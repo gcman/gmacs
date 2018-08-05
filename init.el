@@ -44,6 +44,10 @@
 (global-set-key "\C-cl" 'org-store-link)
 (global-set-key "\C-ca" 'org-agenda)
 
+;; Syntax highlighting LaTeX
+(eval-after-load 'org
+  '(setf org-highlight-latex-and-related '(latex)))
+
 ;; Configuring ox-hugo
 (with-eval-after-load 'ox
     (require 'ox-hugo))
