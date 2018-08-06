@@ -15,7 +15,8 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(org-agenda-files '("~/Documents/School/emacs/first-test.org"))
- '(package-selected-packages '(ox-hugo solarized-theme))
+ '(package-selected-packages
+   '(flyspell-lazy flycheck magic-latex-buffer latex-math-preview cdlatex autopair auctex-latexmk ox-hugo solarized-theme))
  '(safe-local-variable-values
    '((eval add-hook 'after-save-hook #'org-hugo-export-wim-to-md-after-save :append :local))))
 (custom-set-faces
@@ -96,3 +97,20 @@ See `org-capture-templates' for more information."
                  ;; symlink pointing to the actual location of all-posts.org!
                  (file+olp "all-posts.org" "Blog Ideas")
                  (function org-hugo-new-subtree-post-capture-template))))
+
+;; Magic LaTeX
+(require 'magic-latex-buffer)
+(add-hook 'latex-mode-hook 'magic-latex-buffer)
+(add-hook 'org-mode-hook 'magic-latex-buffer)
+
+(require 'smartparens-config)
+;; Always start smartparens mode in js-mode.
+(add-hook 'python-mode-hook #'smartparens-mode)
+(add-hook 'org-mode-hook #'smartparens-mode)
+(add-hook 'latex-mode-hook #'smartparens-mode)
+
+(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+
+(add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
+(add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex mode
+(add-hook 'org-mode-hook 'turn-on-cdlatex)   ; with Emacs latex mode
