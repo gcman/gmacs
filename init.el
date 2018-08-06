@@ -16,15 +16,16 @@
  ;; If there is more than one, they won't work right.
  '(org-agenda-files '("~/Documents/School/emacs/first-test.org"))
  '(package-selected-packages
-   '(flyspell-lazy flycheck magic-latex-buffer latex-math-preview cdlatex autopair auctex-latexmk ox-hugo solarized-theme))
+   '(yasnippet-classic-snippets yasnippet-snippets yasnippet powerline sublimity use-package org-bullets centered-window flyspell-lazy flycheck magic-latex-buffer latex-math-preview cdlatex autopair auctex-latexmk ox-hugo solarized-theme))
  '(safe-local-variable-values
-   '((eval add-hook 'after-save-hook #'org-hugo-export-wim-to-md-after-save :append :local))))
+   '((eval add-hook 'after-save-hook #'org-hugo-export-wim-to-md-after-save :append :local)))
+ '(sublimity-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(fringe ((t (:background "#fdf6e3")))))
 
 ;; Solarized Light theme
 (load-theme 'solarized-light t)
@@ -44,10 +45,6 @@
 (define-key global-map "\C-cc" 'org-capture)
 (global-set-key "\C-cl" 'org-store-link)
 (global-set-key "\C-ca" 'org-agenda)
-
-;; Syntax highlighting LaTeX
-(eval-after-load 'org
-  '(setf org-highlight-latex-and-related '(latex)))
 
 ;; Configuring ox-hugo
 (with-eval-after-load 'ox
@@ -98,19 +95,36 @@ See `org-capture-templates' for more information."
                  (file+olp "all-posts.org" "Blog Ideas")
                  (function org-hugo-new-subtree-post-capture-template))))
 
-;; Magic LaTeX
-(require 'magic-latex-buffer)
-(add-hook 'latex-mode-hook 'magic-latex-buffer)
-(add-hook 'org-mode-hook 'magic-latex-buffer)
+(setq tab-width 4) ; or any other preferred value
 
-(require 'smartparens-config)
-;; Always start smartparens mode in js-mode.
-(add-hook 'python-mode-hook #'smartparens-mode)
-(add-hook 'org-mode-hook #'smartparens-mode)
-(add-hook 'latex-mode-hook #'smartparens-mode)
+(setq org-highlight-latex-and-related '(latex))
+
+;; Autocomplete paired brackets
+(electric-pair-mode 1)
 
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-
 (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
 (add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex mode
-(add-hook 'org-mode-hook 'turn-on-cdlatex)   ; with Emacs latex mode
+
+(require 'flyspell-lazy)
+(flyspell-lazy-mode 1)
+(flyspell-mode 1)      ; or (flyspell-prog-mode)
+
+(require 'org-bullets)
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+
+(require 'sublimity)
+(require 'sublimity-attractive)
+(setq sublimity-attractive-centering-width 110)
+(sublimity-mode 1)
+
+(require 'powerline)
+(powerline-default-theme)
+
+(add-to-list 'load-path
+             "~/.emacs.d/plugins/yasnippet")
+(setq yas-snippet-dirs
+      '("~/.emacs.d/snippets"                 ;; personal snippets
+	))
+(require 'yasnippet)
+(yas-global-mode 1)
