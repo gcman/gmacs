@@ -16,7 +16,7 @@
  ;; If there is more than one, they won't work right.
  '(org-agenda-files '("~/Documents/School/emacs/first-test.org"))
  '(package-selected-packages
-   '(yasnippet-classic-snippets yasnippet-snippets yasnippet powerline sublimity use-package org-bullets centered-window flyspell-lazy flycheck magic-latex-buffer latex-math-preview cdlatex autopair auctex-latexmk ox-hugo solarized-theme))
+   '(smart-tab yasnippet-classic-snippets yasnippet-snippets yasnippet powerline sublimity use-package org-bullets centered-window flyspell-lazy flycheck magic-latex-buffer latex-math-preview cdlatex autopair auctex-latexmk ox-hugo solarized-theme))
  '(safe-local-variable-values
    '((eval add-hook 'after-save-hook #'org-hugo-export-wim-to-md-after-save :append :local)))
  '(sublimity-mode t))
@@ -95,16 +95,27 @@ See `org-capture-templates' for more information."
                  (file+olp "all-posts.org" "Blog Ideas")
                  (function org-hugo-new-subtree-post-capture-template))))
 
-(setq tab-width 4) ; or any other preferred value
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
+(setq indent-line-function 'insert-tab)
+
+(setq-default fill-column 80)
+
+(defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
+
+(defun org-add-electric-pairs ()
+  (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
+  (setq-local electric-pair-text-pairs electric-pair-pairs))
+
+(add-hook 'org-mode-hook 'org-add-electric-pairs)
+
+(electric-pair-mode 1)
 
 (setq org-highlight-latex-and-related '(latex))
 
-;; Autocomplete paired brackets
-(electric-pair-mode 1)
-
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
 (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
-(add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex mode
+(add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex modes
 
 (require 'flyspell-lazy)
 (flyspell-lazy-mode 1)
@@ -128,3 +139,4 @@ See `org-capture-templates' for more information."
 	))
 (require 'yasnippet)
 (yas-global-mode 1)
+(put 'upcase-region 'disabled nil)

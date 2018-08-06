@@ -1,7 +1,7 @@
-# name: equation
-# key: eq
+# name: definition
+# key: def
 # expand-env: ((yas-indent-line 'fixed)(yas/wrap-around-region 'nil))
 # --
-\begin{equation}
+\begin{definition}
     $0
-\end{equation}
+\end{definition}
