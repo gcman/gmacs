@@ -95,6 +95,8 @@ See `org-capture-templates' for more information."
                  (file+olp "all-posts.org" "Blog Ideas")
                  (function org-hugo-new-subtree-post-capture-template))))
 
+(add-hook 'org-mode-hook #'visual-line-mode)
+
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
 (setq indent-line-function 'insert-tab)
