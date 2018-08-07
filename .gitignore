@@ -2,6 +2,6 @@
 
 !.gitignore
 !init.el
-!.README
+!README.md
 !snippets/
 !snippets/*
