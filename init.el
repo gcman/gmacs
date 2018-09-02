@@ -1,144 +1,179 @@
-(require 'package)
-(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
-                    (not (gnutls-available-p))))
-       (proto (if no-ssl "http" "https")))
-  ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
-  (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
-  ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
-  (when (< emacs-major-version 24)
-    ;; For important compatibility libraries like cl-lib
-    (add-to-list 'package-archives '("gnu" . (concat proto "://elpa.gnu.org/packages/")))))
-(package-initialize)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(org-agenda-files '("~/Documents/School/emacs/first-test.org"))
- '(package-selected-packages
-   '(smart-tab yasnippet-classic-snippets yasnippet-snippets yasnippet powerline sublimity use-package org-bullets centered-window flyspell-lazy flycheck magic-latex-buffer latex-math-preview cdlatex autopair auctex-latexmk ox-hugo solarized-theme))
- '(safe-local-variable-values
-   '((eval add-hook 'after-save-hook #'org-hugo-export-wim-to-md-after-save :append :local)))
- '(sublimity-mode t))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(fringe ((t (:background "#fdf6e3")))))
+;; Use a hook so the message doesn't get clobbered by other messages.
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "Emacs ready in %s with %d garbage collections."
+                     (format "%.2f seconds"
+                             (float-time
+                              (time-subtract after-init-time before-init-time)))
+                     gcs-done)))
+(let ((file-name-handler-alist nil))
+  (setq gc-cons-threshold most-positive-fixnum)
+  (require 'package)
+  (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
+                      (not (gnutls-available-p))))
+         (proto (if no-ssl "http" "https")))
+    ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
+    (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
+    ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
+    (when (< emacs-major-version 24)
+      ;; For important compatibility libraries like cl-lib
+      (add-to-list 'package-archives '("gnu" . (concat proto "://elpa.gnu.org/packages/")))))
+  (package-initialize)
 
-;; Solarized Light theme
-(load-theme 'solarized-light t)
+  (when (not package-archive-contents)
+    (package-refresh-contents))
 
-;; -*- mode: elisp -*-
-;; Disable the splash screen (to enable it again, replace the t with O)
-(setq inhibit-splash-screen t)
+  (when (not (package-installed-p 'use-package))
+    (package-install 'use-package))
 
-;; Enable transient mode
-(transient-mark-mode 1)
+  (require 'use-package)
 
-;;;; Org mode configuration
-;; Enable Org mode
-(require 'org)
-;; Make Org mode work with files ending in .org
-(add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-(define-key global-map "\C-cc" 'org-capture)
-(global-set-key "\C-cl" 'org-store-link)
-(global-set-key "\C-ca" 'org-agenda)
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file)
+  (setq completion-ignore-case t)
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 4)
+  (setq indent-line-function 'insert-tab)
+  (show-paren-mode)
+  (setq transient-mark-mode t)
 
-;; Configuring ox-hugo
-(with-eval-after-load 'ox
+  (blink-cursor-mode 0)
+  (when (display-graphic-p)
+    (setq-default cursor-type 'box))
+  (setq x-stretch-cursor 1)
+  (global-font-lock-mode 1)
+
+  (setq ring-bell-function 'ignore)
+  (setq visible-bell t)
+  (display-time-mode 1)
+  (setq display-time-format "%l:%M%p")
+  (scroll-bar-mode 1)
+  (tool-bar-mode -1)
+
+  (setq delete-old-versions -1)
+  (setq version-control t)
+  (setq vc-make-backup-files t)
+  (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+
+  (delete-selection-mode 1)
+  (column-number-mode 1)
+  (fset 'yes-or-no-p 'y-or-n-p)
+
+  (use-package saveplace
+    :defer nil
+    :config
+    (save-place-mode))
+  (use-package imenu-anywhere
+    :bind
+    ("M-i" . helm-imenu-anywhere))
+  (use-package smooth-scrolling
+    :config
+    (smooth-scrolling-mode 1))
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+  (require 'bind-key)
+  (use-package which-key
+    :defer nil
+    :diminish which-key-mode
+    :config
+    (which-key-mode))
+
+  (use-package org
+    :bind
+    ("C-c l" . org-store-link)
+    ("C-c a" . org-agenda)
+    ("A-h" . org-mark-element)
+    ("C-c c" . org-capture)
+    :custom
+    (org-startup-indented t))
+  (use-package org-indent
+    :ensure nil
+    :diminish)
+  (add-hook 'text-mode-hook #'visual-line-mode)
+  (eval-after-load 'face-remap '(diminish 'buffer-face-mode))
+  (eval-after-load 'simple '(diminish 'visual-line-mode))
+
+  (defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
+  (defun org-add-electric-pairs ()
+    (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
+    (setq-local electric-pair-text-pairs electric-pair-pairs))
+  (add-hook 'org-mode-hook 'org-add-electric-pairs)
+  (electric-pair-mode 1)
+  (setq org-highlight-latex-and-related '(latex))
+  (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+  (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
+  (add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex modes
+
+  ;; Configuring ox-hugo
+  (with-eval-after-load 'ox
     (require 'ox-hugo))
+  (require 'ox-hugo-auto-export)
 
-;; ox-hugo auto-reload for org-capture
-(with-eval-after-load 'org-capture
-  ;; Do not cause auto Org->Hugo export to happen when saving captures
-  (defun modi/org-capture--remove-auto-org-to-hugo-export-maybe ()
-    "Function for `org-capture-before-finalize-hook'.
-Disable `org-hugo-export-wim-to-md-after-save'."
-    (setq org-hugo-allow-export-after-save nil))
+  (font-lock-add-keywords 'org-mode
+                        '(("^ *\\([-]\\) "
+                           (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+  (use-package org-bullets
+    :after org
+    :hook
+    (org-mode . (lambda () (org-bullets-mode 1))))
 
-  (defun modi/org-capture--add-auto-org-to-hugo-export-maybe ()
-    "Function for `org-capture-after-finalize-hook'.
-Enable `org-hugo-export-wim-to-md-after-save'."
-    (setq org-hugo-allow-export-after-save t))
+  (when (>= emacs-major-version 26)
+    (pixel-scroll-mode))
+      ;; scroll one line at a time (less "jumpy" than defaults)
+    (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+    (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+    (setq scroll-step 1) ;; keyboard scroll one line at a time
 
-  (add-hook 'org-capture-before-finalize-hook #'modi/org-capture--remove-auto-org-to-hugo-export-maybe)
-  (add-hook 'org-capture-after-finalize-hook #'modi/org-capture--add-auto-org-to-hugo-export-maybe))
+  (setq inhibit-splash-screen t)
+  (use-package solarized-theme)
+  (load-theme 'solarized-light t)
+  (use-package centered-window
+    :ensure t
+    :config
+    (centered-window-mode t))
+  (use-package smart-mode-line
+    :defer 2
+    :config
+    (sml/setup))
+  (desktop-save-mode 1)
+  (use-package diminish
+    :defer 1)
+  (use-package uniquify
+    :defer 1
+    :ensure nil
+    :custom
+    (uniquify-after-kill-buffer-p t)
+    (uniquify-buffer-name-style 'post-forward)
+    (uniquify-strip-common-suffix t))
+  (use-package wc-mode
+    :defer 3)
+  (use-package company
+    :diminish company-mode
+    :hook
+    (after-init . global-company-mode))
 
-;; Populates only the EXPORT_FILE_NAME property in the inserted headline.
-(with-eval-after-load 'org-capture
-(defun org-hugo-new-subtree-post-capture-template ()
-  "Returns `org-capture' template string for new Hugo post.
-See `org-capture-templates' for more information."
-  (let* (;; http://www.holgerschurig.de/en/emacs-blog-from-org-to-hugo/
-         (date (format-time-string (org-time-stamp-format :long :inactive) (org-current-time)))
-         (title (read-from-minibuffer "Post Title: ")) ;Prompt to enter the post title
-         (fname (org-hugo-slug title)))
-    (mapconcat #'identity
-               `(
-                 ,(concat "* TODO " title)
-                 ":PROPERTIES:"
-                 ,(concat ":EXPORT_FILE_NAME: " fname)
-                 ,(concat ":EXPORT_DATE: " date) ;Enter current date and time
-                 ":END:"
-                 "%?\n")                ;Place the cursor here finally
-               "\n"))) 
+  (use-package flyspell
+    :defer 1
+    :hook (text-mode . flyspell-mode)
+    :diminish
+    :bind (:map flyspell-mouse-map
+                ([down-mouse-3] . #'flyspell-correct-word)
+                ([mouse-3]      . #'undefined)))
+  (use-package yaml-mode)
 
-  (add-to-list 'org-capture-templates
-               '("h"                ;`org-capture' binding + h
-                 "Hugo post"
-                 entry
-                 ;; It is assumed that below file is present in `org-directory'
-                 ;; and that it has a "Blog Ideas" heading. It can even be a
-                 ;; symlink pointing to the actual location of all-posts.org!
-                 (file+olp "all-posts.org" "Blog Ideas")
-                 (function org-hugo-new-subtree-post-capture-template))))
-
-(add-hook 'org-mode-hook #'visual-line-mode)
-
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)
-(setq indent-line-function 'insert-tab)
-
-(setq-default fill-column 80)
-
-(defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
-
-(defun org-add-electric-pairs ()
-  (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
-  (setq-local electric-pair-text-pairs electric-pair-pairs))
-
-(add-hook 'org-mode-hook 'org-add-electric-pairs)
-
-(electric-pair-mode 1)
-
-(setq org-highlight-latex-and-related '(latex))
-
-(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-(add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
-(add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex modes
-
-(require 'flyspell-lazy)
-(flyspell-lazy-mode 1)
-(flyspell-mode 1)      ; or (flyspell-prog-mode)
-
-(require 'org-bullets)
-(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
-
-(require 'sublimity)
-(require 'sublimity-attractive)
-(setq sublimity-attractive-centering-width 110)
-(sublimity-mode 1)
-
-(require 'powerline)
-(powerline-default-theme)
-
-(add-to-list 'load-path
+  (add-to-list 'load-path
              "~/.emacs.d/plugins/yasnippet")
-(setq yas-snippet-dirs
+  (setq yas-snippet-dirs
       '("~/.emacs.d/snippets"                 ;; personal snippets
 	))
-(require 'yasnippet)
-(yas-global-mode 1)
-(put 'upcase-region 'disabled nil)
+  (use-package yasnippet)
+  (use-package yasnippet-snippets)
+  (yas-global-mode 1)
+  (use-package aggressive-indent
+    :disabled
+    :diminish aggressive-indent-mode
+    :hook
+    (prog-mode . aggressive-indent-mode)
+    (python-mode . (lambda () (aggressive-indent-mode -1))))
+)
+(setq gc-cons-threshold (* 2 1000 1000))
