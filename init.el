@@ -27,9 +27,10 @@
     (package-install 'use-package))
 
   (require 'use-package)
-
+  (require 'font-lock)
   (setq custom-file "~/.emacs.d/custom.el")
   (load custom-file)
+  (desktop-save-mode 1)
   (setq completion-ignore-case t)
   (setq-default indent-tabs-mode nil)
   (setq-default tab-width 4)
@@ -86,12 +87,6 @@
     ("C-c c" . org-capture)
     :custom
     (org-startup-indented t))
-  (use-package org-indent
-    :ensure nil
-    :diminish)
-  (add-hook 'text-mode-hook #'visual-line-mode)
-  (eval-after-load 'face-remap '(diminish 'buffer-face-mode))
-  (eval-after-load 'simple '(diminish 'visual-line-mode))
 
   (defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
   (defun org-add-electric-pairs ()
@@ -117,25 +112,44 @@
     :hook
     (org-mode . (lambda () (org-bullets-mode 1))))
 
+  ;; Use M-x without tapping ALT
+  (global-set-key "\C-x\C-m" 'execute-extended-command)
+  (global-set-key "\C-c\C-m" 'execute-extended-command)
+  (global-set-key "\C-w" 'backward-kill-word)
+  (global-set-key "\C-x\C-k" 'kill-region)
+  (global-set-key "\C-c\C-k" 'kill-region)
+
   (when (>= emacs-major-version 26)
     (pixel-scroll-mode))
-      ;; scroll one line at a time (less "jumpy" than defaults)
-    (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
-    (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
-    (setq scroll-step 1) ;; keyboard scroll one line at a time
+  (require 'sublimity)
+  (require 'sublimity-scroll)
+  (require 'sublimity-attractive)
+  (setq sublimity-scroll-weight 8
+      sublimity-scroll-drift-length 3)
+  (setq sublimity-attractive-centering-width 80)
+  (sublimity-attractive-hide-vertical-border)
+  (sublimity-attractive-hide-fringes)
+  (sublimity-mode 1)
+
+  (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
+  (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
 
   (setq inhibit-splash-screen t)
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+  (setq frame-title-format "")
   (use-package solarized-theme)
   (load-theme 'solarized-light t)
-  (use-package centered-window
-    :ensure t
-    :config
-    (centered-window-mode t))
+  (visual-line-mode 1)
+  (adaptive-wrap-prefix-mode 1)
+  (when (fboundp 'adaptive-wrap-prefix-mode)
+  (defun my-activate-adaptive-wrap-prefix-mode ()
+    "Toggle `visual-line-mode' and `adaptive-wrap-prefix-mode' simultaneously."
+    (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
+  (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
   (use-package smart-mode-line
     :defer 2
     :config
     (sml/setup))
-  (desktop-save-mode 1)
   (use-package diminish
     :defer 1)
   (use-package uniquify
