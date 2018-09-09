@@ -119,6 +119,8 @@
   (global-set-key "\C-x\C-k" 'kill-region)
   (global-set-key "\C-c\C-k" 'kill-region)
 
+  (set-face-attribute 'default nil :font "Hack" )
+  (set-frame-font "Hack" nil t)
   (when (>= emacs-major-version 26)
     (pixel-scroll-mode))
   (require 'sublimity)
