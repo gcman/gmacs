@@ -8,6 +8,12 @@
                      gcs-done)))
 (let ((file-name-handler-alist nil))
   (setq gc-cons-threshold most-positive-fixnum)
+  (defun my-minibuffer-setup-hook ()
+  (setq gc-cons-threshold most-positive-fixnum))
+  (defun my-minibuffer-exit-hook ()
+  (setq gc-cons-threshold 800000))
+  (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
+  (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
   (require 'package)
   (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                       (not (gnutls-available-p))))
@@ -44,6 +50,11 @@
   (setq x-stretch-cursor 1)
   (global-font-lock-mode 1)
 
+  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+  (setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
+  (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+  (setq scroll-step 1) ;; keyboard scroll one line at a time
+
   (setq ring-bell-function 'ignore)
   (setq visible-bell t)
   (display-time-mode 1)
@@ -67,9 +78,6 @@
   (use-package imenu-anywhere
     :bind
     ("M-i" . helm-imenu-anywhere))
-  (use-package smooth-scrolling
-    :config
-    (smooth-scrolling-mode 1))
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
   (require 'bind-key)
@@ -123,15 +131,8 @@
   (set-frame-font "Hack" nil t)
   (when (>= emacs-major-version 26)
     (pixel-scroll-mode))
-  (require 'sublimity)
-  (require 'sublimity-scroll)
-  (require 'sublimity-attractive)
-  (setq sublimity-scroll-weight 8
-      sublimity-scroll-drift-length 3)
-  (setq sublimity-attractive-centering-width 80)
-  (sublimity-attractive-hide-vertical-border)
-  (sublimity-attractive-hide-fringes)
-  (sublimity-mode 1)
+  (use-package centered-window :ensure t)
+  (centered-window-mode t)
 
   (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
@@ -141,13 +142,8 @@
   (setq frame-title-format "")
   (use-package solarized-theme)
   (load-theme 'solarized-light t)
-  (visual-line-mode 1)
-  (adaptive-wrap-prefix-mode 1)
-  (when (fboundp 'adaptive-wrap-prefix-mode)
-  (defun my-activate-adaptive-wrap-prefix-mode ()
-    "Toggle `visual-line-mode' and `adaptive-wrap-prefix-mode' simultaneously."
-    (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
-  (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
+  (add-hook 'text-mode-hook 'auto-fill-mode)
+  (setq-default fill-column 80)
   (use-package smart-mode-line
     :defer 2
     :config
