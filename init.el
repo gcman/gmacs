@@ -7,13 +7,6 @@
                               (time-subtract after-init-time before-init-time)))
                      gcs-done)))
 (let ((file-name-handler-alist nil))
-  (setq gc-cons-threshold most-positive-fixnum)
-  (defun my-minibuffer-setup-hook ()
-  (setq gc-cons-threshold most-positive-fixnum))
-  (defun my-minibuffer-exit-hook ()
-  (setq gc-cons-threshold 800000))
-  (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
-  (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
   (require 'package)
   (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                       (not (gnutls-available-p))))
@@ -59,7 +52,6 @@
   (setq visible-bell t)
   (display-time-mode 1)
   (setq display-time-format "%l:%M%p")
-  (scroll-bar-mode 1)
   (tool-bar-mode -1)
 
   (setq delete-old-versions -1)
@@ -134,6 +126,9 @@
   (use-package centered-window :ensure t)
   (centered-window-mode t)
 
+  (use-package olivetti)
+  (add-hook 'text-mode-hook #'olivetti-mode)
+
   (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
 
@@ -142,8 +137,6 @@
   (setq frame-title-format "")
   (use-package solarized-theme)
   (load-theme 'solarized-light t)
-  (add-hook 'text-mode-hook 'auto-fill-mode)
-  (setq-default fill-column 80)
   (use-package smart-mode-line
     :defer 2
     :config

@@ -50,11 +50,12 @@
  '(nrepl-message-colors
    (quote
     ("#dc322f" "#cb4b16" "#b58900" "#546E00" "#B4C342" "#00629D" "#2aa198" "#d33682" "#6c71c4")))
+ '(org-agenda-files (quote ("~/Documents/School/writers-craft/prompts.org")))
  '(org-hide-emphasis-markers t)
  '(org-startup-indented t)
  '(package-selected-packages
    (quote
-    (writeroom-mode adaptive-wrap centered-window org-wc yasnippet-snippets auctex yaml-mode company wc-mode smart-mode-line sublimity-attractive yasnippet which-key use-package sublimity solarized-theme smooth-scrolling powerline ox-hugo org-bullets imenu-anywhere flyspell-lazy flycheck cdlatex)))
+    (visudal-fill-column writeroom-mode adaptive-wrap centered-window org-wc yasnippet-snippets auctex yaml-mode company wc-mode smart-mode-line sublimity-attractive yasnippet which-key use-package sublimity solarized-theme smooth-scrolling powerline ox-hugo org-bullets imenu-anywhere flyspell-lazy flycheck cdlatex)))
  '(pos-tip-background-color "#eee8d5")
  '(pos-tip-foreground-color "#586e75")
  '(safe-local-variable-values
