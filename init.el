@@ -97,8 +97,6 @@
   (electric-pair-mode 1)
   (setq org-highlight-latex-and-related '(latex))
   (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-  (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
-  (add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex modes
 
   ;; Configuring ox-hugo
   (use-package ox-hugo
@@ -116,6 +114,49 @@
 
   (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
 
+  (use-package auctex
+    :defer t
+    :ensure t)
+  (require 'tex-site)
+  (setq TeX-auto-save t)
+  (setq TeX-parse-self t)
+  (setq-default TeX-master nil)
+  (setq TeX-PDF-mode t)
+  (defun remove-olivetti-mode ()
+    (olivetti-mode -1))
+  (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
+  (add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex modes
+  ;;(add-hook 'LaTeX-mode-hook 'olivetti-mode)
+  (add-hook 'LaTeX-mode-hook 'visual-line-mode)
+  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  (defun turn-on-outline-minor-mode ()
+  (outline-minor-mode 1))
+  (add-hook 'LaTeX-mode-hook 'turn-on-outline-minor-mode)
+  (add-hook 'latex-mode-hook 'turn-on-outline-minor-mode)
+  (setq outline-minor-mode-prefix "\C-c \C-o") ; Or something else
+  (setq LaTeX-eqnarray-label "eq"
+        LaTeX-equation-label "eq"
+        LaTeX-figure-label "fig"
+        LaTeX-table-label "tab"
+        LaTeX-myChapter-label "chap"
+        TeX-auto-save t
+        TeX-newline-function 'reindent-then-newline-and-indent
+        TeX-parse-self t
+        LaTeX-section-hook
+        '(LaTeX-section-heading
+          LaTeX-section-title
+          LaTeX-section-toc
+          LaTeX-section-section
+          LaTeX-section-label))
+
+  (use-package adaptive-wrap)
+  (when (fboundp 'adaptive-wrap-prefix-mode)
+  (defun my-activate-adaptive-wrap-prefix-mode ()
+    "Toggle `visual-line-mode' and `adaptive-wrap-prefix-mode' simultaneously."
+    (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
+  (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
+
   ;; Use M-x without tapping ALT
   (global-set-key "\C-x\C-m" 'execute-extended-command)
   (global-set-key "\C-c\C-m" 'execute-extended-command)
@@ -131,7 +172,7 @@
   (centered-window-mode t)
 
   (use-package olivetti)
-  (add-hook 'text-mode-hook #'olivetti-mode)
+  (add-hook 'org-mode-hook #'olivetti-mode)
 
   (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
   (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))

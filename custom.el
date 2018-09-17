@@ -56,7 +56,7 @@
  '(org-startup-indented t)
  '(package-selected-packages
    (quote
-    (visudal-fill-column writeroom-mode adaptive-wrap centered-window org-wc yasnippet-snippets auctex yaml-mode company wc-mode smart-mode-line sublimity-attractive yasnippet which-key use-package sublimity solarized-theme smooth-scrolling powerline ox-hugo org-bullets imenu-anywhere flyspell-lazy flycheck cdlatex)))
+    (auctex-lua auctex-latexmk visudal-fill-column writeroom-mode adaptive-wrap centered-window org-wc yasnippet-snippets auctex yaml-mode company wc-mode smart-mode-line sublimity-attractive yasnippet which-key use-package sublimity solarized-theme smooth-scrolling powerline ox-hugo org-bullets imenu-anywhere flyspell-lazy flycheck cdlatex)))
  '(pos-tip-background-color "#eee8d5")
  '(pos-tip-foreground-color "#586e75")
  '(safe-local-variable-values
