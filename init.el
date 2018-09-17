@@ -79,6 +79,7 @@
     :config
     (which-key-mode))
 
+  (require 'org)
   (use-package org
     :bind
     ("C-c l" . org-store-link)
@@ -100,8 +101,9 @@
   (add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex modes
 
   ;; Configuring ox-hugo
-  (with-eval-after-load 'ox
-    (require 'ox-hugo))
+  (use-package ox-hugo
+    :ensure t
+    :after ox)
   (require 'ox-hugo-auto-export)
 
   (font-lock-add-keywords 'org-mode
@@ -111,6 +113,8 @@
     :after org
     :hook
     (org-mode . (lambda () (org-bullets-mode 1))))
+
+  (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
 
   ;; Use M-x without tapping ALT
   (global-set-key "\C-x\C-m" 'execute-extended-command)

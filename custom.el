@@ -52,6 +52,7 @@
     ("#dc322f" "#cb4b16" "#b58900" "#546E00" "#B4C342" "#00629D" "#2aa198" "#d33682" "#6c71c4")))
  '(org-agenda-files (quote ("~/Documents/School/writers-craft/prompts.org")))
  '(org-hide-emphasis-markers t)
+ '(org-hugo-use-code-for-kbd t)
  '(org-startup-indented t)
  '(package-selected-packages
    (quote
