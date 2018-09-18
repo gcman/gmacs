@@ -32,15 +32,18 @@ Use ~M-x package-refresh-contents~ to reload the list of packages after adding t
 If I ever need to load files outside of my package system, I know where to find them. I also set up ~use-package~ here.
 ** General Configuration
 *** Graphical Decluttering
+**** Splash Screen
 Get rid of that ugly splash screen.
 #+BEGIN_SRC emacs-lisp
 (setq inhibit-splash-screen t)
 #+END_SRC
+**** Fullscreen
 Start emacs in glorious fullscreen.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 (setq frame-title-format "")
 #+END_SRC
+**** Bars
 Menus are not required; neither is the scroll bar.
 #+BEGIN_SRC emacs-lisp
 (menu-bar-mode -1)
@@ -50,6 +53,7 @@ It is no longer the 90s. Toolbars and their little icons are not cool.
 #+BEGIN_SRC emacs-lisp
 (tool-bar-mode -1)
 #+END_SRC
+**** Cursor Blinking
 The cursor should not blink.
 #+BEGIN_SRC emacs-lisp
 (blink-cursor-mode 0)
@@ -57,11 +61,13 @@ The cursor should not blink.
   (setq-default cursor-type 'box))
 (setq x-stretch-cursor 1)
 #+END_SRC
+**** Notifications
 Visual, not audible bells.
 #+BEGIN_SRC emacs-lisp
 (setq ring-bell-function 'ignore)
 (setq visible-bell t)
 #+END_SRC
+**** Modeline
 Keep a simpler modeline...
 #+BEGIN_SRC emacs-lisp
 (use-package diminish
@@ -131,6 +137,11 @@ What time is it, Mr. Emacs?
 #+BEGIN_SRC emacs-lisp
 (column-number-mode 1)
 #+END_SRC
+*** Magit
+#+BEGIN_SRC emacs-lisp
+(require 'magit)
+(global-set-key (kbd "C-x g") 'magit-status)
+#+END_SRC
 *** From Yes/No to y/n
 This makes things so much simpler. There's not any ambiguity to begin with.
 #+BEGIN_SRC emacs-lisp
@@ -167,7 +178,7 @@ This makes things so much simpler. There's not any ambiguity to begin with.
 #+END_SRC
 *** Searching and Finding
 #+BEGIN_SRC emacs-lisp
-(require 'ido)
+(use-package ido)
 (ido-mode 1)
 (ido-everywhere 1)
 (setq ido-create-new-buffer 'always)
@@ -262,13 +273,18 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 #+END_SRC
 *** Centered Buffer
 #+BEGIN_SRC emacs-lisp
-(use-package centered-window :ensure t)
+(use-package centered-window
+  :ensure t
+  :diminish centered-window-mode)
 (centered-window-mode t)
 #+END_SRC
-Nicely wraps lines for org-mode.
+Nicely wraps lines for ~text-mode~.
 #+BEGIN_SRC emacs-lisp
-(use-package olivetti)
-(add-hook 'org-mode-hook #'olivetti-mode)
+(use-package olivetti
+  :diminish
+  olivetti-mode
+  visual-line-mode)
+(add-hook 'text-mode-hook #'olivetti-mode)
 #+END_SRC
 ** Org
 *** Setup
@@ -281,6 +297,8 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   ("C-c a" . org-agenda)
   ("A-h" . org-mark-element)
   ("C-c c" . org-capture)
+  :diminish
+  (org-indent-mode)
   :custom
   (org-startup-indented t))
 #+END_SRC
@@ -292,6 +310,10 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (require 'ox-hugo-auto-export)
 #+END_SRC
 *** Prettifying
+**** Hide Emphasis
+#+BEGIN_SRC emacs-lisp
+(setq org-hide-emphasis-markers t)
+#+END_SRC
 **** Org Bullets
 #+BEGIN_SRC emacs-lisp
 (use-package org-bullets
@@ -381,20 +403,17 @@ By default, it's really small on my HiDPI screen.
 (eval-after-load "diminish"
   '(progn
      (eval-after-load "yasnippet"
-       '(diminish 'yas-minor-mode "✂"))))
+       '(diminish 'yas-minor-mode))))
 (yas-global-mode 1)
 #+END_SRC
 ** Mail
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.
 #+BEGIN_SRC emacs-lisp
-(require 'mu4e)
-
+(use-package mu4e)
 ;; use mu4e for e-mail in emacs
 (setq mail-user-agent 'mu4e-user-agent)
-
 ;; default
 (setq mu4e-maildir "~/Maildir")
-
 (setq mu4e-drafts-folder "/[Gmail].Drafts")
 (setq mu4e-sent-folder   "/[Gmail].Sent Mail")
 (setq mu4e-trash-folder  "/[Gmail].Trash")
@@ -412,10 +431,10 @@ This is pretty complicated; I need to sort through this and break it up into mor
 ;; the 'All Mail' folder by pressing ``ma''.
 
 (setq mu4e-maildir-shortcuts
-    '( ("/INBOX"               . ?i)
+    '( ("/[Gmail].All Mail"    . ?i)
        ("/[Gmail].Sent Mail"   . ?s)
        ("/[Gmail].Trash"       . ?t)
-       ("/[Gmail].All Mail"    . ?a)))
+       ("/INBOX"    . ?a)))
 
 ;; allow for updating mail using 'U' in the main view:
 (setq mu4e-get-mail-command "offlineimap")
@@ -437,7 +456,7 @@ This is pretty complicated; I need to sort through this and break it up into mor
 ;; also, make sure the gnutls command line utils are installed
 ;; package 'gnutls-bin' in Debian/Ubuntu
 
-(require 'smtpmail)
+(use-package smtpmail)
 (setq message-send-mail-function 'smtpmail-send-it
    starttls-use-gnutls t
    smtpmail-starttls-credentials '(("smtp.gmail.com" 587 nil nil))
@@ -465,21 +484,6 @@ This is pretty complicated; I need to sort through this and break it up into mor
     )
   (run-with-timer 0 60 'gjstein-refresh-mu4e-alert-mode-line)
   )
-
-(defun remove-nth-element (nth list)
-  (if (zerop nth) (cdr list)
-    (let ((last (nthcdr (1- nth) list)))
-      (setcdr last (cddr last))
-      list)))
-(setq mu4e-marks (remove-nth-element 5 mu4e-marks))
-(add-to-list 'mu4e-marks
-     '(trash
-       :char ("d" . "▼")
-       :prompt "dtrash"
-       :dyn-target (lambda (target msg) (mu4e-get-trash-folder msg))
-       :action (lambda (docid msg target)
-                 (mu4e~proc-move docid
-                    (mu4e~mark-check-target target) "-N"))))
 ;; Don't ask for a 'context' upon opening mu4e
 (setq mu4e-context-policy 'pick-first)
 ;; Don't ask to quit... why is this the default?
