@@ -1,0 +1,7 @@
+# name: theorem
+# key: thm
+# expand-env: ((yas-indent-line 'fixed)(yas/wrap-around-region 'nil))
+# --
+\begin{theorem}
+    $0
+\end{theorem}
