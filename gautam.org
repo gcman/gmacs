@@ -147,12 +147,45 @@ This makes things so much simpler. There's not any ambiguity to begin with.
 #+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
-*** Syntax Highlighting
-**** Use it Everywhere
+*** Highlighting
+**** Syntax
 #+BEGIN_SRC emacs-lisp
 (global-font-lock-mode 1)
 #+END_SRC
-**** Highlight Parentheses
+**** Sentences
+#+BEGIN_SRC emacs-lisp
+(setq sentence-end "[^.].[.?!]+\\([]\"')}]*\\|<[^>]+>\\)\\($\\| $\\|\t\\| \\)[ \t\n]*")
+
+(setq sentence-color "#d5cfd9")
+(setq sentence-face (make-face 'sentence-face-background))
+(set-face-foreground sentence-face sentence-color)
+
+(defun sentence-begin-pos () (save-excursion (unless (= (point) (point-max)) (forward-char)) (backward-sentence) (point)))
+(defun sentence-end-pos () (save-excursion (unless (= (point) (point-max)) (forward-char)) (backward-sentence) (forward-sentence) (point)))
+
+(setq sentence-highlight-mode nil)
+
+(defun sentence-highlight-current (&rest ignore)
+  "Highlight current sentence."
+    (and sentence-highlight-mode (> (buffer-size) 0)
+    (progn
+      (and  (boundp 'sentence-extent)
+        sentence-extent
+        (move-overlay sentence-extent (sentence-begin-pos) (sentence-end-pos) (current-buffer))
+      )
+)))
+
+(setq sentence-extent (make-overlay 0 0))
+(overlay-put sentence-extent 'face sentence-face)
+
+(add-hook 'text-mode-hook (function (lambda ()
+
+ (make-local-variable 'sentence-highlight-mode)
+ (setq sentence-highlight-mode t)
+ (add-hook 'post-command-hook	'sentence-highlight-current)
+)))
+#+END_SRC
+**** Parentheses
 #+BEGIN_SRC emacs-lisp
 (setq blink-matching-paren nil)
 (show-paren-mode t)
@@ -278,13 +311,20 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
   :diminish centered-window-mode)
 (centered-window-mode t)
 #+END_SRC
+*** Autofill
 Nicely wraps lines for ~text-mode~.
 #+BEGIN_SRC emacs-lisp
-(use-package olivetti
-  :diminish
-  olivetti-mode
-  visual-line-mode)
-(add-hook 'text-mode-hook #'olivetti-mode)
+(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
+(eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
+#+END_SRC
+Quickly autofill the entire buffer by paragraph.
+#+BEGIN_SRC emacs-lisp
+(defun fill-buffer ()
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (widen)
+      (fill-region (point-min) (point-max)))))
 #+END_SRC
 ** Org
 *** Setup
@@ -321,13 +361,18 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
     :hook
     (org-mode . (lambda () (org-bullets-mode 1))))
 #+END_SRC
-**** Bullet Lists
+**** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 #+BEGIN_SRC emacs-lisp
 (font-lock-add-keywords 'org-mode
                         '(("^ *\\([-]\\) "
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
+#+END_SRC
+**** Autofill Limit
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook
+        (lambda() (set-fill-column 80)))
 #+END_SRC
 *** LaTeX
 **** Autocomplete ~$~
@@ -362,11 +407,8 @@ By default, it's really small on my HiDPI screen.
   (setq TeX-parse-self t)
   (setq-default TeX-master nil)
   (setq TeX-PDF-mode t)
-  (defun remove-olivetti-mode ()
-    (olivetti-mode -1))
   (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
   (add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex modes
-  ;;(add-hook 'LaTeX-mode-hook 'olivetti-mode)
   (add-hook 'LaTeX-mode-hook 'visual-line-mode)
   (add-hook 'LaTeX-mode-hook 'flyspell-mode)
   (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
