@@ -153,10 +153,15 @@ This makes things so much simpler. There's not any ambiguity to begin with.
 (global-font-lock-mode 1)
 #+END_SRC
 **** Sentences
+Set up ~org~ source blocks to ignore this setting.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-src-mode-hook 'hack-local-variables)
+#+END_SRC
+And then the actual settings.
 #+BEGIN_SRC emacs-lisp
 (setq sentence-end "[^.].[.?!]+\\([]\"')}]*\\|<[^>]+>\\)\\($\\| $\\|\t\\| \\)[ \t\n]*")
 
-(setq sentence-color "#d5cfd9")
+(setq sentence-color "#2aa198")
 (setq sentence-face (make-face 'sentence-face-background))
 (set-face-foreground sentence-face sentence-color)
 
@@ -184,6 +189,7 @@ This makes things so much simpler. There's not any ambiguity to begin with.
  (setq sentence-highlight-mode t)
  (add-hook 'post-command-hook	'sentence-highlight-current)
 )))
+(add-hook 'orc-src-mode-hook (lambda () (highlight-parentheses-mode -1)))
 #+END_SRC
 **** Parentheses
 #+BEGIN_SRC emacs-lisp
@@ -374,7 +380,7 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 (add-hook 'org-mode-hook
         (lambda() (set-fill-column 80)))
 #+END_SRC
-*** LaTeX
+*** LaTeX Editing
 **** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
 (defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
@@ -396,6 +402,10 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 By default, it's really small on my HiDPI screen.
 #+BEGIN_SRC emacs-lisp
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+#+END_SRC
+*** Export LaTeX Quotes
+#+BEGIN_SRC emacs-lisp
+(setq org-export-with-smart-quotes t)
 #+END_SRC
 ** AUCTeX
 #+BEGIN_SRC emacs-lisp
