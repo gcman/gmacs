@@ -1,5 +1,19 @@
 #+TITLE: Emacs Configuration
 * Starting Up
+** Package DIstributions
+#+BEGIN_SRC emacs-lisp
+(require 'package)
+(setq package-enable-at-startup nil)
+(add-to-list 'package-archives
+	     '("melpa" . "https://melpa.org/packages/"))
+(package-initialize)
+#+END_SRC
+Always use ~use-package~.
+#+BEGIN_SRC emacs-lisp
+(unless (package-installed-p 'use-package)
+	(package-refresh-contents)
+	(package-install 'use-package))
+#+END_SRC
 ** Really Starting Up
 On start-up, display how quickly emacs started up.
 #+BEGIN_SRC emacs-lisp
@@ -29,21 +43,23 @@ Use ~M-x package-refresh-contents~ to reload the list of packages after adding t
 (setq use-package-always-ensure t)
 (require 'use-package)
 #+END_SRC
-If I ever need to load files outside of my package system, I know where to find them. I also set up ~use-package~ here.
+If I ever need to load files outside of my package system, I know where to find
+them. I also set up ~use-package~ here.
 * General Configuration
-** Graphical Decluttering
-*** Splash Screen
+** Graphics
+*** Decluttering
+**** Splash Screen
 Get rid of that ugly splash screen.
 #+BEGIN_SRC emacs-lisp
 (setq inhibit-splash-screen t)
 #+END_SRC
-*** Fullscreen
+**** Fullscreen
 Start emacs in glorious fullscreen.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 (setq frame-title-format "")
 #+END_SRC
-*** Bars
+**** Bars
 Menus are not required; neither is the scroll bar.
 #+BEGIN_SRC emacs-lisp
 (menu-bar-mode -1)
@@ -53,7 +69,7 @@ It is no longer the 90s. Toolbars and their little icons are not cool.
 #+BEGIN_SRC emacs-lisp
 (tool-bar-mode -1)
 #+END_SRC
-*** Cursor Blinking
+**** Cursor Blinking
 The cursor should not blink.
 #+BEGIN_SRC emacs-lisp
 (blink-cursor-mode 0)
@@ -61,13 +77,13 @@ The cursor should not blink.
   (setq-default cursor-type 'box))
 (setq x-stretch-cursor 1)
 #+END_SRC
-*** Notifications
+**** Notifications
 Visual, not audible bells.
 #+BEGIN_SRC emacs-lisp
 (setq ring-bell-function 'ignore)
 (setq visible-bell t)
 #+END_SRC
-*** Modeline
+**** Modeline
 Keep a simpler modeline...
 #+BEGIN_SRC emacs-lisp
 (use-package diminish
@@ -80,7 +96,181 @@ and a smarter one.
     :config
     (sml/setup))
 #+END_SRC
-** Backups
+*** Modeline
+**** Time
+What time is it, Mr. Emacs?
+#+BEGIN_SRC emacs-lisp
+(display-time-mode 1)
+(setq display-time-format "%l:%M%p")
+#+END_SRC
+**** Column
+#+BEGIN_SRC emacs-lisp
+(column-number-mode 1)
+#+END_SRC
+*** Ban Whitespace
+#+BEGIN_SRC emacs-lisp
+ (add-hook 'before-save-hook 'delete-trailing-whitespace)
+#+END_SRC
+*** Indentation
+**** Keep Things Indented
+#+BEGIN_SRC emacs-lisp
+  (use-package aggressive-indent
+    :disabled
+    :diminish aggressive-indent-mode
+    :hook
+    (prog-mode . aggressive-indent-mode)
+    (python-mode . (lambda () (aggressive-indent-mode -1))))
+#+END_SRC
+**** Wrap Indented Lines Sensibly
+This way, indented lines that are wrapped with ~visual-line-mode~ do not begin at character 0, but from where they are indented.
+#+BEGIN_SRC emacs-lisp
+(use-package adaptive-wrap)
+  (when (fboundp 'adaptive-wrap-prefix-mode)
+  (defun my-activate-adaptive-wrap-prefix-mode ()
+    "Toggle `visual-line-mode' and `adaptive-wrap-prefix-mode' simultaneously."
+    (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
+  (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
+#+END_SRC
+*** Mouse Scrolling
+#+BEGIN_SRC emacs-lisp
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+(setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
+(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+(setq scroll-step 1) ;; keyboard scroll one line at a time
+#+END_SRC
+*** Indentation
+#+BEGIN_SRC emacs-lisp
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
+(setq indent-line-function 'insert-tab)
+#+END_SRC
+** Ease of Use
+*** Dialogs
+**** From Yes/No to y/n
+This makes things so much simpler. There's not any ambiguity to begin with.
+#+BEGIN_SRC emacs-lisp
+(fset 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+*** Searching and Finding
+#+BEGIN_SRC emacs-lisp
+(use-package ido)
+(ido-mode 1)
+(ido-everywhere 1)
+(setq ido-create-new-buffer 'always)
+(setq ido-use-faces nil)
+#+END_SRC
+*** Delete The Selection
+#+BEGIN_SRC emacs-lisp
+(delete-selection-mode 1)
+#+END_SRC
+*** Autocomplete
+**** ignore case
+#+BEGIN_SRC emacs-lisp
+(setq completion-ignore-case t)
+#+END_SRC
+**** Company
+#+BEGIN_SRC emacs-lisp
+(use-package company
+    :diminish company-mode
+    :hook
+    (after-init . global-company-mode))
+#+END_SRC
+*** Spellchek
+#+BEGIN_SRC emacs-lisp
+(use-package flyspell
+    :defer 1
+    :hook (text-mode . flyspell-mode)
+    :diminish
+    :bind (:map flyspell-mouse-map
+                ([down-mouse-3] . #'flyspell-correct-word)
+                ([mouse-3]      . #'undefined)))
+#+END_SRC
+*** Kill Current Buffer
+#+BEGIN_SRC emacs-lisp
+(defun bjm/kill-this-buffer ()
+  "Kill the current buffer."
+  (interactive)
+  (kill-buffer (current-buffer)))
+(global-set-key (kbd "C-x k") 'bjm/kill-this-buffer)
+#+END_SRC
+** Magit
+#+BEGIN_SRC emacs-lisp
+(require 'magit)
+(global-set-key (kbd "C-x g") 'magit-status)
+#+END_SRC
+** Dired
+*** Declutter
+#+BEGIN_SRC emacs-lisp
+(defun xah-dired-mode-setup ()
+  "to be run as hook for `dired-mode'."
+  (dired-hide-details-mode 1))
+(add-hook 'dired-mode-hook 'xah-dired-mode-setup)
+#+END_SRC
+*** Copy and Delete
+Allow dired to recursively copy and delete directories. ~always~ ensures that no
+confirmation dialog comes up, and ~top~ does it only once.
+#+BEGIN_SRC emacs-lisp
+(setq dired-recursive-copies (quote always))
+(setq dired-recursive-deletes (quote top))
+#+END_SRC
+** God Mode
+Enable god-mode.
+#+BEGIN_SRC emacs-lisp
+(use-package god-mode
+  :ensure t)
+#+END_SRC
+*** Indicate Mode with Modeline
+#+BEGIN_SRC emacs-lisp
+(defun me//god-mode-indicator ()
+  (cond (god-local-mode
+         (progn
+         (set-face-background 'mode-line "#b58900")
+           (set-face-foreground 'mode-line "gray")
+           (set-face-background 'mode-line-inactive "gray30")
+           (set-face-foreground 'mode-line-inactive "#b58900")))
+        (t
+         (progn
+           (set-face-background 'mode-line-inactive "#eee8d5")
+           (set-face-foreground 'mode-line-inactive "#657b83")
+           (set-face-background 'mode-line "#eee8d5")
+           (set-face-foreground 'mode-line "#657b83")))))
+
+(add-hook 'god-mode-enabled-hook #'me//god-mode-indicator)
+(add-hook 'god-mode-disabled-hook #'me//god-mode-indicator)
+#+END_SRC
+* Global Keybindings
+** Bind Key
+#+BEGIN_SRC emacs-lisp
+(require 'bind-key)
+(use-package which-key
+  :defer nil
+  :diminish which-key-mode
+  :config
+  (which-key-mode))
+#+END_SRC
+** The Actual Keybindings
+#+BEGIN_SRC emacs-lisp
+(global-set-key "\C-x\C-m" 'execute-extended-command)
+(global-set-key "\C-c\C-m" 'execute-extended-command)
+(global-set-key "\C-w" 'backward-kill-word)
+(global-set-key "\C-x\C-k" 'kill-region)
+(global-set-key "\C-c\C-k" 'kill-region)
+#+END_SRC
+*** God Mode
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<escape>") 'god-local-mode)
+(global-set-key (kbd "C-x C-1") 'delete-other-windows)
+(global-set-key (kbd "C-x C-2") 'split-window-below)
+(global-set-key (kbd "C-x C-3") 'split-window-right)
+(global-set-key (kbd "C-x C-0") 'delete-window)
+#+END_SRC
+*** Transpose Sentences and Paragraphs
+Add an alias to do this easily.
+#+BEGIN_SRC emacs-lisp
+(defalias 'ts 'transpose-sentences)
+(defalias 'tp 'transpose-paragraphs)
+#+END_SRC
+**** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
 #+BEGIN_SRC emacs-lisp
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
@@ -92,7 +282,7 @@ Also, I have lots of disk space, and not so much patience when I lose an importa
 (setq vc-make-backup-files t)
 (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
 #+END_SRC
-*** History
+***** History
 It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
 #+BEGIN_SRC emacs-lisp
 (setq savehist-file "~/.emacs.d/savehist")
@@ -105,7 +295,7 @@ It's nice to have a history of commands so that when you open a new emacs instan
         search-ring
         regexp-search-ring))
 #+END_SRC
-**** Desktop
+****** Desktop
 On a similar note, save the desktop.
 #+BEGIN_SRC emacs-lisp
 (desktop-save-mode 1)
@@ -121,34 +311,109 @@ Make two buffers with the same file name distinguishable.
     (uniquify-buffer-name-style 'post-forward)
     (uniquify-strip-common-suffix t))
 #+END_SRC
-**** Save Place
+****** Save Place
 Opens a file to the same place in which it was last closed.
 #+BEGIN_SRC emacs-lisp
 (save-place-mode 1)
 #+END_SRC
-** Modeline
-*** Time
-What time is it, Mr. Emacs?
+**** Sentences End With a Single Space
+This is necessary to make sentence navigation commands work for me.
 #+BEGIN_SRC emacs-lisp
-(display-time-mode 1)
-(setq display-time-format "%l:%M%p")
+(setq sentence-end-double-space nil)
 #+END_SRC
-*** Column
+* Theme
+** Font Face
 #+BEGIN_SRC emacs-lisp
-(column-number-mode 1)
+(set-face-attribute 'default nil :font "Hack" )
+(set-frame-font "Hack" nil t)
 #+END_SRC
-** Magit
+** Solarized Light
 #+BEGIN_SRC emacs-lisp
-(require 'magit)
-(global-set-key (kbd "C-x g") 'magit-status)
+(use-package solarized-theme)
+(load-theme 'solarized-light t)
 #+END_SRC
-** From Yes/No to y/n
-This makes things so much simpler. There's not any ambiguity to begin with.
+#+BEGIN_SRC
+
+#+END_SRC
+** Centered Buffer
 #+BEGIN_SRC emacs-lisp
-(fset 'yes-or-no-p 'y-or-n-p)
+(use-package centered-window
+  :ensure t
+  :diminish centered-window-mode)
+(centered-window-mode t)
+#+END_SRC
+** Autofills
+Nicely wraps lines for ~text-mode~.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'text-mode-hook 'auto-fill-mode)
+(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
+(eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
+#+END_SRC
+Quickly autofill the entire buffer by paragraph.
+#+BEGIN_SRC emacs-lisp
+(defun fill-buffer ()
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (widen)
+      (fill-region (point-min) (point-max)))))
+#+END_SRC
+*** 80 Columns
+#+BEGIN_SRC emacs-lisp
+(add-hook 'ext-mode-hook
+        (lambda() (set-fill-column 80)))
+#+END_SRC
+**** LaTeX
+***** Export Command
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<C-XF86AudioPrev>") 'org-latex-export-to-pdf)
+#+END_SRC
+***** LaTeX Editing
+***** Autocomplete ~$~
+#+BEGIN_SRC emacs-lisp
+(defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
+(defun org-add-electric-pairs ()
+  (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
+  (setq-local electric-pair-text-pairs electric-pair-pairs))
+(add-hook 'org-mode-hook 'org-add-electric-pairs)
+(electric-pair-mode 1)
+#+END_SRC
+***** Highlighting
+#+BEGIN_SRC emacs-lisp
+(setq org-highlight-latex-and-related '(latex))
+#+END_SRC
+***** Cdlatex
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+#+END_SRC
+***** Scaling preview
+By default, it's really small on my HiDPI screen.
+#+BEGIN_SRC emacs-lisp
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+#+END_SRC
+***** Export LaTeX Quotes
+#+BEGIN_SRC emacs-lisp
+(setq org-export-with-smart-quotes t)
+#+END_SRC
+***** Use XeTeX
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-to-pdf-process
+  '("xelatex -interaction nonstopmode %f"
+     "xelatex -interaction nonstopmode %f")) ;; for multiple passes
+#+END_SRC
+**** Markdown Conversion
+#+BEGIN_SRC emacs-lisp
+ (defun markdown-convert-buffer-to-org ()
+    "Convert the current buffer's content from markdown to orgmode format and save it with the current buffer's file name but with .org extension."
+    (interactive)
+    (shell-command-on-region (point-min) (point-max)
+                             (format "pandoc -f markdown -t org -o %s"
+                                     (concat (file-name-sans-extension (buffer-file-name)) ".org"))))
 #+END_SRC
 ** Highlighting
 *** Syntax
+***
+***
 #+BEGIN_SRC emacs-lisp
 (global-font-lock-mode 1)
 #+END_SRC
@@ -202,157 +467,6 @@ And then the actual settings.
 #+BEGIN_SRC emacs-lisp
 (setq transient-mark-mode t)
 #+END_SRC
-** Mouse Scrolling
-#+BEGIN_SRC emacs-lisp
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
-(setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
-(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
-(setq scroll-step 1) ;; keyboard scroll one line at a time
-#+END_SRC
-** Indentation
-#+BEGIN_SRC emacs-lisp
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)
-(setq indent-line-function 'insert-tab)
-#+END_SRC
-** Searching and Finding
-#+BEGIN_SRC emacs-lisp
-(use-package ido)
-(ido-mode 1)
-(ido-everywhere 1)
-(setq ido-create-new-buffer 'always)
-(setq ido-use-faces nil)
-#+END_SRC
-** Autocomplete
-*** ignore case
-#+BEGIN_SRC emacs-lisp
-(setq completion-ignore-case t)
-#+END_SRC
-*** Company
-#+BEGIN_SRC emacs-lisp
-(use-package company
-    :diminish company-mode
-    :hook
-    (after-init . global-company-mode))
-#+END_SRC
-** Spellchek
-#+BEGIN_SRC emacs-lisp
-(use-package flyspell
-    :defer 1
-    :hook (text-mode . flyspell-mode)
-    :diminish
-    :bind (:map flyspell-mouse-map
-                ([down-mouse-3] . #'flyspell-correct-word)
-                ([mouse-3]      . #'undefined)))
-#+END_SRC
-** Delete The Selection
-#+BEGIN_SRC emacs-lisp
-(delete-selection-mode 1)
-#+END_SRC
-** Sentences End With a Single Space
-This is necessary to make sentence navigation commands work for me.
-#+BEGIN_SRC emacs-lisp
-(setq sentence-end-double-space nil)
-#+END_SRC
-** Ban Whitespace
-#+BEGIN_SRC emacs-lisp
- (add-hook 'before-save-hook 'delete-trailing-whitespace)
-#+END_SRC
-** Indentation
-*** Keep Things Indented
-#+BEGIN_SRC emacs-lisp
-  (use-package aggressive-indent
-    :disabled
-    :diminish aggressive-indent-mode
-    :hook
-    (prog-mode . aggressive-indent-mode)
-    (python-mode . (lambda () (aggressive-indent-mode -1))))
-#+END_SRC
-*** Wrap Indented Lines Sensibly
-This way, indented lines that are wrapped with ~visual-line-mode~ do not begin at character 0, but from where they are indented.
-#+BEGIN_SRC emacs-lisp
-(use-package adaptive-wrap)
-  (when (fboundp 'adaptive-wrap-prefix-mode)
-  (defun my-activate-adaptive-wrap-prefix-mode ()
-    "Toggle `visual-line-mode' and `adaptive-wrap-prefix-mode' simultaneously."
-    (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
-  (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
-#+END_SRC
-** Transpose Sentences and Paragraphs
-Add an alias to do this easily.
-#+BEGIN_SRC emacs-lisp
-(defalias 'ts 'transpose-sentences)
-(defalias 'tp 'transpose-paragraphs)
-#+END_SRC
-** Dired
-*** Declutter
-#+BEGIN_SRC emacs-lisp
-(defun xah-dired-mode-setup ()
-  "to be run as hook for `dired-mode'."
-  (dired-hide-details-mode 1))
-(add-hook 'dired-mode-hook 'xah-dired-mode-setup)
-#+END_SRC
-Allow dired to recursively copy and delete directories. ~always~ ensures that no
-confirmation dialog comes up, and ~top~ does it only once.
-#+BEGIN_SRC emacs-lisp
-(setq dired-recursive-copies (quote always))
-(setq dired-recursive-deletes (quote top))
-#+END_SRC
-* Global Keybindings
-** Bind Key
-#+BEGIN_SRC emacs-lisp
-(require 'bind-key)
-(use-package which-key
-  :defer nil
-  :diminish which-key-mode
-  :config
-  (which-key-mode))
-#+END_SRC
-** The Actual Keybindings
-#+BEGIN_SRC emacs-lisp
- (global-set-key "\C-x\C-m" 'execute-extended-command)
- (global-set-key "\C-c\C-m" 'execute-extended-command)
- (global-set-key "\C-w" 'backward-kill-word)
- (global-set-key "\C-x\C-k" 'kill-region)
- (global-set-key "\C-c\C-k" 'kill-region)
- #+END_SRC
-* Theme
-** Font Face
-#+BEGIN_SRC emacs-lisp
-(set-face-attribute 'default nil :font "Hack" )
-(set-frame-font "Hack" nil t)
-#+END_SRC
-** Solarized Light
-#+BEGIN_SRC emacs-lisp
-(use-package solarized-theme)
-(load-theme 'solarized-light t)
-#+END_SRC
-#+BEGIN_SRC
-
-#+END_SRC
-** Centered Buffer
-#+BEGIN_SRC emacs-lisp
-(use-package centered-window
-  :ensure t
-  :diminish centered-window-mode)
-(centered-window-mode t)
-#+END_SRC
-** Autofills
-Nicely wraps lines for ~text-mode~.
-#+BEGIN_SRC emacs-lisp
-(add-hook 'text-mode-hook 'auto-fill-mode)
-(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
-(eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
-#+END_SRC
-Quickly autofill the entire buffer by paragraph.
-#+BEGIN_SRC emacs-lisp
-(defun fill-buffer ()
-  (interactive)
-  (save-excursion
-    (save-restriction
-      (widen)
-      (fill-region (point-min) (point-max)))))
-#+END_SRC
 * Org
 ** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
@@ -395,58 +509,6 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
                         '(("^ *\\([-]\\) "
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
-#+END_SRC
-*** Autofill Limit
-#+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook
-        (lambda() (set-fill-column 80)))
-#+END_SRC
-** LaTeX
-*** Export Command
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "<C-XF86AudioPrev>") 'org-latex-export-to-pdf)
-#+END_SRC
-*** LaTeX Editing
-*** Autocomplete ~$~
-#+BEGIN_SRC emacs-lisp
-(defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
-(defun org-add-electric-pairs ()
-  (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
-  (setq-local electric-pair-text-pairs electric-pair-pairs))
-(add-hook 'org-mode-hook 'org-add-electric-pairs)
-(electric-pair-mode 1)
-#+END_SRC
-*** Highlighting
-#+BEGIN_SRC emacs-lisp
-(setq org-highlight-latex-and-related '(latex))
-#+END_SRC
-*** Cdlatex
-#+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-#+END_SRC
-*** Scaling preview
-By default, it's really small on my HiDPI screen.
-#+BEGIN_SRC emacs-lisp
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
-#+END_SRC
-*** Export LaTeX Quotes
-#+BEGIN_SRC emacs-lisp
-(setq org-export-with-smart-quotes t)
-#+END_SRC
-*** Use XeTeX
-#+BEGIN_SRC emacs-lisp
-(setq org-latex-to-pdf-process
-  '("xelatex -interaction nonstopmode %f"
-     "xelatex -interaction nonstopmode %f")) ;; for multiple passes
-#+END_SRC
-** Markdown Conversion
-#+BEGIN_SRC emacs-lisp
- (defun markdown-convert-buffer-to-org ()
-    "Convert the current buffer's content from markdown to orgmode format and save it with the current buffer's file name but with .org extension."
-    (interactive)
-    (shell-command-on-region (point-min) (point-max)
-                             (format "pandoc -f markdown -t org -o %s"
-                                     (concat (file-name-sans-extension (buffer-file-name)) ".org"))))
 #+END_SRC
 * AUCTeX
 #+BEGIN_SRC emacs-lisp
