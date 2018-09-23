@@ -1,6 +1,6 @@
-* Emacs Configuration
-** Starting Up
-*** Really Starting Up
+#+TITLE: Emacs Configuration
+* Starting Up
+** Really Starting Up
 On start-up, display how quickly emacs started up.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-startup-hook
@@ -11,18 +11,18 @@ On start-up, display how quickly emacs started up.
                               (time-subtract after-init-time before-init-time)))
                      gcs-done)))
 #+END_SRC
-*** Speed!
+** Speed!
 For speed, wrap the entire configuration in this block
 #+BEGIN_SRC emacs-lisp
 (let ((file-name-handler-alist nil))
 #+END_SRC
-*** Add Package Sources
+** Add Package Sources
 The real work is done in my ~init.el~ file.
 #+BEGIN_SRC emacs-lisp
 (setq use-package-always-ensure t)
 #+END_SRC
 Use ~M-x package-refresh-contents~ to reload the list of packages after adding the package sources for the first time.
-*** Add Elisp Directory and Other Files
+** Add Elisp Directory and Other Files
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "~/elisp")
 (setq use-package-verbose t)
@@ -30,20 +30,20 @@ Use ~M-x package-refresh-contents~ to reload the list of packages after adding t
 (require 'use-package)
 #+END_SRC
 If I ever need to load files outside of my package system, I know where to find them. I also set up ~use-package~ here.
-** General Configuration
-*** Graphical Decluttering
-**** Splash Screen
+* General Configuration
+** Graphical Decluttering
+*** Splash Screen
 Get rid of that ugly splash screen.
 #+BEGIN_SRC emacs-lisp
 (setq inhibit-splash-screen t)
 #+END_SRC
-**** Fullscreen
+*** Fullscreen
 Start emacs in glorious fullscreen.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 (setq frame-title-format "")
 #+END_SRC
-**** Bars
+*** Bars
 Menus are not required; neither is the scroll bar.
 #+BEGIN_SRC emacs-lisp
 (menu-bar-mode -1)
@@ -53,7 +53,7 @@ It is no longer the 90s. Toolbars and their little icons are not cool.
 #+BEGIN_SRC emacs-lisp
 (tool-bar-mode -1)
 #+END_SRC
-**** Cursor Blinking
+*** Cursor Blinking
 The cursor should not blink.
 #+BEGIN_SRC emacs-lisp
 (blink-cursor-mode 0)
@@ -61,13 +61,13 @@ The cursor should not blink.
   (setq-default cursor-type 'box))
 (setq x-stretch-cursor 1)
 #+END_SRC
-**** Notifications
+*** Notifications
 Visual, not audible bells.
 #+BEGIN_SRC emacs-lisp
 (setq ring-bell-function 'ignore)
 (setq visible-bell t)
 #+END_SRC
-**** Modeline
+*** Modeline
 Keep a simpler modeline...
 #+BEGIN_SRC emacs-lisp
 (use-package diminish
@@ -80,7 +80,7 @@ and a smarter one.
     :config
     (sml/setup))
 #+END_SRC
-*** Backups
+** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
 #+BEGIN_SRC emacs-lisp
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
@@ -92,7 +92,7 @@ Also, I have lots of disk space, and not so much patience when I lose an importa
 (setq vc-make-backup-files t)
 (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
 #+END_SRC
-**** History
+*** History
 It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
 #+BEGIN_SRC emacs-lisp
 (setq savehist-file "~/.emacs.d/savehist")
@@ -105,7 +105,7 @@ It's nice to have a history of commands so that when you open a new emacs instan
         search-ring
         regexp-search-ring))
 #+END_SRC
-***** Desktop
+**** Desktop
 On a similar note, save the desktop.
 #+BEGIN_SRC emacs-lisp
 (desktop-save-mode 1)
@@ -121,38 +121,38 @@ Make two buffers with the same file name distinguishable.
     (uniquify-buffer-name-style 'post-forward)
     (uniquify-strip-common-suffix t))
 #+END_SRC
-***** Save Place
+**** Save Place
 Opens a file to the same place in which it was last closed.
 #+BEGIN_SRC emacs-lisp
 (save-place-mode 1)
 #+END_SRC
-*** Modeline
-**** Time
+** Modeline
+*** Time
 What time is it, Mr. Emacs?
 #+BEGIN_SRC emacs-lisp
 (display-time-mode 1)
 (setq display-time-format "%l:%M%p")
 #+END_SRC
-**** Column
+*** Column
 #+BEGIN_SRC emacs-lisp
 (column-number-mode 1)
 #+END_SRC
-*** Magit
+** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
 (global-set-key (kbd "C-x g") 'magit-status)
 #+END_SRC
-*** From Yes/No to y/n
+** From Yes/No to y/n
 This makes things so much simpler. There's not any ambiguity to begin with.
 #+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
-*** Highlighting
-**** Syntax
+** Highlighting
+*** Syntax
 #+BEGIN_SRC emacs-lisp
 (global-font-lock-mode 1)
 #+END_SRC
-**** Sentences
+*** Sentences
 Set up ~org~ source blocks to ignore this setting.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-src-mode-hook 'hack-local-variables)
@@ -191,31 +191,31 @@ And then the actual settings.
 )))
 (add-hook 'orc-src-mode-hook (lambda () (highlight-parentheses-mode -1)))
 #+END_SRC
-**** Parentheses
+*** Parentheses
 #+BEGIN_SRC emacs-lisp
 (setq blink-matching-paren nil)
 (show-paren-mode t)
 (setq show-paren-delay 0)
 (setq show-paren-style 'expression)
 #+END_SRC
-**** Transient Mark
+*** Transient Mark
 #+BEGIN_SRC emacs-lisp
 (setq transient-mark-mode t)
 #+END_SRC
-*** Mouse Scrolling
+** Mouse Scrolling
 #+BEGIN_SRC emacs-lisp
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
 (setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
 (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 (setq scroll-step 1) ;; keyboard scroll one line at a time
 #+END_SRC
-*** Indentation
+** Indentation
 #+BEGIN_SRC emacs-lisp
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
 (setq indent-line-function 'insert-tab)
 #+END_SRC
-*** Searching and Finding
+** Searching and Finding
 #+BEGIN_SRC emacs-lisp
 (use-package ido)
 (ido-mode 1)
@@ -223,19 +223,19 @@ And then the actual settings.
 (setq ido-create-new-buffer 'always)
 (setq ido-use-faces nil)
 #+END_SRC
-*** Autocomplete
-**** ignore case
+** Autocomplete
+*** ignore case
 #+BEGIN_SRC emacs-lisp
 (setq completion-ignore-case t)
 #+END_SRC
-**** Company
+*** Company
 #+BEGIN_SRC emacs-lisp
 (use-package company
     :diminish company-mode
     :hook
     (after-init . global-company-mode))
 #+END_SRC
-*** Spellchek
+** Spellchek
 #+BEGIN_SRC emacs-lisp
 (use-package flyspell
     :defer 1
@@ -245,21 +245,21 @@ And then the actual settings.
                 ([down-mouse-3] . #'flyspell-correct-word)
                 ([mouse-3]      . #'undefined)))
 #+END_SRC
-*** Delete The Selection
+** Delete The Selection
 #+BEGIN_SRC emacs-lisp
 (delete-selection-mode 1)
 #+END_SRC
-*** Sentences End With a Single Space
+** Sentences End With a Single Space
 This is necessary to make sentence navigation commands work for me.
 #+BEGIN_SRC emacs-lisp
 (setq sentence-end-double-space nil)
 #+END_SRC
-*** Ban Whitespace
+** Ban Whitespace
 #+BEGIN_SRC emacs-lisp
  (add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
-*** Indentation
-**** Keep Things Indented
+** Indentation
+*** Keep Things Indented
 #+BEGIN_SRC emacs-lisp
   (use-package aggressive-indent
     :disabled
@@ -268,7 +268,7 @@ This is necessary to make sentence navigation commands work for me.
     (prog-mode . aggressive-indent-mode)
     (python-mode . (lambda () (aggressive-indent-mode -1))))
 #+END_SRC
-**** Wrap Indented Lines Sensibly
+*** Wrap Indented Lines Sensibly
 This way, indented lines that are wrapped with ~visual-line-mode~ do not begin at character 0, but from where they are indented.
 #+BEGIN_SRC emacs-lisp
 (use-package adaptive-wrap)
@@ -278,8 +278,8 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
     (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
   (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
 #+END_SRC
-** Global Keybindings
-*** Bind Key
+* Global Keybindings
+** Bind Key
 #+BEGIN_SRC emacs-lisp
 (require 'bind-key)
 (use-package which-key
@@ -288,7 +288,7 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
   :config
   (which-key-mode))
 #+END_SRC
-*** The Actual Keybindings
+** The Actual Keybindings
 #+BEGIN_SRC emacs-lisp
  (global-set-key "\C-x\C-m" 'execute-extended-command)
  (global-set-key "\C-c\C-m" 'execute-extended-command)
@@ -296,13 +296,13 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
  (global-set-key "\C-x\C-k" 'kill-region)
  (global-set-key "\C-c\C-k" 'kill-region)
  #+END_SRC
-** Theme
-*** Font Face
+* Theme
+** Font Face
 #+BEGIN_SRC emacs-lisp
 (set-face-attribute 'default nil :font "Hack" )
 (set-frame-font "Hack" nil t)
 #+END_SRC
-*** Solarized Light
+** Solarized Light
 #+BEGIN_SRC emacs-lisp
 (use-package solarized-theme)
 (load-theme 'solarized-light t)
@@ -310,14 +310,14 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 #+BEGIN_SRC
 
 #+END_SRC
-*** Centered Buffer
+** Centered Buffer
 #+BEGIN_SRC emacs-lisp
 (use-package centered-window
   :ensure t
   :diminish centered-window-mode)
 (centered-window-mode t)
 #+END_SRC
-*** Autofill
+** Autofill
 Nicely wraps lines for ~text-mode~.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
@@ -332,8 +332,8 @@ Quickly autofill the entire buffer by paragraph.
       (widen)
       (fill-region (point-min) (point-max)))))
 #+END_SRC
-** Org
-*** Setup
+* Org
+** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp
 (require 'org)
@@ -348,26 +348,26 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   :custom
   (org-startup-indented t))
 #+END_SRC
-*** Ox-hugo
+** Ox-hugo
 #+BEGIN_SRC emacs-lisp
 (use-package ox-hugo
     :ensure t
     :after ox)
 (require 'ox-hugo-auto-export)
 #+END_SRC
-*** Prettifying
-**** Hide Emphasis
+** Prettifying
+*** Hide Emphasis
 #+BEGIN_SRC emacs-lisp
 (setq org-hide-emphasis-markers t)
 #+END_SRC
-**** Org Bullets
+*** Org Bullets
 #+BEGIN_SRC emacs-lisp
 (use-package org-bullets
     :after org
     :hook
     (org-mode . (lambda () (org-bullets-mode 1))))
 #+END_SRC
-**** Bullet List
+*** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 #+BEGIN_SRC emacs-lisp
 (font-lock-add-keywords 'org-mode
@@ -375,13 +375,14 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
 #+END_SRC
-**** Autofill Limit
+*** Autofill Limit
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-mode-hook
         (lambda() (set-fill-column 80)))
 #+END_SRC
+** LaTeX
 *** LaTeX Editing
-**** Autocomplete ~$~
+*** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
 (defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
 (defun org-add-electric-pairs ()
@@ -390,15 +391,15 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 (add-hook 'org-mode-hook 'org-add-electric-pairs)
 (electric-pair-mode 1)
 #+END_SRC
-**** Highlighting
+*** Highlighting
 #+BEGIN_SRC emacs-lisp
 (setq org-highlight-latex-and-related '(latex))
 #+END_SRC
-**** Cdlatex
+*** Cdlatex
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
 #+END_SRC
-**** Scaling preview
+*** Scaling preview
 By default, it's really small on my HiDPI screen.
 #+BEGIN_SRC emacs-lisp
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
@@ -407,7 +408,13 @@ By default, it's really small on my HiDPI screen.
 #+BEGIN_SRC emacs-lisp
 (setq org-export-with-smart-quotes t)
 #+END_SRC
-** AUCTeX
+*** Use XeTeX
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-to-pdf-process
+  '("xelatex -interaction nonstopmode %f"
+     "xelatex -interaction nonstopmode %f")) ;; for multiple passes
+#+END_SRC
+* AUCTeX
 #+BEGIN_SRC emacs-lisp
 (use-package auctex
     :defer t
@@ -443,7 +450,7 @@ By default, it's really small on my HiDPI screen.
           LaTeX-section-label))
 
 #+END_SRC
-** Snippets
+* Snippets
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path
              "~/.emacs.d/plugins/yasnippet")
@@ -458,7 +465,7 @@ By default, it's really small on my HiDPI screen.
        '(diminish 'yas-minor-mode))))
 (yas-global-mode 1)
 #+END_SRC
-** Mail
+* Mail
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.
 #+BEGIN_SRC emacs-lisp
 (use-package mu4e)
@@ -549,7 +556,7 @@ This is pretty complicated; I need to sort through this and break it up into mor
 ;; attempt to show images when viewing messages
 (setq mu4e-view-show-images t)
 #+END_SRC
-** End
+* End
 Finally, close the `let` block we opened way back when and set a higher garbage-collection.
 #+BEGIN_SRC emacs-lisp
 )
