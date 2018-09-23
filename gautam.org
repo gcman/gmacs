@@ -284,6 +284,20 @@ Add an alias to do this easily.
 (defalias 'ts 'transpose-sentences)
 (defalias 'tp 'transpose-paragraphs)
 #+END_SRC
+** Dired
+*** Declutter
+#+BEGIN_SRC emacs-lisp
+(defun xah-dired-mode-setup ()
+  "to be run as hook for `dired-mode'."
+  (dired-hide-details-mode 1))
+(add-hook 'dired-mode-hook 'xah-dired-mode-setup)
+#+END_SRC
+Allow dired to recursively copy and delete directories. ~always~ ensures that no
+confirmation dialog comes up, and ~top~ does it only once.
+#+BEGIN_SRC emacs-lisp
+(setq dired-recursive-copies (quote always))
+(setq dired-recursive-deletes (quote top))
+#+END_SRC
 * Global Keybindings
 ** Bind Key
 #+BEGIN_SRC emacs-lisp
@@ -323,9 +337,10 @@ Add an alias to do this easily.
   :diminish centered-window-mode)
 (centered-window-mode t)
 #+END_SRC
-** Autofill
+** Autofills
 Nicely wraps lines for ~text-mode~.
 #+BEGIN_SRC emacs-lisp
+(add-hook 'text-mode-hook 'auto-fill-mode)
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
 (eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
 #+END_SRC
@@ -387,6 +402,10 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
         (lambda() (set-fill-column 80)))
 #+END_SRC
 ** LaTeX
+*** Export Command
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<C-XF86AudioPrev>") 'org-latex-export-to-pdf)
+#+END_SRC
 *** LaTeX Editing
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
