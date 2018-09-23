@@ -278,6 +278,12 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
     (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
   (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
 #+END_SRC
+** Transpose Sentences and Paragraphs
+Add an alias to do this easily.
+#+BEGIN_SRC emacs-lisp
+(defalias 'ts 'transpose-sentences)
+(defalias 'tp 'transpose-paragraphs)
+#+END_SRC
 * Global Keybindings
 ** Bind Key
 #+BEGIN_SRC emacs-lisp
