@@ -1,19 +1,5 @@
 #+TITLE: Emacs Configuration
 * Starting Up
-** Package DIstributions
-#+BEGIN_SRC emacs-lisp
-(require 'package)
-(setq package-enable-at-startup nil)
-(add-to-list 'package-archives
-	     '("melpa" . "https://melpa.org/packages/"))
-(package-initialize)
-#+END_SRC
-Always use ~use-package~.
-#+BEGIN_SRC emacs-lisp
-(unless (package-installed-p 'use-package)
-	(package-refresh-contents)
-	(package-install 'use-package))
-#+END_SRC
 ** Really Starting Up
 On start-up, display how quickly emacs started up.
 #+BEGIN_SRC emacs-lisp
@@ -31,14 +17,26 @@ For speed, wrap the entire configuration in this block
 (let ((file-name-handler-alist nil))
 #+END_SRC
 ** Add Package Sources
-The real work is done in my ~init.el~ file.
+#+BEGIN_SRC emacs-lisp
+(require 'package)
+(setq package-enable-at-startup nil)
+(add-to-list 'package-archives
+	     '("melpa" . "https://melpa.org/packages/"))
+#+END_SRC
+Use ~use-package~.
+#+BEGIN_SRC emacs-lisp
+(unless (package-installed-p 'use-package)
+	(package-refresh-contents)
+	(package-install 'use-package))
+#+END_SRC
+Always.
 #+BEGIN_SRC emacs-lisp
 (setq use-package-always-ensure t)
 #+END_SRC
 Use ~M-x package-refresh-contents~ to reload the list of packages after adding the package sources for the first time.
 ** Add Elisp Directory and Other Files
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "~/elisp")
+(add-to-list 'load-path "/home/gautam/.emacs.d/elisp/")
 (setq use-package-verbose t)
 (setq use-package-always-ensure t)
 (require 'use-package)
@@ -193,6 +191,52 @@ This makes things so much simpler. There's not any ambiguity to begin with.
   (kill-buffer (current-buffer)))
 (global-set-key (kbd "C-x k") 'bjm/kill-this-buffer)
 #+END_SRC
+*** Backups
+Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
+#+BEGIN_SRC emacs-lisp
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+#+END_SRC
+Also, I have lots of disk space, and not so much patience when I lose an important file. So I save lots.
+#+BEGIN_SRC emacs-lisp
+(setq delete-old-versions -1)
+(setq version-control t)
+(setq vc-make-backup-files t)
+(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+#+END_SRC
+**** History
+It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
+#+BEGIN_SRC emacs-lisp
+(setq savehist-file "~/.emacs.d/savehist")
+(savehist-mode 1)
+(setq history-length t)
+(setq history-delete-duplicates t)
+(setq savehist-save-minibuffer-history 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        search-ring
+        regexp-search-ring))
+#+END_SRC
+***** Desktop
+On a similar note, save the desktop.
+#+BEGIN_SRC emacs-lisp
+(desktop-save-mode 1)
+(setq desktop-restore-eager 10)
+#+END_SRC
+Make two buffers with the same file name distinguishable.
+#+BEGIN_SRC emacs-lisp
+(use-package uniquify
+    :defer 1
+    :ensure nil
+    :custom
+    (uniquify-after-kill-buffer-p t)
+    (uniquify-buffer-name-style 'post-forward)
+    (uniquify-strip-common-suffix t))
+#+END_SRC
+***** Save Place
+Opens a file to the same place in which it was last closed.
+#+BEGIN_SRC emacs-lisp
+(save-place-mode 1)
+#+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
@@ -238,6 +282,11 @@ Enable god-mode.
 (add-hook 'god-mode-enabled-hook #'me//god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'me//god-mode-indicator)
 #+END_SRC
+** Sentences End With a Single Space
+This is necessary to make sentence navigation commands work for me.
+#+BEGIN_SRC emacs-lisp
+(setq sentence-end-double-space nil)
+#+END_SRC
 * Global Keybindings
 ** Bind Key
 #+BEGIN_SRC emacs-lisp
@@ -249,12 +298,17 @@ Enable god-mode.
   (which-key-mode))
 #+END_SRC
 ** The Actual Keybindings
+Generally useful.
 #+BEGIN_SRC emacs-lisp
 (global-set-key "\C-x\C-m" 'execute-extended-command)
 (global-set-key "\C-c\C-m" 'execute-extended-command)
 (global-set-key "\C-w" 'backward-kill-word)
 (global-set-key "\C-x\C-k" 'kill-region)
 (global-set-key "\C-c\C-k" 'kill-region)
+#+END_SRC
+Count org-wc.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<C-XF86Search>") 'org-wc-display)
 #+END_SRC
 *** God Mode
 #+BEGIN_SRC emacs-lisp
@@ -270,56 +324,32 @@ Add an alias to do this easily.
 (defalias 'ts 'transpose-sentences)
 (defalias 'tp 'transpose-paragraphs)
 #+END_SRC
-**** Backups
-Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
+** Keychord
 #+BEGIN_SRC emacs-lisp
-(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+(require 'key-chord)
+(key-chord-mode 1)
+(key-chord-define-global "dq" 'dq)
 #+END_SRC
-Also, I have lots of disk space, and not so much patience when I lose an important file. So I save lots.
+*** Number Symbols
+Eliminate the shift key for inputting symbols.
 #+BEGIN_SRC emacs-lisp
-(setq delete-old-versions -1)
-(setq version-control t)
-(setq vc-make-backup-files t)
-(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+(key-chord-define-global "0o" ")")
+(key-chord-define-global "1q" "!")
+(key-chord-define-global "2w" "@")
+(key-chord-define-global "3e" "#")
+(key-chord-define-global "4r" "$")
+(key-chord-define-global "5t" "%")
+(key-chord-define-global "6y" "^")
+(key-chord-define-global "6t" "^")
+(key-chord-define-global "7y" "&")
+(key-chord-define-global "8u" "*")
+(key-chord-define-global "9i" "(")
+(key-chord-define-global "-p" "_")
 #+END_SRC
-***** History
-It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
+*** God Mode
+Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
-(setq savehist-file "~/.emacs.d/savehist")
-(savehist-mode 1)
-(setq history-length t)
-(setq history-delete-duplicates t)
-(setq savehist-save-minibuffer-history 1)
-(setq savehist-additional-variables
-      '(kill-ring
-        search-ring
-        regexp-search-ring))
-#+END_SRC
-****** Desktop
-On a similar note, save the desktop.
-#+BEGIN_SRC emacs-lisp
-(desktop-save-mode 1)
-(setq desktop-restore-eager 10)
-#+END_SRC
-Make two buffers with the same file name distinguishable.
-#+BEGIN_SRC emacs-lisp
-(use-package uniquify
-    :defer 1
-    :ensure nil
-    :custom
-    (uniquify-after-kill-buffer-p t)
-    (uniquify-buffer-name-style 'post-forward)
-    (uniquify-strip-common-suffix t))
-#+END_SRC
-****** Save Place
-Opens a file to the same place in which it was last closed.
-#+BEGIN_SRC emacs-lisp
-(save-place-mode 1)
-#+END_SRC
-**** Sentences End With a Single Space
-This is necessary to make sentence navigation commands work for me.
-#+BEGIN_SRC emacs-lisp
-(setq sentence-end-double-space nil)
+(key-chord-define-global "jk" 'god-local-mode)
 #+END_SRC
 * Theme
 ** Font Face
@@ -362,53 +392,6 @@ Quickly autofill the entire buffer by paragraph.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'ext-mode-hook
         (lambda() (set-fill-column 80)))
-#+END_SRC
-**** LaTeX
-***** Export Command
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "<C-XF86AudioPrev>") 'org-latex-export-to-pdf)
-#+END_SRC
-***** LaTeX Editing
-***** Autocomplete ~$~
-#+BEGIN_SRC emacs-lisp
-(defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
-(defun org-add-electric-pairs ()
-  (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
-  (setq-local electric-pair-text-pairs electric-pair-pairs))
-(add-hook 'org-mode-hook 'org-add-electric-pairs)
-(electric-pair-mode 1)
-#+END_SRC
-***** Highlighting
-#+BEGIN_SRC emacs-lisp
-(setq org-highlight-latex-and-related '(latex))
-#+END_SRC
-***** Cdlatex
-#+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-#+END_SRC
-***** Scaling preview
-By default, it's really small on my HiDPI screen.
-#+BEGIN_SRC emacs-lisp
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
-#+END_SRC
-***** Export LaTeX Quotes
-#+BEGIN_SRC emacs-lisp
-(setq org-export-with-smart-quotes t)
-#+END_SRC
-***** Use XeTeX
-#+BEGIN_SRC emacs-lisp
-(setq org-latex-to-pdf-process
-  '("xelatex -interaction nonstopmode %f"
-     "xelatex -interaction nonstopmode %f")) ;; for multiple passes
-#+END_SRC
-**** Markdown Conversion
-#+BEGIN_SRC emacs-lisp
- (defun markdown-convert-buffer-to-org ()
-    "Convert the current buffer's content from markdown to orgmode format and save it with the current buffer's file name but with .org extension."
-    (interactive)
-    (shell-command-on-region (point-min) (point-max)
-                             (format "pandoc -f markdown -t org -o %s"
-                                     (concat (file-name-sans-extension (buffer-file-name)) ".org"))))
 #+END_SRC
 ** Highlighting
 *** Syntax
@@ -467,6 +450,15 @@ And then the actual settings.
 #+BEGIN_SRC emacs-lisp
 (setq transient-mark-mode t)
 #+END_SRC
+* Markdown Conversion
+#+BEGIN_SRC emacs-lisp
+ (defun markdown-convert-buffer-to-org ()
+    "Convert the current buffer's content from markdown to orgmode format and save it with the current buffer's file name but with .org extension."
+    (interactive)
+    (shell-command-on-region (point-min) (point-max)
+                             (format "pandoc -f markdown -t org -o %s"
+                                     (concat (file-name-sans-extension (buffer-file-name)) ".org"))))
+#+END_SRC
 * Org
 ** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
@@ -510,7 +502,46 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
 #+END_SRC
-* AUCTeX
+** LaTeX
+*** Export Command
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<C-XF86AudioPrev>") 'org-latex-export-to-pdf)
+#+END_SRC
+*** LaTeX Editing
+*** Autocomplete ~$~
+#+BEGIN_SRC emacs-lisp
+(defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
+(defun org-add-electric-pairs ()
+  (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
+  (setq-local electric-pair-text-pairs electric-pair-pairs))
+(add-hook 'org-mode-hook 'org-add-electric-pairs)
+(electric-pair-mode 1)
+#+END_SRC
+*** Highlighting
+#+BEGIN_SRC emacs-lisp
+(setq org-highlight-latex-and-related '(latex))
+#+END_SRC
+*** Cdlatex
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+#+END_SRC
+*** Scaling preview
+By default, it's really small on my HiDPI screen.
+#+BEGIN_SRC emacs-lisp
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+#+END_SRC
+*** Export LaTeX Quotes
+#+BEGIN_SRC emacs-lisp
+(setq org-export-with-smart-quotes t)
+#+END_SRC
+*** Use XeTeX
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-to-pdf-process
+  '("xelatex -interaction nonstopmode %f"
+     "xelatex -interaction nonstopmode %f")) ;; for multiple passes
+#+END_SRC
+* TeX
+** AUCTeX
 #+BEGIN_SRC emacs-lisp
 (use-package auctex
     :defer t
@@ -544,7 +575,10 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
           LaTeX-section-toc
           LaTeX-section-section
           LaTeX-section-label))
-
+#+END_SRC
+** Diffing
+#+BEGIN_SRC
+(use-package latexdiff)
 #+END_SRC
 * Snippets
 #+BEGIN_SRC emacs-lisp
