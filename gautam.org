@@ -308,7 +308,7 @@ Generally useful.
 #+END_SRC
 Count org-wc.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "<C-XF86Search>") 'org-wc-display)
+(global-set-key (kbd "<C-f9>") 'org-wc-display)
 #+END_SRC
 *** God Mode
 #+BEGIN_SRC emacs-lisp
@@ -328,12 +328,10 @@ Add an alias to do this easily.
 #+BEGIN_SRC emacs-lisp
 (require 'key-chord)
 (key-chord-mode 1)
-(key-chord-define-global "dq" 'dq)
 #+END_SRC
 *** Number Symbols
 Eliminate the shift key for inputting symbols.
 #+BEGIN_SRC emacs-lisp
-(key-chord-define-global "0o" ")")
 (key-chord-define-global "1q" "!")
 (key-chord-define-global "2w" "@")
 (key-chord-define-global "3e" "#")
@@ -344,6 +342,7 @@ Eliminate the shift key for inputting symbols.
 (key-chord-define-global "7y" "&")
 (key-chord-define-global "8u" "*")
 (key-chord-define-global "9i" "(")
+(key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
 #+END_SRC
 *** God Mode
@@ -361,9 +360,6 @@ Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
 (use-package solarized-theme)
 (load-theme 'solarized-light t)
-#+END_SRC
-#+BEGIN_SRC
-
 #+END_SRC
 ** Centered Buffer
 #+BEGIN_SRC emacs-lisp
@@ -450,15 +446,6 @@ And then the actual settings.
 #+BEGIN_SRC emacs-lisp
 (setq transient-mark-mode t)
 #+END_SRC
-* Markdown Conversion
-#+BEGIN_SRC emacs-lisp
- (defun markdown-convert-buffer-to-org ()
-    "Convert the current buffer's content from markdown to orgmode format and save it with the current buffer's file name but with .org extension."
-    (interactive)
-    (shell-command-on-region (point-min) (point-max)
-                             (format "pandoc -f markdown -t org -o %s"
-                                     (concat (file-name-sans-extension (buffer-file-name)) ".org"))))
-#+END_SRC
 * Org
 ** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
@@ -502,15 +489,18 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
 #+END_SRC
+*** Visual Lines
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook 'visual-line-mode)
+#+END_SRC
 ** LaTeX
 *** Export Command
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "<C-XF86AudioPrev>") 'org-latex-export-to-pdf)
+(global-set-key (kbd "<C-f4>") 'org-latex-export-to-pdf)
 #+END_SRC
-*** LaTeX Editing
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
-(defvar org-electric-pairs '((?$ . ?$) (?= . ?=)) "Electric pairs for org-mode.")
+(defvar org-electric-pairs '((?$ . ?$) )) "Electric pairs for org-mode."
 (defun org-add-electric-pairs ()
   (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
   (setq-local electric-pair-text-pairs electric-pair-pairs))
@@ -521,11 +511,7 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 #+BEGIN_SRC emacs-lisp
 (setq org-highlight-latex-and-related '(latex))
 #+END_SRC
-*** Cdlatex
-#+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-#+END_SRC
-*** Scaling preview
+*** Scaling Preview
 By default, it's really small on my HiDPI screen.
 #+BEGIN_SRC emacs-lisp
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
@@ -540,6 +526,15 @@ By default, it's really small on my HiDPI screen.
   '("xelatex -interaction nonstopmode %f"
      "xelatex -interaction nonstopmode %f")) ;; for multiple passes
 #+END_SRC
+** Markdown Conversion
+#+BEGIN_SRC emacs-lisp
+ (defun markdown-convert-buffer-to-org ()
+    "Convert the current buffer's content from markdown to orgmode format and save it with the current buffer's file name but with .org extension."
+    (interactive)
+    (shell-command-on-region (point-min) (point-max)
+                             (format "pandoc -f markdown -t org -o %s"
+                                     (concat (file-name-sans-extension (buffer-file-name)) ".org"))))
+#+END_SRC
 * TeX
 ** AUCTeX
 #+BEGIN_SRC emacs-lisp
@@ -552,7 +547,6 @@ By default, it's really small on my HiDPI screen.
   (setq-default TeX-master nil)
   (setq TeX-PDF-mode t)
   (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
-  (add-hook 'latex-mode-hook 'turn-on-cdlatex)   ; with Emacs latex modes
   (add-hook 'LaTeX-mode-hook 'visual-line-mode)
   (add-hook 'LaTeX-mode-hook 'flyspell-mode)
   (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
@@ -582,13 +576,9 @@ By default, it's really small on my HiDPI screen.
 #+END_SRC
 * Snippets
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path
-             "~/.emacs.d/plugins/yasnippet")
-  (setq yas-snippet-dirs
-      '("~/.emacs.d/snippets"                 ;; personal snippets
-	))
-  (use-package yasnippet)
-  (use-package yasnippet-snippets)
+(add-to-list 'load-path "~/.emacs.d/plugins/yasnippet")
+(setq yas-snippet-dirs '("~/.emacs.d/snippets"))
+(use-package yasnippet)
 (eval-after-load "diminish"
   '(progn
      (eval-after-load "yasnippet"
@@ -598,7 +588,18 @@ By default, it's really small on my HiDPI screen.
 * Mail
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.
 #+BEGIN_SRC emacs-lisp
-(use-package mu4e)
+(add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e")
+(progn
+      (unless
+          (fboundp 'mu4e)
+        (autoload #'mu4e "mu4e" nil t))
+      (eval-after-load 'mu4e
+        '(progn
+           (config)
+           t))
+      (ignore
+       (bind-keys :package mu4e
+                  ("<f9>" . mu4e))))
 ;; use mu4e for e-mail in emacs
 (setq mail-user-agent 'mu4e-user-agent)
 ;; default
@@ -655,6 +656,23 @@ This is pretty complicated; I need to sort through this and break it up into mor
    smtpmail-smtp-server "smtp.gmail.com"
    smtpmail-smtp-service 587)
 
+(require 'gnus-dired)
+;; make the `gnus-dired-mail-buffers' function also work on
+;; message-mode derived modes, such as mu4e-compose-mode
+(defun gnus-dired-mail-buffers ()
+  "Return a list of active message buffers."
+  (let (buffers)
+    (save-current-buffer
+      (dolist (buffer (buffer-list t))
+        (set-buffer buffer)
+        (when (and (derived-mode-p 'message-mode)
+                (null message-sent-message-via))
+          (push (buffer-name buffer) buffers))))
+    (nreverse buffers)))
+
+(setq gnus-dired-mail-mode 'mu4e-user-agent)
+(add-hook 'dired-mode-hook 'turn-on-gnus-dired-mode)
+
 (use-package mu4e-alert
   :ensure t
   :after mu4e
@@ -687,7 +705,7 @@ This is pretty complicated; I need to sort through this and break it up into mor
 (setq mu4e-view-show-images t)
 #+END_SRC
 * End
-Finally, close the `let` block we opened way back when and set a higher garbage-collection.
+Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
 #+BEGIN_SRC emacs-lisp
 )
 (setq gc-cons-threshold (* 2 1000 1000))
