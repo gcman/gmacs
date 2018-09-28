@@ -237,6 +237,10 @@ Opens a file to the same place in which it was last closed.
 #+BEGIN_SRC emacs-lisp
 (save-place-mode 1)
 #+END_SRC
+*** Dictionary
+#+BEGIN_SRC emacs-lisp
+(require 'sdcv-mode)
+#+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
@@ -298,21 +302,44 @@ This is necessary to make sentence navigation commands work for me.
   (which-key-mode))
 #+END_SRC
 ** The Actual Keybindings
-Generally useful.
+*** Easy Meta
+Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
-(global-set-key "\C-x\C-m" 'execute-extended-command)
-(global-set-key "\C-c\C-m" 'execute-extended-command)
+(global-set-key (kbd "C-SPC") 'execute-extended-command)
+#+END_SRC
+*** Set Mark
+Need to have a replacement because we rebound ~C-SPC~.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-t") 'set-mark-command)
+#+END_SRC
+*** Shell Backwards Kill
+#+BEGIN_SRC emacs-lisp
 (global-set-key "\C-w" 'backward-kill-word)
+#+END_SRC
+*** Easy Kill
+Add extra keybinding to account for missing.
+#+BEGIN_SRC emacs-lisp
 (global-set-key "\C-x\C-k" 'kill-region)
 (global-set-key "\C-c\C-k" 'kill-region)
 #+END_SRC
+*** Shell Backspace
+Use shell like ~C-h~ instead of Backspace.
+#+BEGIN_SRC emacs-lisp
+(define-key key-translation-map [?\C-h] [?\C-?])
+(global-set-key (kbd "<f1>") 'help-command)
+#+END_SRC
+*** Better Buffers
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+(autoload 'ibuffer "ibuffer" "List buffers." t)
+#+END_SRC
+*** Word Count
 Count org-wc.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "<C-f9>") 'org-wc-display)
 #+END_SRC
 *** God Mode
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "<escape>") 'god-local-mode)
 (global-set-key (kbd "C-x C-1") 'delete-other-windows)
 (global-set-key (kbd "C-x C-2") 'split-window-below)
 (global-set-key (kbd "C-x C-3") 'split-window-right)
@@ -369,7 +396,11 @@ Easily enter god mode.
 (centered-window-mode t)
 #+END_SRC
 ** Autofills
-Nicely wraps lines for ~text-mode~.
+Use visual line mode everywhere.
+#+BEGIN_SRC emacs-lisp
+(global-visual-line-mode 1)
+#+END_SRC
+Nicely wraps lines for ~text-mode~.[]
 #+BEGIN_SRC emacs-lisp
 (add-hook 'text-mode-hook 'auto-fill-mode)
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
@@ -386,7 +417,7 @@ Quickly autofill the entire buffer by paragraph.
 #+END_SRC
 *** 80 Columns
 #+BEGIN_SRC emacs-lisp
-(add-hook 'ext-mode-hook
+(add-hook 'text-mode-hook
         (lambda() (set-fill-column 80)))
 #+END_SRC
 ** Highlighting
