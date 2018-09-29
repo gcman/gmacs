@@ -76,10 +76,32 @@ The cursor should not blink.
 (setq x-stretch-cursor 1)
 #+END_SRC
 **** Notifications
+**** Bells
 Visual, not audible bells.
 #+BEGIN_SRC emacs-lisp
 (setq ring-bell-function 'ignore)
 (setq visible-bell t)
+#+END_SRC
+**** Auto-revert
+Turn off reverting buffer messages.
+#+BEGIN_SRC emacs-lisp
+(setq auto-revert-verbose nil)
+#+END_SRC
+**** Autosave
+Turn off autosave messages. To do this, we define our own auto-save function and
+replace the built-in one with ours.
+#+BEGIN_SRC emacs-lisp
+(setq auto-save-timeout 99999)
+(defvar bjm/auto-save-timer nil
+  "Timer to run `bjm/auto-save-silent'")
+(defvar bjm/auto-save-interval 5
+  "How often in seconds of idle time to auto-save with `bjm/auto-save-silent'")
+(defun bjm/auto-save-silent ()
+  "Auto-save all buffers silently"
+  (interactive)
+  (do-auto-save t))
+(setq bjm/auto-save-timer
+      (run-with-idle-timer 0 bjm/auto-save-interval 'bjm/auto-save-silent))
 #+END_SRC
 **** Modeline
 Keep a simpler modeline...
@@ -241,12 +263,36 @@ Opens a file to the same place in which it was last closed.
 #+BEGIN_SRC emacs-lisp
 (require 'sdcv-mode)
 #+END_SRC
+*** Sentences End With a Single Space
+This is necessary to make sentence navigation commands work for me.
+#+BEGIN_SRC emacs-lisp
+(setq sentence-end-double-space nil)
+#+END_SRC
+*** Better Searching
+Don't search, swipe.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-s") 'swiper)
+(setq ivy-display-style 'fancy)
+#+END_SRC
+Get swiper to recentre the display when it exits.
+#+BEGIN_SRC emacs-lisp
+(defun bjm-swiper-recenter (&rest args)
+  "recenter display after swiper"
+  (recenter)
+  )
+(advice-add 'swiper :after #'bjm-swiper-recenter)
+#+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
 (global-set-key (kbd "C-x g") 'magit-status)
 #+END_SRC
 ** Dired
+*** Revert Buffer
+Have the most up-to-date version of the buffer when using dired.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'dired-mode-hook 'auto-revert-mode)
+#+END_SRC
 *** Declutter
 #+BEGIN_SRC emacs-lisp
 (defun xah-dired-mode-setup ()
@@ -260,6 +306,15 @@ confirmation dialog comes up, and ~top~ does it only once.
 #+BEGIN_SRC emacs-lisp
 (setq dired-recursive-copies (quote always))
 (setq dired-recursive-deletes (quote top))
+#+END_SRC
+*** Speed Sorting
+Easily sort based on a lot of options such as name, time, size, and
+extension. Use ~S~ to use in a dired buffer.
+#+BEGIN_SRC emacs-lisp
+(use-package dired-quick-sort
+  :ensure t
+  :config
+  (dired-quick-sort-setup))
 #+END_SRC
 ** God Mode
 Enable god-mode.
@@ -286,10 +341,21 @@ Enable god-mode.
 (add-hook 'god-mode-enabled-hook #'me//god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'me//god-mode-indicator)
 #+END_SRC
-** Sentences End With a Single Space
-This is necessary to make sentence navigation commands work for me.
+** PDFTools
 #+BEGIN_SRC emacs-lisp
-(setq sentence-end-double-space nil)
+(use-package pdf-tools
+:pin manual
+:config
+(pdf-tools-install)
+(add-hook 'pdf-view-mode-hook (lambda () (pdf-view-midnight-minor-mode)))
+(setq pdf-view-midnight-colours '("#657b83" . "3e##fdf6e3"))
+(setq-default pdf-view-display-size 'fit-page)
+(setq pdf-annot-activate-created-annotations t)
+(define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+(setq pdf-view-resize-factor 1.1)
+(define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
+(define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
+(define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete))
 #+END_SRC
 * Global Keybindings
 ** Bind Key
@@ -539,6 +605,7 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 (electric-pair-mode 1)
 #+END_SRC
 *** Highlighting
+Inline LaTeX such as $y = mx + b$ will appear in a different colour.
 #+BEGIN_SRC emacs-lisp
 (setq org-highlight-latex-and-related '(latex))
 #+END_SRC
@@ -556,6 +623,18 @@ By default, it's really small on my HiDPI screen.
 (setq org-latex-to-pdf-process
   '("xelatex -interaction nonstopmode %f"
      "xelatex -interaction nonstopmode %f")) ;; for multiple passes
+#+END_SRC
+*** Don't Break Paragraph on Comments
+Remove comments from org document when exporting to LaTeX.
+#+BEGIN_SRC emacs-lisp
+(defun delete-org-comments (backend)
+  (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
+                    'comment 'identity))
+    do
+    (setf (buffer-substring (org-element-property :begin comment)
+                (org-element-property :end comment))
+          "")))
+(add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
 ** Markdown Conversion
 #+BEGIN_SRC emacs-lisp
