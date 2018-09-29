@@ -1,7 +1,0 @@
-# name: corollary
-# key: cor
-# expand-env: ((yas-indent-line 'fixed)(yas/wrap-around-region 'nil))
-# --
-\begin{corollary}
-    $0
-\end{corollary}

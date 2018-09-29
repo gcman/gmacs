@@ -269,6 +269,11 @@ This is necessary to make sentence navigation commands work for me.
 (setq sentence-end-double-space nil)
 #+END_SRC
 *** Better Searching
+Enable ivy-mode.
+#+BEGIN_SRC emacs-lisp
+(use-package ivy)
+(ivy-mode 1)
+#+END_SRC
 Don't search, swipe.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-s") 'swiper)
@@ -281,6 +286,31 @@ Get swiper to recentre the display when it exits.
   (recenter)
   )
 (advice-add 'swiper :after #'bjm-swiper-recenter)
+#+END_SRC
+*** Abbreviations
+Load them.
+#+BEGIN_SRC emacs-lisp
+(load "~/.emacs.d/abbrevs.el")
+#+END_SRC
+Always use this wonderful tool.
+#+BEGIN_SRC emacs-lispn
+(set-default 'abbrev-mode t)
+#+END_SRC
+Because it's always on, we don't need to know about it.
+#+BEGIN_SRC emacs-lisp
+(diminish 'abbrev-mode)
+#+END_SRC
+Save them in the ~.emacs.d~ dir.
+#+BEGIN_SRC emacs-lisp
+(setq abbrev-file-name "~/.emacs.d/abbrevs.el")
+#+END_SRC
+Save abbreviations upon saving a file.
+#+BEGIN_SRC emacs-lisp
+(setq save-abbrevs 'silent)
+#+END_SRC
+*** Thing at Point
+#+BEGIN_SRC emacs-lisp
+(require 'thingatpt)
 #+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
@@ -341,21 +371,29 @@ Enable god-mode.
 (add-hook 'god-mode-enabled-hook #'me//god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'me//god-mode-indicator)
 #+END_SRC
-** PDFTools
+** PDF Tools
 #+BEGIN_SRC emacs-lisp
-(use-package pdf-tools
-:pin manual
-:config
-(pdf-tools-install)
-(add-hook 'pdf-view-mode-hook (lambda () (pdf-view-midnight-minor-mode)))
-(setq pdf-view-midnight-colours '("#657b83" . "3e##fdf6e3"))
-(setq-default pdf-view-display-size 'fit-page)
-(setq pdf-annot-activate-created-annotations t)
-(define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
-(setq pdf-view-resize-factor 1.1)
-(define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
-(define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
-(define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete))
+  (use-package pdf-tools
+  :pin manual
+  :config
+  (pdf-tools-install)
+  (add-hook 'pdf-view-mode-hook (lambda () (pdf-view-midnight-minor-mode)))
+  (setq pdf-view-midnight-colours '("#657b83" . "#fdf6e3"))
+  (setq-default pdf-view-display-size 'fit-page) ;
+  (setq pdf-annot-activate-created-annotations t)
+  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
+  (setq pdf-view-resize-factor 1.1)
+  (define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
+  (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
+  (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete))
+#+END_SRC
+*** Electric Pairs
+#+BEGIN_SRC emacs-lisp
+(electric-pair-mode 1)
+(setq electric-pair-pairs
+      '(
+        (?\" . ?\")
+        (?\{ . ?\})))
 #+END_SRC
 * Global Keybindings
 ** Bind Key
@@ -488,8 +526,6 @@ Quickly autofill the entire buffer by paragraph.
 #+END_SRC
 ** Highlighting
 *** Syntax
-***
-***
 #+BEGIN_SRC emacs-lisp
 (global-font-lock-mode 1)
 #+END_SRC
@@ -598,11 +634,11 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
 (defvar org-electric-pairs '((?$ . ?$) )) "Electric pairs for org-mode."
-(defun org-add-electric-pairs ()
+(defun dollar-add-electric-pairs ()
   (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
   (setq-local electric-pair-text-pairs electric-pair-pairs))
-(add-hook 'org-mode-hook 'org-add-electric-pairs)
-(electric-pair-mode 1)
+(add-hook 'org-mode-hook 'dollar-add-electric-pairs)
+(add-hook 'LaTeX-mode-hook 'dollar-add-electric-pairs)
 #+END_SRC
 *** Highlighting
 Inline LaTeX such as $y = mx + b$ will appear in a different colour.
@@ -656,7 +692,6 @@ Remove comments from org document when exporting to LaTeX.
   (setq TeX-parse-self t)
   (setq-default TeX-master nil)
   (setq TeX-PDF-mode t)
-  (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)   ; with AUCTeX LaTeX mode
   (add-hook 'LaTeX-mode-hook 'visual-line-mode)
   (add-hook 'LaTeX-mode-hook 'flyspell-mode)
   (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
@@ -680,13 +715,48 @@ Remove comments from org document when exporting to LaTeX.
           LaTeX-section-section
           LaTeX-section-label))
 #+END_SRC
+Don't make super and subscripts smaller.
+#+BEGIN_SRC emacs-lisp
+(setq font-latex-subscript-face nil)
+(setq font-latex-superscript-face nil)
+#+END_SRC
+Company math symbol completion.
+#+BEGIN_SRC emacs-lisp
+(use-package company-math)
+(add-to-list 'company-backends 'company-math-symbols-latex)
+#+END_SRC
+** Electric Dollars and Parens
+#+BEGIN_SRC emacs-lisp
+(add-hook 'TeX-mode-hook
+	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+			  (cons "$" "$"))))
+(add-hook 'LaTeX-mode-hook
+	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+			  (cons "$" "$"))))
+(add-hook 'LaTeX-mode-hook
+	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+			  (cons "(" ")"))))
+#+END_SRC
+** CDLaTeX
+I use this package to easily insert math characters.
+#+BEGIN_SRC emacs-lisp
+(use-package cdlatex)
+#+END_SRC
+Automatically turn on when using LaTeX.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)
+#+END_SRC
+Insert math with semicolon.
+#+BEGIN_SRC emacs-lisp
+(setq cdlatex-math-symbol-prefix ?;)
+#+END_SRC
 ** Diffing
 #+BEGIN_SRC
 (use-package latexdiff)
 #+END_SRC
 * Snippets
+Load our snippets.
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "~/.emacs.d/plugins/yasnippet")
 (setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet)
 (eval-after-load "diminish"
@@ -694,6 +764,62 @@ Remove comments from org document when exporting to LaTeX.
      (eval-after-load "yasnippet"
        '(diminish 'yas-minor-mode))))
 (yas-global-mode 1)
+#+END_SRC
+Use SPC instead of TAB to expand snippets.
+#+BEGIN_SRC emacs-lisp
+(define-key yas-minor-mode-map (kbd "<tab>") nil)
+(define-key yas-minor-mode-map (kbd "TAB") nil)
+(define-key yas-minor-mode-map (kbd "SPC")
+  (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
+#+END_SRC
+** Vim-like Ultisnips
+Use texmathp to tell if you are in math mode.
+#+BEGIN_SRC emacs-lisp
+(require 'texmathp)
+#+END_SRC
+Using a hydra, I setup automatic expansion of yasnippets; when a leader key is
+pressed, that key is inserted, but if the next key of a defined sequence is
+pressed, the leader key is erased and the snippet is expanded.
+#+BEGIN_SRC emacs-lisp
+(use-package hydra)
+#+END_SRC
+*** Squared
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-s (:color blue
+                         :body-pre (insert "s")
+                         :idle 1.0)
+("r" (if (texmathp) (progn
+       (delete-char -1)
+       (yas-expand-snippet
+       (yas-lookup-snippet "squared"))) (insert "r")) "auto-expand 'squared'"))
+
+(global-set-key (kbd "s") 'hydra-s/body)
+#+END_SRC
+*** Cubed
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-c (:color blue
+                         :body-pre (insert "c")
+                         :idle 1.0)
+("b" (if (texmathp) (progn
+       (delete-char -1)
+       (yas-expand-snippet
+       (yas-lookup-snippet "cubed"))) (insert "b")) "auto-expand 'cubed'"))
+
+(global-set-key (kbd "c") 'hydra-c/body)
+#+END_SRC
+*** Partial Derivative
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-r (:color blue
+                         :body-pre (insert "r")
+                         :idle 1.0)
+("t" (if (and (and (texmathp) (= (char-before (- (point) 1)) ?a)) (= (char-before (- (point) 2)) ?p))
+       (progn
+       (dotimes (i 3)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "partial"))) (insert "t")) "auto-expand 'partial'"))
+
+(global-set-key (kbd "r") 'hydra-r/body)
 #+END_SRC
 * Mail
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.

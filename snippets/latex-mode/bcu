@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: bigcup
-# key: bcu
-# --
-\bigcup_{$1}^{$2}$0

@@ -11,8 +11,9 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(org-agenda-files '("~/.emacs.d/gautam.org"))
  '(package-selected-packages
-   '(pdf-tools latexdiff magit yasnippet-snippets yaml-mode writeroom-mode which-key wc-mode use-package sublimity solarized-theme smooth-scrolling smart-mode-line powerline ox-hugo org-wc org-mime org-bullets olivetti mu4e-alert imenu-anywhere flyspell-lazy flycheck diminish company centered-window cdlatex auctex-lua auctex-latexmk adaptive-wrap))
+   '(company-math pdf-tools latexdiff magit yasnippet-snippets yaml-mode writeroom-mode which-key wc-mode use-package sublimity solarized-theme smooth-scrolling smart-mode-line powerline ox-hugo org-wc org-mime org-bullets olivetti mu4e-alert imenu-anywhere flyspell-lazy flycheck diminish company centered-window cdlatex auctex-lua auctex-latexmk adaptive-wrap))
  '(pdf-view-midnight-colors '("#839496" . "#fdf6e3"))
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
