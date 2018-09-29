@@ -1,7 +1,0 @@
-# name: split
-# key: sp
-# expand-env: ((yas-indent-line 'fixed)(yas/wrap-around-region 'nil))
-# --
-\begin{split}
-    $0
-\end{split}

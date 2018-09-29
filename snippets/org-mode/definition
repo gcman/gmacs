@@ -1,7 +1,0 @@
-# name: definition
-# key: def
-# expand-env: ((yas-indent-line 'fixed)(yas/wrap-around-region 'nil))
-# --
-\begin{definition}
-    $0
-\end{definition}
