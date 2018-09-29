@@ -620,49 +620,37 @@ By default, it's really small on my HiDPI screen.
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e")
-(progn
-      (unless
-          (fboundp 'mu4e)
-        (autoload #'mu4e "mu4e" nil t))
-      (eval-after-load 'mu4e
-        '(progn
-           (config)
-           t))
-      (ignore
-       (bind-keys :package mu4e
-                  ("<f9>" . mu4e))))
+(use-package mu4e
+  :ensure nil
+  :custom
+  (mu4e-attachment-dir "~/Downloads")
+  (mu4e-drafts-folder "/[Gmail].Drafts")
+  (mu4e-get-mail-command "offlineimap")
+  (mu4e-maildir "~/Maildir")
+  (mu4e-refile-folder "/[Gmail].Archive")
+  (mu4e-sent-folder "/[Gmail].Sent Mail")
+  (mu4e-maildir-shortcuts
+   '(("/[Gmail].INBOX" . ?i)
+     ("/[Gmail].Archive" . ?a)
+     ("/[Gmail].Trash" . ?d)
+     ("/[Gmail].Drafts" . ?D)
+     ("/[Gmail].Sent Mail" . ?s)
+     ))
+  (mu4e-trash-folder "/[Gmail].Trash")
+  (mu4e-update-interval 300)
+  (mu4e-use-fancy-chars t)
+  (mu4e-view-show-addresses t)
+  (mu4e-view-show-images t))
 ;; use mu4e for e-mail in emacs
 (setq mail-user-agent 'mu4e-user-agent)
-;; default
-(setq mu4e-maildir "~/Maildir")
-(setq mu4e-drafts-folder "/[Gmail].Drafts")
-(setq mu4e-sent-folder   "/[Gmail].Sent Mail")
-(setq mu4e-trash-folder  "/[Gmail].Trash")
 
-;; don't save message to Sent Messages, Gmail/IMAP takes care of this
+(setq mu4e-headers-date-format "%d-%m-%Y")
+
+(add-hook 'mu4e-view-mode-hook #'visual-line-mode)
+(add-hook 'mu4e-compose-mode-hook 'flyspell-mode)
+
+;; don't save message to Sent Messages, [Gmail].IMAP takes care of this
 (setq mu4e-sent-messages-behavior 'delete)
-
-;; (See the documentation for `mu4e-sent-messages-behavior' if you have
-;; additional non-Gmail addresses and want assign them different
-;; behavior.)
-
-;; setup some handy shortcuts
-;; you can quickly switch to your Inbox -- press ``ji''
-;; then, when you want archive some messages, move them to
-;; the 'All Mail' folder by pressing ``ma''.
-
-(setq mu4e-maildir-shortcuts
-    '( ("/[Gmail].All Mail"    . ?i)
-       ("/[Gmail].Sent Mail"   . ?s)
-       ("/[Gmail].Trash"       . ?t)
-       ("/INBOX"    . ?a)))
-
-;; allow for updating mail using 'U' in the main view:
-(setq mu4e-get-mail-command "offlineimap")
-
-(setq
-  mu4e-get-mail-command "offlineimap"   ;; or fetchmail, or ...
-  mu4e-update-interval 300)             ;; update every 5 minutes
 
 ;; something about ourselves
 (setq
@@ -672,10 +660,6 @@ This is pretty complicated; I need to sort through this and break it up into mor
     (concat
       "Gautam Manohar, S6 UTS\n"
       "https://gautammanohar.com\n"))
-
-;; sending mail -- replace USERNAME with your gmail username
-;; also, make sure the gnutls command line utils are installed
-;; package 'gnutls-bin' in Debian/Ubuntu
 
 (use-package smtpmail)
 (setq message-send-mail-function 'smtpmail-send-it
@@ -712,7 +696,7 @@ This is pretty complicated; I need to sort through this and break it up into mor
     (concat
      "flag:unread maildir:/Exchange/INBOX "
      "OR "
-     "flag:unread maildir:/Gmail/INBOX"
+     "flag:unread maildir:/[Gmail].INBOX"
      ))
   (mu4e-alert-enable-mode-line-display)
   (defun gjstein-refresh-mu4e-alert-mode-line ()
@@ -729,11 +713,6 @@ This is pretty complicated; I need to sort through this and break it up into mor
 ;; don't keep message buffers around
 (setq message-kill-buffer-on-exit t)
 ;; use 'fancy' non-ascii characters in various places in mu4e
-(setq mu4e-use-fancy-chars t)
-;; save attachment to my desktop (this can also be a function)
-(setq mu4e-attachment-dir "~/Downloads")
-;; attempt to show images when viewing messages
-(setq mu4e-view-show-images t)
 #+END_SRC
 * End
 Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
