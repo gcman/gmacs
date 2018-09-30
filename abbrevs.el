@@ -58,26 +58,9 @@
 
 (define-abbrev-table 'ibuffer-mode-abbrev-table '())
 
-<<<<<<< HEAD
 (define-abbrev-table 'ivy-occur-grep-mode-abbrev-table '())
 
 (define-abbrev-table 'ivy-occur-mode-abbrev-table '())
-
-(define-abbrev-table 'latex-mode-abbrev-table
-  '(
-    ("CC" "mathbb{C}" nil :count 0)
-    ("QQ" "mathbb{Q}" nil :count 0)
-    ("RR" "mathbb{R}" nil :count 0)
-    ("ZZ" "mathbb{Z}" nil :count 0)
-    ("cb" "^3" nil :count 0)
-    ("cc" " ubset" nil :count 0)
-=======
-(define-abbrev-table 'latex-mode-abbrev-table
-  '(
-    ("cb" "^3" nil :count 0)
->>>>>>> 51c34422c6f834273bd68f5a63ed5ba4aa59205a
-    ("sr" "^2" nil :count 0)
-   ))
 
 (define-abbrev-table 'lisp-mode-abbrev-table '())
 
@@ -182,4 +165,3 @@
 (define-abbrev-table 'vc-git-region-history-mode-abbrev-table '())
 
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
-

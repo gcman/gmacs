@@ -312,10 +312,6 @@ Save abbreviations upon saving a file.
 #+BEGIN_SRC emacs-lisp
 (require 'thingatpt)
 #+END_SRC
-<<<<<<< HEAD
-=======
-**
->>>>>>> 51c34422c6f834273bd68f5a63ed5ba4aa59205a
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
@@ -719,7 +715,6 @@ Remove comments from org document when exporting to LaTeX.
           LaTeX-section-section
           LaTeX-section-label))
 #+END_SRC
-<<<<<<< HEAD
 Don't make super and subscripts smaller.
 #+BEGIN_SRC emacs-lisp
 (setq font-latex-subscript-face nil)
@@ -731,9 +726,7 @@ Company math symbol completion.
 (add-to-list 'company-backends 'company-math-symbols-latex)
 #+END_SRC
 ** Electric Dollars and Parens
-=======
 Insert dollar signs electrically.
->>>>>>> 51c34422c6f834273bd68f5a63ed5ba4aa59205a
 #+BEGIN_SRC emacs-lisp
 (add-hook 'TeX-mode-hook
 	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
@@ -741,7 +734,6 @@ Insert dollar signs electrically.
 (add-hook 'LaTeX-mode-hook
 	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
 			  (cons "$" "$"))))
-<<<<<<< HEAD
 (add-hook 'LaTeX-mode-hook
 	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
 			  (cons "(" ")"))))
@@ -758,8 +750,6 @@ Automatically turn on when using LaTeX.
 Insert math with semicolon.
 #+BEGIN_SRC emacs-lisp
 (setq cdlatex-math-symbol-prefix ?;)
-=======
->>>>>>> 51c34422c6f834273bd68f5a63ed5ba4aa59205a
 #+END_SRC
 ** Diffing
 #+BEGIN_SRC
@@ -783,7 +773,6 @@ Use SPC instead of TAB to expand snippets.
 (define-key yas-minor-mode-map (kbd "SPC")
   (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
 #+END_SRC
-<<<<<<< HEAD
 ** Vim-like Ultisnips
 Use texmathp to tell if you are in math mode.
 #+BEGIN_SRC emacs-lisp
@@ -833,8 +822,6 @@ pressed, the leader key is erased and the snippet is expanded.
 
 (global-set-key (kbd "r") 'hydra-r/body)
 #+END_SRC
-=======
->>>>>>> 51c34422c6f834273bd68f5a63ed5ba4aa59205a
 * Mail
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.
 #+BEGIN_SRC emacs-lisp
