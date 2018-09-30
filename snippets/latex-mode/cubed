@@ -1,5 +1,9 @@
 # -*- mode: snippet -*-
 # name: cubed
+<<<<<<< HEAD
 # key: cb
+=======
+# binding: cb
+>>>>>>> 51c34422c6f834273bd68f5a63ed5ba4aa59205a
 # --
 ^3
