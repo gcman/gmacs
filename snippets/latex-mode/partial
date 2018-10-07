@@ -1,5 +1,4 @@
 # -*- mode: snippet -*-
 # name: partial
-# key: del
 # --
 \frac{\partial $1}{\partial $2}$0

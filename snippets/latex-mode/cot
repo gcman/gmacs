@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
-# name: squared
+# name: cot
 # --
-^2
+\cot $0

@@ -242,7 +242,7 @@ It's nice to have a history of commands so that when you open a new emacs instan
 On a similar note, save the desktop.
 #+BEGIN_SRC emacs-lisp
 (desktop-save-mode 1)
-(setq desktop-restore-eager 10)
+(setq desktop-restore-eager 250)
 #+END_SRC
 Make two buffers with the same file name distinguishable.
 #+BEGIN_SRC emacs-lisp
@@ -560,13 +560,12 @@ And then the actual settings.
 (setq sentence-extent (make-overlay 0 0))
 (overlay-put sentence-extent 'face sentence-face)
 
-(add-hook 'text-mode-hook (function (lambda ()
+(add-hook 'org-mode-hook (function (lambda ()
 
  (make-local-variable 'sentence-highlight-mode)
  (setq sentence-highlight-mode t)
  (add-hook 'post-command-hook	'sentence-highlight-current)
 )))
-(add-hook 'orc-src-mode-hook (lambda () (highlight-parentheses-mode -1)))
 #+END_SRC
 *** Parentheses
 #+BEGIN_SRC emacs-lisp
@@ -672,6 +671,23 @@ Remove comments from org document when exporting to LaTeX.
           "")))
 (add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
+** Export to Word
+#+BEGIN_SRC emacs-lisp
+(setq org-export-odt-preferred-output-format "doc")
+(setq org-odt-preferred-output-format "doc")
+
+;; Only OSX need below setup
+(defun my-setup-odt-org-convert-process ()
+  (interactive)
+  (let ((cmd "/Applications/LibreOffice.app/Contents/MacOS/soffice"))
+    (when (and (eq system-type 'darwin) (file-exists-p cmd))
+      ;; org v7
+      (setq org-export-odt-convert-processes '(("LibreOffice" "/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to %f%x --outdir %d %i")))
+      ;; org v8
+      (setq org-odt-convert-processes '(("LibreOffice" "/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to %f%x --outdir %d %i"))))
+    ))
+(my-setup-odt-org-convert-process)
+#+END_SRC
 ** Markdown Conversion
 #+BEGIN_SRC emacs-lisp
  (defun markdown-convert-buffer-to-org ()
@@ -717,13 +733,16 @@ Remove comments from org document when exporting to LaTeX.
 #+END_SRC
 Don't make super and subscripts smaller.
 #+BEGIN_SRC emacs-lisp
-(setq font-latex-subscript-face nil)
-(setq font-latex-superscript-face nil)
+(setq font-latex-fontify-script nil)
 #+END_SRC
 Company math symbol completion.
 #+BEGIN_SRC emacs-lisp
 (use-package company-math)
 (add-to-list 'company-backends 'company-math-symbols-latex)
+#+END_SRC
+Make preview size bigger.
+#+BEGIN_SRC emacs-lisp
+(set-default 'preview-scale-function 3.0)
 #+END_SRC
 ** Electric Dollars and Parens
 Insert dollar signs electrically.
@@ -734,7 +753,7 @@ Insert dollar signs electrically.
 (add-hook 'LaTeX-mode-hook
 	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
 			  (cons "$" "$"))))
-(add-hook 'LaTeX-mode-hook
+(add-hook 'text-mode-hook
 	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
 			  (cons "(" ")"))))
 #+END_SRC
@@ -754,6 +773,26 @@ Insert math with semicolon.
 ** Diffing
 #+BEGIN_SRC
 (use-package latexdiff)
+#+END_SRC
+** Auto Preview
+#+BEGIN_SRC emacs-lisp
+(defvar my/was-inside-math nil)
+
+(defun my/preview-when-leaving-math ()
+ (let ((in-math (texmathp)))
+   (cond (in-math
+          (setq my/was-inside-math t))
+         ((and (not in-math)
+               my/was-inside-math)
+          (progn
+            (condition-case ex
+                (unless (get-process "Preview-Ghostscript")
+                  (preview-at-point))
+              ('error
+               (message (format "Could not invoke Preview: %s" ex))))
+            (setq my/was-inside-math nil))))))
+
+(add-hook 'post-command-hook 'my/preview-when-leaving-math t)
 #+END_SRC
 * Snippets
 Load our snippets.
@@ -784,49 +823,316 @@ pressed, the leader key is erased and the snippet is expanded.
 #+BEGIN_SRC emacs-lisp
 (use-package hydra)
 #+END_SRC
-*** Squared
+For the fraction command, we use general.el.
+#+BEGIN_SRC emacs-lisp
+(require 'general)
+#+END_SRC
+*** Squared, Square Root
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-s (:color blue
                          :body-pre (insert "s")
                          :idle 1.0)
-("r" (if (texmathp) (progn
+("r" (if (texmathp)
+       (progn
        (delete-char -1)
        (yas-expand-snippet
-       (yas-lookup-snippet "squared"))) (insert "r")) "auto-expand 'squared'"))
+       (yas-lookup-snippet "squared"))) (insert "r")) "auto-expand 'squared'")
+("q" (if (texmathp) (progn
+       (delete-char -1)
+       (yas-expand-snippet
+       (yas-lookup-snippet "sqrt"))) (insert "q")) "auto-expand 'sqrt'"))
 
- (add-hook 'tex-mode-hook
+ (add-hook 'LaTeX-mode-hook
      (lambda ()
      (local-set-key (kbd "s") 'hydra-s/body)))
 #+END_SRC
-*** Cubed
+*** Cubed, Subset
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-c (:color blue
                          :body-pre (insert "c")
                          :idle 1.0)
 ("b" (if (texmathp) (progn
        (delete-char -1)
+       (if (= (char-before (- (point) 1)) ? ) (delete-char -1))
        (yas-expand-snippet
-       (yas-lookup-snippet "cubed"))) (insert "b")) "auto-expand 'cubed'"))
+       (yas-lookup-snippet "cubed"))) (insert "b")) "auto-expand 'cubed'")
+("c" (if (texmathp) (progn
+       (delete-char -1)
+       (yas-expand-snippet
+       (yas-lookup-snippet "subset"))) (insert "c")) "auto-expand 'subset'"))
 
- (add-hook 'tex-mode-hook
+ (add-hook 'LaTeX-mode-hook
      (lambda ()
      (local-set-key (kbd "c") 'hydra-c/body)))
 #+END_SRC
-*** Partial Derivative
+*** Derivative
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-d (:color blue
+                         :body-pre (insert "d")
+                         :idle 1.0)
+("d" (if (texmathp) (progn
+       (delete-char -1)
+       (yas-expand-snippet
+       (yas-lookup-snippet "derivative"))) (insert "d")) "auto-expand 'derivative'"))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "d") 'hydra-d/body)))
+#+END_SRC
+*** Partial Derivative, Brackets
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-r (:color blue
                          :body-pre (insert "r")
                          :idle 1.0)
-("t" (if (and (and (texmathp) (= (char-before (- (point) 1)) ?a)) (= (char-before (- (point) 2)) ?p))
+("t" (if (and (texmathp) (= (char-before (- (point) 1)) ?a) (= (char-before (- (point) 2)) ?p))
        (progn
        (dotimes (i 3)
          (delete-char -1))
        (yas-expand-snippet
-       (yas-lookup-snippet "partial"))) (insert "t")) "auto-expand 'partial'"))
+       (yas-lookup-snippet "partial"))) (insert "t")) "auto-expand 'partial'")
+("9" (if (and (texmathp) (= (char-before (- (point) 1)) ?l))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "parentheses"))) (insert "9")) "auto-expand 'parentheses'")
+("[" (if (and (texmathp) (= (char-before (- (point) 1)) ?l))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "brackets"))) (insert "")) "auto-expand 'brackets'")
+("{" (if (and (texmathp) (= (char-before (- (point) 1)) ?l))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "set"))) (insert "")) "auto-expand 'set'"))
 
- (add-hook 'tex-mode-hook
+ (add-hook 'LaTeX-mode-hook
      (lambda ()
      (local-set-key (kbd "r") 'hydra-r/body)))
+#+END_SRC
+*** Inverse, Integral, In
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-n (:color blue
+                         :body-pre (insert "n")
+                         :idle 1.0)
+("v" (if (and (texmathp) (= (char-before (- (point) 1)) ?i))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "inverse"))) (insert "v")) "auto-expand 'inverse'")
+("t" (if (and (texmathp) (= (char-before (- (point) 1)) ?i))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "integral"))) (insert "t")) "auto-expand 'integral'")
+("n" (if (and (texmathp) (= (char-before (- (point) 1)) ?i))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "inn"))) (insert "n")) "auto-expand 'in'")))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "n") 'hydra-n/body)))
+#+END_SRC
+*** Maps To
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-exc (:color blue
+                         :body-pre (insert "!")
+                         :idle 1.0)
+(">" (if (texmathp) (progn
+       (delete-char -1)
+       (yas-expand-snippet
+       (yas-lookup-snippet "maps-to"))) (insert ">")) "auto-expand 'maps-to'"))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "!") 'hydra-exc/body)))
+#+END_SRC
+*** Implies
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-eq (:color blue
+                         :body-pre (insert "=")
+                         :idle 1.0)
+(">" (if (texmathp) (progn
+       (delete-char -1)
+       (yas-expand-snippet
+       (yas-lookup-snippet "implies"))) (insert ">")) "auto-expand 'implies'"))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "=") 'hydra-eq/body)))
+#+END_SRC
+*** Limit, Sin
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-i (:color blue
+                         :body-pre (insert "i")
+                         :idle 1.0)
+("m" (if (and (texmathp) (= (char-before (- (point) 1)) ?l))
+       (progn
+       (dotimes (i 2) (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "limit"))) (insert "m")) "auto-expand 'limit'")
+("n" (if (and (texmathp) (= (char-before (- (point) 1)) ?s))
+       (if (= (char-before (- (point) 2)) ?a)
+         (progn
+         (dotimes (i 3) (delete-char -1))
+         (yas-expand-snippet (yas-lookup-snippet "asin")))
+         (progn
+         (dotimes (i 2) (delete-char -1))
+         (yas-expand-snippet (yas-lookup-snippet "sin"))))
+         (hydra-n/body)) "auto-expand '(a)sin'"))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "i") 'hydra-i/body)))
+#+END_SRC
+*** Sum
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-u (:color blue
+                         :body-pre (insert "u")
+                         :idle 1.0)
+("m" (if (and (texmathp) (= (char-before (- (point) 1)) ?s))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "summation"))) (insert "m")) "auto-expand 'sum'"))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "u") 'hydra-u/body)))
+#+END_SRC
+*** Set, Sec
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-e (:color blue
+                         :body-pre (insert "e")
+                         :idle 1.0)
+("t" (if (and (texmathp) (= (char-before (- (point) 1)) ?s))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "set"))) (insert "t")) "auto-expand 'set'")
+("c" (if (and (texmathp) (= (char-before (- (point) 1)) ?s))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "sec"))) (insert "c")) "auto-expand 'sec'"))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "e") 'hydra-e/body)))
+#+END_SRC
+*** Log, Cos, Arccos, Cot, Arccot
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-o (:color blue
+                         :body-pre (insert "o")
+                         :idle 1.0)
+("g" (if (and (texmathp) (= (char-before (- (point) 1)) ?l))
+       (progn
+       (dotimes (i 2)
+         (delete-char -1))
+       (yas-expand-snippet
+       (yas-lookup-snippet "log"))) (insert "g")) "auto-expand 'log'")
+("s" (if (and (texmathp) (= (char-before (- (point) 1)) ?c))
+       (if (= (char-before (- (point) 2)) ?a)
+         (progn
+         (dotimes (i 3) (delete-char -1))
+         (yas-expand-snippet (yas-lookup-snippet "acos")))
+         (progn
+         (dotimes (i 2) (delete-char -1))
+         (yas-expand-snippet (yas-lookup-snippet "cos"))))
+       (insert "s")) "auto-expand '(a)cos'")
+("t" (if (and (texmathp) (= (char-before (- (point) 1)) ?c))
+       (if (= (char-before (- (point) 2)) ?a)
+         (progn
+         (dotimes (i 3) (delete-char -1))
+         (yas-expand-snippet (yas-lookup-snippet "acot")))
+         (progn
+         (dotimes (i 2) (delete-char -1))
+         (yas-expand-snippet (yas-lookup-snippet "cot"))))
+       (insert "t")) "auto-expand '(a)cot'"))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "o") 'hydra-o/body)))
+#+END_SRC
+*** Tan, Arctan
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-a (:color blue
+                         :body-pre (insert "a")
+                         :idle 1.0)
+("n" (if (and (texmathp) (= (char-before (- (point) 1)) ?t))
+       (if (= (char-before (- (point) 2)) ?a)
+         (progn
+         (dotimes (i 3) (delete-char -1))
+         (yas-expand-snippet (yas-lookup-snippet "atan")))
+         (progn
+         (dotimes (i 2) (delete-char -1))
+         (yas-expand-snippet (yas-lookup-snippet "tan"))))
+       (insert "n")) "auto-expand '(a)tan'"))
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "a") 'hydra-a/body)))
+#+END_SRC
+*** Fraction
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-f (:color blue
+                         :body-pre (insert "f")
+                         :idle 1.0)
+("r" (if (texmathp) (progn
+       (delete-char -1)
+       (yas-expand-snippet
+       (yas-lookup-snippet "frac"))) (insert "r")) "auto-expand 'frac'"))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "f") 'hydra-f/body)))
+#+END_SRC
+*** Math Symbols
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-semicolon-a (:color blue
+                             :idle 1.0)
+(";" hydra-semicolon-b/body "alpha")
+("a" (insert "\\alpha") "α")
+("A" (insert "\\forall ") "∀")
+("b" (insert "\\beta") "β")
+("d" (insert "\\delta") "delta")
+("D" (insert "\\Delta") "Delta")
+("e" (insert "\\epsilon") "epsilon")
+("E" (insert "\\exists ") "∃")
+("f" (insert "\\varphi") "γ")
+("g" (insert "\\gamma") "γ")
+("G" (insert "\\Gamma") "Γ")
+("h" (insert "\\eta") "Γ")
+("n" (insert "\\nu") "nu")
+)
+(defhydra hydra-semicolon-b (:color blue
+                             :idle 1.0)
+(";" hydra-semicolon-a/body "alpha")
+("a" (insert "\\alpha") "α")
+("A" (insert "\\forall ") "∀")
+("b" (insert "\\beta") "β")
+("d" (insert "\\delta") "delta")
+("D" (insert "\\Delta") "Delta")
+("e" (insert "\\epsilon") "epsilon")
+("E" (insert "\\exists ") "∃")
+("f" (insert "\\varphi") "γ")
+("g" (insert "\\gamma") "γ")
+("G" (insert "\\Gamma") "Γ")
+("h" (insert "\\eta") "Γ")
+)
+(add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd ";") 'hydra-semicolon-a/body)))
 #+END_SRC
 * Mail
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.
@@ -839,11 +1145,11 @@ This is pretty complicated; I need to sort through this and break it up into mor
   (mu4e-drafts-folder "/[Gmail].Drafts")
   (mu4e-get-mail-command "offlineimap")
   (mu4e-maildir "~/Maildir")
-  (mu4e-refile-folder "/[Gmail].Archive")
+  (mu4e-refile-folder "/[Gmail].All Mail")
   (mu4e-sent-folder "/[Gmail].Sent Mail")
   (mu4e-maildir-shortcuts
    '(("/[Gmail].INBOX" . ?i)
-     ("/[Gmail].Archive" . ?a)
+     ("/[Gmail].All Mail" . ?a)
      ("/[Gmail].Trash" . ?d)
      ("/[Gmail].Drafts" . ?D)
      ("/[Gmail].Sent Mail" . ?s)
@@ -905,11 +1211,7 @@ This is pretty complicated; I need to sort through this and break it up into mor
   :after mu4e
   :init
   (setq mu4e-alert-interesting-mail-query
-    (concat
-     "flag:unread maildir:/Exchange/INBOX "
-     "OR "
-     "flag:unread maildir:/[Gmail].INBOX"
-     ))
+     "flag:unread maildir:/[Gmail].INBOX")
   (mu4e-alert-enable-mode-line-display)
   (defun gjstein-refresh-mu4e-alert-mode-line ()
     (interactive)

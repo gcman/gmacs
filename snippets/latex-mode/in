@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
-# name: squared
+# name: inn
 # --
-^2
+\in $0

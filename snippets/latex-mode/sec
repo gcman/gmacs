@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
-# name: squared
+# name: sec
 # --
-^2
+\sec $0

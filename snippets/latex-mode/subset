@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
-# name: squared
+# name: subset
 # --
-^2
+\subset $0

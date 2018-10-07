@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: summation
+# --
+\sum_{${1:k}=${2:0}}^{${3:\infty}}

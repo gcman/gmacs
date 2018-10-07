@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: integral
+# --
+\int_{${1:-\infty}}^{${2:\infty}} $3 \,dx$0

@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
-# name: squared
+# name: asin
 # --
-^2
+\arcsin $0

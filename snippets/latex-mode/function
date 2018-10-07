@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: function
+# --
+${1:f} : $2\mathbb{R} \to \mathbb{R}

@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: parentheses
+# --
+\left($1\right)

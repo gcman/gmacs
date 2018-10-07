@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
-# name: squared
+# name: sqrt
 # --
-^2
+\sqrt{$1}$0

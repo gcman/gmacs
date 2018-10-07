@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
-# name: squared
+# name: cos
 # --
-^2
+\cos $0
