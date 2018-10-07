@@ -1,6 +1,6 @@
 #+TITLE: Emacs Configuration
 * Starting Up
-** Really Starting Up
+** Time It
 On start-up, display how quickly emacs started up.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-startup-hook
@@ -10,11 +10,6 @@ On start-up, display how quickly emacs started up.
                              (float-time
                               (time-subtract after-init-time before-init-time)))
                      gcs-done)))
-#+END_SRC
-** Speed!
-For speed, wrap the entire configuration in this block
-#+BEGIN_SRC emacs-lisp
-(let ((file-name-handler-alist nil))
 #+END_SRC
 ** Add Package Sources
 #+BEGIN_SRC emacs-lisp
@@ -175,9 +170,11 @@ This makes things so much simpler. There's not any ambiguity to begin with.
 #+BEGIN_SRC emacs-lisp
 (use-package ido)
 (ido-mode 1)
-(ido-everywhere 1)
+(setq ido-enable-flex-matching t)
+(setq ido-everywhere t)
 (setq ido-create-new-buffer 'always)
 (setq ido-use-faces nil)
+(setq ido-file-extensions-order '(".org" ".tex" ".py"))
 #+END_SRC
 *** Delete The Selection
 #+BEGIN_SRC emacs-lisp
@@ -272,6 +269,7 @@ This is necessary to make sentence navigation commands work for me.
 Enable ivy-mode.
 #+BEGIN_SRC emacs-lisp
 (use-package ivy)
+(diminish 'ivy-mode)
 (ivy-mode 1)
 #+END_SRC
 Don't search, swipe.
@@ -483,8 +481,9 @@ Easily enter god mode.
 #+END_SRC
 * Theme
 ** Font Face
+Normally use Hack.
 #+BEGIN_SRC emacs-lisp
-(set-face-attribute 'default nil :font "Hack" )
+(set-face-attribute 'default nil :font "Hack")
 (set-frame-font "Hack" nil t)
 #+END_SRC
 ** Solarized Light
@@ -529,43 +528,30 @@ Quickly autofill the entire buffer by paragraph.
 #+BEGIN_SRC emacs-lisp
 (global-font-lock-mode 1)
 #+END_SRC
-*** Sentences
-Set up ~org~ source blocks to ignore this setting.
+*** Rainbow Mode
 #+BEGIN_SRC emacs-lisp
-(add-hook 'org-src-mode-hook 'hack-local-variables)
+(rainbow-mode 1)
+(diminish 'rainbow-mode)
 #+END_SRC
-And then the actual settings.
+*** Source Code Blocks
+Native syntax highlighting for source blocks in org mode.
 #+BEGIN_SRC emacs-lisp
-(setq sentence-end "[^.].[.?!]+\\([]\"')}]*\\|<[^>]+>\\)\\($\\| $\\|\t\\| \\)[ \t\n]*")
-
-(setq sentence-color "#2aa198")
-(setq sentence-face (make-face 'sentence-face-background))
-(set-face-foreground sentence-face sentence-color)
-
-(defun sentence-begin-pos () (save-excursion (unless (= (point) (point-max)) (forward-char)) (backward-sentence) (point)))
-(defun sentence-end-pos () (save-excursion (unless (= (point) (point-max)) (forward-char)) (backward-sentence) (forward-sentence) (point)))
-
-(setq sentence-highlight-mode nil)
-
-(defun sentence-highlight-current (&rest ignore)
-  "Highlight current sentence."
-    (and sentence-highlight-mode (> (buffer-size) 0)
-    (progn
-      (and  (boundp 'sentence-extent)
-        sentence-extent
-        (move-overlay sentence-extent (sentence-begin-pos) (sentence-end-pos) (current-buffer))
-      )
-)))
-
-(setq sentence-extent (make-overlay 0 0))
-(overlay-put sentence-extent 'face sentence-face)
-
-(add-hook 'org-mode-hook (function (lambda ()
-
- (make-local-variable 'sentence-highlight-mode)
- (setq sentence-highlight-mode t)
- (add-hook 'post-command-hook	'sentence-highlight-current)
-)))
+(setq org-src-fontify-natively t
+      org-src-tab-acts-natively t
+      org-confirm-babel-evaluate nil
+      org-edit-src-content-indentation 0)
+#+END_SRC
+*** Sentences
+Highlight sentences. Credit to [[https://github.com/milkypostman/hl-sentence][Donald Curtis]].
+#+BEGIN_SRC emacs-lisp
+(require 'hl-sentence)
+(add-hook 'text-mode-hook 'hl-sentence-mode)
+#+END_SRC
+Use Solarized Light cyan to highlight.
+#+BEGIN_SRC emacs-lisp
+(set-face-attribute 'hl-sentence nil
+                     :background "#fdf6e3"
+                     :foreground "#2aa198")
 #+END_SRC
 *** Parentheses
 #+BEGIN_SRC emacs-lisp
@@ -611,7 +597,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (use-package org-bullets
     :after org
     :hook
-    (org-mode . (lambda () (org-bullets-mode 1))))
+    (org-mode . (lambda () (org-bullets-mode))))
 #+END_SRC
 *** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
@@ -935,7 +921,7 @@ For the fraction command, we use general.el.
        (dotimes (i 2)
          (delete-char -1))
        (yas-expand-snippet
-       (yas-lookup-snippet "inn"))) (insert "n")) "auto-expand 'in'")))
+       (yas-lookup-snippet "inn"))) (insert "n")) "auto-expand 'in'"))
 
  (add-hook 'LaTeX-mode-hook
      (lambda ()
@@ -1231,6 +1217,5 @@ This is pretty complicated; I need to sort through this and break it up into mor
 * End
 Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
 #+BEGIN_SRC emacs-lisp
-)
 (setq gc-cons-threshold (* 2 1000 1000))
 #+END_SRC
