@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: ceiling
+# --
+\left\lceil$1\right\rceil $0

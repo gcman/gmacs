@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: greater-than
+# --
+\ge $0

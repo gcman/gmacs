@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: less-than
+# --
+\le $0

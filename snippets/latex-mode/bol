@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: bol
+# --
+\left(${1:x} - ${2:\delta}, $1 + $2)$0

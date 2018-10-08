@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: abs
+# --
+\left|$1\right|

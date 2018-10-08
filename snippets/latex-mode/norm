@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: norm
+# --
+\left\lVert$1\right\rVert$0
