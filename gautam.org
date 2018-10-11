@@ -314,6 +314,26 @@ Save abbreviations upon saving a file.
 #+BEGIN_SRC emacs-lisp
 (require 'thingatpt)
 #+END_SRC
+*** Electric Pairs
+#+BEGIN_SRC emacs-lisp
+(electric-pair-mode 1)
+(setq electric-pair-pairs
+      '(
+        (?\" . ?\")
+        (?\{ . ?\})))
+#+END_SRC
+*** Easily Navigate to Word (Avy Mode)
+#+BEGIN_SRC emacs-lisp
+(use-package avy :ensure t
+  :commands (avy-goto-char)
+  :config
+  (setq avy-background t)
+  :custom-face
+  (avy-lead-face ((t(:weight bold))))
+  (avy-lead-face-0 ((t(:weight bold))))
+  )
+(global-set-key (kbd "M-i") 'avy-goto-char-2)
+#+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
@@ -388,14 +408,6 @@ Enable god-mode.
   (define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
   (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
   (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete))
-#+END_SRC
-*** Electric Pairs
-#+BEGIN_SRC emacs-lisp
-(electric-pair-mode 1)
-(setq electric-pair-pairs
-      '(
-        (?\" . ?\")
-        (?\{ . ?\})))
 #+END_SRC
 * Global Keybindings
 ** Bind Key
@@ -541,7 +553,7 @@ Count org-wc.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "<C-f9>") 'org-wc-display)
 #+END_SRC
-*** God Mode
+*** Window Management
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x C-1") 'delete-other-windows)
 (global-set-key (kbd "C-x C-2") 'split-window-below)
@@ -597,14 +609,14 @@ Normally use Hack.
 (use-package centered-window
   :ensure t
   :diminish centered-window-mode)
-(centered-window-mode t)
+(centered-window-mode 1)
 #+END_SRC
-** Autofills
+** Autofill
 Use visual line mode everywhere.
 #+BEGIN_SRC emacs-lisp
 (global-visual-line-mode 1)
 #+END_SRC
-Nicely wraps lines for ~text-mode~.[]
+Nicely wrap lines for text mode.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'text-mode-hook 'auto-fill-mode)
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
@@ -674,7 +686,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   :bind
   ("C-c l" . org-store-link)
   ("C-c a" . org-agenda)
-  ("A-h" . org-mark-element)
+  ("M-h" . org-mark-element)
   ("C-c c" . org-capture)
   :diminish
   (org-indent-mode)
@@ -695,10 +707,10 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+END_SRC
 *** Org Bullets
 #+BEGIN_SRC emacs-lisp
-(use-package org-bullets
-    :after org
-    :hook
-    (org-mode . (lambda () (org-bullets-mode))))
+(use-package org-bullets)
+(add-hook 'org-mode-hook
+  (defun org-bullets-mode-enable ()
+    (org-bullets-mode 1)))
 #+END_SRC
 *** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
@@ -821,11 +833,6 @@ Remove comments from org document when exporting to LaTeX.
 Don't make super and subscripts smaller.
 #+BEGIN_SRC emacs-lisp
 (setq font-latex-fontify-script nil)
-#+END_SRC
-Company math symbol completion.
-#+BEGIN_SRC emacs-lisp
-(use-package company-math)
-(add-to-list 'company-backends 'company-math-symbols-latex)
 #+END_SRC
 Make preview size bigger.
 #+BEGIN_SRC emacs-lisp
@@ -963,7 +970,15 @@ the given string, not including the last character, precedes the point.
                           :body-pre (insert "s")
                           :idle 1.0)
   ("r" (gm/snippet "sr" "squared") "squared")
-  ("q" (gm/snippet "sq" "sqrt") "square root"))
+  ("q" (if (and (texmathp) (gm/prefix-before-point "sq"))
+           (if (gm/prefix-before-point "nsq")
+               (progn
+                 (gm/delete-chars 2)
+                 (gm/expand-snippet "nsqrt"))
+             (progn
+               (gm/delete-chars 1)
+               (gm/expand-snippet "sqrt"))
+         (insert "q")) "(n)sqrt")))
 
 (add-hook 'LaTeX-mode-hook
           (lambda ()
@@ -992,12 +1007,13 @@ the given string, not including the last character, precedes the point.
      (lambda ()
      (local-set-key (kbd "d") 'hydra-d/body)))
 #+END_SRC
-*** Partial Derivative, Brackets
+*** Partial Derivative, Norm, Brackets
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-r (:color blue
                           :body-pre (insert "r")
                           :idle 1.0)
   ("t" (gm/snippet "part" "partial") "partial")
+  ("m" (gm/snippet "norm" "norm") "norm")
   ("9" (gm/snippet "lr9" "parentheses") "parentheses")
   ("[" (gm/snippet "lr[" "brackets") "brackets")
   ("{" (gm/snippet "lr{" "set") "set"))
@@ -1024,7 +1040,7 @@ the given string, not including the last character, precedes the point.
 *** Implies
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-eq (:color blue
-                         :body-pre (insenmsrt "=")
+                         :body-pre (insert "=")
                          :idle 1.0)
 (">" (gm/snippet "!>" "implies") "implies"))
 
@@ -1038,6 +1054,7 @@ the given string, not including the last character, precedes the point.
                           :body-pre (insert "i")
                           :idle 1.0)
   ("m" (gm/snippet "lim" "limit") "limit")
+  ("l" (gm/snippet "ceil" "ceiling") "ceiling")
   ("n" (if (and (texmathp) (gm/prefix-before-point "sin"))
            (if (gm/prefix-before-point "asin")
                (progn
@@ -1057,11 +1074,34 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-u (:color blue
                           :body-pre (insert "u")
                           :idle 1.0)
-  ("m" (gm/snippet "sum" "summation") "summation"))
+  ("m" (gm/snippet "sum" "summation") "summation")
+  ("n" (gm/snippet "fun" "function") "function"))
 
 (add-hook 'LaTeX-mode-hook
           (lambda ()
             (local-set-key (kbd "u") 'hydra-u/body)))
+#+END_SRC
+*** Less Than
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-l (:color blue
+                          :body-pre (insert "l")
+                          :idle 1.0)
+  ("e" (gm/snippet "le" "less-than") "less than"))
+
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "l") 'hydra-l/body)))
+#+END_SRC
+*** Greater Than
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-g (:color blue
+                          :body-pre (insert "g")
+                          :idle 1.0)
+  ("e" (gm/snippet "ge" "greater-than") "greater than"))
+
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "g") 'hydra-g/body)))
 #+END_SRC
 *** Set, Sec
 #+BEGIN_SRC emacs-lisp
@@ -1075,13 +1115,26 @@ the given string, not including the last character, precedes the point.
           (lambda ()
             (local-set-key (kbd "e") 'hydra-e/body)))
 #+END_SRC
-*** Log, Cos, Arccos, Cot, Arccot
+*** Times
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-x (:color blue
+                          :body-pre (insert "x")
+                          :idle 1.0)
+("x" (gm/snippet "xx" "times") "times"))
+
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "x") 'hydra-x/body)))
+#+END_SRC
+*** Infinity, Log, Interval, (Arc)cos, (Arc)cot
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-o (:color blue
-                         :body-pre (insert "o")
-                         :idle 1.0)
-("g" (gm/snippet "log" "log") "log")
-("s" (if (and (texmathp) (gm/prefix-before-point "cos"))
+                          :body-pre (insert "o")
+                          :idle 1.0)
+  ("g" (gm/snippet "log" "log") "log")
+  ("l" (gm/snippet "bol" "bol") "centered interval")
+  ("o" (gm/snippet "oo" "infinity") "infinity")
+  ("s" (if (and (texmathp) (gm/prefix-before-point "cos"))
            (if (gm/prefix-before-point "acos")
                (progn
                  (gm/delete-chars 3)
@@ -1089,8 +1142,8 @@ the given string, not including the last character, precedes the point.
              (progn
                (gm/delete-chars 2)
                (gm/expand-snippet "cos"))
-         (insert "s")) "(a)cos"))
-("t" (if (and (texmathp) (gm/prefix-before-point "cot"))
+             (insert "s")) "(a)cos"))
+  ("t" (if (and (texmathp) (gm/prefix-before-point "cot"))
            (if (gm/prefix-before-point "acot")
                (progn
                  (gm/delete-chars 3)
@@ -1100,9 +1153,9 @@ the given string, not including the last character, precedes the point.
                (gm/expand-snippet "cot")))
          (insert "t")) "(a)cot"))
 
- (add-hook 'LaTeX-mode-hook
-     (lambda ()
-     (local-set-key (kbd "o") 'hydra-o/body)))
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "o") 'hydra-o/body)))
 #+END_SRC
 *** Tan, Arctan
 #+BEGIN_SRC emacs-lisp
@@ -1117,86 +1170,75 @@ the given string, not including the last character, precedes the point.
              (progn
                (gm/delete-chars 2)
                (gm/expand-snippet "tan")))
-         (insert "n")) "(a)tan"))
+         (insert "n")) "(a)tan")
+("r" (gm/snippet "star" "star") "star"))
  (add-hook 'LaTeX-mode-hook
      (lambda ()
      (local-set-key (kbd "a") 'hydra-a/body)))
 #+END_SRC
-*** Fraction
+*** Fraction, Floor
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-f (:color blue
                          :body-pre (insert "f")
                          :idle 1.0)
-("r" (gm/snippet "fr" "frac") "frac"))
+  ("l" (gm/snippet "fl" "floor") "floor")
+  ("r" (gm/snippet "fr" "frac") "frac"))
 
  (add-hook 'LaTeX-mode-hook
      (lambda ()
      (local-set-key (kbd "f") 'hydra-f/body)))
 #+END_SRC
-*** Math Symbols
+*** Absolute Value, Nabla
 #+BEGIN_SRC emacs-lisp
-(defhydra hydra-semicolon-a (:color blue
-                             :idle 1.0)
-(";" hydra-semicolon-b/body "alpha")
-("a" (insert "\\alpha") "α")
-("A" (insert "\\forall ") "∀")
-("b" (insert "\\beta") "β")
-("C" (insert "\\mathbb{C}") "ℂ")
-("d" (insert "\\delta") "δ")
-("D" (insert "\\Delta") "Δ")
-("e" (insert "\\epsilon") "ε")
-("E" (insert "\\exists ") "∃")
-("f" (insert "\\varphi") "φ")
-("F" (insert "\\Phi") "Φ")
-("g" (insert "\\gamma") "γ")
-("G" (insert "\\Gamma") "Γ")
-("h" (insert "\\eta") "η")
-("k" (insert "\\kappa") "κ")
-("l" (insert "\\lambda") "λ")
-("L" (insert "\\Lambda") "Λ")
-("m" (insert "\\mu") "µ")
-("n" (insert "\\nu") "ν")
-("N" (insert "\\nabla") "∇")
-("o" (insert "\\omega") "ω")
-("O" (insert "\\Omega") "Ω")
-("p" (insert "\\pi") "π")
-("P" (insert "\\Pi") "Π")
-("q" (insert "\\theta") "θ")
-("Q" (insert "\\mathbb{Q}") "ℚ")
-("r" (insert "\\rho") "ρ")
-("R" (insert "\\mathbb{R}") "ℝ")
-("s" (insert "\\sigma") "σ")
-("t" (insert "\\tau") "τ")
-("u" (insert "\\upsilon") "υ")
-("U" (insert "\\cup") "∪")
-("w" (insert "\\xi") "ξ")
-("W" (insert "\\Xi") "Ξ")
-("x" (insert "\\chi") "χ")
-("y" (insert "\\psi") "ψ")
-("Y" (insert "\\Psi") "Ψ")
-("z" (insert "\\zeta") "ζ")
-("Z" (insert "\\mathbb{Z}") "ℤ")
-("0" (insert "\\emptyset") "∅")
-("8" (insert "\\infinity") "∞")
-("!" (insert "\\neg") "¬")
-("*" (insert "\\star") "⋆")
-("\\" (insert "\\setminus") "∖")
-("'" (insert "\\prime") "′")
-("." (insert "\\cdot") "·")
-)
-(defhydra hydra-semicolon-b (:color blue
-                             :idle 1.0)
-(";" hydra-semicolon-a/body "alpha")
-("e" (insert "\\varepsilon") "ε")
-("f" (insert "\\phi") "φ")
-("q" (insert "\\Theta") "Θ")
-("r" (insert "\\varrho") "ρ")
-("U" (insert "\\cap") "∩")
-("x" (insert "\\times") "×")
-)
+(defhydra hydra-b (:color blue
+                          :body-pre (insert "b")
+                          :idle 1.0)
+("s" (gm/snippet "abs" "abs") "abs")
+("l" (gm/snippet "nabl" "nabla") "nabla"))
 (add-hook 'LaTeX-mode-hook
-     (lambda ()
-     (local-set-key (kbd ";") 'hydra-semicolon-a/body)))
+          (lambda ()
+            (local-set-key (kbd "b") 'hydra-b/body)))
+#+END_SRC
+*** Number Systems
+**** Real
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-R (:color blue
+                          :body-pre (insert "R")
+                          :idle 1.0)
+  ("R" (gm/snippet "RR" "real-numbers") "real-numbers"))
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "R") 'hydra-R/body)))
+#+END_SRC
+**** Rational
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-Q (:color blue
+                          :body-pre (insert "Q")
+                          :idle 1.0)
+  ("Q" (gm/snippet "QQ" "rational-numbers") "rational-numbers"))
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "Q") 'hydra-Q/body)))
+#+END_SRC
+**** Complex
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-C (:color blue
+                          :body-pre (insert "C")
+                          :idle 1.0)
+  ("C" (gm/snippet "CC" "complex-numbers") "complex-numbers"))
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C") 'hydra-C/body)))
+#+END_SRC
+**** Integer
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-Z (:color blue
+                          :body-pre (insert "Z")
+                          :idle 1.0)
+  ("Z" (gm/snippet "ZZ" "integers") "integers"))
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "Z") 'hydra-Z/body)))
 #+END_SRC
 * Mail
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.

@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: new-math-hydra
+# key: nmh
+# --
+(defhydra hydra-${1:x} (:color blue
+                          :body-pre (insert "$1")
+                          :idle 1.0))
+
+ (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd "$1") 'hydra-$1/body)))$0

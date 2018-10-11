@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
 # name: floor
 # --
-\left\lfloor$1\right\rfloor $0
+\left\lfloor $1 \right\rfloor $0
