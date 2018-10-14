@@ -150,6 +150,8 @@
 
 (define-abbrev-table 'tags-table-mode-abbrev-table '())
 
+(define-abbrev-table 'tar-mode-abbrev-table '())
+
 (define-abbrev-table 'tex-mode-abbrev-table '())
 
 (define-abbrev-table 'tex-shell-abbrev-table '())

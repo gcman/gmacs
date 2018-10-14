@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
 # name: derivative
 # --
-\frac{d$1}{d${2:x}}$0
+\frac{\d{}$1}{\d{${2:x}}}$0

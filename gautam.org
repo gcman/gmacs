@@ -170,12 +170,22 @@ This makes things so much simpler. There's not any ambiguity to begin with.
 #+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
-*** Searching and Finding
+*** Ido Mode
 #+BEGIN_SRC emacs-lisp
 (use-package ido)
+(use-package ido-grid-mode)
+(require 'flx-ido)
+(require 'ido-completing-read+)
+(require 'smex)
+(smex-initialize)
 (ido-mode 1)
+(ido-grid-mode 1)
+(flx-ido-mode 1)
+(ido-ubiquitous-mode 1)
+(ido-everywhere 1)
+(setq ido-grid-bind-keys t)
 (setq ido-enable-flex-matching t)
-(setq ido-everywhere t)
+(setq ido-use-filename-at-point 'guess)
 (setq ido-create-new-buffer 'always)
 (setq ido-use-faces nil)
 (setq ido-file-extensions-order '(".org" ".tex" ".py"))
@@ -213,6 +223,12 @@ This makes things so much simpler. There's not any ambiguity to begin with.
   (interactive)
   (kill-buffer (current-buffer)))
 (global-set-key (kbd "C-x k") 'bjm/kill-this-buffer)
+#+END_SRC
+*** Split Vertically by Default
+Gotta maximize that vertical screen space.
+#+BEGIN_SRC emacs-lisp
+(setq split-height-threshold nil)
+(setq split-width-threshold 0)
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
@@ -269,17 +285,20 @@ This is necessary to make sentence navigation commands work for me.
 #+BEGIN_SRC emacs-lisp
 (setq sentence-end-double-space nil)
 #+END_SRC
-*** Better Searching
+*** Better Searching (Ivy and Swiper)
 Enable ivy-mode.
 #+BEGIN_SRC emacs-lisp
 (use-package ivy)
-(diminish 'ivy-mode)
-(ivy-mode 1)
+(use-package swiper
+  :ensure t
+  :config
+  (ivy-mode 1)
+  (diminish 'ivy-mode)
+  (setq ivy-use-virtual-buffers t)
+  (setq ivy-display-style 'fancy)
+  (global-set-key (kbd "C-s") 'swiper)
+  (global-set-key (kbd "C-c C-r") 'ivy-resume))
 #+END_SRC
-Don't search, swipe.
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-s") 'swiper)
-(setq ivy-display-style 'fancy)
 #+END_SRC
 Get swiper to recentre the display when it exits.
 #+BEGIN_SRC emacs-lisp
@@ -338,6 +357,7 @@ Save abbreviations upon saving a file.
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
 (global-set-key (kbd "C-x g") 'magit-status)
+(setq magit-completing-read-function 'magit-ido-completing-read)
 #+END_SRC
 ** Dired
 *** Revert Buffer
@@ -423,7 +443,9 @@ Enable god-mode.
 *** Easy Meta
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-SPC") 'execute-extended-command)
+(global-set-key (kbd "C-SPC") 'smex)
+(global-set-key (kbd "C-M-SPC") 'smex-major-mode-commands)
+(global-set-key (kbd "C-c C-SPC") 'execute-extended-command)
 #+END_SRC
 *** Set Mark
 Need to have a replacement because we rebound ~C-SPC~.
@@ -800,36 +822,64 @@ Remove comments from org document when exporting to LaTeX.
 ** AUCTeX
 #+BEGIN_SRC emacs-lisp
 (use-package auctex
-    :defer t
-    :ensure t)
-  (require 'tex-site)
-  (setq TeX-auto-save t)
-  (setq TeX-parse-self t)
-  (setq-default TeX-master nil)
-  (setq TeX-PDF-mode t)
-  (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
-  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-  (defun turn-on-outline-minor-mode ()
+  :defer t
+  :ensure t)
+(require 'tex-site)
+(setq TeX-auto-save t)
+(setq TeX-parse-self t)
+(setq TeX-PDF-mode t)
+(setq preview-auto-cache-preamble t)
+(setq TeX-source-correlate-method 'synctex)
+(add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+(add-hook 'LaTeX-mode-hook 'visual-line-mode)
+(add-hook 'LaTeX-mode-hook 'flyspell-mode)
+(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+(add-hook 'LaTeX-mode-hook 'TeX-fold-mode)
+(defun turn-on-outline-minor-mode ()
   (outline-minor-mode 1))
-  (add-hook 'LaTeX-mode-hook 'turn-on-outline-minor-mode)
-  (add-hook 'latex-mode-hook 'turn-on-outline-minor-mode)
-  (setq outline-minor-mode-prefix "\C-c \C-o") ; Or something else
-  (setq LaTeX-eqnarray-label "eq"
-        LaTeX-equation-label "eq"
-        LaTeX-figure-label "fig"
-        LaTeX-table-label "tab"
-        LaTeX-myChapter-label "chap"
-        TeX-auto-save t
-        TeX-newline-function 'reindent-then-newline-and-indent
-        TeX-parse-self t
-        LaTeX-section-hook
-        '(LaTeX-section-heading
-          LaTeX-section-title
-          LaTeX-section-toc
-          LaTeX-section-section
-          LaTeX-section-label))
+(add-hook 'LaTeX-mode-hook 'turn-on-outline-minor-mode)
+(add-hook 'latex-mode-hook 'turn-on-outline-minor-mode)
+(setq outline-minor-mode-prefix "\C-c \C-o") ; Or something else
+(setq LaTeX-eqnarray-label "eq"
+      LaTeX-equation-label "eq"
+      LaTeX-figure-label "fig"
+      LaTeX-table-label "tab"
+      LaTeX-myChapter-label "chap"
+      TeX-auto-save t
+      TeX-newline-function 'reindent-then-newline-and-indent
+      TeX-parse-self t
+      LaTeX-section-hook
+      '(LaTeX-section-heading
+        LaTeX-section-title
+        LaTeX-section-toc
+        LaTeX-section-section
+        LaTeX-section-label))
 #+END_SRC
+*** Auto Preview
+#+BEGIN_SRC emacs-lisp
+(defvar my/was-inside-math nil)
+
+(defun my/preview-when-leaving-math ()
+ (let ((in-math (texmathp)))
+   (cond (in-math
+          (setq my/was-inside-math t))
+         ((and (not in-math)
+               my/was-inside-math)
+          (progn
+            (condition-case ex
+                (unless (get-process "Preview-Ghostscript")
+                  (preview-at-point))
+              ('error
+               (message (format "Could not invoke Preview: %s" ex))))
+            (setq my/was-inside-math nil))))))
+
+(add-hook 'post-command-hook 'my/preview-when-leaving-math t)
+#+END_SRC
+*** Diffing
+#+BEGIN_SRC
+(use-package latexdiff)
+#+END_SRC
+*** Prettifying
 Don't make super and subscripts smaller.
 #+BEGIN_SRC emacs-lisp
 (setq font-latex-fontify-script nil)
@@ -837,6 +887,111 @@ Don't make super and subscripts smaller.
 Make preview size bigger.
 #+BEGIN_SRC emacs-lisp
 (set-default 'preview-scale-function 3.0)
+#+END_SRC
+*** SyncTeX
+Obtained from [[https://tex.stackexchange.com/questions/29813/setup-synctex-with-emacs][from here]].
+#+BEGIN_SRC emacs-lisp
+; SyncTeX basics
+
+; un-urlify and urlify-escape-only should be improved to handle all special characters, not only spaces.
+; The fix for spaces is based on the first comment on http://emacswiki.org/emacs/AUCTeX#toc20
+
+(defun un-urlify (fname-or-url)
+  "Transform file:///absolute/path from Gnome into /absolute/path with very limited support for special characters"
+  (if (string= (substring fname-or-url 0 8) "file:///")
+      (url-unhex-string (substring fname-or-url 7))
+    fname-or-url))
+
+(defun urlify-escape-only (path)
+  "Handle special characters for urlify"
+  (replace-regexp-in-string " " "%20" path))
+
+(defun urlify (absolute-path)
+  "Transform /absolute/path to file:///absolute/path for Gnome with very limited support for special characters"
+  (if (string= (substring absolute-path 0 1) "/")
+      (concat "file://" (urlify-escape-only absolute-path))
+      absolute-path))
+
+
+; SyncTeX backward search - based on http://emacswiki.org/emacs/AUCTeX#toc20, reproduced on https://tex.stackexchange.com/a/49840/21017
+
+(defun th-evince-sync (file linecol &rest ignored)
+  (let* ((fname (un-urlify file))
+         (buf (find-file fname))
+         (line (car linecol))
+         (col (cadr linecol)))
+    (if (null buf)
+        (message "[Synctex]: Could not open %s" fname)
+      (switch-to-buffer buf)
+      (goto-line (car linecol))
+      (unless (= col -1)
+        (move-to-column col)))))
+
+(defvar *dbus-evince-signal* nil)
+
+(defun enable-evince-sync ()
+  (require 'dbus)
+  ; cl is required for setf, taken from: http://lists.gnu.org/archive/html/emacs-orgmode/2009-11/msg01049.html
+  (require 'cl)
+  (when (and
+         (eq window-system 'x)
+         (fboundp 'dbus-register-signal))
+    (unless *dbus-evince-signal*
+      (setf *dbus-evince-signal*
+            (dbus-register-signal
+             :session nil "/org/gnome/evince/Window/0"
+             "org.gnome.evince.Window" "SyncSource"
+             'th-evince-sync)))))
+
+(add-hook 'LaTeX-mode-hook 'enable-evince-sync)
+
+
+; SyncTeX forward search - based on https://tex.stackexchange.com/a/46157
+
+;; universal time, need by evince
+(defun utime ()
+  (let ((high (nth 0 (current-time)))
+        (low (nth 1 (current-time))))
+   (+ (* high (lsh 1 16) ) low)))
+
+;; Forward search.
+;; Adapted from http://dud.inf.tu-dresden.de/~ben/evince_synctex.tar.gz
+(defun auctex-evince-forward-sync (pdffile texfile line)
+  (let ((dbus-name
+     (dbus-call-method :session
+               "org.gnome.evince.Daemon"  ; service
+               "/org/gnome/evince/Daemon" ; path
+               "org.gnome.evince.Daemon"  ; interface
+               "FindDocument"
+               (urlify pdffile)
+               t     ; Open a new window if the file is not opened.
+               )))
+    (dbus-call-method :session
+          dbus-name
+          "/org/gnome/evince/Window/0"
+          "org.gnome.evince.Window"
+          "SyncView"
+          (urlify-escape-only texfile)
+          (list :struct :int32 line :int32 1)
+  (utime))))
+
+(defun auctex-evince-view ()
+  (let ((pdf (file-truename (concat default-directory
+                    (TeX-master-file (TeX-output-extension)))))
+    (tex (buffer-file-name))
+    (line (line-number-at-pos)))
+    (auctex-evince-forward-sync pdf tex line)))
+
+;; New view entry: Evince via D-bus.
+(setq TeX-view-program-list '())
+(add-to-list 'TeX-view-program-list
+         '("EvinceDbus" auctex-evince-view))
+
+;; Prepend Evince via D-bus to program selection list
+;; overriding other settings for PDF viewing.
+(setq TeX-view-program-selection '())
+(add-to-list 'TeX-view-program-selection
+         '(output-pdf "EvinceDbus"))
 #+END_SRC
 ** Electric Dollars and Parens
 Insert dollar signs electrically.
@@ -864,32 +1019,8 @@ Insert math with semicolon.
 #+BEGIN_SRC emacs-lisp
 (setq cdlatex-math-symbol-prefix ?;)
 #+END_SRC
-** Diffing
-#+BEGIN_SRC
-(use-package latexdiff)
-#+END_SRC
-** Auto Preview
-#+BEGIN_SRC emacs-lisp
-(defvar my/was-inside-math nil)
-
-(defun my/preview-when-leaving-math ()
- (let ((in-math (texmathp)))
-   (cond (in-math
-          (setq my/was-inside-math t))
-         ((and (not in-math)
-               my/was-inside-math)
-          (progn
-            (condition-case ex
-                (unless (get-process "Preview-Ghostscript")
-                  (preview-at-point))
-              ('error
-               (message (format "Could not invoke Preview: %s" ex))))
-            (setq my/was-inside-math nil))))))
-
-(add-hook 'post-command-hook 'my/preview-when-leaving-math t)
-#+END_SRC
 * Snippets
-Load our snippets.
+** Load Snippets
 #+BEGIN_SRC emacs-lisp
 (setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet)
@@ -899,6 +1030,7 @@ Load our snippets.
        '(diminish 'yas-minor-mode))))
 (yas-global-mode 1)
 #+END_SRC
+** SPC Expansion
 Use SPC instead of TAB to expand snippets.
 #+BEGIN_SRC emacs-lisp
 (define-key yas-minor-mode-map (kbd "<tab>") nil)
@@ -1027,12 +1159,17 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-n (:color blue
                           :body-pre (insert "n")
                           :idle 1.0)
+  ("t" (if (gm/prefix-before-point "int")
+           (cond ((gm/prefix-before-point "iint") (gm/snippet "iint" "iintegral"))
+                 ((gm/prefix-before-point "oint") (gm/snippet "oint" "ointegral"))
+                 ((gm/prefix-before-point "dint") (gm/snippet "dint" "dintegral"))
+                 (t (gm/snippet "int" "integral")))
+         (insert "t")) "integral")
   ("v" (gm/snippet "inv" "inverse") "inverse")
-  ("t" (gm/snippet "int" "integral") "integral")
   ("n" (gm/snippet "inn" "inn") "in"))
 (add-hook 'LaTeX-mode-hook
-     (lambda ()
-     (local-set-key (kbd "n") 'hydra-n/body)))
+          (lambda ()
+            (local-set-key (kbd "n") 'hydra-n/body)))
 #+END_SRC
 *** Maps To
 #+BEGIN_SRC emacs-lisp
@@ -1055,14 +1192,9 @@ the given string, not including the last character, precedes the point.
                           :idle 1.0)
   ("m" (gm/snippet "lim" "limit") "limit")
   ("l" (gm/snippet "ceil" "ceiling") "ceiling")
-  ("n" (if (and (texmathp) (gm/prefix-before-point "sin"))
-           (if (gm/prefix-before-point "asin")
-               (progn
-                 (gm/delete-chars 3)
-                 (gm/expand-snippet "asin"))
-             (progn
-               (gm/delete-chars 2)
-               (gm/expand-snippet "sin")))
+  ("n" (if (gm/prefix-before-point "sin")
+           (cond ((gm/prefix-before-point "asin") (gm/snippet "asin" "asin"))
+                 (t (gm/snippet "sin" "sin")))
          (hydra-n/body)) "(a)sin"))
 
 (add-hook 'LaTeX-mode-hook
@@ -1134,23 +1266,13 @@ the given string, not including the last character, precedes the point.
   ("g" (gm/snippet "log" "log") "log")
   ("l" (gm/snippet "bol" "bol") "centered interval")
   ("o" (gm/snippet "oo" "infinity") "infinity")
-  ("s" (if (and (texmathp) (gm/prefix-before-point "cos"))
-           (if (gm/prefix-before-point "acos")
-               (progn
-                 (gm/delete-chars 3)
-                 (gm/expand-snippet "acos"))
-             (progn
-               (gm/delete-chars 2)
-               (gm/expand-snippet "cos"))
-             (insert "s")) "(a)cos"))
-  ("t" (if (and (texmathp) (gm/prefix-before-point "cot"))
-           (if (gm/prefix-before-point "acot")
-               (progn
-                 (gm/delete-chars 3)
-                 (gm/expand-snippet "acot"))
-             (progn
-               (gm/delete-chars 2)
-               (gm/expand-snippet "cot")))
+  ("s" (if (gm/prefix-before-point "cos")
+           (cond ((gm/prefix-before-point "acos") (gm/snippet "acos" "acos"))
+                 (t (gm/snippet "cos" "cos")))
+         (insert "s")) "(a)cos")
+  ("t" (if (gm/prefix-before-point "cot")
+           (cond ((gm/prefix-before-point "acot") (gm/snippet "acot" "acot"))
+                 (t (gm/snippet "cot" "cot")))
          (insert "t")) "(a)cot"))
 
 (add-hook 'LaTeX-mode-hook
@@ -1160,21 +1282,17 @@ the given string, not including the last character, precedes the point.
 *** Tan, Arctan
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-a (:color blue
-                         :body-pre (insert "a")
-                         :idle 1.0)
-("n" (if (and (texmathp) (gm/prefix-before-point "tan"))
-           (if (gm/prefix-before-point "tan")
-               (progn
-                 (gm/delete-chars 3)
-                 (gm/expand-snippet "atan"))
-             (progn
-               (gm/delete-chars 2)
-               (gm/expand-snippet "tan")))
+                          :body-pre (insert "a")
+                          :idle 1.0)
+  ("n" (if (gm/prefix-before-point "tan")
+           (cond ((gm/prefix-before-point "atan") (gm/snippet "atan" "atan"))
+                 (t (gm/snippet "tan" "tan")))
          (insert "n")) "(a)tan")
-("r" (gm/snippet "star" "star") "star"))
- (add-hook 'LaTeX-mode-hook
-     (lambda ()
-     (local-set-key (kbd "a") 'hydra-a/body)))
+  ("r" (gm/snippet "star" "star") "star"))
+
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (local-set-key (kbd "a") 'hydra-a/body)))
 #+END_SRC
 *** Fraction, Floor
 #+BEGIN_SRC emacs-lisp
@@ -1265,6 +1383,9 @@ This is pretty complicated; I need to sort through this and break it up into mor
   (mu4e-use-fancy-chars t)
   (mu4e-view-show-addresses t)
   (mu4e-view-show-images t))
+
+(with-eval-after-load 'mu4e (require 'mu4e-conversation))
+
 ;; use mu4e for e-mail in emacs
 (setq mail-user-agent 'mu4e-user-agent)
 
@@ -1294,6 +1415,8 @@ This is pretty complicated; I need to sort through this and break it up into mor
    smtpmail-default-smtp-server "smtp.gmail.com"
    smtpmail-smtp-server "smtp.gmail.com"
    smtpmail-smtp-service 587)
+
+(setq gnus-completing-read-function 'gnus-ido-completing-read)
 
 (require 'gnus-dired)
 ;; make the `gnus-dired-mail-buffers' function also work on
@@ -1337,5 +1460,5 @@ This is pretty complicated; I need to sort through this and break it up into mor
 * End
 Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
 #+BEGIN_SRC emacs-lisp
-(setq gc-cons-threshold (* 2 1000 1000))
+(setq gc-cons-threshold 20000000)
 #+END_SRC
