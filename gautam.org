@@ -985,13 +985,13 @@ Obtained from [[https://tex.stackexchange.com/questions/29813/setup-synctex-with
 ;; New view entry: Evince via D-bus.
 (setq TeX-view-program-list '())
 (add-to-list 'TeX-view-program-list
-         '("EvinceDbus" auctex-evince-view))
+         '("Evince" auctex-evince-view))
 
 ;; Prepend Evince via D-bus to program selection list
 ;; overriding other settings for PDF viewing.
 (setq TeX-view-program-selection '())
 (add-to-list 'TeX-view-program-selection
-         '(output-pdf "EvinceDbus"))
+         '(output-pdf "Evince"))
 #+END_SRC
 ** Electric Dollars and Parens
 Insert dollar signs electrically.
@@ -1090,27 +1090,22 @@ the given string, not including the last character, precedes the point.
   (let ((len (length key)))
     (if (and (texmathp) (gm/prefix-before-point key))
         (progn
-          (gm/delete-chars (1- len))
+          (gm/delete-chars (- len 1))
           (gm/expand-snippet snippet))
-      (insert (substring key (-1 len) len))
+      (insert (substring key (- len 1) len))
     )
-  ))
+    ))
 #+END_SRC
 *** Squared, Square Root
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-s (:color blue
                           :body-pre (insert "s")
                           :idle 1.0)
-  ("r" (gm/snippet "sr" "squared") "squared")
-  ("q" (if (and (texmathp) (gm/prefix-before-point "sq"))
-           (if (gm/prefix-before-point "nsq")
-               (progn
-                 (gm/delete-chars 2)
-                 (gm/expand-snippet "nsqrt"))
-             (progn
-               (gm/delete-chars 1)
-               (gm/expand-snippet "sqrt"))
-         (insert "q")) "(n)sqrt")))
+  ("q" (if (gm/prefix-before-point "sq")
+           (cond ((gm/prefix-before-point "nsq") (gm/snippet "nsq" "nsq"))
+                 (t (gm/snippet "sq" "sqrt")))
+         (insert "n")) "(a)tan")
+  ("r" (gm/snippet "sr" "squared") "squared"))
 
 (add-hook 'LaTeX-mode-hook
           (lambda ()
@@ -1179,7 +1174,7 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-eq (:color blue
                          :body-pre (insert "=")
                          :idle 1.0)
-(">" (gm/snippet "!>" "implies") "implies"))
+(">" (gm/snippet "!>" "math-implies") "implies"))
 
 (add-hook 'LaTeX-mode-hook
      (lambda ()
