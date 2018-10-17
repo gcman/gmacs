@@ -399,16 +399,10 @@ Enable god-mode.
 (defun me//god-mode-indicator ()
   (cond (god-local-mode
          (progn
-         (set-face-background 'mode-line "#b58900")
-           (set-face-foreground 'mode-line "gray")
-           (set-face-background 'mode-line-inactive "gray30")
-           (set-face-foreground 'mode-line-inactive "#b58900")))
+           (set-cursor-color "#dc322f")))
         (t
          (progn
-           (set-face-background 'mode-line-inactive "#eee8d5")
-           (set-face-foreground 'mode-line-inactive "#657b83")
-           (set-face-background 'mode-line "#eee8d5")
-           (set-face-foreground 'mode-line "#657b83")))))
+           (set-cursor-color "#657b83")))))
 
 (add-hook 'god-mode-enabled-hook #'me//god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'me//god-mode-indicator)
@@ -680,7 +674,7 @@ Native syntax highlighting for source blocks in org mode.
 Highlight sentences. Credit to [[https://github.com/milkypostman/hl-sentence][Donald Curtis]].
 #+BEGIN_SRC emacs-lisp
 (require 'hl-sentence)
-(add-hook 'text-mode-hook 'hl-sentence-mode)
+(add-hook 'org-mode-hook 'hl-sentence-mode)
 #+END_SRC
 Use Solarized Light cyan to highlight.
 #+BEGIN_SRC emacs-lisp
@@ -886,7 +880,7 @@ Don't make super and subscripts smaller.
 #+END_SRC
 Make preview size bigger.
 #+BEGIN_SRC emacs-lisp
-(set-default 'preview-scale-function 3.0)
+(set-default 'preview-scale-function 1.0)
 #+END_SRC
 *** SyncTeX
 Obtained from [[https://tex.stackexchange.com/questions/29813/setup-synctex-with-emacs][from here]].
