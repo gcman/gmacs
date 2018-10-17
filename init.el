@@ -16,7 +16,7 @@
  '(preview-default-preamble
    '("\\RequirePackage["
      ("," . preview-default-option-list)
-     "]{preview}[2004/11/05]" "\\renewcommand{\\d}[1]{\\,\\mathrm{d}#1}" "\\usepacakge{amsmath}" "\\usepackage{amssymb}" "\\usepackage{amsfonts}"))
+     "]{preview}[2004/11/05]" "\\renewcommand{\\d}[1]{\\,\\mathrm{d}#1}" "\\usepackage{amssymb}" "\\usepackage{amsfonts}"))
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-strip-common-suffix t))

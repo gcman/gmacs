@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
-# name: math-implies
+# name: implies
+# key: math-implies
 # --
 \implies $0
