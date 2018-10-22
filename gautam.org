@@ -804,6 +804,9 @@ Remove comments from org document when exporting to LaTeX.
 (my-setup-odt-org-convert-process)
 #+END_SRC
 ** Markdown Conversion
+**
+**
+**
 #+BEGIN_SRC emacs-lisp
  (defun markdown-convert-buffer-to-org ()
     "Convert the current buffer's content from markdown to orgmode format and save it with the current buffer's file name but with .org extension."
@@ -811,6 +814,11 @@ Remove comments from org document when exporting to LaTeX.
     (shell-command-on-region (point-min) (point-max)
                              (format "pandoc -f markdown -t org -o %s"
                                      (concat (file-name-sans-extension (buffer-file-name)) ".org"))))
+#+END_SRC
+** ASCII Export
+Remove wrapping.
+#+BEGIN_SRC emacs-lisp
+(setq org-ascii-text-width 10000)
 #+END_SRC
 * TeX
 ** AUCTeX
@@ -1207,7 +1215,9 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-l (:color blue
                           :body-pre (insert "l")
                           :idle 1.0)
-  ("e" (gm/snippet "le" "less-than") "less than"))
+  ("e" (if (and (gm/prefix-before-point "le") (not (gm/prefix-before-point "\\le")))
+           (gm/snippet "le" "less-than")
+         (insert "e")) "less-than"))
 
 (add-hook 'LaTeX-mode-hook
           (lambda ()

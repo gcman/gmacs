@@ -9,6 +9,8 @@
  '(TeX-view-program-list '(("Evince" ("evince --page-index=%(outpage) %o") "")))
  '(custom-safe-themes
    '("a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default))
+ '(org-latex-pdf-process
+   '("xelatex -interaction nonstopmode -output-directory %o %f" "xelatex -interaction nonstopmode -output-directory %o %f" "xelatex -interaction nonstopmode -output-directory %o %f"))
  '(package-selected-packages
    '(mu4e-conversation ido-grid-mode avy-flycheck avy-menu avy-zap ido-vertical-mode flx-ido smex rainbow-mode yasnippet-snippets yaml-mode writeroom-mode which-key wc-mode use-package sublimity solarized-theme smooth-scrolling smart-mode-line powerline pdf-tools ox-hugo org-wc org-mime org-bullets olivetti nadvice mu4e-alert magit latexdiff ivy imenu-anywhere god-mode flyspell-lazy flycheck dired-quick-sort diminish dashboard company-math centered-window cdlatex auto-package-update auctex-lua auctex-latexmk adaptive-wrap))
  '(preview-default-option-list
