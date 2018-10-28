@@ -171,6 +171,7 @@ This makes things so much simpler. There's not any ambiguity to begin with.
 (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 *** Ido Mode
+"
 #+BEGIN_SRC emacs-lisp
 (use-package ido)
 (use-package ido-grid-mode)
@@ -353,6 +354,78 @@ Save abbreviations upon saving a file.
   )
 (global-set-key (kbd "M-i") 'avy-goto-char-2)
 #+END_SRC
+*** Autocorrect
+**** Double Caps
+#+BEGIN_SRC emacs-lisp
+(defun dcaps-to-scaps ()
+  "Convert word in DOuble CApitals to Single Capitals."
+  (interactive)
+  (and (= ?w (char-syntax (char-before)))
+       (save-excursion
+         (and (if (called-interactively-p)
+                  (skip-syntax-backward "w")
+                (= -3 (skip-syntax-backward "w")))
+              (let (case-fold-search)
+                (looking-at "\\b[[:upper:]]\\{2\\}[[:lower:]]"))
+              (capitalize-word 1)))))
+
+(add-hook 'post-self-insert-hook #'dcaps-to-scaps nil 'local)
+
+(define-minor-mode dubcaps-mode
+  "Toggle `dubcaps-mode'.  Converts words in DOuble CApitals to
+Single Capitals as you type."
+  :init-value nil
+  :lighter (" DC")
+  (if dubcaps-mode
+      (add-hook 'post-self-insert-hook #'dcaps-to-scaps nil 'local)
+    (remove-hook 'post-self-insert-hook #'dcaps-to-scaps 'local)))
+
+(add-hook 'text-mode-hook #'dubcaps-mode)
+#+END_SRC
+**** Abbrevs
+#+BEGIN_SRC emacs-lisp
+(define-key ctl-x-map "\C-i"
+  #'endless/ispell-word-then-abbrev)
+
+(defun endless/simple-get-word ()
+  (car-safe (save-excursion (ispell-get-word nil))))
+
+(defun endless/ispell-word-then-abbrev (p)
+  "Call `ispell-word', then create an abbrev for it.
+With prefix P, create local abbrev. Otherwise it will
+be global.
+If there's nothing wrong with the word at point, keep
+looking for a typo until the beginning of buffer. You can
+skip typos you don't want to fix with `SPC', and you can
+abort completely with `C-g'."
+  (interactive "P")
+  (let (bef aft)
+    (save-excursion
+      (while (if (setq bef (endless/simple-get-word))
+                 ;; Word was corrected or used quit.
+                 (if (ispell-word nil 'quiet)
+                     nil ; End the loop.
+                   ;; Also end if we reach `bob'.
+                   (not (bobp)))
+               ;; If there's no word at point, keep looking
+               ;; until `bob'.
+               (not (bobp)))
+        (backward-word)
+        (backward-char))
+      (setq aft (endless/simple-get-word)))
+    (if (and aft bef (not (equal aft bef)))
+        (let ((aft (downcase aft))
+              (bef (downcase bef)))
+          (define-abbrev
+            (if p local-abbrev-table global-abbrev-table)
+            bef aft)
+          (message "\"%s\" now expands to \"%s\" %sally"
+                   bef aft (if p "loc" "glob")))
+      (user-error "No typo at or before point"))))
+
+(setq save-abbrevs 'silently)
+(setq-default abbrev-mode t)
+#+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
@@ -463,6 +536,11 @@ Use shell like ~C-h~ instead of Backspace.
 (global-set-key (kbd "<f1>") 'help-command)
 #+END_SRC
 *** Better Buffers
+Switch better.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x b") 'ido-switch-buffer)
+#+END_SRC
+Use ibuffer.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (autoload 'ibuffer "ibuffer" "List buffers." t)
@@ -745,6 +823,79 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-mode-hook 'visual-line-mode)
 #+END_SRC
+*** Typography
+**** Quotation Marks
+#+BEGIN_SRC emacs-lisp
+(define-key org-mode-map "\"" #'endless/round-quotes)
+(defun endless/round-quotes (italicize)
+  "Insert “” and leave point in the middle.
+With prefix argument ITALICIZE, insert /“”/ instead
+\(meant for org-mode).
+Inside a code-block, just call `self-insert-command'."
+  (interactive "P")
+  (if (and (derived-mode-p 'org-mode)
+           (org-in-block-p '("src" "latex" "html")))
+      (call-interactively #'self-insert-command)
+    (if (looking-at "”[/=_\\*]?")
+        (goto-char (match-end 0))
+      (when italicize
+        (if (derived-mode-p 'markdown-mode)
+            (insert "__")
+          (insert "//"))
+        (forward-char -1))
+      (insert "“”")
+      (forward-char -1))))
+#+END_SRC
+**** Apostrophes
+#+BEGIN_SRC emacs-lisp
+(define-key org-mode-map "'" #'endless/apostrophe)
+;; (eval-after-load 'markdown-mode
+;;   '(define-key markdown-mode-map "'"
+;;      #'endless/apostrophe))
+
+(defun endless/apostrophe (opening)
+  "Insert ’ in prose or `self-insert-command' in code.
+With prefix argument OPENING, insert ‘’ instead and
+leave point in the middle.
+Inside a code-block, just call `self-insert-command'."
+  (interactive "P")
+  (if (and (derived-mode-p 'org-mode)
+           (org-in-block-p '("src" "latex" "html")))
+      (call-interactively #'self-insert-command)
+    (if (looking-at "['’][=_/\\*]?")
+        (goto-char (match-end 0))
+      (if (null opening)
+          (insert "’")
+        (insert "‘’")
+        (forward-char -1)))))
+#+END_SRC
+**** Ispell
+#+BEGIN_SRC emacs-lisp
+(require 'ispell)
+
+;;; Tell ispell.el that ’ can be part of a word.
+(setq ispell-local-dictionary-alist
+      `((nil "[[:alpha:]]" "[^[:alpha:]]"
+             "['\x2019]" nil ("-B") nil utf-8)))
+
+;;; Don't send ’ to the subprocess.
+(defun endless/replace-apostrophe (args)
+  (cons (replace-regexp-in-string
+         "’" "'" (car args))
+        (cdr args)))
+(advice-add #'ispell-send-string :filter-args
+            #'endless/replace-apostrophe)
+
+;;; Convert ' back to ’ from the subprocess.
+(defun endless/replace-quote (args)
+  (if (not (derived-mode-p 'org-mode))
+      args
+    (cons (replace-regexp-in-string
+           "'" "’" (car args))
+          (cdr args))))
+(advice-add #'ispell-parse-output :filter-args
+            #'endless/replace-quote)
+#+END_SRC
 ** LaTeX
 *** Export Command
 #+BEGIN_SRC emacs-lisp
@@ -767,7 +918,7 @@ Inline LaTeX such as $y = mx + b$ will appear in a different colour.
 *** Scaling Preview
 By default, it's really small on my HiDPI screen.
 #+BEGIN_SRC emacs-lisp
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
 #+END_SRC
 *** Export LaTeX Quotes
 #+BEGIN_SRC emacs-lisp
@@ -791,39 +942,77 @@ Remove comments from org document when exporting to LaTeX.
           "")))
 (add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
-** Export to Word
+*** Equation Preview
+Use overlay library.
 #+BEGIN_SRC emacs-lisp
-(setq org-export-odt-preferred-output-format "doc")
-(setq org-odt-preferred-output-format "doc")
+(require 'ov)
+#+END_SRC
+**** Continuous Equation Numbering
+#+BEGIN_SRC emacs-lisp
+(defun org-renumber-environment (orig-func &rest args)
+(let ((results '())
+    (counter -1)
+    (numberp))
 
-;; Only OSX need below setup
-(defun my-setup-odt-org-convert-process ()
-  (interactive)
-  (let ((cmd "/Applications/LibreOffice.app/Contents/MacOS/soffice"))
-    (when (and (eq system-type 'darwin) (file-exists-p cmd))
-      ;; org v7
-      (setq org-export-odt-convert-processes '(("LibreOffice" "/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to %f%x --outdir %d %i")))
-      ;; org v8
-      (setq org-odt-convert-processes '(("LibreOffice" "/Applications/LibreOffice.app/Contents/MacOS/soffice --headless --convert-to %f%x --outdir %d %i"))))
-    ))
-(my-setup-odt-org-convert-process)
+(setq results (loop for (begin .  env) in
+                    (org-element-map (org-element-parse-buffer) 'latex-environment
+                      (lambda (env)
+                        (cons
+                         (org-element-property :begin env)
+                         (org-element-property :value env))))
+                    collect
+                    (cond
+                     ((and (string-match "\\\\begin{equation}" env)
+                           (not (string-match "\\\\tag{" env)))
+                      (incf counter)
+                      (cons begin counter))
+                     ((string-match "\\\\begin{align}" env)
+                      (prog2
+                          (incf counter)
+                          (cons begin counter)
+                        (with-temp-buffer
+                          (insert env)
+                          (goto-char (point-min))
+                          ;; \\ is used for a new line. Each one leads to a number
+                          (incf counter (count-matches "\\\\$"))
+                          ;; unless there are nonumbers.
+                          (goto-char (point-min))
+                          (decf counter (count-matches "\\nonumber")))))
+                     (t
+                      (cons begin nil)))))
+
+(when (setq numberp (cdr (assoc (point) results)))
+  (setf (car args)
+        (concat
+         (format "\\setcounter{equation}{%s}\n" numberp)
+         (car args)))))
+
+(apply orig-func args))
+(advice-add 'org-create-formula-image :around #'org-renumber-environment)
 #+END_SRC
-** Markdown Conversion
-**
-**
-**
+**** Equation Preview
 #+BEGIN_SRC emacs-lisp
- (defun markdown-convert-buffer-to-org ()
-    "Convert the current buffer's content from markdown to orgmode format and save it with the current buffer's file name but with .org extension."
-    (interactive)
-    (shell-command-on-region (point-min) (point-max)
-                             (format "pandoc -f markdown -t org -o %s"
-                                     (concat (file-name-sans-extension (buffer-file-name)) ".org"))))
+(defvar my/was-inside-math nil)
+
+(defun my/org-preview-when-leaving-math ()
+ (let ((in-math (texmathp)))
+   (cond (in-math
+          (setq my/was-inside-math t))
+         ((and (not in-math)
+               my/was-inside-math)
+          (progn
+            (condition-case ex
+                (unless (get-process "Preview-Ghostscript")
+                  (org-toggle-latex-fragment))
+              ('error
+               (message (format "Could not invoke Preview: %s" ex))))
+            (setq my/was-inside-math nil))))))
+
+(add-hook 'post-command-hook 'my/org-preview-when-leaving-math t)
 #+END_SRC
-** ASCII Export
-Remove wrapping.
+*** CDLaTeX
 #+BEGIN_SRC emacs-lisp
-(setq org-ascii-text-width 10000)
+(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
 #+END_SRC
 * TeX
 ** AUCTeX
@@ -866,7 +1055,7 @@ Remove wrapping.
 #+BEGIN_SRC emacs-lisp
 (defvar my/was-inside-math nil)
 
-(defun my/preview-when-leaving-math ()
+(defun my/latex-preview-when-leaving-math ()
  (let ((in-math (texmathp)))
    (cond (in-math
           (setq my/was-inside-math t))
@@ -880,7 +1069,7 @@ Remove wrapping.
                (message (format "Could not invoke Preview: %s" ex))))
             (setq my/was-inside-math nil))))))
 
-(add-hook 'post-command-hook 'my/preview-when-leaving-math t)
+(add-hook 'post-command-hook 'my/latex-preview-when-leaving-math t)
 #+END_SRC
 *** Diffing
 #+BEGIN_SRC
@@ -1054,7 +1243,7 @@ Using a hydra, I setup automatic expansion of yasnippets; when a leader key is
 pressed, that key is inserted, but if the next key of a defined sequence is
 pressed, the leader key is erased and the snippet is expanded.
 #+BEGIN_SRC emacs-lisp
-(use-package hydra)
+(require 'hydra)
 #+END_SRC
 For the fraction command, we use general.el.
 #+BEGIN_SRC emacs-lisp
@@ -1112,11 +1301,10 @@ the given string, not including the last character, precedes the point.
            (cond ((gm/prefix-before-point "nsq") (gm/snippet "nsq" "nsq"))
                  (t (gm/snippet "sq" "sqrt")))
          (insert "n")) "(a)tan")
-  ("r" (gm/snippet "sr" "squared") "squared"))
+  ("r" (gm/snippet "sr" "squared") "squared")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "s") 'hydra-s/body)))
+(global-set-key (kbd "s") 'hydra-s/body)
 #+END_SRC
 *** Cubed, Subset
 #+BEGIN_SRC emacs-lisp
@@ -1124,22 +1312,20 @@ the given string, not including the last character, precedes the point.
                           :body-pre (insert "c")
                           :idle 1.0)
   ("b" (gm/snippet "cb" "cubed") "cubed")
-  ("c" (gm/snippet "cc" "subset") "subset"))
+  ("c" (gm/snippet "cc" "subset") "subset")
+  ("-" (insert "-") "dash"))
 
-  (add-hook 'LaTeX-mode-hook
-            (lambda ()
-              (local-set-key (kbd "c") 'hydra-c/body)))
+ (global-set-key (kbd "c") 'hydra-c/body)
 #+END_SRC
 *** Derivative
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-d (:color blue
                          :body-pre (insert "d")
                          :idle 1.0)
-("d" (gm/snippet "dd" "derivative") "derivative"))
+("d" (gm/snippet "dd" "derivative") "derivative")
+  ("-" (insert "-") "dash"))
 
- (add-hook 'LaTeX-mode-hook
-     (lambda ()
-     (local-set-key (kbd "d") 'hydra-d/body)))
+(global-set-key (kbd "d") 'hydra-d/body)
 #+END_SRC
 *** Partial Derivative, Norm, Brackets
 #+BEGIN_SRC emacs-lisp
@@ -1150,11 +1336,10 @@ the given string, not including the last character, precedes the point.
   ("m" (gm/snippet "norm" "norm") "norm")
   ("9" (gm/snippet "lr9" "parentheses") "parentheses")
   ("[" (gm/snippet "lr[" "brackets") "brackets")
-  ("{" (gm/snippet "lr{" "set") "set"))
+  ("{" (gm/snippet "lr{" "set") "set")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "r") 'hydra-r/body)))
+(global-set-key (kbd "r") 'hydra-r/body)
 #+END_SRC
 *** Inverse, Integral, In
 #+BEGIN_SRC emacs-lisp
@@ -1168,24 +1353,30 @@ the given string, not including the last character, precedes the point.
                  (t (gm/snippet "int" "integral")))
          (insert "t")) "integral")
   ("v" (gm/snippet "inv" "inverse") "inverse")
-  ("n" (gm/snippet "inn" "in") "in"))
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "n") 'hydra-n/body)))
+  ("n" (gm/snippet "inn" "in") "in")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "n") 'hydra-n/body)
 #+END_SRC
 *** Maps To
 #+BEGIN_SRC emacs-lisp
+(defhydra hydra-exc (:color blue
+                         :body-pre (insert "!")
+                         :idle 1.0)
+(">" (gm/snippet "!>" "implies") "implies")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "!") 'hydra-exc/body)
 #+END_SRC
 *** Implies
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-eq (:color blue
                          :body-pre (insert "=")
                          :idle 1.0)
-(">" (gm/snippet "!>" "implies") "implies"))
+(">" (gm/snippet "=>" "implies") "implies")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-     (lambda ()
-     (local-set-key (kbd "=") 'hydra-eq/body)))
+(global-set-key (kbd "=") 'hydra-eq/body)
 #+END_SRC
 *** Limit, Sin
 #+BEGIN_SRC emacs-lisp
@@ -1197,11 +1388,10 @@ the given string, not including the last character, precedes the point.
   ("n" (if (gm/prefix-before-point "sin")
            (cond ((gm/prefix-before-point "asin") (gm/snippet "asin" "asin"))
                  (t (gm/snippet "sin" "sin")))
-         (hydra-n/body)) "(a)sin"))
+         (hydra-n/body)) "(a)sin")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "i") 'hydra-i/body)))
+(global-set-key (kbd "i") 'hydra-i/body)
 #+END_SRC
 *** Sum
 #+BEGIN_SRC emacs-lisp
@@ -1209,11 +1399,10 @@ the given string, not including the last character, precedes the point.
                           :body-pre (insert "u")
                           :idle 1.0)
   ("m" (gm/snippet "sum" "summation") "summation")
-  ("n" (gm/snippet "fun" "function") "function"))
+  ("n" (gm/snippet "fun" "function") "function")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "u") 'hydra-u/body)))
+(global-set-key (kbd "u") 'hydra-u/body)
 #+END_SRC
 *** Less Than
 #+BEGIN_SRC emacs-lisp
@@ -1222,22 +1411,20 @@ the given string, not including the last character, precedes the point.
                           :idle 1.0)
   ("e" (if (and (gm/prefix-before-point "le") (not (gm/prefix-before-point "\\le")))
            (gm/snippet "le" "less-than")
-         (insert "e")) "less-than"))
+         (insert "e")) "less-than")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "l") 'hydra-l/body)))
+(global-set-key (kbd "l") 'hydra-l/body)
 #+END_SRC
 *** Greater Than
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-g (:color blue
                           :body-pre (insert "g")
                           :idle 1.0)
-  ("e" (gm/snippet "ge" "greater-than") "greater than"))
+  ("e" (gm/snippet "ge" "greater-than") "greater than")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "g") 'hydra-g/body)))
+(global-set-key (kbd "g") 'hydra-g/body)
 #+END_SRC
 *** Set, Sec
 #+BEGIN_SRC emacs-lisp
@@ -1245,22 +1432,20 @@ the given string, not including the last character, precedes the point.
                           :body-pre (insert "e")
                           :idle 1.0)
   ("t" (gm/snippet "set" "set") "set")
-  ("c" (gm/snippet "sec" "sec") "sec"))
+  ("c" (gm/snippet "sec" "sec") "sec")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "e") 'hydra-e/body)))
+(global-set-key (kbd "e") 'hydra-e/body)
 #+END_SRC
 *** Times
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-x (:color blue
                           :body-pre (insert "x")
                           :idle 1.0)
-("x" (gm/snippet "xx" "times") "times"))
+("x" (gm/snippet "xx" "times") "times")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "x") 'hydra-x/body)))
+(global-set-key (kbd "x") 'hydra-x/body)
 #+END_SRC
 *** Infinity, Log, Interval, (Arc)cos, (Arc)cot
 #+BEGIN_SRC emacs-lisp
@@ -1277,7 +1462,8 @@ the given string, not including the last character, precedes the point.
   ("t" (if (gm/prefix-before-point "cot")
            (cond ((gm/prefix-before-point "acot") (gm/snippet "acot" "acot"))
                  (t (gm/snippet "cot" "cot")))
-         (insert "t")) "(a)cot"))
+         (insert "t")) "(a)cot")
+  ("-" (insert "-") "dash"))
 
 (add-hook 'LaTeX-mode-hook
           (lambda ()
@@ -1292,11 +1478,10 @@ the given string, not including the last character, precedes the point.
            (cond ((gm/prefix-before-point "atan") (gm/snippet "atan" "atan"))
                  (t (gm/snippet "tan" "tan")))
          (insert "n")) "(a)tan")
-  ("r" (gm/snippet "star" "star") "star"))
+  ("r" (gm/snippet "star" "star") "star")
+  ("-" (insert "-") "dash"))
 
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "a") 'hydra-a/body)))
+(global-set-key (kbd "a") 'hydra-a/body)
 #+END_SRC
 *** Fraction, Floor
 #+BEGIN_SRC emacs-lisp
@@ -1304,11 +1489,10 @@ the given string, not including the last character, precedes the point.
                          :body-pre (insert "f")
                          :idle 1.0)
   ("l" (gm/snippet "fl" "floor") "floor")
-  ("r" (gm/snippet "fr" "frac") "frac"))
+  ("r" (gm/snippet "fr" "frac") "frac")
+  ("-" (insert "-") "dash"))
 
- (add-hook 'LaTeX-mode-hook
-     (lambda ()
-     (local-set-key (kbd "f") 'hydra-f/body)))
+(global-set-key (kbd "f") 'hydra-f/body)
 #+END_SRC
 *** Absolute Value, Nabla
 #+BEGIN_SRC emacs-lisp
@@ -1316,10 +1500,10 @@ the given string, not including the last character, precedes the point.
                           :body-pre (insert "b")
                           :idle 1.0)
 ("s" (gm/snippet "abs" "abs") "abs")
-("l" (gm/snippet "nabl" "nabla") "nabla"))
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "b") 'hydra-b/body)))
+("l" (gm/snippet "nabl" "nabla") "nabla")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "b") 'hydra-b/body)
 #+END_SRC
 *** Number Systems
 **** Real
@@ -1327,40 +1511,40 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-R (:color blue
                           :body-pre (insert "R")
                           :idle 1.0)
-  ("R" (gm/snippet "RR" "real-numbers") "real-numbers"))
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "R") 'hydra-R/body)))
+  ("R" (gm/snippet "RR" "real-numbers") "real-numbers")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "R") 'hydra-R/body)
 #+END_SRC
 **** Rational
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-Q (:color blue
                           :body-pre (insert "Q")
                           :idle 1.0)
-  ("Q" (gm/snippet "QQ" "rational-numbers") "rational-numbers"))
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "Q") 'hydra-Q/body)))
+  ("Q" (gm/snippet "QQ" "rational-numbers") "rational-numbers")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "Q") 'hydra-Q/body)
 #+END_SRC
 **** Complex
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-C (:color blue
                           :body-pre (insert "C")
                           :idle 1.0)
-  ("C" (gm/snippet "CC" "complex-numbers") "complex-numbers"))
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "C") 'hydra-C/body)))
+  ("C" (gm/snippet "CC" "complex-numbers") "complex-numbers")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "C") 'hydra-C/body)
 #+END_SRC
 **** Integer
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-Z (:color blue
                           :body-pre (insert "Z")
                           :idle 1.0)
-  ("Z" (gm/snippet "ZZ" "integers") "integers"))
-(add-hook 'LaTeX-mode-hook
-          (lambda ()
-            (local-set-key (kbd "Z") 'hydra-Z/body)))
+  ("Z" (gm/snippet "ZZ" "integers") "integers")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "Z") 'hydra-Z/body)
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
@@ -1427,6 +1611,9 @@ the given string, not including the last character, precedes the point.
 ("x" (insert " \\times ") "×")
 )
 (add-hook 'LaTeX-mode-hook
+     (lambda ()
+     (local-set-key (kbd ";") 'hydra-semicolon-a/body)))
+(add-hook 'org-mode-hook
      (lambda ()
      (local-set-key (kbd ";") 'hydra-semicolon-a/body)))
 #+END_SRC
@@ -1533,4 +1720,4 @@ This is pretty complicated; I need to sort through this and break it up into mor
 Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
 #+BEGIN_SRC emacs-lisp
 (setq gc-cons-threshold 20000000)
-#+END_SRC
+#+END_Sr
