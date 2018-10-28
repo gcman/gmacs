@@ -582,6 +582,11 @@ Add an alias to do this easily.
 (defalias 'ts 'transpose-sentences)
 (defalias 'tp 'transpose-paragraphs)
 #+END_SRC
+*** Normal Undo
+#+BEGIN_SRC emacs-lisp
+(global-unset-key (kbd "C-z"))
+(global-set-key  (kbd "C-z") 'advertised-undo)
+#+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
 (require 'key-chord)
