@@ -426,6 +426,10 @@ abort completely with `C-g'."
 (setq save-abbrevs 'silently)
 (setq-default abbrev-mode t)
 #+END_SRC
+*** Remember File Variables
+#+BEGIN_SRC emacs-lisp
+(defun risky-local-variable-p (sym &optional _ignored) nil)
+#+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
@@ -664,6 +668,7 @@ Add an alias to do this easily.
 #+BEGIN_SRC emacs-lisp
 (global-unset-key (kbd "C-z"))
 (global-set-key  (kbd "C-z") 'advertised-undo)
+(global-set-key (kbd "C-x C-u") 'advertised-undo)
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
@@ -685,6 +690,10 @@ Eliminate the shift key for inputting symbols.
 (key-chord-define-global "9i" "(")
 (key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
+#+END_SRC
+*** Org Preview Latex
+#+BEGIN_SRC emacs-lisp
+(key-chord-define-global "df" 'my/org-toggle-latex-fragment)
 #+END_SRC
 *** God Mode
 Easily enter god mode.
@@ -781,6 +790,7 @@ Use Solarized Light cyan to highlight.
 We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp
 (require 'org)
+(require 'ox-latex)
 (use-package org
   :bind
   ("C-c l" . org-store-link)
@@ -947,72 +957,26 @@ Use overlay library.
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
 #+END_SRC
-**** Continuous Equation Numbering
-#+BEGIN_SRC emacs-lisp
-(defun org-renumber-environment (orig-func &rest args)
-(let ((results '())
-    (counter -1)
-    (numberp))
-
-(setq results (loop for (begin .  env) in
-                    (org-element-map (org-element-parse-buffer) 'latex-environment
-                      (lambda (env)
-                        (cons
-                         (org-element-property :begin env)
-                         (org-element-property :value env))))
-                    collect
-                    (cond
-                     ((and (string-match "\\\\begin{equation}" env)
-                           (not (string-match "\\\\tag{" env)))
-                      (incf counter)
-                      (cons begin counter))
-                     ((string-match "\\\\begin{align}" env)
-                      (prog2
-                          (incf counter)
-                          (cons begin counter)
-                        (with-temp-buffer
-                          (insert env)
-                          (goto-char (point-min))
-                          ;; \\ is used for a new line. Each one leads to a number
-                          (incf counter (count-matches "\\\\$"))
-                          ;; unless there are nonumbers.
-                          (goto-char (point-min))
-                          (decf counter (count-matches "\\nonumber")))))
-                     (t
-                      (cons begin nil)))))
-
-(when (setq numberp (cdr (assoc (point) results)))
-  (setf (car args)
-        (concat
-         (format "\\setcounter{equation}{%s}\n" numberp)
-         (car args)))))
-
-(apply orig-func args))
-(advice-add 'org-create-formula-image :around #'org-renumber-environment)
-#+END_SRC
-**** Equation Preview
-#+BEGIN_SRC emacs-lisp
-(defvar my/was-inside-math nil)
-
-(defun my/org-preview-when-leaving-math ()
- (let ((in-math (texmathp)))
-   (cond (in-math
-          (setq my/was-inside-math t))
-         ((and (not in-math)
-               my/was-inside-math)
-          (progn
-            (condition-case ex
-                (unless (get-process "Preview-Ghostscript")
-                  (org-toggle-latex-fragment))
-              ('error
-               (message (format "Could not invoke Preview: %s" ex))))
-            (setq my/was-inside-math nil))))))
-
-(add-hook 'post-command-hook 'my/org-preview-when-leaving-math t)
-#+END_SRC
 *** CDLaTeX
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+#+END_SRC
+*** Export Classes
+**** Assignment
+#+BEGIN_SRC emacs-lisp
+(with-eval-after-load 'ox-latex
+  (add-to-list 'org-latex-classes
+               '("assignment"
+                 "\\documentclass[12pt]{article}
+\\usepackage{uts-assignment}
+\\renewcommand{\\maketitle}{}
+[NO-DEFAULT-PACKAGES]
+[EXTRA]"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 #+END_SRC
 * TeX
 ** AUCTeX
@@ -1055,21 +1019,43 @@ Use overlay library.
 #+BEGIN_SRC emacs-lisp
 (defvar my/was-inside-math nil)
 
-(defun my/latex-preview-when-leaving-math ()
- (let ((in-math (texmathp)))
-   (cond (in-math
-          (setq my/was-inside-math t))
-         ((and (not in-math)
-               my/was-inside-math)
-          (progn
-            (condition-case ex
-                (unless (get-process "Preview-Ghostscript")
-                  (preview-at-point))
-              ('error
-               (message (format "Could not invoke Preview: %s" ex))))
-            (setq my/was-inside-math nil))))))
+(defun my/org-toggle-latex-fragment (&optional arg)
+  (interactive "P")
+  (when (display-graphic-p)
+    (catch 'exit
+      (save-excursion
+	  	(let ((datum (org-element-context)))
+          (let ((beg (org-element-property :begin datum))
+                (end (org-element-property :end datum)))
+	        (when (memq (org-element-type datum)
+			            '(latex-environment latex-fragment))
+		      (cond ((org-remove-latex-fragment-image-overlays beg end)
+		             (progn (message "LaTeX fragment image removed")
+			                (throw 'exit nil))
+                     (t (org-toggle-latex-fragment)))))))))))
 
-(add-hook 'post-command-hook 'my/latex-preview-when-leaving-math t)
+(defun my/preview-when-leaving-math ()
+  (let ((in-math (texmathp)))
+    (cond (in-math
+           (setq my/was-inside-math t))
+          ((and (not in-math)
+                my/was-inside-math)
+           (progn
+             (condition-case ex
+                 (unless (get-process "Preview-Ghostscript")
+                   (when (eq major-mode 'LaTeX-mode)
+                     (preview-at-point))
+                   (when (eq major-mode 'org-mode)
+                     (org-toggle-latex-fragment)))
+               ('error
+                (message (format "Could not invoke Preview: %s" ex)))))))))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'post-command-hook 'my/preview-when-leaving-math nil t)))
+(add-hook 'LaTeX-mode-hook
+          (lambda ()
+            (add-hook 'post-command-hook 'my/preview-when-leaving-math nil t)))
 #+END_SRC
 *** Diffing
 #+BEGIN_SRC
@@ -1298,7 +1284,7 @@ the given string, not including the last character, precedes the point.
                           :body-pre (insert "s")
                           :idle 1.0)
   ("q" (if (gm/prefix-before-point "sq")
-           (cond ((gm/prefix-before-point "nsq") (gm/snippet "nsq" "nsq"))
+           (cond ((gm/prefix-before-point "nsq") (gm/snippet "nsq" "nsqrt"))
                  (t (gm/snippet "sq" "sqrt")))
          (insert "n")) "(a)tan")
   ("r" (gm/snippet "sr" "squared") "squared")
@@ -1398,7 +1384,7 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-u (:color blue
                           :body-pre (insert "u")
                           :idle 1.0)
-  ("m" (gm/snippet "sum" "summation") "summation")
+  ("m" (gm/snippet "sum" "sum") "sum")
   ("n" (gm/snippet "fun" "function") "function")
   ("-" (insert "-") "dash"))
 
@@ -1499,8 +1485,10 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-b (:color blue
                           :body-pre (insert "b")
                           :idle 1.0)
-("s" (gm/snippet "abs" "abs") "abs")
-("l" (gm/snippet "nabl" "nabla") "nabla")
+  ("s" (if (gm/prefix-before-point "abs")
+           (gm/snippet "abs" "abs")
+         (hydra-s/body) "abs"))
+  ("l" (gm/snippet "nabl" "nabla") "nabla")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "b") 'hydra-b/body)
