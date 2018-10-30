@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: times
+# key: math-times
 # --
 \times $0

@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: subset
+# key: math-subset
 # --
 \subset $0

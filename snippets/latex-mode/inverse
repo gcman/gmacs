@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: inverse
+# key: math-inverse
 # --
 ^{-1}
