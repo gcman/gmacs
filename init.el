@@ -40,7 +40,14 @@
    '("\\RequirePackage["
      ("," . preview-default-option-list)
      "]{preview}[2004/11/05]" "\\renewcommand{\\d}[1]{\\,\\mathrm{d}#1}" "\\usepackage{amssymb}" "\\usepackage{amsfonts}"))
- '(safe-local-variable-values '((after-save-hook . org-latex-export-to-latex)))
+ '(safe-local-variable-values
+   '((org-inline-image-overlays)
+     (org-latex-caption-above)
+     (org-latex-title-command . "")
+     (org-hide-emphasis-markers . t)
+     (org-hide-macro-markers . t)
+     (org-fontify-quote-and-verse-blocks . t)
+     (after-save-hook . org-latex-export-to-latex)))
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-strip-common-suffix t))
