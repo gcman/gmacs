@@ -818,7 +818,12 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp
 (setq org-hide-emphasis-markers t)
 #+END_SRC
+*** Hide Macro Marks
+#+BEGIN_SRC emacs-lisp
+(setq org-hide-emphasis-markers t)
+#+END_SRC
 *** Org Bullets
+***
 #+BEGIN_SRC emacs-lisp
 (use-package org-bullets)
 (add-hook 'org-mode-hook
@@ -911,6 +916,16 @@ Inside a code-block, just call `self-insert-command'."
             #'endless/replace-quote)
 #+END_SRC
 ** LaTeX
+*** Use Cleverref
+#+BEGIN_SRC emacs-lisp
+(defun org-latex-ref-to-cref (text backend info)
+  "Use \\cref instead of \\ref in latex export."
+  (when (org-export-derived-backend-p backend 'latex)
+    (replace-regexp-in-string "\\\\ref{" "\\\\cref{" text)))
+
+(add-to-list 'org-export-filter-final-output-functions
+             'org-latex-ref-to-cref)
+#+END_SRC
 *** Export Command
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "<C-f4>") 'org-latex-export-to-pdf)
@@ -1107,7 +1122,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-latex-classes
 '("tufte-handout"
-"\\documentclass[twoside,nobib]{gm-tufte-handout}
+"\\documentclass[symmetric,nobib]{gm-tufte-handout}
    [NO-DEFAULT-PACKAGES]"
 ("\\section{%s}" . "\\section*{%s}")
 ("\\subsection{%s}" . "\\subsection*{%s}")))

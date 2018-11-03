@@ -112,6 +112,8 @@
 
 (define-abbrev-table 'occur-mode-abbrev-table '())
 
+(define-abbrev-table 'org-export-stack-mode-abbrev-table '())
+
 (define-abbrev-table 'org-mode-abbrev-table '())
 
 (define-abbrev-table 'outline-mode-abbrev-table '())
