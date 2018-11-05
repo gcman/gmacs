@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
-# name: rational-numbers
+# name: rational
+# key: math-rational
 # --
 \mathbb{Q}

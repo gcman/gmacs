@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: set
+# key: math-set
 # --
 \left\\{$1\right\\}

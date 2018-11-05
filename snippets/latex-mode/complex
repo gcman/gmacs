@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
-# name: complex-numbers
+# name: complex
+# key: math-complex
 # --
 \mathbb{C}

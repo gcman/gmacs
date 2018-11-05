@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: not
+# key: math-nott
+# --
+\not$0

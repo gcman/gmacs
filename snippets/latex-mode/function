@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: function
+# key: math-function
 # --
 ${1:f} : $2\mathbb{R} \to \mathbb{R}

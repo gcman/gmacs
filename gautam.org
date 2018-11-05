@@ -1548,7 +1548,8 @@ the given string, not including the last character, precedes the point.
                          :body-pre (insert "=")
                          :idle 1.0)
 (">" (gm/snippet "=>" "implies") "implies")
-  ("-" (insert "-") "dash"))
+("=" (gm/snippet "==" "split-equals") "&=")
+("-" (insert "-") "dash"))
 
 (global-set-key (kbd "=") 'hydra-eq/body)
 #+END_SRC
@@ -1583,9 +1584,10 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-l (:color blue
                           :body-pre (insert "l")
                           :idle 1.0)
-  ("e" (if (and (gm/prefix-before-point "le") (not (gm/prefix-before-point "\\le")))
-           (gm/snippet "le" "less-than")
-         (insert "e")) "less-than")
+  ("e"
+   (if (and (and (texmathp) (gm/prefix-before-point "le")) (not (gm/prefix-before-point "\\le")))
+       (gm/snippet "le" "less-than")
+     (insert "e")) "less-than")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "l") 'hydra-l/body)
@@ -1607,6 +1609,11 @@ the given string, not including the last character, precedes the point.
                           :idle 1.0)
   ("t" (gm/snippet "set" "set") "set")
   ("c" (gm/snippet "sec" "sec") "sec")
+  ("q" (if (gm/prefix-before-point "neq")
+           (if (texmathp)
+               (gm/snippet "neq" "neq")
+             (gm/snippet "neq" "unnumbered-equation"))
+         (insert "q")) "neq")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "e") 'hydra-e/body)
@@ -1633,10 +1640,12 @@ the given string, not including the last character, precedes the point.
            (cond ((gm/prefix-before-point "acos") (gm/snippet "acos" "acos"))
                  (t (gm/snippet "cos" "cos")))
          (insert "s")) "(a)cos")
-  ("t" (if (gm/prefix-before-point "cot")
-           (cond ((gm/prefix-before-point "acot") (gm/snippet "acot" "acot"))
-                 (t (gm/snippet "cot" "cot")))
-         (insert "t")) "(a)cot")
+  ("t" (cond ((gm/prefix-before-point "cot")
+              (cond ((gm/prefix-before-point "acot") (gm/snippet "acot" "acot"))
+                    (t (gm/snippet "cot" "cot"))))
+             ((gm/prefix-before-point "not") (gm/snippet "not" "not"))
+             (t (insert "t"))) "(a)cot")
+  ("+" (gm/snippet "o+" "oplus") "oplus")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "o") 'hydra-o/body)
@@ -1646,10 +1655,11 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-a (:color blue
                           :body-pre (insert "a")
                           :idle 1.0)
-  ("n" (if (gm/prefix-before-point "tan")
-           (cond ((gm/prefix-before-point "atan") (gm/snippet "atan" "atan"))
-                 (t (gm/snippet "tan" "tan")))
-         (insert "n")) "(a)tan")
+  ("n" (cond ((gm/prefix-before-point "tan")
+              (cond ((gm/prefix-before-point "atan") (gm/snippet "atan" "atan"))
+                    (t (gm/snippet "tan" "tan"))))
+             ((gm/prefix-before-point "span") (gm/snippet "span" "span"))
+             (t (insert "n"))) "(a)tan")
   ("r" (gm/snippet "star" "star") "star")
   ("-" (insert "-") "dash"))
 
@@ -1685,7 +1695,7 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-R (:color blue
                           :body-pre (insert "R")
                           :idle 1.0)
-  ("R" (gm/snippet "RR" "real-numbers") "real-numbers")
+  ("R" (gm/snippet "RR" "real") "real")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "R") 'hydra-R/body)
@@ -1695,7 +1705,7 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-Q (:color blue
                           :body-pre (insert "Q")
                           :idle 1.0)
-  ("Q" (gm/snippet "QQ" "rational-numbers") "rational-numbers")
+  ("Q" (gm/snippet "QQ" "rational") "rational")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "Q") 'hydra-Q/body)
@@ -1705,7 +1715,7 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-C (:color blue
                           :body-pre (insert "C")
                           :idle 1.0)
-  ("C" (gm/snippet "CC" "complex-numbers") "complex-numbers")
+  ("C" (gm/snippet "CC" "complex") "complex")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "C") 'hydra-C/body)
@@ -1719,6 +1729,16 @@ the given string, not including the last character, precedes the point.
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "Z") 'hydra-Z/body)
+#+END_SRC
+**** Natural
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-N (:color blue
+                          :body-pre (insert "N")
+                          :idle 1.0)
+  ("N" (gm/snippet "NN" "natural") "natural")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "N") 'hydra-N/body)
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
@@ -1771,6 +1791,7 @@ the given string, not including the last character, precedes the point.
 ("*" (insert "\\star") "⋆")
 ("\\" (insert "\\setminus ") "∖")
 ("'" (insert "\\prime ") "′")
+("," (insert ",\\ldots,") ".")
 ("." (insert " \\cdot ") "·")
 )
 (defhydra hydra-semicolon-b (:color blue
@@ -1779,10 +1800,12 @@ the given string, not including the last character, precedes the point.
 (" " (insert "; " "semicolon"))
 ("e" (insert "\\varepsilon") "ε")
 ("f" (insert "\\phi") "φ")
+("F" (insert "\\mathbb{F}") "𝔽")
 ("q" (insert "\\Theta") "Θ")
 ("r" (insert "\\varrho") "ρ")
-("U" (insert "\\cap") "∩")
+("U" (insert "\\cap ") "∩")
 ("x" (insert " \\times ") "×")
+("." (insert " \\cdots ") "···")
 )
 (add-hook 'LaTeX-mode-hook
      (lambda ()

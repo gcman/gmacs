@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
-# name: real-numbers
+# name: real
+# key: math-real
 # --
 \mathbb{R}

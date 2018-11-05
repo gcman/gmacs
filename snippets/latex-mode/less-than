@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: less-than
+# key: math-less-than
 # --
 \le $0

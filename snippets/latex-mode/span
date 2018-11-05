@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: span
+# key: math-span
+# --
+\Span$0

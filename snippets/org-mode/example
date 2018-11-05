@@ -2,6 +2,6 @@
 # name: new-math-example
 # key: <ex
 # --
-#+begin_example
+#+begin_ex
     $0
-#+end_example
+#+end_ex
