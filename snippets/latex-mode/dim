@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: dim
+# key: math-dim
+# --
+\Dim $0

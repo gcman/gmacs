@@ -43,7 +43,9 @@
      ("," . preview-default-option-list)
      "]{preview}[2004/11/05]" "\\renewcommand{\\d}[1]{\\,\\mathrm{d}#1}" "\\usepackage{amssymb}" "\\usepackage{amsfonts}"))
  '(safe-local-variable-values
-   '((org-inline-image-overlays)
+   '((after-save-hook . gm/org-latex-export)
+     (after-save-hook . org-export-headlines-to-pdf)
+     (org-inline-image-overlays)
      (org-latex-caption-above)
      (org-latex-title-command . "")
      (org-hide-emphasis-markers . t)

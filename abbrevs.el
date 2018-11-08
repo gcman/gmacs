@@ -3,10 +3,11 @@
   '(
     ("bg" "background" nil :count 0)
     ("diffeq" "differential equation" nil :count 0)
+    ("fdvs" "finite-dimensional vector space" nil :count 1)
     ("iff" "if and only if" nil :count 0)
     ("lindep" "linearly dependent" nil :count 0)
-    ("linind" "linearly independent" nil :count 1)
+    ("linind" "linearly independent" nil :count 3)
     ("st" "such that" nil :count 0)
-    ("vs" "vector space" nil :count 3)
+    ("vs" "vector space" nil :count 5)
    ))
 
