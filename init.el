@@ -9,6 +9,23 @@
  '(TeX-view-program-list '(("Evince" ("evince --page-index=%(outpage) %o") "")))
  '(custom-safe-themes
    '("a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default))
+ '(mu4e-attachment-dir "~/Downloads")
+ '(mu4e-drafts-folder "/[Gmail].Drafts")
+ '(mu4e-get-mail-command "offlineimap")
+ '(mu4e-maildir "~/Maildir")
+ '(mu4e-maildir-shortcuts
+   '(("/[Gmail].INBOX" . 105)
+     ("/[Gmail].All Mail" . 97)
+     ("/[Gmail].Trash" . 100)
+     ("/[Gmail].Drafts" . 68)
+     ("/[Gmail].Sent Mail" . 115)))
+ '(mu4e-refile-folder "/[Gmail].All Mail")
+ '(mu4e-sent-folder "/[Gmail].Sent Mail")
+ '(mu4e-trash-folder "/[Gmail].Trash")
+ '(mu4e-update-interval 300)
+ '(mu4e-use-fancy-chars t)
+ '(mu4e-view-show-addresses t)
+ '(mu4e-view-show-images t)
  '(org-agenda-files '("~/Documents/school/math/axler/lin-alg-done-right.org"))
  '(org-format-latex-header
    "\\documentclass{article}
@@ -33,6 +50,7 @@
  '(org-latex-packages-alist nil)
  '(org-latex-pdf-process
    '("xelatex -interaction nonstopmode -output-directory %o %f" "xelatex -interaction nonstopmode -output-directory %o %f" "xelatex -interaction nonstopmode -output-directory %o %f"))
+ '(org-startup-indented t)
  '(package-selected-packages
    '(mu4e-conversation ido-grid-mode avy-flycheck avy-menu avy-zap ido-vertical-mode flx-ido smex rainbow-mode yasnippet-snippets yaml-mode writeroom-mode which-key wc-mode use-package sublimity solarized-theme smooth-scrolling smart-mode-line powerline pdf-tools ox-hugo org-wc org-mime org-bullets olivetti nadvice mu4e-alert magit latexdiff ivy imenu-anywhere god-mode flyspell-lazy flycheck dired-quick-sort diminish dashboard company-math centered-window cdlatex auto-package-update auctex-lua auctex-latexmk adaptive-wrap))
  '(pdf-view-midnight-colors '("#657b83" . "#fdf6e3"))
@@ -41,7 +59,7 @@
  '(preview-default-preamble
    '("\\RequirePackage["
      ("," . preview-default-option-list)
-     "]{preview}[2004/11/05]" "\\renewcommand{\\d}[1]{\\,\\mathrm{d}#1}" "\\usepackage{amssymb}" "\\usepackage{amsfonts}"))
+     "]{preview}[2004/11/05]" "\\RequirePackage{ifthen}" "\\RequirePackage{gm-math}" "\\RequirePackage{amssymb}" "\\RequirePackage{amsfonts}"))
  '(safe-local-variable-values
    '((after-save-hook . gm/org-latex-export)
      (after-save-hook . org-export-headlines-to-pdf)
@@ -62,4 +80,5 @@
  ;; If there is more than one, they won't work right.
  '(avy-lead-face ((t (:weight bold))))
  '(avy-lead-face-0 ((t (:weight bold))))
+ '(fringe ((t (:background "#fdf6e3"))))
  '(variable-pitch ((t (:family "Palatino Linotype")))))

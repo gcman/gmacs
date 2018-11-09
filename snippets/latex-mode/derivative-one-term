@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: derivative-one-term
+# key: math-derivative-one-term
+# --
+\d{${1:u}}$0

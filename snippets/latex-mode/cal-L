@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: cal-L
+# key: math-cal-L
+# --
+\mathcal{L}

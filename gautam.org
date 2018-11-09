@@ -503,35 +503,6 @@ Enable god-mode.
   (define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
   (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
   (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete))
-
-  ;; workaround for pdf-tools not reopening to last-viewed page of the pdf:
-    ;; https://github.com/politza/pdf-tools/issues/18
-    (defun brds/pdf-set-last-viewed-bookmark ()
-      (interactive)
-      (when (eq major-mode 'pdf-view-mode)
-        (bookmark-set (brds/pdf-generate-bookmark-name))))
-
-    (defun brds/pdf-jump-last-viewed-bookmark ()
-      (when
-          (brds/pdf-has-last-viewed-bookmark)
-        (bookmark-jump (brds/pdf-generate-bookmark-name))))
-
-    (defun brds/pdf-has-last-viewed-bookmark ()
-      (assoc
-       (brds/pdf-generate-bookmark-name) bookmark-alist))
-
-    (defun brds/pdf-generate-bookmark-name ()
-      (concat "PDF-LAST-VIEWED: " (buffer-file-name)))
-
-    (defun brds/pdf-set-all-last-viewed-bookmarks ()
-      (dolist (buf (buffer-list))
-        (with-current-buffer buf
-            (brds/pdf-set-last-viewed-bookmark))))
-
-    (add-hook 'kill-buffer-hook 'brds/pdf-set-last-viewed-bookmark)
-    (add-hook 'pdf-view-mode-hook 'brds/pdf-jump-last-viewed-bookmark)
-    (unless noninteractive  ; as `save-place-mode' does
-      (add-hook 'kill-emacs-hook #'brds/pdf-set-all-last-viewed-bookmarks))
 #+END_SRC
 * Global Keybindings
 ** Bind Key
@@ -852,7 +823,6 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (setq org-hide-emphasis-markers t)
 #+END_SRC
 *** Org Bullets
-***
 #+BEGIN_SRC emacs-lisp
 (use-package org-bullets)
 (add-hook 'org-mode-hook
@@ -1248,8 +1218,11 @@ are exported to a filename derived from the headline text."
 (defun gm/org-latex-export ()
   (interactive)
   (save-buffer)
-  (org-narrow-to-subtree)
-  (org-export-headlines-to-pdf))
+  (save-excursion
+    (setq exp-name (org-entry-get nil "EXPORT_FILE_NAME" :inherit))
+    (search-backward exp-name)
+    (org-narrow-to-subtree)
+    (org-export-headlines-to-pdf)))
 #+END_SRC
 * TeX
 ** AUCTeX
@@ -1559,9 +1532,16 @@ the given string, not including the last character, precedes the point.
 *** Derivative
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-d (:color blue
-                         :body-pre (insert "d")
-                         :idle 1.0)
-("d" (gm/snippet "dd" "derivative") "derivative")
+                          :body-pre (insert "d")
+                          :idle 1.0)
+  ("d" (cond ((gm/prefix-before-point "dd")
+              (cond ((gm/prefix-before-point "pdd") (gm/snippet "pdd" "partial"))
+                    (t (gm/snippet "dd" "derivative-one-term"))))
+             (t (insert "d"))) "(p)differential")
+  ("v" (cond ((gm/prefix-before-point "dv")
+              (cond ((gm/prefix-before-point "pdv") (gm/snippet "pdv" "partial-derivative"))
+                    (t (gm/snippet "dv" "derivative"))))
+             (t (insert "v"))) "(p)derivative")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "d") 'hydra-d/body)
@@ -1571,7 +1551,7 @@ the given string, not including the last character, precedes the point.
 (defhydra hydra-r (:color blue
                           :body-pre (insert "r")
                           :idle 1.0)
-  ("t" (gm/snippet "part" "partial") "partial")
+  ("t" (gm/snippet "part" "partial-derivative") "partial")
   ("m" (gm/snippet "norm" "norm") "norm")
   ("9" (gm/snippet "lr9" "parentheses") "parentheses")
   ("[" (gm/snippet "lr[" "brackets") "brackets")
@@ -1678,6 +1658,7 @@ the given string, not including the last character, precedes the point.
                           :idle 1.0)
   ("t" (gm/snippet "set" "set") "set")
   ("c" (gm/snippet "sec" "sec") "sec")
+  ("r" (gm/snippet "ker" "kernel") "kernel")
   ("q" (if (gm/prefix-before-point "neq")
            (if (texmathp)
                (gm/snippet "neq" "neq")
@@ -1809,79 +1790,87 @@ the given string, not including the last character, precedes the point.
 
 (global-set-key (kbd "N") 'hydra-N/body)
 #+END_SRC
+**** Cal L
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-L (:color blue
+                          :body-pre (insert "L")
+                          :idle 1.0)
+  ("L" (gm/snippet "LL" "cal-L") "cal-L")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "L") 'hydra-L/body)
+#+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
-(defhydra hydra-semicolon-a (:color blue
-                             :idle 1.0
-                             :columns 8)
-(";" hydra-semicolon-b/body "Level 2")
-("SPC" (insert "; ") ";")
-("a" (insert "\\alpha") "α")
-("A" (insert "\\forall ") "∀")
-("b" (insert "\\beta") "β")
-("C" (insert "\\mathbb{C}") "ℂ")
-("d" (insert "\\delta") "δ")
-("D" (insert "\\Delta") "Δ")
-("e" (insert "\\epsilon") "ε")
-("E" (insert "\\exists ") "∃")
-("f" (insert "\\varphi") "φ")
-("F" (insert "\\Phi") "Φ")
-("g" (insert "\\gamma") "γ")
-("G" (insert "\\Gamma") "Γ")
-("h" (insert "\\eta") "η")
-("k" (insert "\\kappa") "κ")
-("l" (insert "\\lambda") "λ")
-("L" (insert "\\Lambda") "Λ")
-("m" (insert "\\mu") "µ")
-("n" (insert "\\nu") "ν")
-("N" (insert "\\nabla ") "∇")
-("o" (insert "\\omega") "ω")
-("O" (insert "\\Omega") "Ω")
-("p" (insert "\\pi") "π")
-("P" (insert "\\Pi") "Π")
-("q" (insert "\\theta") "θ")
-("Q" (insert "\\mathbb{Q}") "ℚ")
-("r" (insert "\\rho") "ρ")
-("R" (insert "\\mathbb{R}") "ℝ")
-("s" (insert "\\sigma") "σ")
-("t" (insert "\\tau") "τ")
-("u" (insert "\\upsilon") "υ")
-("U" (insert " \\cup ") "∪")
-("w" (insert "\\xi") "ξ")
-("W" (insert "\\Xi") "Ξ")
-("x" (insert "\\chi") "χ")
-("y" (insert "\\psi") "ψ")
-("Y" (insert "\\Psi") "Ψ")
-("z" (insert "\\zeta") "ζ")
-("Z" (insert "\\mathbb{Z}") "ℤ")
-("0" (insert " \\emptyset ") "∅")
-("8" (insert "\\infinity") "∞")
-("!" (insert "\\neg") "¬")
-("*" (insert "\\star") "⋆")
-("\\" (insert "\\setminus ") "∖")
-("'" (insert "\\prime ") "′")
-("," (insert ",\\ldots,") ".")
-("." (insert " \\cdot ") "·")
-)
-(defhydra hydra-semicolon-b (:color blue
-                             :idle 1.0)
-(";" hydra-semicolon-a/body "base")
-(" " (insert "; " "semicolon"))
-("e" (insert "\\varepsilon") "ε")
-("f" (insert "\\phi") "φ")
-("F" (insert "\\mathbb{F}") "𝔽")
-("q" (insert "\\Theta") "Θ")
-("r" (insert "\\varrho") "ρ")
-("U" (insert "\\cap ") "∩")
-("x" (insert " \\times ") "×")
-("." (insert " \\cdots ") "···")
-)
-(add-hook 'LaTeX-mode-hook
-     (lambda ()
-     (local-set-key (kbd ";") 'hydra-semicolon-a/body)))
-(add-hook 'org-mode-hook
-     (lambda ()
-     (local-set-key (kbd ";") 'hydra-semicolon-a/body)))
+(defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
+  (";" hydra-semicolon-b/body "Level 2")
+  ("SPC" (insert "; ") ";")
+  ("a" (insert "\\alpha") "α")
+  ("A" (insert "\\forall ") "∀")
+  ("b" (insert "\\beta") "β")
+  ("C" (insert "\\mathbb{C}") "ℂ")
+  ("d" (insert "\\delta") "δ")
+  ("D" (insert "\\Delta") "Δ")
+  ("e" (insert "\\epsilon") "ε")
+  ("E" (insert "\\exists ") "∃")
+  ("f" (insert "\\varphi") "φ")
+  ("F" (insert "\\Phi") "Φ")
+  ("g" (insert "\\gamma") "γ")
+  ("G" (insert "\\Gamma") "Γ")
+  ("h" (insert "\\eta") "η")
+  ("k" (insert "\\kappa") "κ")
+  ("l" (insert "\\lambda") "λ")
+  ("L" (insert "\\Lambda") "Λ")
+  ("m" (insert "\\mu") "µ")
+  ("n" (insert "\\nu") "ν")
+  ("N" (insert "\\nabla ") "∇")
+  ("o" (insert "\\omega") "ω")
+  ("O" (insert "\\Omega") "Ω")
+  ("p" (insert "\\pi") "π")
+  ("P" (insert "\\Pi") "Π")
+  ("q" (insert "\\theta") "θ")
+  ("Q" (insert "\\mathbb{Q}") "ℚ")
+  ("r" (insert "\\rho") "ρ")
+  ("R" (insert "\\mathbb{R}") "ℝ")
+  ("s" (insert "\\sigma") "σ")
+  ("t" (insert "\\tau") "τ")
+  ("u" (insert "\\upsilon") "υ")
+  ("U" (insert " \\cup ") "∪")
+  ("w" (insert "\\xi") "ξ")
+  ("W" (insert "\\Xi") "Ξ")
+  ("x" (insert "\\chi") "χ")
+  ("y" (insert "\\psi") "ψ")
+  ("Y" (insert "\\Psi") "Ψ")
+  ("z" (insert "\\zeta") "ζ")
+  ("Z" (insert "\\mathbb{Z}") "ℤ")
+  ("0" (insert " \\emptyset ") "∅")
+  ("8" (insert "\\infinity") "∞")
+  ("!" (insert "\\neg") "¬")
+  ("*" (insert "\\star") "⋆")
+  ("\\" (insert "\\setminus ") "∖")
+  ("'" (insert "\\prime ") "′")
+  ("," (insert ",\\ldots,") ".")
+  ("." (insert " \\cdot ") "·"))
+
+(defhydra hydra-semicolon-b (:color blue :idle 1.0 :columns 8)
+  (";" hydra-semicolon-a/body "base")
+  (" " (insert "; " "semicolon"))
+  ("e" (insert "\\varepsilon") "ε")
+  ("f" (insert "\\phi") "φ")
+  ("F" (insert "\\mathbb{F}") "𝔽")
+  ("q" (insert "\\Theta") "Θ")
+  ("r" (insert "\\varrho") "ρ")
+  ("U" (insert "\\cap ") "∩")
+  ("x" (insert " \\times ") "×")
+  ("." (insert " \\cdots ") "···"))
+
+(defun gm/semicolon ()
+  (interactive)
+  (if (texmathp)
+      (hydra-semicolon-a/body)
+    (insert ";")))
+
+(global-set-key (kbd ";") 'gm/semicolon)
 #+END_SRC
 * Mail
 This is pretty complicated; I need to sort through this and break it up into more digestible chunks.
