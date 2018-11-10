@@ -1216,13 +1216,13 @@ are exported to a filename derived from the headline text."
        "-noexport" 'region-start-level))))
 
 (defun gm/org-latex-export ()
-  (interactive)
   (save-buffer)
   (save-excursion
     (setq exp-name (org-entry-get nil "EXPORT_FILE_NAME" :inherit))
     (search-backward exp-name)
     (org-narrow-to-subtree)
-    (org-export-headlines-to-pdf)))
+    (org-export-headlines-to-pdf)
+    (widen)))
 #+END_SRC
 * TeX
 ** AUCTeX
@@ -1605,7 +1605,10 @@ the given string, not including the last character, precedes the point.
                           :idle 1.0)
   ("m" (gm/snippet "lim" "limit") "limit")
   ("l" (gm/snippet "ceil" "ceiling") "ceiling")
-  ("m" (gm/snippet "dim" "dim") "dim")
+  ("m" (if (gm/prefix-before-point "im")
+           (cond ((gm/prefix-before-point "dim") (gm/snippet "dim" "dim"))
+                 (t (gm/snippet "im" "image")))
+         (hydra-m/body)) "dimension/image")
   ("n" (if (gm/prefix-before-point "sin")
            (cond ((gm/prefix-before-point "asin") (gm/snippet "asin" "asin"))
                  (t (gm/snippet "sin" "sin")))
@@ -1711,6 +1714,7 @@ the given string, not including the last character, precedes the point.
              ((gm/prefix-before-point "span") (gm/snippet "span" "span"))
              (t (insert "n"))) "(a)tan")
   ("r" (gm/snippet "star" "star") "star")
+  ("t" (gm/snippet "mat" "matrix") "matrix")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "a") 'hydra-a/body)
@@ -1799,6 +1803,16 @@ the given string, not including the last character, precedes the point.
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "L") 'hydra-L/body)
+#+END_SRC
+**** Cal M
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-M (:color blue
+                          :body-pre (insert "M")
+                          :idle 1.0)
+  ("M" (gm/snippet "MM" "cal-M") "cal-M")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "M") 'hydra-M/body)
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp

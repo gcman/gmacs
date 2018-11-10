@@ -3,5 +3,5 @@
 # key: math-matrix
 # --
 \begin{bmatrix}
-
-\end{bmatrix}
+$1
+\end{bmatrix}$0
