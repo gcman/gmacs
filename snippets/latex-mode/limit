@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: limit
+# key: math-limit
 # --
 \lim_{${1:n}\to${2:\infty}}$0

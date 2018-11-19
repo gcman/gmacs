@@ -1293,7 +1293,7 @@ Don't make super and subscripts smaller.
 #+END_SRC
 Make preview size bigger.
 #+BEGIN_SRC emacs-lisp
-(set-default 'preview-scale-function 1.0)
+(set-default 'preview-scale-function 2.0)
 #+END_SRC
 *** SyncTeX
 Obtained from [[https://tex.stackexchange.com/questions/29813/setup-synctex-with-emacs][from here]].
