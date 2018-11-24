@@ -61,7 +61,6 @@
      ("" "amsmath" t nil)
      ("" "textcomp" t nil)
      ("" "amssymb" t nil)
-     ("" "gm-math" t nil)
      ("" "capt-of" nil nil)
      ("" "hyperref" nil nil)))
  '(org-latex-packages-alist nil)
@@ -76,7 +75,7 @@
  '(preview-default-preamble
    '("\\RequirePackage["
      ("," . preview-default-option-list)
-     "]{preview}[2004/11/05]" "\\RequirePackage{ifthen}" "\\RequirePackage{gm-math}" "\\RequirePackage{amssymb}" "\\RequirePackage{amsfonts}"))
+     "]{preview}[2004/11/05]" "\\RequirePackage{ifthen}" "\\RequirePackage{amssymb}" "\\RequirePackage{amsfonts}"))
  '(safe-local-variable-values
    '((after-save-hook . gm/org-latex-export)
      (after-save-hook . org-export-headlines-to-pdf)

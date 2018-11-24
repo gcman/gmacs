@@ -1,6 +1,6 @@
 #+TITLE: Emacs Configuration
 * Starting Up
-** Time It
+** Time Startup
 On start-up, display how quickly emacs started up.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-startup-hook
@@ -437,7 +437,7 @@ abort completely with `C-g'."
 *** Complete Reload
 Completely reload emacs, by reloading the init file.
 #+BEGIN_SRC emacs-lisp
-(defun gm-reload ()
+(defun gm\reload ()
   (interactive)
   (load-file "init.el"))
 #+END_SRC
@@ -1902,105 +1902,6 @@ the given string, not including the last character, precedes the point.
     (insert ";")))
 
 (global-set-key (kbd ";") 'gm/semicolon)
-#+END_SRC
-* Mail
-This is pretty complicated; I need to sort through this and break it up into more digestible chunks.
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "/usr/share/emacs/site-lisp/mu4e")
-(use-package mu4e
-  :ensure nil
-  :custom
-  (mu4e-attachment-dir "~/Downloads")
-  (mu4e-drafts-folder "/[Gmail].Drafts")
-  (mu4e-get-mail-command "offlineimap")
-  (mu4e-maildir "~/Maildir")
-  (mu4e-refile-folder "/[Gmail].All Mail")
-  (mu4e-sent-folder "/[Gmail].Sent Mail")
-  (mu4e-maildir-shortcuts
-   '(("/[Gmail].INBOX" . ?i)
-     ("/[Gmail].All Mail" . ?a)
-     ("/[Gmail].Trash" . ?d)
-     ("/[Gmail].Drafts" . ?D)
-     ("/[Gmail].Sent Mail" . ?s)
-     ))
-  (mu4e-trash-folder "/[Gmail].Trash")
-  (mu4e-update-interval 300)
-  (mu4e-use-fancy-chars t)
-  (mu4e-view-show-addresses t)
-  (mu4e-view-show-images t))
-
-(with-eval-after-load 'mu4e (require 'mu4e-conversation))
-
-;; use mu4e for e-mail in emacs
-(setq mail-user-agent 'mu4e-user-agent)
-
-(setq mu4e-headers-date-format "%d-%m-%Y")
-
-(add-hook 'mu4e-view-mode-hook #'visual-line-mode)
-(add-hook 'mu4e-compose-mode-hook 'flyspell-mode)
-
-;; don't save message to Sent Messages, [Gmail].IMAP takes care of this
-(setq mu4e-sent-messages-behavior 'delete)
-
-;; something about ourselves
-(setq
-   user-mail-address "manga@utschools.ca"
-   user-full-name  "Gautam Manohar"
-   mu4e-compose-signature
-    (concat
-      "Gautam Manohar, S6 UTS\n"
-      "https://gautammanohar.com\n"))
-
-(use-package smtpmail)
-(setq message-send-mail-function 'smtpmail-send-it
-   starttls-use-gnutls t
-   smtpmail-starttls-credentials '(("smtp.gmail.com" 587 nil nil))
-   smtpmail-auth-credentials
-     '(("smtp.gmail.com" 587 "manga@utschools.ca" nil))
-   smtpmail-default-smtp-server "smtp.gmail.com"
-   smtpmail-smtp-server "smtp.gmail.com"
-   smtpmail-smtp-service 587)
-
-(setq gnus-completing-read-function 'gnus-ido-completing-read)
-
-(require 'gnus-dired)
-;; make the `gnus-dired-mail-buffers' function also work on
-;; message-mode derived modes, such as mu4e-compose-mode
-(defun gnus-dired-mail-buffers ()
-  "Return a list of active message buffers."
-  (let (buffers)
-    (save-current-buffer
-      (dolist (buffer (buffer-list t))
-        (set-buffer buffer)
-        (when (and (derived-mode-p 'message-mode)
-                (null message-sent-message-via))
-          (push (buffer-name buffer) buffers))))
-    (nreverse buffers)))
-
-(setq gnus-dired-mail-mode 'mu4e-user-agent)
-(add-hook 'dired-mode-hook 'turn-on-gnus-dired-mode)
-
-(use-package mu4e-alert
-  :ensure t
-  :after mu4e
-  :init
-  (setq mu4e-alert-interesting-mail-query
-     "flag:unread maildir:/[Gmail].INBOX")
-  (mu4e-alert-enable-mode-line-display)
-  (defun gjstein-refresh-mu4e-alert-mode-line ()
-    (interactive)
-    (mu4e~proc-kill)
-    (mu4e-alert-enable-mode-line-display)
-    )
-  (run-with-timer 0 60 'gjstein-refresh-mu4e-alert-mode-line)
-  )
-;; Don't ask for a 'context' upon opening mu4e
-(setq mu4e-context-policy 'pick-first)
-;; Don't ask to quit... why is this the default?
-(setq mu4e-confirm-quit nil)
-;; don't keep message buffers around
-(setq message-kill-buffer-on-exit t)
-;; use 'fancy' non-ascii characters in various places in mu4e
 #+END_SRC
 * End
 Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
