@@ -2,4 +2,4 @@
 # name: floor
 # key: math-floor
 # --
-\left\lfloor $1 \right\rfloor $0
+\floor{$1}$0

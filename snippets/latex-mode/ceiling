@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: ceiling
+# key: math-ceiling
 # --
-\left\lceil $1 \right\rceil $0
+\ceil{$1}$0

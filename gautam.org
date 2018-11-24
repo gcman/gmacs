@@ -218,9 +218,9 @@ This makes things so much simpler. There's not any ambiguity to begin with.
                 ([mouse-3]      . #'undefined)))
 #+END_SRC
 *** Kill Current Buffer
+Kill the current buffer.
 #+BEGIN_SRC emacs-lisp
 (defun bjm/kill-this-buffer ()
-  "Kill the current buffer."
   (interactive)
   (kill-buffer (current-buffer)))
 (global-set-key (kbd "C-x k") 'bjm/kill-this-buffer)
@@ -433,6 +433,13 @@ abort completely with `C-g'."
 *** Reload Files On Update
 #+BEGIN_SRC emacs-lisp
 (global-auto-revert-mode t)
+#+END_SRC
+*** Complete Reload
+Completely reload emacs, by reloading the init file.
+#+BEGIN_SRC emacs-lisp
+(defun gm-reload ()
+  (interactive)
+  (load-file "init.el"))
 #+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
@@ -1653,6 +1660,16 @@ the given string, not including the last character, precedes the point.
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "g") 'hydra-g/body)
+#+END_SRC
+*** Pairsum
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-p (:color blue
+                          :body-pre (insert "p")
+                          :idle 1.0)
+  ("s" (gm/snippet "ps" "pairsum") "pairsum")
+  ("-" (insert "-") "dash"))
+
+(global-set-key (kbd "p") 'hydra-p/body)
 #+END_SRC
 *** Set, Sec
 #+BEGIN_SRC emacs-lisp
