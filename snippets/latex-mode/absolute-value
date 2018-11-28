@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: abs
+# key: math-abs
 # --
-\left|$1\right|
+\abs{$1}$0

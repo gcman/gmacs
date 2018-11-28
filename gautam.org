@@ -437,9 +437,9 @@ abort completely with `C-g'."
 *** Complete Reload
 Completely reload emacs, by reloading the init file.
 #+BEGIN_SRC emacs-lisp
-(defun gm\reload ()
+(defun gm/reload ()
   (interactive)
-  (load-file "init.el"))
+  (load-file "~/.emacs.d/init.el"))
 #+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
@@ -1614,6 +1614,7 @@ the given string, not including the last character, precedes the point.
   ("l" (gm/snippet "ceil" "ceiling") "ceiling")
   ("m" (if (gm/prefix-before-point "im")
            (cond ((gm/prefix-before-point "dim") (gm/snippet "dim" "dim"))
+                 ((gm/prefix-before-point "lim") (gm/snippet "lim" "limit"))
                  (t (gm/snippet "im" "image")))
          (hydra-m/body)) "dimension/image")
   ("n" (if (gm/prefix-before-point "sin")
@@ -1874,7 +1875,7 @@ the given string, not including the last character, precedes the point.
   ("Y" (insert "\\Psi") "Ψ")
   ("z" (insert "\\zeta") "ζ")
   ("Z" (insert "\\mathbb{Z}") "ℤ")
-  ("0" (insert " \\emptyset ") "∅")
+  ("0" (insert " \\emptyset") "∅")
   ("8" (insert "\\infinity") "∞")
   ("!" (insert "\\neg") "¬")
   ("*" (insert "\\star") "⋆")
@@ -1889,11 +1890,13 @@ the given string, not including the last character, precedes the point.
   ("e" (insert "\\varepsilon") "ε")
   ("f" (insert "\\phi") "φ")
   ("F" (insert "\\mathbb{F}") "𝔽")
+  ("l" (insert "\\ell") "ℓ")
   ("q" (insert "\\Theta") "Θ")
   ("r" (insert "\\varrho") "ρ")
   ("U" (insert "\\cap ") "∩")
   ("x" (insert " \\times ") "×")
-  ("." (insert " \\cdots ") "···"))
+  ("." (insert " \\cdots ") "···")
+  ("-" (gm/snippet "" "conjugate") "-"))
 
 (defun gm/semicolon ()
   (interactive)
