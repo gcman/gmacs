@@ -1225,8 +1225,7 @@ are exported to a filename derived from the headline text."
 (defun gm/org-latex-export ()
   (save-buffer)
   (save-excursion
-    (setq exp-name (org-entry-get nil "EXPORT_FILE_NAME" :inherit))
-    (search-backward exp-name)
+    (search-backward "EXPORT_FILE_NAME")
     (org-narrow-to-subtree)
     (org-export-headlines-to-pdf)
     (widen)))

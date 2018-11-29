@@ -9,24 +9,6 @@
  '(TeX-view-program-list '(("Evince" ("evince --page-index=%(outpage) %o") "")))
  '(custom-safe-themes
    '("a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default))
- '(mu4e-attachment-dir "~/Downloads")
- '(mu4e-drafts-folder "/[Gmail].Drafts")
- '(mu4e-get-mail-command "offlineimap")
- '(mu4e-maildir "~/Maildir")
- '(mu4e-maildir-shortcuts
-   '(("/[Gmail].INBOX" . 105)
-     ("/[Gmail].All Mail" . 97)
-     ("/[Gmail].Trash" . 100)
-     ("/[Gmail].Drafts" . 68)
-     ("/[Gmail].Sent Mail" . 115)))
- '(mu4e-refile-folder "/[Gmail].All Mail")
- '(mu4e-sent-folder "/[Gmail].Sent Mail")
- '(mu4e-trash-folder "/[Gmail].Trash")
- '(mu4e-update-interval 300)
- '(mu4e-use-fancy-chars t)
- '(mu4e-view-show-addresses t)
- '(mu4e-view-show-images t)
- '(org-agenda-files '("~/Documents/school/math/axler/lin-alg-done-right.org"))
  '(org-format-latex-header
    "\\documentclass{article}
 \\usepackage[usenames]{color}
@@ -78,14 +60,12 @@
      "]{preview}[2004/11/05]" "\\RequirePackage{ifthen}" "\\RequirePackage{amssymb}" "\\RequirePackage{amsfonts}"))
  '(safe-local-variable-values
    '((after-save-hook . gm/org-latex-export)
-     (after-save-hook . org-export-headlines-to-pdf)
      (org-inline-image-overlays)
      (org-latex-caption-above)
      (org-latex-title-command . "")
      (org-hide-emphasis-markers . t)
      (org-hide-macro-markers . t)
-     (org-fontify-quote-and-verse-blocks . t)
-     (after-save-hook . org-latex-export-to-latex)))
+     (org-fontify-quote-and-verse-blocks . t)))
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-strip-common-suffix t))
