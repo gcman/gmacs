@@ -681,6 +681,10 @@ Add an alias to do this easily.
 (global-set-key  (kbd "C-z") 'undo)
 (global-set-key (kbd "C-x C-u") 'undo)
 #+END_SRC
+*** Org LaTeX Export
+#+BEGIN_SRC emacs-lisp
+(global-set-key  (kbd "C-c b") 'gm/org-latex-export)
+#+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
 (require 'key-chord)
@@ -1223,7 +1227,7 @@ are exported to a filename derived from the headline text."
        "-noexport" 'region-start-level))))
 
 (defun gm/org-latex-export ()
-  (save-buffer)
+  (interactive)
   (save-excursion
     (search-backward "EXPORT_FILE_NAME")
     (org-narrow-to-subtree)
