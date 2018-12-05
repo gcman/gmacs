@@ -1,5 +1,11 @@
 #+TITLE: Emacs Configuration
 * Starting Up
+** Balance Brackets :noexport:
+(
+** Daemon Mode
+#+BEGIN_SRC emacs-lisp
+(server-start)
+#+END_SRC
 ** Time Startup
 On start-up, display how quickly emacs started up.
 #+BEGIN_SRC emacs-lisp
