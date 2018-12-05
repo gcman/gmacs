@@ -447,6 +447,12 @@ Completely reload emacs, by reloading the init file.
   (interactive)
   (load-file "~/.emacs.d/init.el"))
 #+END_SRC
+*** Key Frequency
+#+BEGIN_SRC emacs-lisp
+(use-package keyfreq)
+(keyfreq-mode 1)
+(keyfreq-autosave-mode 1)
+#+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
@@ -815,6 +821,10 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   (org-indent-mode)
   :custom
   (org-startup-indented t))
+#+END_SRC
+*** Org Capture
+#+BEGIN_SRC emacs-lisp
+(setq org-default-notes-file "~/Documents/school/org/todo.org")
 #+END_SRC
 ** Ox-hugo
 #+BEGIN_SRC emacs-lisp
