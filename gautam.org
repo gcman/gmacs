@@ -719,20 +719,13 @@ Easily enter god mode.
 ** Font Face
 Normally use Hack.
 #+BEGIN_SRC emacs-lisp
-(set-face-attribute 'default nil :font "Hack")
+(set-face-font 'default "Hack")
 (set-frame-font "Hack" nil t)
 #+END_SRC
 ** Solarized Light
 #+BEGIN_SRC emacs-lisp
 (use-package solarized-theme)
 (load-theme 'solarized-light t)
-#+END_SRC
-** Centered Buffer
-#+BEGIN_SRC emacs-lisp
-(use-package centered-window
-  :ensure t
-  :diminish centered-window-mode)
-(centered-window-mode 1)
 #+END_SRC
 ** Autofill
 Use visual line mode everywhere.
@@ -1287,14 +1280,6 @@ are exported to a filename derived from the headline text."
                    (preview-at-point))
                ('error
                 (message (format "Could not invoke Preview: %s" ex)))))))))
-
-;; (add-hook 'LaTeX-mode-hook
-;;           (lambda ()
-;;             (add-hook 'post-command-hook 'my/preview-when-leaving-math nil t)))
-#+END_SRC
-*** Diffing
-#+BEGIN_SRC
-(use-package latexdiff)
 #+END_SRC
 *** Prettifying
 Don't make super and subscripts smaller.
@@ -1308,11 +1293,6 @@ Make preview size bigger.
 *** SyncTeX
 Obtained from [[https://tex.stackexchange.com/questions/29813/setup-synctex-with-emacs][from here]].
 #+BEGIN_SRC emacs-lisp
-; SyncTeX basics
-
-; un-urlify and urlify-escape-only should be improved to handle all special characters, not only spaces.
-; The fix for spaces is based on the first comment on http://emacswiki.org/emacs/AUCTeX#toc20
-
 (defun un-urlify (fname-or-url)
   "Transform file:///absolute/path from Gnome into /absolute/path with very limited support for special characters"
   (if (string= (substring fname-or-url 0 8) "file:///")

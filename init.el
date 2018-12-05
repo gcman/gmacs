@@ -9,6 +9,7 @@
  '(TeX-view-program-list '(("Evince" ("evince --page-index=%(outpage) %o") "")))
  '(custom-safe-themes
    '("a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default))
+ '(org-agenda-files '("~/Documents/school/org/todo.org"))
  '(org-format-latex-header
    "\\documentclass{article}
 \\usepackage[usenames]{color}
