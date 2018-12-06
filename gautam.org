@@ -1509,6 +1509,30 @@ the given string, not including the last character, precedes the point.
     )
     ))
 #+END_SRC
+**** Set of Snippets
+This function is a work in progress. I’d like to write a macro to reduce the
+amount of redundant code needed to set up the snippets. Ideally, I could just
+provide a list of pairs of the string to be expanded and the snippet to be
+activated.
+#+BEGIN_SRC emacs-lisp
+(defmacro gm/snippet-set (leader hydraname snippets extras)
+  `(defhydra ,hydraname (:color blue :body-pre (insert leader) :idle 1.0)
+      ,@(cl-loop for kv in snippets
+		collect (list (substring (car kv) (length (car kv)) (1- (length (car kv)))) (list 'gm/snippet (car kv) (cdr kv)) (cdr kv)))
+     ("0" nil "0")
+("1" nil "1")
+("2" nil "2")
+("3" nil "3")
+("4" nil "4")
+("5" nil "5")
+("6" nil "6")
+("7" nil "7")
+("8" nil "8")
+("9" nil "9")
+("-" nil "dash")
+,@(cl-loop for kv in extras
+ collect (list kv))))
+#+END_SRC
 *** Squared, Square Root
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-s (:color blue
