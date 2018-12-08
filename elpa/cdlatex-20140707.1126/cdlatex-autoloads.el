@@ -1,10 +1,12 @@
 ;;; cdlatex-autoloads.el --- automatically extracted autoloads
 ;;
 ;;; Code:
-(add-to-list 'load-path (directory-file-name (or (file-name-directory #$) (car load-path))))
+
+(add-to-list 'load-path (directory-file-name
+                         (or (file-name-directory #$) (car load-path))))
+
 
-;;;### (autoloads nil "cdlatex" "cdlatex.el" (23427 60281 130104
-;;;;;;  657000))
+;;;### (autoloads nil "cdlatex" "cdlatex.el" (0 0 0 0))
 ;;; Generated autoloads from cdlatex.el
 
 (autoload 'turn-on-cdlatex "cdlatex" "\
@@ -57,11 +59,14 @@ Entering cdlatex-mode calls the hook cdlatex-mode-hook.
 
 \(fn &optional ARG)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "cdlatex" '("cdlatex-")))
+
 ;;;***
 
 ;; Local Variables:
 ;; version-control: never
 ;; no-byte-compile: t
 ;; no-update-autoloads: t
+;; coding: utf-8
 ;; End:
 ;;; cdlatex-autoloads.el ends here

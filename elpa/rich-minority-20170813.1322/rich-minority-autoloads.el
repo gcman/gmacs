@@ -1,10 +1,12 @@
 ;;; rich-minority-autoloads.el --- automatically extracted autoloads
 ;;
 ;;; Code:
-(add-to-list 'load-path (directory-file-name (or (file-name-directory #$) (car load-path))))
+
+(add-to-list 'load-path (directory-file-name
+                         (or (file-name-directory #$) (car load-path))))
+
 
-;;;### (autoloads nil "rich-minority" "rich-minority.el" (23435 57517
-;;;;;;  142131 504000))
+;;;### (autoloads nil "rich-minority" "rich-minority.el" (0 0 0 0))
 ;;; Generated autoloads from rich-minority.el
 
 (autoload 'rm--mode-list-as-string-list "rich-minority" "\
@@ -24,12 +26,17 @@ or call the function `rich-minority-mode'.")
 
 (autoload 'rich-minority-mode "rich-minority" "\
 Toggle Rich minority mode on or off.
-With a prefix argument ARG, enable Rich minority mode if ARG is
-positive, and disable it otherwise.  If called from Lisp, enable
-the mode if ARG is omitted or nil, and toggle it if ARG is `toggle'.
+
+If called interactively, enable Rich minority mode if ARG is positive, and
+disable it if ARG is zero or negative.  If called from Lisp,
+also enable the mode if ARG is omitted or nil, and toggle it
+if ARG is `toggle'; disable the mode otherwise.
+
 \\{rich-minority-mode-map}
 
 \(fn &optional ARG)" t nil)
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "rich-minority" '("rm-")))
 
 ;;;***
 
@@ -37,5 +44,6 @@ the mode if ARG is omitted or nil, and toggle it if ARG is `toggle'.
 ;; version-control: never
 ;; no-byte-compile: t
 ;; no-update-autoloads: t
+;; coding: utf-8
 ;; End:
 ;;; rich-minority-autoloads.el ends here

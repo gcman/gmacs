@@ -1,13 +1,10 @@
 *
-
-!.gitignore
-!init.el
-!README.md
 !snippets/
 !snippets/*
-!elpa/
-!elpa/*
 !elisp/
 !elisp/*
+!README.md
+!.gitignore
+!init.el
 !gautam.org
 !abbrevs.el

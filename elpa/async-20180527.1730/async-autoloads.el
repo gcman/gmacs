@@ -1,9 +1,12 @@
 ;;; async-autoloads.el --- automatically extracted autoloads
 ;;
 ;;; Code:
-(add-to-list 'load-path (directory-file-name (or (file-name-directory #$) (car load-path))))
+
+(add-to-list 'load-path (directory-file-name
+                         (or (file-name-directory #$) (car load-path))))
+
 
-;;;### (autoloads nil "async" "async.el" (23457 23340 173201 610000))
+;;;### (autoloads nil "async" "async.el" (0 0 0 0))
 ;;; Generated autoloads from async.el
 
 (autoload 'async-start-process "async" "\
@@ -66,10 +69,12 @@ returns nil.  It can still be useful, however, as an argument to
 
 \(fn START-FUNC &optional FINISH-FUNC)" nil nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "async" '("async-")))
+
 ;;;***
 
-;;;### (autoloads nil "async-bytecomp" "async-bytecomp.el" (23457
-;;;;;;  23340 197192 171000))
+;;;### (autoloads nil "async-bytecomp" "async-bytecomp.el" (0 0 0
+;;;;;;  0))
 ;;; Generated autoloads from async-bytecomp.el
 
 (autoload 'async-byte-recompile-directory "async-bytecomp" "\
@@ -93,6 +98,11 @@ Byte compile asynchronously packages installed with package.el.
 Async compilation of packages can be controlled by
 `async-bytecomp-allowed-packages'.
 
+If called interactively, enable Async-Bytecomp-Package mode if ARG is positive, and
+disable it if ARG is zero or negative.  If called from Lisp,
+also enable the mode if ARG is omitted or nil, and toggle it
+if ARG is `toggle'; disable the mode otherwise.
+
 \(fn &optional ARG)" t nil)
 
 (autoload 'async-byte-compile-file "async-bytecomp" "\
@@ -102,10 +112,11 @@ Same as `byte-compile-file' but asynchronous.
 
 \(fn FILE)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "async-bytecomp" '("async-byte")))
+
 ;;;***
 
-;;;### (autoloads nil "dired-async" "dired-async.el" (23457 23340
-;;;;;;  189195 317000))
+;;;### (autoloads nil "dired-async" "dired-async.el" (0 0 0 0))
 ;;; Generated autoloads from dired-async.el
 
 (defvar dired-async-mode nil "\
@@ -120,6 +131,11 @@ or call the function `dired-async-mode'.")
 
 (autoload 'dired-async-mode "dired-async" "\
 Do dired actions asynchronously.
+
+If called interactively, enable Dired-Async mode if ARG is positive, and
+disable it if ARG is zero or negative.  If called from Lisp,
+also enable the mode if ARG is omitted or nil, and toggle it
+if ARG is `toggle'; disable the mode otherwise.
 
 \(fn &optional ARG)" t nil)
 
@@ -143,10 +159,19 @@ Run ‘dired-do-rename’ asynchronously.
 
 \(fn &optional ARG)" t nil)
 
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "dired-async" '("dired-async-")))
+
 ;;;***
 
-;;;### (autoloads nil nil ("async-pkg.el" "smtpmail-async.el") (23457
-;;;;;;  23340 205189 25000))
+;;;### (autoloads nil "smtpmail-async" "smtpmail-async.el" (0 0 0
+;;;;;;  0))
+;;; Generated autoloads from smtpmail-async.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "smtpmail-async" '("async-smtpmail-")))
+
+;;;***
+
+;;;### (autoloads nil nil ("async-pkg.el") (0 0 0 0))
 
 ;;;***
 
@@ -154,5 +179,6 @@ Run ‘dired-do-rename’ asynchronously.
 ;; version-control: never
 ;; no-byte-compile: t
 ;; no-update-autoloads: t
+;; coding: utf-8
 ;; End:
 ;;; async-autoloads.el ends here

@@ -46,7 +46,7 @@
 ;;
 ;; OVERVIEW
 ;; ========
-;;
+;; 
 ;; CDLaTeX is a minor mode supporting mainly mathematical and scientific
 ;; text development with LaTeX.  CDLaTeX is really about speed.  AUCTeX
 ;; (the major mode I recommend for editing LaTeX files) does have a hook
@@ -54,8 +54,8 @@
 ;; useful and general, it is sometimes slow to use.  CDLaTeX tries to be
 ;; quick, with very few and easy to remember keys, and intelligent
 ;; on-the-fly help.
-;;
-;; 1. ABBREVIATIONS.
+;; 
+;; 1. ABBREVIATIONS.  
 ;;    -------------
 ;;    CDLaTeX has an abbrev-like mechanism to insert full LaTeX
 ;;    environments and other templates into the buffer.  Abbreviation
@@ -63,7 +63,7 @@
 ;;    For example, typing "ite<TAB>" inserts an itemize environment.  A
 ;;    full list of defined abbreviations is available with the command
 ;;    `C-c ?' (`cdlatex-command-help').
-;;
+;; 
 ;;    1a. ENVIRONMENT TEMPLATES
 ;;        ---------------------
 ;;        Typing `C-c {' (`cdlatex-environment') uses the minibuffer to
@@ -73,16 +73,16 @@
 ;;        template, text needs to be filled in at various places, which we
 ;;        call "points of interest".  You can use the TAB key to jump to
 ;;        the next point of interest in the template.
-;;
+;; 
 ;;        For many frequently used LaTeX environments, abbreviations are
 ;;        available.  Most of the time, the abbreviation consists of the
 ;;        first three letters of the environment name: `equ<TAB>' expands
 ;;        into
 ;;            \begin{equation}
 ;;            \label{eq:1}
-;;
+;; 
 ;;            \end{equation}
-;;
+;; 
 ;;        Similarly, `ali<TAB>' inserts an AMS-LaTeX align environment
 ;;        template etc.  For a full list of environment abbreviations, use
 ;;        `C-c ?'.
@@ -93,9 +93,9 @@
 ;;        environment it inserts "\item\label{item:25}" and in an eqnarray
 ;;        environment, it inserts "\label{eq:25} \n & &".  When
 ;;        appropriate, newlines are inserted, and the previous item is also
-;;        closed with "\\".  `cdlatex-item' can also be invoked with the
+;;        closed with "\\".  `cdlatex-item' can also be invoked with the 
 ;;        abbreviation "it<TAB>".
-;;
+;; 
 ;;    1b. MATH TEMPLATES
 ;;        --------------
 ;;        Abbreviations are also used to insert simple math templates
@@ -108,7 +108,7 @@
 ;;        inserted.  For example in the `\frac{}{}' template, it will
 ;;        move you from the first argument to the second and then out of
 ;;        the second.  For a list of available templates, type `C-c ?'.
-;;
+;; 
 ;; 2. MATHEMATICAL SYMBOLS
 ;;    --------------------
 ;;    This feature is similar to the functionality in the Math minor mode
@@ -125,7 +125,7 @@
 ;;    example, typing "`d" inserts "\delta" (level 1), and typing "``d"
 ;;    inserts "\partial" (level 2).  Similarly, "`e" inserts "\epsilon"
 ;;    and "``e" inserts "\vareppsilon".
-;;
+;; 
 ;;    On each level, on-thy-fly help will pop up automatically if you
 ;;    hesitate to press the next key.  The help screen is a window which
 ;;    lists all math macros available on the current level.  Initially,
@@ -135,17 +135,17 @@
 ;;    out: First press "`" (backquote), wait for the help window and then
 ;;    press "a" to get "\alpha".  Then press "`" and "b" as a quick
 ;;    sequence to get "\beta", without the help window.
-;;
+;; 
 ;;    The LaTeX macros available through this mechanism are fully
 ;;    configurable - see the variable `cdlatex-math-symbol-alist'.
-;;
+;; 
 ;; 3. ACCENTS AND FONTS
 ;;    -----------------
 ;;    Putting accents on mathematical characters and/or changing the font
 ;;    of a character uses key combinations with the quote character "'"
 ;;    as a prefix.  The accent or font change is applied to the character
 ;;    or LaTeX macro *before* point.  For example
-;;
+;; 
 ;;      Keys                            Result
 ;;      --------------------------------------------------------------------
 ;;      a'~                             ERROR                 % in text mode
@@ -157,7 +157,7 @@
 ;;      r_{dust}'r                      r_\mathrm{dust}       % in math mode
 ;;      <SPC> 'e                        \emph{}
 ;;      this is important   M-2 'b      this \textbf{is important}
-;;
+;; 
 ;;    As you can see:
 ;;    - using math accents like ~ outside math mode will throw an error.
 ;;    - the font change used automatically adapts to math mode.
@@ -170,7 +170,7 @@
 ;;      and positions the cursor inside.
 ;;    - when a numeric prefix argument is supplied, the command acts on
 ;;      whole words before the cursor.
-;;
+;; 
 ;;    In order to insert a normal quote, you can press the quote
 ;;    character twice.  Also, if the key character is not associated with
 ;;    an accent or font, the quote will be inserted.  For example, "'t"
@@ -181,7 +181,7 @@
 ;;    continue quickly.  The available accents and also the prefix key
 ;;    can be can be configured - see documentation of the variables
 ;;    `cdlatex-math-modify-alist' and `cdlatex-math-modify-prefix'.
-;;
+;; 
 ;; 4. PAIR INSERTION of (), [], {}, and $$
 ;;    ------------------------------------
 ;;    Dollars and parens can be inserted as pairs.  When you type the
@@ -189,7 +189,7 @@
 ;;    and the cursor positioned between them.  You can configure which
 ;;    delimiter are inserted pairwise by configuring the variable
 ;;    `cdlatex-paired-parens'.
-;;
+;; 
 ;;    Also, the keys `_' and `^' will insert "_{}" and "^{}",
 ;;    respectively, and, if necessary, also a pair of dollar signs to
 ;;    switch to math mode.  You can use TAB to exit paired parenthesis.
@@ -198,7 +198,7 @@
 ;;    the sub/superscript consists of a single character.  For example
 ;;    typing "$10^3<TAB>" inserts "$10^3$", but typing "$10^34<TAB>"
 ;;    inserts "$10^{34}$"
-;;
+;; 
 ;; 5. THE OVERLOADED TAB KEY
 ;;    ----------------------
 ;;    You may have noticed that we use the TAB key for many different
@@ -206,16 +206,16 @@
 ;;    gotten used to this very much.  Hopefully this will work for you as
 ;;    well: "when in doubt, press TAB".  Here is a summary of what happens
 ;;    when you press the TAB key:
-;;
+;; 
 ;;    The function first tries to expand any abbreviation before point.
-;;
+;; 
 ;;    If there is none, it cleans up short subscripts and superscripts at
 ;;    point.  I.e., is the cursor is just before the closing brace in
 ;;    "a^{2}", it changes it to "a^2", since this is more readable.  If
 ;;    you want to keep the braces also for simple superscripts and
 ;;    subscripts, set the variable `cdlatex-simplify-sub-super-scripts'
 ;;    to nil.
-;;
+;; 
 ;;    After that, the TAB function jumps to the next point of interest in
 ;;    a LaTeX text where one would reasonably expect that more input can
 ;;    be put in.  This does *not* use special markers in the template,
@@ -224,10 +224,10 @@
 ;;    function `cdlatex-tab'.
 ;;
 ;;-----------------------------------------------------------------------------
-;;
+;; 
 ;; CONFIGURATION EXAMPLES
 ;; ======================
-;;
+;; 
 ;; Check out the documentation of the variables in the configuration
 ;; section.  The variables must be set before cdlatex-mode is turned on,
 ;; or, at the latext, in `cdlatex-mode-hook', in order to be effective.
@@ -274,6 +274,11 @@
 ;; installed.
 ;;
 ;;   $         cdlatex-dollar
+;;   (         cdlatex-pbb
+;;   {         cdlatex-pbb
+;;   [         cdlatex-pbb
+;;   |         cdlatex-pbb
+;;   <         cdlatex-pbb
 ;;   ^         cdlatex-sub-superscript
 ;;   _         cdlatex-sub-superscript
 ;;
@@ -287,7 +292,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; FAQ
-;;
+;; 
 ;; - Some people find it disturbing that the quote character (') is active
 ;;   for math accents and font switching.  I have tried to avoid any letters
 ;;   which are frequently following ' in normal text.  For example, 's and 't
@@ -330,7 +335,7 @@
   (interactive)
   (if (fboundp 'customize-menu-create)
       (progn
-	(easy-menu-change
+	(easy-menu-change 
 	 '("CDLTX") "Customize"
 	 `(["Browse CDLaTeX group" cdlatex-customize t]
 	   "---"
@@ -436,7 +441,7 @@ math symbols.  First entry for level 1 etc.
 Each entry consists of a prefix key and a list of modifiers for the
 character.  The prefix key can be nil, or any of a character, a
 read-kbd-macro readable string or a vector.
-Examples:
+Examples: 
 `((nil alt))'                   bind `\\delta' to `A-d'.
 `((\"C-c C-f\"))'               bind `\\delta' to `C-c C-f d'.
 `((nil alt) (nil alt control))' bind `\\delta' to `A-d' and
@@ -449,7 +454,7 @@ Examples:
 	   (cons
 	    :tag "Specify a binding"
 	    :value (nil alt)
-	    (choice
+	    (choice 
 	     (const :tag "No prefix" nil)
 	     (character :value ?@)
 	     (string :value "" :tag "kbd readable string")
@@ -638,7 +643,7 @@ Entering cdlatex-mode calls the hook cdlatex-mode-hook.
 	(run-hooks 'cdlatex-mode-hook)
 	(cdlatex-compute-tables))
     (easy-menu-remove cdlatex-mode-menu)))
-
+    
 (or (assoc 'cdlatex-mode minor-mode-alist)
     (setq minor-mode-alist
           (cons '(cdlatex-mode " CDL") minor-mode-alist)))
@@ -711,6 +716,23 @@ Entering cdlatex-mode calls the hook cdlatex-mode-hook.
 ;;;
 ;;; Insert pairs of $$ (), etc.
 
+;; Alist connection opening with closing delimiters
+(defconst cdlatex-parens-pairs '(("(".")") ("["."]") ("{"."}")
+                               ("|"."|") ("<".">")))
+
+(defun cdlatex-pbb ()
+  "Insert a pair of parens, brackets or braces."
+  (interactive)
+  (let ((paren (char-to-string (event-basic-type last-command-event))))
+    (if (and (stringp cdlatex-paired-parens)
+             (string-match (regexp-quote paren) cdlatex-paired-parens)
+             (not (cdlatex-number-of-backslashes-is-odd)))
+        (progn
+          (insert paren)
+          (insert (cdr (assoc paren cdlatex-parens-pairs)))
+          (forward-char -1))
+      (insert paren))))
+
 (defun cdlatex-ensure-math ()
   ;; Make sure we are in math
   (unless (texmathp)
@@ -758,8 +780,8 @@ When not in LaTeX math environment, _{} and ^{} will have dollars."
 			 "{"))
         ;; We are at the start of a sub/suberscript.  Allow a__{b} and a^^{b}
         ;; This is an undocumented feature, please keep it in.  It supports
-        ;; a special notation which can be used for upright sub- and
-        ;; superscripts.
+        ;; a special notation which can be used for upright sub- and 
+        ;; superscripts. 
         (progn
           (backward-char 1)
           (insert (event-basic-type last-command-event))
@@ -958,7 +980,7 @@ the template.  This is mainly useful for \"items\" of environments, where
     (setq begpos (point))
     (if (try-completion env cdlatex-env-alist-comb)
         (progn
-          (setq template (nth (if item 2 1)
+          (setq template (nth (if item 2 1) 
                               (assoc env cdlatex-env-alist-comb)))
           (if (string= (substring template 0 2) "\\\\")
               ;; Need a double backslash to teminate previous item
@@ -979,7 +1001,7 @@ the template.  This is mainly useful for \"items\" of environments, where
     (while (search-forward "AUTOFILE" (marker-position endmarker) t)
       (backward-delete-char 8)
       (call-interactively 'cdlatex-insert-filename))
-
+    
     ;; Look for AUTOLABEL requests
     (goto-char begpos)
     (while (search-forward "AUTOLABEL" (marker-position endmarker) t)
@@ -1184,7 +1206,7 @@ constant `cdlatex-math-modify-alist'."
              (t (throw 'exit1 t))))))
       (message "")
       (setq ass (assoc char cdlatex-math-modify-alist-comb))
-      (if (not ass)
+      (if (not ass) 
           (progn
             (insert cdlatex-math-modify-prefix char)
             (throw 'exit t)))
@@ -1216,7 +1238,7 @@ constant `cdlatex-math-modify-alist'."
 	(insert cmd)
 	(if (not acc) (insert " "))
 	(register-to-point ?x)
-	(insert "}"))
+	(insert "}"))	
        ((or (bolp)
 	    (not cdlatex-modify-backwards)
 	    (memq (preceding-char) '(?\  ?$ ?- ?{ ?\( )))
@@ -1384,7 +1406,7 @@ zZ
      "" cdlatex-environment ("flalign*") t nil)
     ("fg"        "Insert a FIGURE environment template"
      "" cdlatex-environment ("figure") t nil)
-
+    
 
     ("sn"        "Insert a \\section{} statement"
      "\\section{?}" cdlatex-position-cursor nil t nil)
@@ -1419,6 +1441,8 @@ zZ
      "|" cdlatex-lr-pair nil nil t)
     ("caseeq"     "Insert a = { construct"
      "\\left\\{ \n\\begin{array}{l@{\\quad:\\quad}l}\n? & \\\\\n & \n\\end{array}\\right." cdlatex-position-cursor nil nil t)
+    ("fr"         "Insert \\frac{}{}"
+     "\\frac{?}{}"           cdlatex-position-cursor nil nil t)
     ("sq"         "Insert \\sqrt{}"
      "\\sqrt{?}"             cdlatex-position-cursor nil nil t)
     ("intl"       "Insert \\int\\limits_{}^{}"
@@ -1610,7 +1634,7 @@ nil
 ;;------------------------------------
 ( "description"
 "\\begin{description}
-\\item[?]
+\\item[?] 
 \\end{description}"
 "\\item[?] "
 )
@@ -1871,34 +1895,34 @@ AUTOLABEL
 ( "alignat"
 "\\begin{alignat}{?}
 AUTOLABEL
-
+ 
 \\end{alignat}"
 "\\\\AUTOLABEL
 ?")
 ;;------------------------------------
 ( "alignat*"
 "\\begin{alignat*}{?}
-
+ 
 \\end{alignat*}"
 "\\\\?")
 ;;------------------------------------
 ( "xalignat"
 "\\begin{xalignat}{?}
 AUTOLABEL
-
+ 
 \\end{xalignat}"
 "\\\\AUTOLABEL
 ?")
 ;;------------------------------------
 ( "xalignat*"
 "\\begin{xalignat*}{?}
-
+ 
 \\end{xalignat*}"
 "\\\\?")
 ;;------------------------------------
 ( "xxalignat"
 "\\begin{xxalignat}{?}
-
+ 
 \\end{xxalignat}"
 "\\\\?")
 ;;------------------------------------
@@ -1970,7 +1994,7 @@ nil
 nil
 )
 ;;------------------------------------
-;; figure environments for A&A
+;; figure environments for A&A 
 ( "aafigure"
 "\\begin{figure}
 \\resizebox{\\hsize}{!}{\\includegraphics{?.eps}}
@@ -2034,19 +2058,19 @@ these variables via `cdlatex-add-to-label-alist'."
     (setq cdlatex-math-symbol-no-of-levels (1- maxlev)))
 
   ;; The direct key bindings.
-  (let (map dummy-map prefix modifiers symbol bindings)
+  (let (map dummy-map prefix modifiers symbol bindings) 
     (loop for level from 1 to cdlatex-math-symbol-no-of-levels do
 	  (setq dummy-map (make-sparse-keymap))
 	  (setq prefix (car (nth (1- level)
 				 cdlatex-math-symbol-direct-bindings)))
-	  (setq modifiers (cdr
+	  (setq modifiers (cdr 
 			   (nth (1- level)
 				cdlatex-math-symbol-direct-bindings)))
 	  (when (or prefix modifiers)
 	    (cond
 	     ((stringp prefix) (setq prefix (read-kbd-macro prefix)))
 	     ((integerp prefix) (setq prefix (vector prefix))))
-
+	    
 	    (if (null prefix)
 		(setq map cdlatex-mode-map)
 	      (setq map (make-keymap))
@@ -2055,14 +2079,14 @@ these variables via `cdlatex-add-to-label-alist'."
 	    (defun cdlatex-nop () (interactive))
 	    (define-key dummy-map
 	      (vector (append modifiers (list ?a))) 'cdlatex-nop)
-	    (push (cons level (substitute-command-keys
+	    (push (cons level (substitute-command-keys 
 			       "\\<dummy-map>\\[cdlatex-nop]"))
 		  bindings)
 	    (mapc (lambda (entry)
 		    (setq symbol (nth level entry))
 		    (when (and symbol (stringp symbol)
 			       (not (equal "" symbol)))
-		      (define-key
+		      (define-key 
 			map (vector (append modifiers (list (car entry))))
 			(list 'lambda '() '(interactive)
 			      (list 'cdlatex-insert-math symbol)))))
@@ -2078,6 +2102,11 @@ these variables via `cdlatex-add-to-label-alist'."
 ;;; Keybindings --------------------------------------------------------------
 
 (define-key cdlatex-mode-map  "$"         'cdlatex-dollar)
+(define-key cdlatex-mode-map  "("         'cdlatex-pbb)
+(define-key cdlatex-mode-map  "{"         'cdlatex-pbb)
+(define-key cdlatex-mode-map  "["         'cdlatex-pbb)
+(define-key cdlatex-mode-map  "|"         'cdlatex-pbb)
+(define-key cdlatex-mode-map  "<"         'cdlatex-pbb)
 (define-key cdlatex-mode-map  "^"         'cdlatex-sub-superscript)
 (define-key cdlatex-mode-map  "_"         'cdlatex-sub-superscript)
 
@@ -2099,7 +2128,7 @@ these variables via `cdlatex-add-to-label-alist'."
 
 (require 'easymenu)
 
-(easy-menu-define
+(easy-menu-define 
  cdlatex-mode-menu cdlatex-mode-map
  "Menu used in CDLaTeX mode"
  '("CDLTX"
@@ -2112,7 +2141,7 @@ these variables via `cdlatex-add-to-label-alist'."
    ("Customize"
     ["Browse CDLaTeX group" cdlatex-customize t]
     "---"
-    ["Build Full Customize Menu" cdlatex-create-customize-menu
+    ["Build Full Customize Menu" cdlatex-create-customize-menu 
      (fboundp 'customize-menu-create)])
    "----"
    ["Show documentation"      cdlatex-show-commentary t]

@@ -1,5 +1,3 @@
-;; (package-initialize)
-
 (org-babel-load-file (expand-file-name "~/.emacs.d/gautam.org"))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
