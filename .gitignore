@@ -5,5 +5,9 @@
 !README.md
 !snippets/
 !snippets/*
+!elpa/
+!elpa/*
+!elisp/
+!elisp/*
 !gautam.org
 !abbrevs.el

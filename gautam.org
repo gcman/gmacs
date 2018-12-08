@@ -1,13 +1,13 @@
 #+TITLE: Emacs Configuration
 * Starting Up
-** Balance Brackets :noexport:
-(
+** Balancing                                                         :noexport:
+("
 ** Daemon Mode
 #+BEGIN_SRC emacs-lisp
 (server-start)
 #+END_SRC
 ** Time Startup
-On start-up, display how quickly emacs started up.
+On start-up, display how quickly Emacs started up.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-startup-hook
           (lambda ()
@@ -50,7 +50,7 @@ them. I also set up ~use-package~ here.
 #+END_SRC
 * General Configuration
 ** Graphics
-*** Decluttering
+*** ng
 **** Splash Screen
 Get rid of that ugly splash screen.
 #+BEGIN_SRC emacs-lisp
@@ -170,31 +170,30 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 (setq indent-line-function 'insert-tab)
 #+END_SRC
 ** Ease of Use
-*** Dialogs
-**** From Yes/No to y/n
+*** From Yes/No to y/n
 This makes things so much simpler. There's not any ambiguity to begin with.
 #+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 *** Ido Mode
-"
 #+BEGIN_SRC emacs-lisp
 (use-package ido)
 (use-package ido-grid-mode)
+(use-package amx)
 (require 'flx-ido)
 (require 'ido-completing-read+)
-(require 'smex)
-(smex-initialize)
 (ido-mode 1)
 (ido-grid-mode 1)
 (flx-ido-mode 1)
 (ido-ubiquitous-mode 1)
 (ido-everywhere 1)
+(amx-mode 1)
 (setq ido-grid-bind-keys t)
 (setq ido-enable-flex-matching t)
 (setq ido-use-filename-at-point 'guess)
 (setq ido-create-new-buffer 'always)
 (setq ido-use-faces nil)
+(setq ido-max-directory-size 100000)
 (setq ido-file-extensions-order '(".org" ".tex" ".py"))
 #+END_SRC
 *** Delete The Selection
@@ -218,10 +217,7 @@ This makes things so much simpler. There's not any ambiguity to begin with.
 (use-package flyspell
     :defer 1
     :hook (text-mode . flyspell-mode)
-    :diminish
-    :bind (:map flyspell-mouse-map
-                ([down-mouse-3] . #'flyspell-correct-word)
-                ([mouse-3]      . #'undefined)))
+    :diminish)
 #+END_SRC
 *** Kill Current Buffer
 Kill the current buffer.
@@ -229,7 +225,6 @@ Kill the current buffer.
 (defun bjm/kill-this-buffer ()
   (interactive)
   (kill-buffer (current-buffer)))
-(global-set-key (kbd "C-x k") 'bjm/kill-this-buffer)
 #+END_SRC
 *** Split Vertically by Default
 Gotta maximize that vertical screen space.
@@ -303,9 +298,10 @@ Enable ivy-mode.
   (diminish 'ivy-mode)
   (setq ivy-use-virtual-buffers t)
   (setq ivy-display-style 'fancy)
-  (global-set-key (kbd "C-s") 'swiper)
-  (global-set-key (kbd "C-c C-r") 'ivy-resume))
-#+END_SRC
+  (setq ivy-re-builders-alist
+        '((swiper . ivy--regex-plus)
+          (t      . ivy--regex-fuzzy)))
+  (setq ivy-initial-inputs-alist nil))
 #+END_SRC
 Get swiper to recentre the display when it exits.
 #+BEGIN_SRC emacs-lisp
@@ -356,9 +352,7 @@ Save abbreviations upon saving a file.
   (setq avy-background t)
   :custom-face
   (avy-lead-face ((t(:weight bold))))
-  (avy-lead-face-0 ((t(:weight bold))))
-  )
-(global-set-key (kbd "M-i") 'avy-goto-char-2)
+  (avy-lead-face-0 ((t(:weight bold)))))
 #+END_SRC
 *** Autocorrect
 **** Double Caps
@@ -456,7 +450,6 @@ Completely reload emacs, by reloading the init file.
 ** Magit
 #+BEGIN_SRC emacs-lisp
 (require 'magit)
-(global-set-key (kbd "C-x g") 'magit-status)
 (setq magit-completing-read-function 'magit-ido-completing-read)
 #+END_SRC
 ** Dired
@@ -534,27 +527,21 @@ Enable god-mode.
   (which-key-mode))
 #+END_SRC
 ** The Actual Keybindings
-*** Easy Meta
+*** Easy M-x
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-SPC") 'smex)
-(global-set-key (kbd "C-M-SPC") 'smex-major-mode-commands)
+(global-set-key (kbd "C-SPC") 'execute-extended-command)
+(global-set-key (kbd "C-M-SPC") 'amx-major-mode-commands)
 (global-set-key (kbd "C-c C-SPC") 'execute-extended-command)
 #+END_SRC
 *** Set Mark
-Need to have a replacement because we rebound ~C-SPC~.
+Need a replacement because we rebound ~C-SPC~ above.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-t") 'set-mark-command)
 #+END_SRC
-*** Shell Backwards Kill
+*** Shell Backwards Kill Word
 #+BEGIN_SRC emacs-lisp
-(global-set-key "\C-w" 'backward-kill-word)
-#+END_SRC
-*** Easy Kill
-Add extra keybinding to account for missing.
-#+BEGIN_SRC emacs-lisp
-(global-set-key "\C-x\C-k" 'kill-region)
-(global-set-key "\C-c\C-k" 'kill-region)
+(global-set-key (kbd "C-w") 'backward-kill-word)
 #+END_SRC
 *** Shell Backspace
 Use shell like ~C-h~ instead of Backspace.
@@ -562,7 +549,17 @@ Use shell like ~C-h~ instead of Backspace.
 (define-key key-translation-map [?\C-h] [?\C-?])
 (global-set-key (kbd "<f1>") 'help-command)
 #+END_SRC
+*** Easy Kill
+Add extra keybinding to account for missing.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x C-k") 'kill-region)
+(global-set-key (kbd "C-c C-k") 'kill-region)
+#+END_SRC
 *** Better Buffers
+Kill better.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x k") 'bjm/kill-this-buffer)
+#+END_SRC
 Switch better.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x b") 'ido-switch-buffer)
@@ -676,10 +673,10 @@ Count org-wc.
 #+END_SRC
 *** Window Management
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x C-1") 'delete-other-windows)
-(global-set-key (kbd "C-x C-2") 'split-window-below)
-(global-set-key (kbd "C-x C-3") 'split-window-right)
-(global-set-key (kbd "C-x C-0") 'delete-window)
+(global-set-key (kbd "C-x 1") 'delete-other-windows)
+(global-set-key (kbd "C-x 2") 'split-window-below)
+(global-set-key (kbd "C-x 3") 'split-window-right)
+(global-set-key (kbd "C-x 0") 'delete-window)
 #+END_SRC
 *** Transpose Sentences and Paragraphs
 Add an alias to do this easily.
@@ -693,9 +690,31 @@ Add an alias to do this easily.
 (global-set-key  (kbd "C-z") 'undo)
 (global-set-key (kbd "C-x C-u") 'undo)
 #+END_SRC
+*** Search
+**** Swiper
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-s") 'swiper)
+#+END_SRC
+**** Avy
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "M-i") 'avy-goto-char-2)
+#+END_SRC
+*** Magit
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-x g") 'magit-status)
+#+END_SRC
 *** Org LaTeX Export
 #+BEGIN_SRC emacs-lisp
 (global-set-key  (kbd "C-c b") 'gm/org-latex-export)
+#+END_SRC
+*** Dictionary
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c d") 'sdcv-search)
+#+END_SRC
+*** Find Inbox
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c o")
+                (lambda () (interactive) (find-file "~/org/inbox.org")))
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
@@ -824,7 +843,26 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+END_SRC
 *** Org Capture
 #+BEGIN_SRC emacs-lisp
-(setq org-default-notes-file "~/Documents/school/org/todo.org")
+(setq org-directory "~/org/")
+(setq org-default-notes-file "~/org/inbox.org")
+(setq org-agenda-files '("~/org/inbox.org"
+                         "~/org/journal.org"
+                         "~/org/gtd.org"
+                         "~/org/tickler.org"))
+(setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+(setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
+                           ("~/org/someday.org" :level . 1)
+                           ("~/org/tickler.org" :maxlevel . 2)))
+(setq org-capture-templates '(("t" "Todo [inbox]" entry
+                               (file+headline "~/org/inbox.org" "Tasks")
+                               "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
+                              ("T" "Tickler" entry
+                               (file+headline "~/org/tickler.org" "Tickler")
+                               "* %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
+                              ("j" "Journal" entry
+                               (file+datetree "~/org/journal.org")
+                               "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
+                              ))
 #+END_SRC
 ** Ox-hugo
 #+BEGIN_SRC emacs-lisp
@@ -1188,16 +1226,6 @@ from lines like:
                  "\\documentclass[12pt]{article}
 \\usepackage{uts-assignment}
 \\renewcommand{\\maketitle}{}
-[NO-DEFAULT-PACKAGES]
-[EXTRA]"
-                 ("\\section{%s}" . "\\section*{%s}")
-                 ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")
-                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
-  (add-to-list 'org-latex-classes
-               '("lecture"
-                 "\\documentclass[11pt]{lecture}
 [NO-DEFAULT-PACKAGES]
 [EXTRA]"
                  ("\\section{%s}" . "\\section*{%s}")
@@ -1933,4 +1961,4 @@ activated.
 Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
 #+BEGIN_SRC emacs-lisp
 (setq gc-cons-threshold 20000000)
-#+END_Sr
+#+END_SRC
