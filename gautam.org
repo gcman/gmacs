@@ -50,7 +50,7 @@ them. I also set up ~use-package~ here.
 #+END_SRC
 * General Configuration
 ** Graphics
-*** ng
+*** Decluttering
 **** Splash Screen
 Get rid of that ugly splash screen.
 #+BEGIN_SRC emacs-lisp
@@ -80,7 +80,6 @@ The cursor should not blink.
   (setq-default cursor-type 'box))
 (setq x-stretch-cursor 1)
 #+END_SRC
-**** Notifications
 **** Bells
 Visual, not audible bells.
 #+BEGIN_SRC emacs-lisp
@@ -170,11 +169,6 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 (setq indent-line-function 'insert-tab)
 #+END_SRC
 ** Ease of Use
-*** From Yes/No to y/n
-This makes things so much simpler. There's not any ambiguity to begin with.
-#+BEGIN_SRC emacs-lisp
-(fset 'yes-or-no-p 'y-or-n-p)
-#+END_SRC
 *** Ido Mode
 #+BEGIN_SRC emacs-lisp
 (use-package ido)
@@ -196,165 +190,14 @@ This makes things so much simpler. There's not any ambiguity to begin with.
 (setq ido-max-directory-size 100000)
 (setq ido-file-extensions-order '(".org" ".tex" ".py"))
 #+END_SRC
-*** Delete The Selection
-#+BEGIN_SRC emacs-lisp
-(delete-selection-mode 1)
-#+END_SRC
-*** Autocomplete
-**** ignore case
-#+BEGIN_SRC emacs-lisp
-(setq completion-ignore-case t)
-#+END_SRC
-**** Company
-#+BEGIN_SRC emacs-lisp
-(use-package company
-    :diminish company-mode
-    :hook
-    (after-init . global-company-mode))
-#+END_SRC
 *** Spellchek
+**** Highlight Mistakes
 #+BEGIN_SRC emacs-lisp
 (use-package flyspell
     :defer 1
     :hook (text-mode . flyspell-mode)
     :diminish)
 #+END_SRC
-*** Kill Current Buffer
-Kill the current buffer.
-#+BEGIN_SRC emacs-lisp
-(defun bjm/kill-this-buffer ()
-  (interactive)
-  (kill-buffer (current-buffer)))
-#+END_SRC
-*** Split Vertically by Default
-Gotta maximize that vertical screen space.
-#+BEGIN_SRC emacs-lisp
-(setq split-height-threshold nil)
-(setq split-width-threshold 0)
-#+END_SRC
-*** Backups
-Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
-#+BEGIN_SRC emacs-lisp
-(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
-#+END_SRC
-Also, I have lots of disk space, and not so much patience when I lose an important file. So I save lots.
-#+BEGIN_SRC emacs-lisp
-(setq delete-old-versions -1)
-(setq version-control t)
-(setq vc-make-backup-files t)
-(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
-#+END_SRC
-**** History
-It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
-#+BEGIN_SRC emacs-lisp
-(setq savehist-file "~/.emacs.d/savehist")
-(savehist-mode 1)
-(setq history-length t)
-(setq history-delete-duplicates t)
-(setq savehist-save-minibuffer-history 1)
-(setq savehist-additional-variables
-      '(kill-ring
-        search-ring
-        regexp-search-ring))
-#+END_SRC
-***** Desktop
-On a similar note, save the desktop.
-#+BEGIN_SRC emacs-lisp
-(desktop-save-mode 1)
-(setq desktop-restore-eager 250)
-#+END_SRC
-Make two buffers with the same file name distinguishable.
-#+BEGIN_SRC emacs-lisp
-(use-package uniquify
-    :defer 1
-    :ensure nil
-    :custom
-    (uniquify-after-kill-buffer-p t)
-    (uniquify-buffer-name-style 'post-forward)
-    (uniquify-strip-common-suffix t))
-#+END_SRC
-***** Save Place
-Opens a file to the same place in which it was last closed.
-#+BEGIN_SRC emacs-lisp
-(save-place-mode 1)
-#+END_SRC
-*** Dictionary
-#+BEGIN_SRC emacs-lisp
-(require 'sdcv-mode)
-#+END_SRC
-*** Sentences End With a Single Space
-This is necessary to make sentence navigation commands work for me.
-#+BEGIN_SRC emacs-lisp
-(setq sentence-end-double-space nil)
-#+END_SRC
-*** Better Searching (Ivy and Swiper)
-Enable ivy-mode.
-#+BEGIN_SRC emacs-lisp
-(use-package ivy)
-(use-package swiper
-  :ensure t
-  :config
-  (ivy-mode 1)
-  (diminish 'ivy-mode)
-  (setq ivy-use-virtual-buffers t)
-  (setq ivy-display-style 'fancy)
-  (setq ivy-re-builders-alist
-        '((swiper . ivy--regex-plus)
-          (t      . ivy--regex-fuzzy)))
-  (setq ivy-initial-inputs-alist nil))
-#+END_SRC
-Get swiper to recentre the display when it exits.
-#+BEGIN_SRC emacs-lisp
-(defun bjm-swiper-recenter (&rest args)
-  "recenter display after swiper"
-  (recenter)
-  )
-(advice-add 'swiper :after #'bjm-swiper-recenter)
-#+END_SRC
-*** Abbreviations
-Load them.
-#+BEGIN_SRC emacs-lisp
-(load "~/.emacs.d/abbrevs.el")
-#+END_SRC
-Always use this wonderful tool.
-#+BEGIN_SRC emacs-lispn
-(set-default 'abbrev-mode t)
-#+END_SRC
-Because it's always on, we don't need to know about it.
-#+BEGIN_SRC emacs-lisp
-(diminish 'abbrev-mode)
-#+END_SRC
-Save them in the ~.emacs.d~ dir.
-#+BEGIN_SRC emacs-lisp
-(setq abbrev-file-name "~/.emacs.d/abbrevs.el")
-#+END_SRC
-Save abbreviations upon saving a file.
-#+BEGIN_SRC emacs-lisp
-(setq save-abbrevs 'silent)
-#+END_SRC
-*** Thing at Point
-#+BEGIN_SRC emacs-lisp
-(require 'thingatpt)
-#+END_SRC
-*** Electric Pairs
-#+BEGIN_SRC emacs-lisp
-(electric-pair-mode 1)
-(setq electric-pair-pairs
-      '(
-        (?\" . ?\")
-        (?\{ . ?\})))
-#+END_SRC
-*** Easily Navigate to Word (Avy Mode)
-#+BEGIN_SRC emacs-lisp
-(use-package avy :ensure t
-  :commands (avy-goto-char)
-  :config
-  (setq avy-background t)
-  :custom-face
-  (avy-lead-face ((t(:weight bold))))
-  (avy-lead-face-0 ((t(:weight bold)))))
-#+END_SRC
-*** Autocorrect
 **** Double Caps
 #+BEGIN_SRC emacs-lisp
 (defun dcaps-to-scaps ()
@@ -426,20 +269,179 @@ abort completely with `C-g'."
 (setq save-abbrevs 'silently)
 (setq-default abbrev-mode t)
 #+END_SRC
-*** Remember File Variables
+**** Autocomplete
+***** ignore case
+#+BEGIN_SRC emacs-lisp
+(setq completion-ignore-case t)
+#+END_SRC
+***** Company
+#+BEGIN_SRC emacs-lisp
+(use-package company
+    :diminish company-mode
+    :hook
+    (after-init . global-company-mode))
+#+END_SRC
+*** Better Defaults
+All the things (perhaps they seem little) that just make sense to have.
+**** From Yes/No to y/n
+This makes things so much simpler. There's not any ambiguity to begin with.
+#+BEGIN_SRC emacs-lisp
+(fset 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+**** Sentences End With a Single Space
+This is necessary to make sentence navigation commands work for me.
+#+BEGIN_SRC emacs-lisp
+(setq sentence-end-double-space nil)
+#+END_SRC
+**** Delete The Selection
+#+BEGIN_SRC emacs-lisp
+(delete-selection-mode 1)
+#+END_SRC
+**** Split Vertically by Default
+Gotta maximize that vertical screen space.
+#+BEGIN_SRC emacs-lisp
+(setq split-height-threshold nil)
+(setq split-width-threshold 0)
+#+END_SRC
+**** Kill Current Buffer
+Kill the current buffer.
+#+BEGIN_SRC emacs-lisp
+(defun bjm/kill-this-buffer ()
+  (interactive)
+  (kill-buffer (current-buffer)))
+#+END_SRC
+**** Remember File Variables
 #+BEGIN_SRC emacs-lisp
 (defun risky-local-variable-p (sym &optional _ignored) nil)
 #+END_SRC
-*** Reload Files On Update
+**** Reload Files On Update
 #+BEGIN_SRC emacs-lisp
 (global-auto-revert-mode t)
 #+END_SRC
-*** Complete Reload
+**** Complete Reload
 Completely reload emacs, by reloading the init file.
 #+BEGIN_SRC emacs-lisp
 (defun gm/reload ()
   (interactive)
   (load-file "~/.emacs.d/init.el"))
+#+END_SRC
+**** Dictionary
+#+BEGIN_SRC emacs-lisp
+(require 'sdcv-mode)
+#+END_SRC
+*** Backups
+Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
+#+BEGIN_SRC emacs-lisp
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+#+END_SRC
+Also, I have lots of disk space, and not so much patience when I lose an important file. So I save lots.
+#+BEGIN_SRC emacs-lisp
+(setq delete-old-versions -1)
+(setq version-control t)
+(setq vc-make-backup-files t)
+(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+#+END_SRC
+**** History
+It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
+#+BEGIN_SRC emacs-lisp
+(setq savehist-file "~/.emacs.d/savehist")
+(savehist-mode 1)
+(setq history-length t)
+(setq history-delete-duplicates t)
+(setq savehist-save-minibuffer-history 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        search-ring
+        regexp-search-ring))
+#+END_SRC
+***** Desktop
+On a similar note, save the desktop.
+#+BEGIN_SRC emacs-lisp
+(desktop-save-mode 1)
+(setq desktop-restore-eager 250)
+#+END_SRC
+Make two buffers with the same file name distinguishable.
+#+BEGIN_SRC emacs-lisp
+(use-package uniquify
+    :defer 1
+    :ensure nil
+    :custom
+    (uniquify-after-kill-buffer-p t)
+    (uniquify-buffer-name-style 'post-forward)
+    (uniquify-strip-common-suffix t))
+#+END_SRC
+***** Save Place
+Opens a file to the same place in which it was last closed.
+#+BEGIN_SRC emacs-lisp
+(save-place-mode 1)
+#+END_SRC
+
+*** Searching (Ivy, Avy, Swiper)
+Enable ivy-mode.
+#+BEGIN_SRC emacs-lisp
+(use-package ivy)
+(use-package swiper
+  :ensure t
+  :config
+  (ivy-mode 1)
+  (diminish 'ivy-mode)
+  (setq ivy-use-virtual-buffers t)
+  (setq ivy-display-style 'fancy)
+  (setq ivy-re-builders-alist
+        '((swiper . ivy--regex-plus)
+          (t      . ivy--regex-fuzzy)))
+  (setq ivy-initial-inputs-alist nil))
+#+END_SRC
+Get swiper to recentre the display when it exits.
+#+BEGIN_SRC emacs-lisp
+(defun bjm-swiper-recenter (&rest args)
+  "recenter display after swiper"
+  (recenter)
+  )
+(advice-add 'swiper :after #'bjm-swiper-recenter)
+#+END_SRC
+**** Easily Navigate to Word (Avy Mode)
+#+BEGIN_SRC emacs-lisp
+(use-package avy :ensure t
+  :commands (avy-goto-char)
+  :config
+  (setq avy-background t)
+  :custom-face
+  (avy-lead-face ((t(:weight bold))))
+  (avy-lead-face-0 ((t(:weight bold)))))
+#+END_SRC
+*** Abbreviations
+Load them.
+#+BEGIN_SRC emacs-lisp
+(load "~/.emacs.d/abbrevs.el")
+#+END_SRC
+Always use this wonderful tool.
+#+BEGIN_SRC emacs-lispn
+(set-default 'abbrev-mode t)
+#+END_SRC
+Because it's always on, we don't need to know about it.
+#+BEGIN_SRC emacs-lisp
+(diminish 'abbrev-mode)
+#+END_SRC
+Save them in the ~.emacs.d~ dir.
+#+BEGIN_SRC emacs-lisp
+(setq abbrev-file-name "~/.emacs.d/abbrevs.el")
+#+END_SRC
+Save abbreviations upon saving a file.
+#+BEGIN_SRC emacs-lisp
+(setq save-abbrevs 'silent)
+#+END_SRC
+*** Thing at Point
+#+BEGIN_SRC emacs-lisp
+(require 'thingatpt)
+#+END_SRC
+*** Electric Pairs
+#+BEGIN_SRC emacs-lisp
+(electric-pair-mode 1)
+(setq electric-pair-pairs
+      '(
+        (?\" . ?\")
+        (?\{ . ?\})))
 #+END_SRC
 *** Key Frequency
 #+BEGIN_SRC emacs-lisp
@@ -447,32 +449,33 @@ Completely reload emacs, by reloading the init file.
 (keyfreq-mode 1)
 (keyfreq-autosave-mode 1)
 #+END_SRC
-** Magit
+** Packages
+*** Magit
 #+BEGIN_SRC emacs-lisp
 (use-package magit)
 (setq magit-completing-read-function 'magit-ido-completing-read)
 #+END_SRC
-** Dired
-*** Revert Buffer
+*** Dired
+**** Revert Buffer
 Have the most up-to-date version of the buffer when using dired.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 #+END_SRC
-*** Declutter
+**** Declutter
 #+BEGIN_SRC emacs-lisp
 (defun xah-dired-mode-setup ()
   "to be run as hook for `dired-mode'."
   (dired-hide-details-mode 1))
 (add-hook 'dired-mode-hook 'xah-dired-mode-setup)
 #+END_SRC
-*** Copy and Delete
+**** Copy and Delete
 Allow dired to recursively copy and delete directories. ~always~ ensures that no
 confirmation dialog comes up, and ~top~ does it only once.
 #+BEGIN_SRC emacs-lisp
 (setq dired-recursive-copies (quote always))
 (setq dired-recursive-deletes (quote top))
 #+END_SRC
-*** Speed Sorting
+**** Speed Sorting
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a dired buffer.
 #+BEGIN_SRC emacs-lisp
@@ -481,13 +484,13 @@ extension. Use ~S~ to use in a dired buffer.
   :config
   (dired-quick-sort-setup))
 #+END_SRC
-** God Mode
+*** God Mode
 Enable god-mode.
 #+BEGIN_SRC emacs-lisp
 (use-package god-mode
   :ensure t)
 #+END_SRC
-*** Indicate Mode with Modeline
+**** Indicate Mode with Modeline
 #+BEGIN_SRC emacs-lisp
 (defun me//god-mode-indicator ()
   (cond (god-local-mode
@@ -500,7 +503,7 @@ Enable god-mode.
 (add-hook 'god-mode-enabled-hook #'me//god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'me//god-mode-indicator)
 #+END_SRC
-** PDF Tools
+*** PDF Tools
 #+BEGIN_SRC emacs-lisp
   (use-package pdf-tools
   :pin manual
@@ -515,6 +518,85 @@ Enable god-mode.
   (define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
   (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
   (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete))
+#+END_SRC
+** Theme
+*** Font Face
+Normally use Hack.
+#+BEGIN_SRC emacs-lisp
+(set-face-font 'default "Hack")
+(set-frame-font "Hack" nil t)
+#+END_SRC
+*** Solarized Light
+#+BEGIN_SRC emacs-lisp
+(use-package solarized-theme)
+(load-theme 'solarized-light t)
+#+END_SRC
+*** Autofill
+Use visual line mode everywhere.
+#+BEGIN_SRC emacs-lisp
+(global-visual-line-mode 1)
+#+END_SRC
+Nicely wrap lines for text mode.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'text-mode-hook 'auto-fill-mode)
+(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
+(eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
+#+END_SRC
+Quickly autofill the entire buffer by paragraph.
+#+BEGIN_SRC emacs-lisp
+(defun fill-buffer ()
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (widen)
+      (fill-region (point-min) (point-max)))))
+#+END_SRC
+**** 80 Columns
+#+BEGIN_SRC emacs-lisp
+(add-hook 'text-mode-hook
+        (lambda() (set-fill-column 80)))
+#+END_SRC
+*** Highlighting
+**** Syntax
+#+BEGIN_SRC emacs-lisp
+(global-font-lock-mode 1)
+#+END_SRC
+**** Rainbow Mode
+#+BEGIN_SRC emacs-lisp
+(use-package rainbow-mode)
+(rainbow-mode 1)
+(diminish 'rainbow-mode)
+#+END_SRC
+**** Source Code Blocks
+Native syntax highlighting for source blocks in org mode.
+#+BEGIN_SRC emacs-lisp
+(setq org-src-fontify-natively t
+      org-src-tab-acts-natively t
+      org-confirm-babel-evaluate nil
+      org-edit-src-content-indentation 0)
+#+END_SRC
+**** Sentences
+Highlight sentences. Credit to [[https://github.com/milkypostman/hl-sentence][Donald Curtis]].
+#+BEGIN_SRC emacs-lisp
+(require 'hl-sentence)
+(add-hook 'org-mode-hook 'hl-sentence-mode)
+#+END_SRC
+Use Solarized Light cyan to highlight.
+#+BEGIN_SRC emacs-lisp
+(set-face-attribute 'hl-sentence nil
+                     :background "#fdf6e3"
+                     :foreground "#2aa198")
+#+END_SRC
+**** Parentheses
+#+BEGIN_SRC emacs-lisp
+(setq blink-matching-paren nil)
+(show-paren-mode t)
+(setq show-paren-delay 0)
+(setq show-paren-style 'expression)
+#+END_SRC
+**** Transient Mark
+#+BEGIN_SRC emacs-lisp
+(setq transient-mark-mode t)
 #+END_SRC
 * Global Keybindings
 ** Bind Key
@@ -747,85 +829,6 @@ Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
 (key-chord-define-global "jk" 'god-local-mode)
 #+END_SRC
-* Theme
-** Font Face
-Normally use Hack.
-#+BEGIN_SRC emacs-lisp
-(set-face-font 'default "Hack")
-(set-frame-font "Hack" nil t)
-#+END_SRC
-** Solarized Light
-#+BEGIN_SRC emacs-lisp
-(use-package solarized-theme)
-(load-theme 'solarized-light t)
-#+END_SRC
-** Autofill
-Use visual line mode everywhere.
-#+BEGIN_SRC emacs-lisp
-(global-visual-line-mode 1)
-#+END_SRC
-Nicely wrap lines for text mode.
-#+BEGIN_SRC emacs-lisp
-(add-hook 'text-mode-hook 'auto-fill-mode)
-(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
-(eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
-#+END_SRC
-Quickly autofill the entire buffer by paragraph.
-#+BEGIN_SRC emacs-lisp
-(defun fill-buffer ()
-  (interactive)
-  (save-excursion
-    (save-restriction
-      (widen)
-      (fill-region (point-min) (point-max)))))
-#+END_SRC
-*** 80 Columns
-#+BEGIN_SRC emacs-lisp
-(add-hook 'text-mode-hook
-        (lambda() (set-fill-column 80)))
-#+END_SRC
-** Highlighting
-*** Syntax
-#+BEGIN_SRC emacs-lisp
-(global-font-lock-mode 1)
-#+END_SRC
-*** Rainbow Mode
-#+BEGIN_SRC emacs-lisp
-(use-package rainbow-mode)
-(rainbow-mode 1)
-(diminish 'rainbow-mode)
-#+END_SRC
-*** Source Code Blocks
-Native syntax highlighting for source blocks in org mode.
-#+BEGIN_SRC emacs-lisp
-(setq org-src-fontify-natively t
-      org-src-tab-acts-natively t
-      org-confirm-babel-evaluate nil
-      org-edit-src-content-indentation 0)
-#+END_SRC
-*** Sentences
-Highlight sentences. Credit to [[https://github.com/milkypostman/hl-sentence][Donald Curtis]].
-#+BEGIN_SRC emacs-lisp
-(require 'hl-sentence)
-(add-hook 'org-mode-hook 'hl-sentence-mode)
-#+END_SRC
-Use Solarized Light cyan to highlight.
-#+BEGIN_SRC emacs-lisp
-(set-face-attribute 'hl-sentence nil
-                     :background "#fdf6e3"
-                     :foreground "#2aa198")
-#+END_SRC
-*** Parentheses
-#+BEGIN_SRC emacs-lisp
-(setq blink-matching-paren nil)
-(show-paren-mode t)
-(setq show-paren-delay 0)
-(setq show-paren-style 'expression)
-#+END_SRC
-*** Transient Mark
-#+BEGIN_SRC emacs-lisp
-(setq transient-mark-mode t)
-#+END_SRC
 * Org
 ** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
@@ -833,15 +836,14 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (require 'org)
 (require 'ox-latex)
 (use-package org
-  :bind
-  ("C-c l" . org-store-link)
-  ("C-c a" . org-agenda)
-  ("M-h" . org-mark-element)
-  ("C-c c" . org-capture)
   :diminish
   (org-indent-mode)
   :custom
   (org-startup-indented t))
+(global-set-key (kbd "C-c l") 'org-store-link)
+(global-set-key (kbd "C-c a") 'org-agenda)
+(global-set-key (kbd "C-c c") 'org-capture)
+(global-set-key (kbd "M-h") 'org-mark-element)
 #+END_SRC
 *** Org Capture
 #+BEGIN_SRC emacs-lisp
@@ -866,7 +868,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
                                "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
                               ))
 #+END_SRC
-** Ox-hugo
+*** Ox-hugo
 #+BEGIN_SRC emacs-lisp
 (use-package ox-hugo
     :ensure t
@@ -975,7 +977,7 @@ Inside a code-block, just call `self-insert-command'."
             #'endless/replace-quote)
 #+END_SRC
 ** LaTeX
-*** Use Cleverref
+*** Cleverref
 #+BEGIN_SRC emacs-lisp
 (defun org-latex-ref-to-cref (text backend info)
   "Use \\cref instead of \\ref in latex export."
@@ -985,9 +987,11 @@ Inside a code-block, just call `self-insert-command'."
 (add-to-list 'org-export-filter-final-output-functions
              'org-latex-ref-to-cref)
 #+END_SRC
-*** Export Command
+*** XeTeX
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "<C-f4>") 'org-latex-export-to-pdf)
+(setq org-latex-to-pdf-process
+  '("xelatex -interaction nonstopmode %f"
+     "xelatex -interaction nonstopmode %f")) ;; for multiple passes
 #+END_SRC
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
@@ -1012,12 +1016,6 @@ By default, it's really small on my HiDPI screen.
 #+BEGIN_SRC emacs-lisp
 (setq org-export-with-smart-quotes t)
 #+END_SRC
-*** Use XeTeX
-#+BEGIN_SRC emacs-lisp
-(setq org-latex-to-pdf-process
-  '("xelatex -interaction nonstopmode %f"
-     "xelatex -interaction nonstopmode %f")) ;; for multiple passes
-#+END_SRC
 *** Don't Break Paragraph on Comments
 Remove comments from org document when exporting to LaTeX.
 #+BEGIN_SRC emacs-lisp
@@ -1031,7 +1029,6 @@ Remove comments from org document when exporting to LaTeX.
 (add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
 *** Equation Preview
-Use overlay library.
 Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]].
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
