@@ -752,6 +752,7 @@ Use with period.
 *** Word Count
 Count org-wc.
 #+BEGIN_SRC emacs-lisp
+(use-package org-wc)
 (global-set-key (kbd "<C-f9>") 'org-wc-display)
 #+END_SRC
 *** Window Management
