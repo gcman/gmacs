@@ -49,7 +49,7 @@
  '(org-startup-indented t)
  '(org-tags-column -80)
  '(package-selected-packages
-   '(amx mu4e-conversation ido-grid-mode avy-flycheck avy-menu avy-zap ido-vertical-mode flx-ido smex rainbow-mode yasnippet-snippets yaml-mode writeroom-mode which-key wc-mode use-package sublimity solarized-theme smooth-scrolling smart-mode-line powerline pdf-tools ox-hugo org-wc org-mime org-bullets olivetti nadvice mu4e-alert magit latexdiff ivy imenu-anywhere god-mode flyspell-lazy flycheck dired-quick-sort diminish dashboard company-math centered-window cdlatex auto-package-update auctex-lua auctex-latexmk adaptive-wrap))
+   '(amx mu4e-conversation ido-grid-mode avy-flycheck avy-menu avy-zap ido-vertical-mode flx-ido smex rainbow-mode yasnippet-snippets yaml-mode writeroom-mode which-key wc-mode use-package sublimity solarized-theme smooth-scrolling smart-mode-line powerline pdf-tools ox-hugo org-wc org-mime org-bullets olivetti nadvice mu4e-alert magit latexdiff ivy imenu-anywhere god-mode dired-quick-sort diminish dashboard company-math centered-window cdlatex auto-package-update auctex-lua auctex-latexmk adaptive-wrap))
  '(pdf-view-midnight-colors '("#657b83" . "#fdf6e3"))
  '(preview-default-option-list
    '("displaymath" "floats" "graphics" "textmath" "sections" "footnotes" "showlabels"))

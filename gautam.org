@@ -198,77 +198,6 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
     :hook (text-mode . flyspell-mode)
     :diminish)
 #+END_SRC
-**** Double Caps
-#+BEGIN_SRC emacs-lisp
-(defun dcaps-to-scaps ()
-  "Convert word in DOuble CApitals to Single Capitals."
-  (interactive)
-  (and (= ?w (char-syntax (char-before)))
-       (save-excursion
-         (and (if (called-interactively-p)
-                  (skip-syntax-backward "w")
-                (= -3 (skip-syntax-backward "w")))
-              (let (case-fold-search)
-                (looking-at "\\b[[:upper:]]\\{2\\}[[:lower:]]"))
-              (capitalize-word 1)))))
-
-(add-hook 'post-self-insert-hook #'dcaps-to-scaps nil 'local)
-
-(define-minor-mode dubcaps-mode
-  "Toggle `dubcaps-mode'.  Converts words in DOuble CApitals to
-Single Capitals as you type."
-  :init-value nil
-  :lighter (" DC")
-  (if dubcaps-mode
-      (add-hook 'post-self-insert-hook #'dcaps-to-scaps nil 'local)
-    (remove-hook 'post-self-insert-hook #'dcaps-to-scaps 'local)))
-
-(add-hook 'text-mode-hook #'dubcaps-mode)
-#+END_SRC
-**** Abbrevs
-#+BEGIN_SRC emacs-lisp
-(define-key ctl-x-map "\C-i"
-  #'endless/ispell-word-then-abbrev)
-
-(defun endless/simple-get-word ()
-  (car-safe (save-excursion (ispell-get-word nil))))
-
-(defun endless/ispell-word-then-abbrev (p)
-  "Call `ispell-word', then create an abbrev for it.
-With prefix P, create local abbrev. Otherwise it will
-be global.
-If there's nothing wrong with the word at point, keep
-looking for a typo until the beginning of buffer. You can
-skip typos you don't want to fix with `SPC', and you can
-abort completely with `C-g'."
-  (interactive "P")
-  (let (bef aft)
-    (save-excursion
-      (while (if (setq bef (endless/simple-get-word))
-                 ;; Word was corrected or used quit.
-                 (if (ispell-word nil 'quiet)
-                     nil ; End the loop.
-                   ;; Also end if we reach `bob'.
-                   (not (bobp)))
-               ;; If there's no word at point, keep looking
-               ;; until `bob'.
-               (not (bobp)))
-        (backward-word)
-        (backward-char))
-      (setq aft (endless/simple-get-word)))
-    (if (and aft bef (not (equal aft bef)))
-        (let ((aft (downcase aft))
-              (bef (downcase bef)))
-          (define-abbrev
-            (if p local-abbrev-table global-abbrev-table)
-            bef aft)
-          (message "\"%s\" now expands to \"%s\" %sally"
-                   bef aft (if p "loc" "glob")))
-      (user-error "No typo at or before point"))))
-
-(setq save-abbrevs 'silently)
-(setq-default abbrev-mode t)
-#+END_SRC
 **** Autocomplete
 ***** ignore case
 #+BEGIN_SRC emacs-lisp
@@ -431,10 +360,6 @@ Save abbreviations upon saving a file.
 #+BEGIN_SRC emacs-lisp
 (setq save-abbrevs 'silent)
 #+END_SRC
-*** Thing at Point
-#+BEGIN_SRC emacs-lisp
-(require 'thingatpt)
-#+END_SRC
 *** Electric Pairs
 #+BEGIN_SRC emacs-lisp
 (electric-pair-mode 1)
@@ -574,18 +499,6 @@ Native syntax highlighting for source blocks in org mode.
       org-src-tab-acts-natively t
       org-confirm-babel-evaluate nil
       org-edit-src-content-indentation 0)
-#+END_SRC
-**** Sentences
-Highlight sentences. Credit to [[https://github.com/milkypostman/hl-sentence][Donald Curtis]].
-#+BEGIN_SRC emacs-lisp
-(require 'hl-sentence)
-(add-hook 'org-mode-hook 'hl-sentence-mode)
-#+END_SRC
-Use Solarized Light cyan to highlight.
-#+BEGIN_SRC emacs-lisp
-(set-face-attribute 'hl-sentence nil
-                     :background "#fdf6e3"
-                     :foreground "#2aa198")
 #+END_SRC
 **** Parentheses
 #+BEGIN_SRC emacs-lisp
@@ -800,6 +713,10 @@ Add an alias to do this easily.
 (global-set-key (kbd "C-c o")
                 (lambda () (interactive) (find-file "~/org/inbox.org")))
 #+END_SRC
+*** Transpose Chars
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-r") 'transpose-chars)
+#+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
 (require 'key-chord)
@@ -853,11 +770,13 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (setq org-agenda-files '("~/org/inbox.org"
                          "~/org/journal.org"
                          "~/org/gtd.org"
-                         "~/org/tickler.org"))
+                         "~/org/tickler.org"
+                         "~/org/notes.org"))
 (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 (setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
                            ("~/org/someday.org" :level . 1)
-                           ("~/org/tickler.org" :maxlevel . 2)))
+                           ("~/org/tickler.org" :maxlevel . 2)
+                           ("~/org/notes.org" :maxlevel . 2)))
 (setq org-capture-templates '(("t" "Todo [inbox]" entry
                                (file+headline "~/org/inbox.org" "Tasks")
                                "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
@@ -930,9 +849,6 @@ Inside a code-block, just call `self-insert-command'."
 **** Apostrophes
 #+BEGIN_SRC emacs-lisp
 (define-key org-mode-map "'" #'endless/apostrophe)
-;; (eval-after-load 'markdown-mode
-;;   '(define-key markdown-mode-map "'"
-;;      #'endless/apostrophe))
 
 (defun endless/apostrophe (opening)
   "Insert ’ in prose or `self-insert-command' in code.
@@ -949,33 +865,6 @@ Inside a code-block, just call `self-insert-command'."
           (insert "’")
         (insert "‘’")
         (forward-char -1)))))
-#+END_SRC
-**** Ispell
-#+BEGIN_SRC emacs-lisp
-(require 'ispell)
-
-;;; Tell ispell.el that ’ can be part of a word.
-(setq ispell-local-dictionary-alist
-      `((nil "[[:alpha:]]" "[^[:alpha:]]"
-             "['\x2019]" nil ("-B") nil utf-8)))
-
-;;; Don't send ’ to the subprocess.
-(defun endless/replace-apostrophe (args)
-  (cons (replace-regexp-in-string
-         "’" "'" (car args))
-        (cdr args)))
-(advice-add #'ispell-send-string :filter-args
-            #'endless/replace-apostrophe)
-
-;;; Convert ' back to ’ from the subprocess.
-(defun endless/replace-quote (args)
-  (if (not (derived-mode-p 'org-mode))
-      args
-    (cons (replace-regexp-in-string
-           "'" "’" (car args))
-          (cdr args))))
-(advice-add #'ispell-parse-output :filter-args
-            #'endless/replace-quote)
 #+END_SRC
 ** LaTeX
 *** Cleverref
@@ -1138,7 +1027,12 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
            (setq cw/org-last-fragment curr))
           ))))
 
-(add-hook 'org-mode-hook
+(define-minor-mode equation-preview-mode
+      nil
+      ;; The indicator for the mode line.
+      "Eq"
+      nil)
+(add-hook 'equation-preview-mode-hook
           (lambda ()
             (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)))
 #+END_SRC
