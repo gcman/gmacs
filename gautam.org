@@ -378,7 +378,6 @@ Save abbreviations upon saving a file.
 *** Magit
 #+BEGIN_SRC emacs-lisp
 (use-package magit)
-(setq magit-completing-read-function 'magit-ido-completing-read)
 #+END_SRC
 *** Dired
 **** Revert Buffer
@@ -716,6 +715,10 @@ Add an alias to do this easily.
 *** Transpose Chars
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-r") 'transpose-chars)
+#+END_SRC
+*** Complete Reload
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c r") 'gm/reload)
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
