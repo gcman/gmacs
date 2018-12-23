@@ -19,10 +19,10 @@ On start-up, display how quickly Emacs started up.
 #+END_SRC
 ** Add Package Sources
 #+BEGIN_SRC emacs-lisp
-(require 'package)
-(setq package-enable-at-startup nil)
-(add-to-list 'package-archives
-	     '("melpa" . "https://melpa.org/packages/"))
+(when (>= emacs-major-version 24)
+  (require 'package)
+  (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+  )
 #+END_SRC
 Use ~use-package~.
 #+BEGIN_SRC emacs-lisp
@@ -549,6 +549,12 @@ Add extra keybinding to account for missing.
 (global-set-key (kbd "C-x C-k") 'kill-region)
 (global-set-key (kbd "C-c C-k") 'kill-region)
 #+END_SRC
+*** Normal Undo Binding
+#+BEGIN_SRC emacs-lisp
+(global-unset-key (kbd "C-z"))
+(global-set-key  (kbd "C-z") 'undo)
+(global-set-key (kbd "C-x C-u") 'undo)
+#+END_SRC
 *** Better Buffers
 Kill better.
 #+BEGIN_SRC emacs-lisp
@@ -661,12 +667,6 @@ Use with period.
 #+BEGIN_SRC emacs-lisp
 (define-key ibuffer-mode-map "." 'hydra-ibuffer-main/body)
 #+END_SRC
-*** Word Count
-Count org-wc.
-#+BEGIN_SRC emacs-lisp
-(use-package org-wc)
-(global-set-key (kbd "<C-f9>") 'org-wc-display)
-#+END_SRC
 *** Window Management
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x 1") 'delete-other-windows)
@@ -674,17 +674,22 @@ Count org-wc.
 (global-set-key (kbd "C-x 3") 'split-window-right)
 (global-set-key (kbd "C-x 0") 'delete-window)
 #+END_SRC
-*** Transpose Sentences and Paragraphs
-Add an alias to do this easily.
+*** Word Count
+Count org-wc.
+#+BEGIN_SRC emacs-lisp
+(use-package org-wc)
+(global-set-key (kbd "<C-f9>") 'org-wc-display)
+#+END_SRC
+*** Transpose
+**** Sentences and Paragraphs
+Add aliases to do this easily.
 #+BEGIN_SRC emacs-lisp
 (defalias 'ts 'transpose-sentences)
 (defalias 'tp 'transpose-paragraphs)
 #+END_SRC
-*** Normal Undo
+**** Characters
 #+BEGIN_SRC emacs-lisp
-(global-unset-key (kbd "C-z"))
-(global-set-key  (kbd "C-z") 'undo)
-(global-set-key (kbd "C-x C-u") 'undo)
+(global-set-key (kbd "C-r") 'transpose-chars)
 #+END_SRC
 *** Search
 **** Swiper
@@ -712,13 +717,15 @@ Add an alias to do this easily.
 (global-set-key (kbd "C-c o")
                 (lambda () (interactive) (find-file "~/org/inbox.org")))
 #+END_SRC
-*** Transpose Chars
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-r") 'transpose-chars)
-#+END_SRC
 *** Complete Reload
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c r") 'gm/reload)
+#+END_SRC
+*** Org Cliplink
+Paste URL with extracted title as the description.
+#+BEGIN_SRC emacs-lisp
+(use-package org-cliplink)
+(global-set-key (kbd "C-c y") 'org-cliplink)
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
@@ -771,17 +778,20 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (setq org-directory "~/org/")
 (setq org-default-notes-file "~/org/inbox.org")
 (setq org-agenda-files '("~/org/inbox.org"
-                         "~/org/journal.org"
                          "~/org/gtd.org"
                          "~/org/tickler.org"
-                         "~/org/notes.org"))
+                         "~/org/notes.org"
+                         "~/org/gcal.org"))
 (setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 (setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
                            ("~/org/someday.org" :level . 1)
                            ("~/org/tickler.org" :maxlevel . 2)
                            ("~/org/notes.org" :maxlevel . 2)))
-(setq org-capture-templates '(("t" "Todo [inbox]" entry
-                               (file+headline "~/org/inbox.org" "Tasks")
+(setq org-capture-templates '(("a" "Appointment" entry
+                               (file "~/org/gcal.org")
+                               "* %i%? \n%^T\n")
+                              ("t" "Todo [inbox]" entry
+                               (file "~/org/inbox.org")
                                "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
                               ("T" "Tickler" entry
                                (file+headline "~/org/tickler.org" "Tickler")
@@ -797,6 +807,17 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
     :ensure t
     :after ox)
 (require 'ox-hugo-auto-export)
+#+END_SRC
+*** Google Calendar
+#+BEGIN_SRC emacs-lisp
+(setq package-check-signature nil)
+(use-package org-gcal
+  :ensure t
+  :config
+  (setq org-gcal-client-id "980401579277-lhd730utipsj73s9d73qkkecrjjdlveo.apps.googleusercontent.com"
+        org-gcal-client-secret "U4e1D8tH9TEC15sIeXKSqTE1"
+        org-gcal-file-alist '(("gcmanohar001@gmail.com" . "~/org/gcal.org"))))
+(add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync)))
 #+END_SRC
 ** Prettifying
 *** Hide Emphasis
@@ -1853,6 +1874,62 @@ activated.
     (insert ";")))
 
 (global-set-key (kbd ";") 'gm/semicolon)
+#+END_SRC
+* Email
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e")
+(require 'smtpmail)
+
+; smtp
+(setq message-send-mail-function 'smtpmail-send-it
+      smtpmail-starttls-credentials
+      '(("smtp.stanford.edu" 25 nil nil))
+      smtpmail-smtp-service 25
+      smtpmail-debug-info t)
+
+(require 'mu4e)
+
+(setq mu4e-maildir (expand-file-name "~/email/mbsyncmail"))
+
+(setq mu4e-drafts-folder "/Drafts")
+(setq mu4e-sent-folder   "/Sent Items")
+(setq mu4e-trash-folder  "/Trash")
+
+; get mail
+(setq mu4e-get-mail-command "mbsync -c ~/.emacs.d/.mbsyncrc uni"
+      mu4e-html2text-command "w3m -T text/html"
+      mu4e-update-interval 120
+      mu4e-headers-auto-update t
+      mu4e-compose-signature-auto-include nil)
+
+(setq mu4e-maildir-shortcuts
+      '( ("/INBOX"               . ?i)
+         ("/Sent Items"   . ?s)
+         ("/Deleted Items"       . ?t)
+         ("/Drafts"    . ?d)))
+
+;; show images
+(setq mu4e-show-images t)
+
+;; use imagemagick, if available
+(when (fboundp 'imagemagick-register-types)
+  (imagemagick-register-types))
+
+;; general emacs mail settings; used when composing e-mail
+;; the non-mu4e-* stuff is inherited from emacs/message-mode
+(setq mu4e-reply-to-address "gmanohar@stanford.edu"
+    user-mail-address "gmanohar@stanford.edu"
+    user-full-name  "Gautam Manohar")
+
+;; don't save message to Sent Messages, IMAP takes care of this
+; (setq mu4e-sent-messages-behavior 'delete)
+
+;; spell check
+(add-hook 'mu4e-compose-mode-hook
+        (defun my-do-compose-stuff ()
+           "My settings for message composition."
+           (set-fill-column 80)
+           (flyspell-mode)))
 #+END_SRC
 * End
 Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
