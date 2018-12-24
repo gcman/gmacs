@@ -1447,7 +1447,7 @@ the given string, not including the last character, precedes the point.
 #+BEGIN_SRC emacs-lisp
 (defun gm/snippet (key snippet)
   (let ((len (length key)))
-    (if (and (texmathp) (gm/prefix-before-point key))
+    (if (and (eq major-mode 'org-mode) (and (texmathp) (gm/prefix-before-point key)))
         (progn
           (gm/delete-chars (- len 1))
           (gm/expand-snippet snippet))
@@ -1882,10 +1882,10 @@ activated.
 
 ; smtp
 (setq message-send-mail-function 'smtpmail-send-it
-      smtpmail-starttls-credentials
-      '(("smtp.stanford.edu" 25 nil nil))
-      smtpmail-smtp-service 25
-      smtpmail-debug-info t)
+    smtpmail-stream-type 'starttls
+    smtpmail-default-smtp-server "smtp.stanford.edu"
+    smtpmail-smtp-server "smtp.stanford.edu"
+    smtpmail-smtp-service 587)
 
 (require 'mu4e)
 
@@ -1896,7 +1896,7 @@ activated.
 (setq mu4e-trash-folder  "/Trash")
 
 ; get mail
-(setq mu4e-get-mail-command "mbsync -c ~/.emacs.d/.mbsyncrc uni"
+(setq mu4e-get-mail-command "mbsync -c ~/.mbsyncrc uni"
       mu4e-html2text-command "w3m -T text/html"
       mu4e-update-interval 120
       mu4e-headers-auto-update t

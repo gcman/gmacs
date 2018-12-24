@@ -67,6 +67,7 @@
      (org-fontify-quote-and-verse-blocks . t)))
  '(smtpmail-smtp-server "smtp.stanford.edu")
  '(smtpmail-smtp-service 465)
+ '(tab-width 2)
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-strip-common-suffix t))
