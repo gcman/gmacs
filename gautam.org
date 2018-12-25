@@ -443,6 +443,11 @@ Enable god-mode.
   (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
   (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete))
 #+END_SRC
+*** Webmode
+#+BEGIN_SRC emacs-lisp
+(use-package web-mode)
+(add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
+#+END_SRC
 ** Theme
 *** Font Face
 Normally use Hack.
@@ -506,10 +511,7 @@ Native syntax highlighting for source blocks in org mode.
 (setq show-paren-delay 0)
 (setq show-paren-style 'expression)
 #+END_SRC
-**** Transient Mark
-#+BEGIN_SRC emacs-lisp
-(setq transient-mark-mode t)
-#+END_SRC
+**** Transient
 * Global Keybindings
 ** Bind Key
 #+BEGIN_SRC emacs-lisp
