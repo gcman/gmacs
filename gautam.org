@@ -1590,7 +1590,7 @@ activated.
            (cond ((gm/prefix-before-point "dim") (gm/snippet "dim" "dim"))
                  ((gm/prefix-before-point "lim") (gm/snippet "lim" "limit"))
                  (t (gm/snippet "im" "image")))
-         (hydra-m/body)) "dimension/image")
+         (insert "m")) "dimension/image")
   ("n" (if (gm/prefix-before-point "sin")
            (cond ((gm/prefix-before-point "asin") (gm/snippet "asin" "asin"))
                  (t (gm/snippet "sin" "sin")))
@@ -1706,7 +1706,6 @@ activated.
              ((gm/prefix-before-point "span") (gm/snippet "span" "span"))
              (t (insert "n"))) "(a)tan")
   ("r" (gm/snippet "star" "star") "star")
-  ("t" (gm/snippet "mat" "matrix") "matrix")
   ("-" (insert "-") "dash"))
 
 (global-set-key (kbd "a") 'hydra-a/body)

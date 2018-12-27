@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
 # name: matrix
-# key: math-matrix
+# key: mat
 # --
 \begin{bmatrix}
 $1
