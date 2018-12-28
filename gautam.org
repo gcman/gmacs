@@ -25,8 +25,8 @@ On start-up, display how quickly Emacs started up.
 Use ~use-package~.
 #+BEGIN_SRC emacs-lisp
 (unless (package-installed-p 'use-package)
-	(package-refresh-contents)
-	(package-install 'use-package))
+  (package-refresh-contents)
+  (package-install 'use-package))
 #+END_SRC
 Always.
 #+BEGIN_SRC emacs-lisp
@@ -109,14 +109,14 @@ replace the built-in one with ours.
 Keep a simpler modeline...
 #+BEGIN_SRC emacs-lisp
 (use-package diminish
-    :defer 1)
+  :defer 1)
 #+END_SRC
 and a smarter one.
 #+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
-    :defer 2
-    :config
-    (sml/setup))
+  :defer 2
+  :config
+  (sml/setup))
 #+END_SRC
 *** Modeline
 **** Time
@@ -131,23 +131,23 @@ What time is it, Mr. Emacs?
 #+END_SRC
 *** Ban Whitespace
 #+BEGIN_SRC emacs-lisp
- (add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
 #+END_SRC
 *** Indentation
 **** Keep Things Indented
 #+BEGIN_SRC emacs-lisp
-  (use-package aggressive-indent
-    :disabled
-    :diminish aggressive-indent-mode
-    :hook
-    (prog-mode . aggressive-indent-mode)
-    (python-mode . (lambda () (aggressive-indent-mode -1))))
+(use-package aggressive-indent
+  :disabled
+  :diminish aggressive-indent-mode
+  :hook
+  (prog-mode . aggressive-indent-mode)
+  (python-mode . (lambda () (aggressive-indent-mode -1))))
 #+END_SRC
 **** Wrap Indented Lines Sensibly
 This way, indented lines that are wrapped with ~visual-line-mode~ do not begin at character 0, but from where they are indented.
 #+BEGIN_SRC emacs-lisp
 (use-package adaptive-wrap)
-  (when (fboundp 'adaptive-wrap-prefix-mode)
+(when (fboundp 'adaptive-wrap-prefix-mode)
   (defun my-activate-adaptive-wrap-prefix-mode ()
     "Toggle `visual-line-mode' and `adaptive-wrap-prefix-mode' simultaneously."
     (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
@@ -200,11 +200,6 @@ All the things (perhaps they seem little) that just make sense to have.
 This makes things so much simpler. There's not any ambiguity to begin with.
 #+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
-#+END_SRC
-**** Confirm Kill Emacs
-I’ve accidentally closed this thing typing =C-x C-c= instead of =C-c C-x= way too many times.
-#+BEGIN_SRC emacs-lisp
-(setq confirm-kill-emacs 'y-or-n-p)
 #+END_SRC
 **** Sentences End With a Single Space
 This is necessary to make sentence navigation commands work for me.
@@ -294,12 +289,12 @@ On a similar note, save the desktop.
 Make two buffers with the same file name distinguishable.
 #+BEGIN_SRC emacs-lisp
 (use-package uniquify
-    :defer 1
-    :ensure nil
-    :custom
-    (uniquify-after-kill-buffer-p t)
-    (uniquify-buffer-name-style 'post-forward)
-    (uniquify-strip-common-suffix t))
+  :defer 1
+  :ensure nil
+  :custom
+  (uniquify-after-kill-buffer-p t)
+  (uniquify-buffer-name-style 'post-forward)
+  (uniquify-strip-common-suffix t))
 #+END_SRC
 ***** Save Place
 Opens a file to the same place in which it was last closed.
@@ -319,8 +314,8 @@ Enable ivy-mode.
   (ivy-use-virtual-buffers t)
   (ivy-display-style 'fancy)
   (ivy-re-builders-alist
-        '((swiper . ivy--regex-plus)
-          (t      . ivy--regex-fuzzy)))
+   '((swiper . ivy--regex-plus)
+     (t      . ivy--regex-fuzzy)))
   (ivy-initial-inputs-alist nil))
 #+END_SRC
 Get swiper to recentre the display when it exits.
@@ -423,7 +418,7 @@ Enable god-mode.
 #+END_SRC
 *** PDF Tools
 #+BEGIN_SRC emacs-lisp
-  (use-package pdf-tools
+(use-package pdf-tools
   :pin manual
   :config
   (pdf-tools-install)
@@ -471,7 +466,7 @@ Nicely wrap lines for text mode.
 **** 80 Columns
 #+BEGIN_SRC emacs-lisp
 (add-hook 'text-mode-hook
-        (lambda() (set-fill-column 80)))
+          (lambda() (set-fill-column 80)))
 #+END_SRC
 *** Highlighting
 **** Syntax
@@ -500,53 +495,57 @@ Native syntax highlighting for source blocks in org mode.
 (setq show-paren-style 'expression)
 #+END_SRC
 * Global Keybindings
+** Bind Key
+#+BEGIN_SRC emacs-lisp
+(require 'bind-key)
+#+END_SRC
 ** Easy M-x
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-SPC") 'execute-extended-command)
-(global-set-key (kbd "C-M-SPC") 'amx-major-mode-commands)
-(global-set-key (kbd "C-c C-SPC") 'execute-extended-command)
+(bind-key "C-SPC" 'execute-extended-command)
+(bind-key "C-M-SPC" 'amx-major-mode-commands)
+(bind-key "C-c C-SPC" 'execute-extended-command)
 #+END_SRC
 ** Set Mark
 Need a replacement because we rebound ~C-SPC~ above.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-t") 'set-mark-command)
+(bind-key "C-t" 'set-mark-command)
 #+END_SRC
 ** Shell Backwards Kill Word
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-w") 'backward-kill-word)
+(bind-key "C-w" 'backward-kill-word)
 #+END_SRC
 ** Shell Backspace
 Use shell like ~C-h~ instead of Backspace.
 #+BEGIN_SRC emacs-lisp
 (define-key key-translation-map [?\C-h] [?\C-?])
-(global-set-key (kbd "<f1>") 'help-command)
+(bind-key "<f1>" 'help-command)
 #+END_SRC
 ** Easy Kill
 Add extra keybinding to account for missing.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x C-k") 'kill-region)
-(global-set-key (kbd "C-c C-k") 'kill-region)
+(bind-key "C-x C-k" 'kill-region)
+(bind-key "C-c C-k" 'kill-region)
 #+END_SRC
 ** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
 (global-unset-key (kbd "C-z"))
 (global-set-key  (kbd "C-z") 'undo)
-(global-set-key (kbd "C-x C-u") 'undo)
+(bind-key "C-x C-u" 'undo)
 #+END_SRC
 ** Better Buffers
 Kill better.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x k") 'bjm/kill-this-buffer)
+(bind-key "C-x k" 'bjm/kill-this-buffer)
 #+END_SRC
 Switch better.
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x b") 'ido-switch-buffer)
+(bind-key "C-x b" 'ido-switch-buffer)
 #+END_SRC
 Use ibuffer.
 #+BEGIN_SRC emacs-lisp
 (require 'ibuffer)
-(global-set-key (kbd "C-x C-b") 'ibuffer)
+(bind-key "C-x C-b" 'ibuffer)
 (autoload 'ibuffer "ibuffer" "List buffers." t)
 #+END_SRC
 **** Ibuffer Hydra
@@ -582,7 +581,7 @@ Courtesy of [[https://github.com/abo-abo/hydra/wiki/Ibuffer][hydra wiki]].
   ("." nil "toggle hydra" :color blue))
 
 (defhydra hydra-ibuffer-mark (:color teal :columns 5
-                              :after-exit (hydra-ibuffer-main/body))
+                                     :after-exit (hydra-ibuffer-main/body))
   "Mark"
   ("*" ibuffer-unmark-all "unmark all")
   ("M" ibuffer-mark-by-mode "mode")
@@ -597,9 +596,9 @@ Courtesy of [[https://github.com/abo-abo/hydra/wiki/Ibuffer][hydra wiki]].
   ("b" hydra-ibuffer-main/body "back" :color blue))
 
 (defhydra hydra-ibuffer-action (:color teal :columns 4
-                                :after-exit
-                                (if (eq major-mode 'ibuffer-mode)
-                                    (hydra-ibuffer-main/body)))
+                                       :after-exit
+                                       (if (eq major-mode 'ibuffer-mode)
+                                           (hydra-ibuffer-main/body)))
   "Action"
   ("A" ibuffer-do-view "view")
   ("E" ibuffer-do-eval "eval")
@@ -648,16 +647,16 @@ Use with period.
 #+END_SRC
 ** Window Management
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x 1") 'delete-other-windows)
-(global-set-key (kbd "C-x 2") 'split-window-below)
-(global-set-key (kbd "C-x 3") 'split-window-right)
-(global-set-key (kbd "C-x 0") 'delete-window)
+(bind-key "C-x 1" 'delete-other-windows)
+(bind-key "C-x 2" 'split-window-below)
+(bind-key "C-x 3" 'split-window-right)
+(bind-key "C-x 0" 'delete-window)
 #+END_SRC
 ** Word Count
 Count org-wc.
 #+BEGIN_SRC emacs-lisp
 (use-package org-wc)
-(global-set-key (kbd "<C-f9>") 'org-wc-display)
+(bind-key "<C-f9>" 'org-wc-display)
 #+END_SRC
 ** Transpose
 **** Sentences and Paragraphs
@@ -668,20 +667,20 @@ Add aliases to do this easily.
 #+END_SRC
 **** Characters
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-r") 'transpose-chars)
+(bind-key "C-r" 'transpose-chars)
 #+END_SRC
 ** Search
 **** Swiper
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-s") 'swiper)
+(bind-key "C-s" 'swiper)
 #+END_SRC
 **** Avy
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "M-i") 'avy-goto-char-2)
+(bind-key "M-i" 'avy-goto-char-2)
 #+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-x g") 'magit-status)
+(bind-key "C-x g" 'magit-status)
 #+END_SRC
 ** Org LaTeX Export
 #+BEGIN_SRC emacs-lisp
@@ -689,7 +688,7 @@ Add aliases to do this easily.
 #+END_SRC
 ** Dictionary
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c d") 'sdcv-search)
+(bind-key "C-c d" 'sdcv-search)
 #+END_SRC
 ** Find Inbox
 #+BEGIN_SRC emacs-lisp
@@ -698,14 +697,14 @@ Add aliases to do this easily.
 #+END_SRC
 ** Complete Reload
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c r") 'gm/reload)
+(bind-key "C-c r" 'gm/reload)
 #+END_SRC
 ** Org Cliplink
 
 Paste URL with extracted title as the description.
 #+BEGIN_SRC emacs-lisp
 (use-package org-cliplink)
-(global-set-key (kbd "C-c y") 'org-cliplink)
+(bind-key "C-c y" 'org-cliplink)
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
@@ -745,50 +744,41 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   :init
   (require 'org)
   (require 'ox-latex)
-  :diminish
-  (org-indent-mode)
-  :custom
-  (org-startup-indented t))
-(global-set-key (kbd "C-c l") 'org-store-link)
-(global-set-key (kbd "C-c a") 'org-agenda)
-(global-set-key (kbd "C-c c") 'org-capture)
-(global-set-key (kbd "M-h") 'org-mark-element)
-#+END_SRC
-*** Org Capture
-#+BEGIN_SRC emacs-lisp
-(setq org-directory "~/org/")
-(setq org-default-notes-file "~/org/inbox.org")
-(setq org-agenda-files '("~/org/inbox.org"
-                         "~/org/gtd.org"
-                         "~/org/tickler.org"
-                         "~/org/notes.org"
-                         "~/org/gcal.org"))
-(setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
-(setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
-                           ("~/org/someday.org" :level . 1)
-                           ("~/org/tickler.org" :maxlevel . 2)
-                           ("~/org/notes.org" :maxlevel . 2)
-                           ("~/website/content-org/blog.org" :maxlevel . 1)))
-(setq org-capture-templates '(("a" "Appointment" entry
-                               (file "~/org/gcal.org")
-                               "* %i%? \n%^T\n")
-                              ("t" "Todo [inbox]" entry
-                               (file "~/org/inbox.org")
-                               "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
-                              ("T" "Tickler" entry
-                               (file+headline "~/org/tickler.org" "Tickler")
-                               "* %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
-                              ("j" "Journal" entry
-                               (file+datetree "~/org/journal.org")
-                               "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
-                              ))
-#+END_SRC
-*** Ox-hugo
-#+BEGIN_SRC emacs-lisp
-(use-package ox-hugo
+  (use-package ox-hugo
     :ensure t
     :after ox)
-(require 'ox-hugo-auto-export)
+  (require 'ox-hugo-auto-export)
+  :bind (("C-c l" . org-store-link)
+         ("C-c a" . org-agenda)
+         ("C-c c" . org-capture)
+         ("M-h" . org-mark-element))
+  :custom
+  (org-directory "~/org/")
+  (org-default-notes-file "~/org/inbox.org")
+  (org-agenda-files '("~/org/inbox.org"
+                      "~/org/gtd.org"
+                      "~/org/tickler.org"
+                      "~/org/notes.org"
+                      "~/org/gcal.org"))
+  (org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+  (org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
+                        ("~/org/someday.org" :level . 1)
+                        ("~/org/tickler.org" :maxlevel . 2)
+                        ("~/org/notes.org" :maxlevel . 2)
+                        ("~/website/content-org/blog.org" :maxlevel . 1)))
+  (org-capture-templates '(("a" "Appointment" entry
+                            (file "~/org/gcal.org")
+                            "* %i%? \n%^T\n")
+                           ("t" "Todo [inbox]" entry
+                            (file "~/org/inbox.org")
+                            "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
+                           ("T" "Tickler" entry
+                            (file+headline "~/org/tickler.org" "Tickler")
+                            "* %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
+                           ("j" "Journal" entry
+                            (file+datetree "~/org/journal.org")
+                            "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
+                           )))
 #+END_SRC
 *** Google Calendar
 #+BEGIN_SRC emacs-lisp
@@ -802,10 +792,6 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync)))
 #+END_SRC
 ** Prettifying
-#+BEGIN_SRC emacs-lisp
-(require 'typopunct)
-(typopunct-change-language 'english t)
-#+END_SRC
 *** Hide Emphasis
 #+BEGIN_SRC emacs-lisp
 (setq org-hide-emphasis-markers t)
@@ -818,8 +804,8 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp
 (use-package org-bullets)
 (add-hook 'org-mode-hook
-  (defun org-bullets-mode-enable ()
-    (org-bullets-mode 1)))
+          (defun org-bullets-mode-enable ()
+            (org-bullets-mode 1)))
 #+END_SRC
 *** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
@@ -847,8 +833,8 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 *** XeTeX
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-to-pdf-process
-  '("xelatex -interaction nonstopmode %f"
-     "xelatex -interaction nonstopmode %f")) ;; for multiple passes
+      '("xelatex -interaction nonstopmode %f"
+        "xelatex -interaction nonstopmode %f")) ;; for multiple passes
 #+END_SRC
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
@@ -878,11 +864,11 @@ Remove comments from org document when exporting to LaTeX.
 #+BEGIN_SRC emacs-lisp
 (defun delete-org-comments (backend)
   (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
-                    'comment 'identity))
-    do
-    (setf (buffer-substring (org-element-property :begin comment)
-                (org-element-property :end comment))
-          "")))
+                                    'comment 'identity))
+        do
+        (setf (buffer-substring (org-element-property :begin comment)
+                                (org-element-property :end comment))
+              "")))
 (add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
 *** Equation Preview
@@ -995,10 +981,10 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
           ))))
 
 (define-minor-mode equation-preview-mode
-      nil
-      ;; The indicator for the mode line.
-      "Eq"
-      nil)
+  nil
+  ;; The indicator for the mode line.
+  "Eq"
+  nil)
 (add-hook 'equation-preview-mode-hook
           (lambda ()
             (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)))
@@ -1013,11 +999,11 @@ The justification is set by :justify in
 line are justified."
   (cond
    ((and (= beg (line-beginning-position))
-              (string-match "equation" (buffer-substring-no-properties beg end))))
-    (let* ((img (create-image image))
-           (width (car (image-size img)))
-           (offset (floor (- (/ (window-text-width) 2) (/ width 2)))))
-      (overlay-put (ov-at) 'before-string (make-string offset ? )))))
+         (string-match "equation" (buffer-substring-no-properties beg end))))
+   (let* ((img (create-image image))
+          (width (car (image-size img)))
+          (offset (floor (- (/ (window-text-width) 2) (/ width 2)))))
+     (overlay-put (ov-at) 'before-string (make-string offset ? )))))
 
 ;; advise the function to a
 (advice-add 'org--format-latex-make-overlay :after 'org-justify-fragment-overlay)
@@ -1036,10 +1022,10 @@ line are justified."
 ****** No Option
 #+BEGIN_SRC emacs-lisp
 (org-add-link-type
-"latex" nil
-(lambda (path desc format)
-  (when(eq format 'latex)
-    (format "\\%s{%s}" path desc))))
+ "latex" nil
+ (lambda (path desc format)
+   (when(eq format 'latex)
+     (format "\\%s{%s}" path desc))))
 #+END_SRC
 ****** One Option
 #+BEGIN_SRC emacs-lisp
@@ -1058,23 +1044,23 @@ line are justified."
 ****** Handout
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-latex-classes
-'("tufte-handout"
-"\\documentclass[symmetric,nobib]{gm-tufte-handout}
+             '("tufte-handout"
+               "\\documentclass[symmetric,nobib]{gm-tufte-handout}
    [NO-DEFAULT-PACKAGES]"
-("\\section{%s}" . "\\section*{%s}")
-("\\subsection{%s}" . "\\subsection*{%s}")))
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")))
 #+END_SRC
 ****** Book
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-latex-classes
-'("tufte-book"
-"\\documentclass[twoside,nobib]{tufte-book}
+             '("tufte-book"
+               "\\documentclass[twoside,nobib]{tufte-book}
   [NO-DEFAULT-PACKAGES]"
-("\\part{%s}" . "\\part*{%s}")
-("\\chapter{%s}" . "\\chapter*{%s}")
-("\\section{%s}" . "\\section*{%s}")
-("\\subsection{%s}" . "\\subsection*{%s}")
-("\\paragraph{%s}" . "\\paragraph*{%s}")))
+               ("\\part{%s}" . "\\part*{%s}")
+               ("\\chapter{%s}" . "\\chapter*{%s}")
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")))
 #+END_SRC
 ***** Biber
 #+BEGIN_SRC emacs-lisp
@@ -1089,10 +1075,10 @@ line are justified."
 (defun jk-org-kwds ()
   "parse the buffer and return a cons list of (property . value)
 from lines like:
-#+PROPERTY: value"
+,#+PROPERTY: value"
   (org-element-map (org-element-parse-buffer 'element) 'keyword
-                   (lambda (keyword) (cons (org-element-property :key keyword)
-                                           (org-element-property :value keyword)))))
+    (lambda (keyword) (cons (org-element-property :key keyword)
+                            (org-element-property :value keyword)))))
 
 (defun jk-org-kwd (KEYWORD)
   "get the value of a KEYWORD in the form of #+KEYWORD: value"
@@ -1231,10 +1217,10 @@ Obtained from [[https://tex.stackexchange.com/questions/29813/setup-synctex-with
   "Transform /absolute/path to file:///absolute/path for Gnome with very limited support for special characters"
   (if (string= (substring absolute-path 0 1) "/")
       (concat "file://" (urlify-escape-only absolute-path))
-      absolute-path))
+    absolute-path))
 
 
-; SyncTeX backward search - based on http://emacswiki.org/emacs/AUCTeX#toc20, reproduced on https://tex.stackexchange.com/a/49840/21017
+                                        ; SyncTeX backward search - based on http://emacswiki.org/emacs/AUCTeX#toc20, reproduced on https://tex.stackexchange.com/a/49840/21017
 
 (defun th-evince-sync (file linecol &rest ignored)
   (let* ((fname (un-urlify file))
@@ -1252,7 +1238,7 @@ Obtained from [[https://tex.stackexchange.com/questions/29813/setup-synctex-with
 
 (defun enable-evince-sync ()
   (require 'dbus)
-  ; cl is required for setf, taken from: http://lists.gnu.org/archive/html/emacs-orgmode/2009-11/msg01049.html
+                                        ; cl is required for setf, taken from: http://lists.gnu.org/archive/html/emacs-orgmode/2009-11/msg01049.html
   (require 'cl)
   (when (and
          (eq window-system 'x)
@@ -1267,65 +1253,65 @@ Obtained from [[https://tex.stackexchange.com/questions/29813/setup-synctex-with
 (add-hook 'LaTeX-mode-hook 'enable-evince-sync)
 
 
-; SyncTeX forward search - based on https://tex.stackexchange.com/a/46157
+                                        ; SyncTeX forward search - based on https://tex.stackexchange.com/a/46157
 
 ;; universal time, need by evince
 (defun utime ()
   (let ((high (nth 0 (current-time)))
         (low (nth 1 (current-time))))
-   (+ (* high (lsh 1 16) ) low)))
+    (+ (* high (lsh 1 16) ) low)))
 
 ;; Forward search.
 ;; Adapted from http://dud.inf.tu-dresden.de/~ben/evince_synctex.tar.gz
 (defun auctex-evince-forward-sync (pdffile texfile line)
   (let ((dbus-name
-     (dbus-call-method :session
-               "org.gnome.evince.Daemon"  ; service
-               "/org/gnome/evince/Daemon" ; path
-               "org.gnome.evince.Daemon"  ; interface
-               "FindDocument"
-               (urlify pdffile)
-               t     ; Open a new window if the file is not opened.
-               )))
+         (dbus-call-method :session
+                           "org.gnome.evince.Daemon"  ; service
+                           "/org/gnome/evince/Daemon" ; path
+                           "org.gnome.evince.Daemon"  ; interface
+                           "FindDocument"
+                           (urlify pdffile)
+                           t     ; Open a new window if the file is not opened.
+                           )))
     (dbus-call-method :session
-          dbus-name
-          "/org/gnome/evince/Window/0"
-          "org.gnome.evince.Window"
-          "SyncView"
-          (urlify-escape-only texfile)
-          (list :struct :int32 line :int32 1)
-  (utime))))
+                      dbus-name
+                      "/org/gnome/evince/Window/0"
+                      "org.gnome.evince.Window"
+                      "SyncView"
+                      (urlify-escape-only texfile)
+                      (list :struct :int32 line :int32 1)
+                      (utime))))
 
 (defun auctex-evince-view ()
   (let ((pdf (file-truename (concat default-directory
-                    (TeX-master-file (TeX-output-extension)))))
-    (tex (buffer-file-name))
-    (line (line-number-at-pos)))
+                                    (TeX-master-file (TeX-output-extension)))))
+        (tex (buffer-file-name))
+        (line (line-number-at-pos)))
     (auctex-evince-forward-sync pdf tex line)))
 
 ;; New view entry: Evince via D-bus.
 (setq TeX-view-program-list '())
 (add-to-list 'TeX-view-program-list
-         '("Evince" auctex-evince-view))
+             '("Evince" auctex-evince-view))
 
 ;; Prepend Evince via D-bus to program selection list
 ;; overriding other settings for PDF viewing.
 (setq TeX-view-program-selection '())
 (add-to-list 'TeX-view-program-selection
-         '(output-pdf "Evince"))
+             '(output-pdf "Evince"))
 #+END_SRC
 ** Electric Dollars and Parens
 Insert dollar signs electrically.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'TeX-mode-hook
-	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
-			  (cons "$" "$"))))
+	      (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+			              (cons "$" "$"))))
 (add-hook 'LaTeX-mode-hook
-	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
-			  (cons "$" "$"))))
+	      (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+			              (cons "$" "$"))))
 (add-hook 'text-mode-hook
-	  (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
-			  (cons "(" ")"))))
+	      (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+			              (cons "(" ")"))))
 #+END_SRC
 ** CDLaTeX
 I use this package to easily insert math characters.
@@ -1410,7 +1396,7 @@ the given string, not including the last character, precedes the point.
           (gm/delete-chars (- len 1))
           (gm/expand-snippet snippet))
       (insert (substring key (- len 1) len))
-    )
+      )
     ))
 #+END_SRC
 **** Set of Snippets
@@ -1421,21 +1407,21 @@ activated.
 #+BEGIN_SRC emacs-lisp
 (defmacro gm/snippet-set (leader hydraname snippets extras)
   `(defhydra ,hydraname (:color blue :body-pre (insert leader) :idle 1.0)
-      ,@(cl-loop for kv in snippets
-		collect (list (substring (car kv) (length (car kv)) (1- (length (car kv)))) (list 'gm/snippet (car kv) (cdr kv)) (cdr kv)))
+     ,@(cl-loop for kv in snippets
+		        collect (list (substring (car kv) (length (car kv)) (1- (length (car kv)))) (list 'gm/snippet (car kv) (cdr kv)) (cdr kv)))
      ("0" nil "0")
-("1" nil "1")
-("2" nil "2")
-("3" nil "3")
-("4" nil "4")
-("5" nil "5")
-("6" nil "6")
-("7" nil "7")
-("8" nil "8")
-("9" nil "9")
-("-" nil "dash")
-,@(cl-loop for kv in extras
- collect (list kv))))
+     ("1" nil "1")
+     ("2" nil "2")
+     ("3" nil "3")
+     ("4" nil "4")
+     ("5" nil "5")
+     ("6" nil "6")
+     ("7" nil "7")
+     ("8" nil "8")
+     ("9" nil "9")
+     ("-" nil "dash")
+     ,@(cl-loop for kv in extras
+                collect (list kv))))
 #+END_SRC
 *** Squared, Square Root
 #+BEGIN_SRC emacs-lisp
@@ -1463,7 +1449,7 @@ activated.
   ("c" (gm/snippet "cc" "subset") "subset")
   ("-" (insert "-") "dash"))
 
- (define-key org-mode-map (kbd "c") 'hydra-c/body)
+(define-key org-mode-map (kbd "c") 'hydra-c/body)
 #+END_SRC
 *** Derivative
 #+BEGIN_SRC emacs-lisp
@@ -1516,9 +1502,9 @@ activated.
 *** Maps To
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-exc (:color blue
-                         :body-pre (insert "!")
-                         :idle 1.0)
-(">" (gm/snippet "!>" "maps-to") "maps-to")
+                            :body-pre (insert "!")
+                            :idle 1.0)
+  (">" (gm/snippet "!>" "maps-to") "maps-to")
   ("-" (insert "-") "dash"))
 
 (define-key org-mode-map (kbd "!") 'hydra-exc/body)
@@ -1526,11 +1512,11 @@ activated.
 *** Implies
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-eq (:color blue
-                         :body-pre (insert "=")
-                         :idle 1.0)
-(">" (gm/snippet "=>" "implies") "implies")
-("=" (gm/snippet "==" "split-equals") "&=")
-("-" (insert "-") "dash"))
+                           :body-pre (insert "=")
+                           :idle 1.0)
+  (">" (gm/snippet "=>" "implies") "implies")
+  ("=" (gm/snippet "==" "split-equals") "&=")
+  ("-" (insert "-") "dash"))
 
 (define-key org-mode-map (kbd "=") 'hydra-eq/body)
 #+END_SRC
@@ -1623,7 +1609,7 @@ activated.
 (defhydra hydra-x (:color blue
                           :body-pre (insert "x")
                           :idle 1.0)
-("x" (gm/snippet "xx" "times") "times")
+  ("x" (gm/snippet "xx" "times") "times")
   ("-" (insert "-") "dash"))
 
 (define-key org-mode-map (kbd "x") 'hydra-x/body)
@@ -1668,8 +1654,8 @@ activated.
 *** Fraction, Floor
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-f (:color blue
-                         :body-pre (insert "f")
-                         :idle 1.0)
+                          :body-pre (insert "f")
+                          :idle 1.0)
   ("l" (gm/snippet "fl" "floor") "floor")
   ("r" (gm/snippet "fr" "frac") "frac")
   ("-" (insert "-") "dash"))
@@ -1832,19 +1818,19 @@ activated.
       (hydra-semicolon-a/body)
     (insert ";")))
 
-(global-set-key (kbd ";") 'gm/semicolon)
+(bind-key ";" 'gm/semicolon)
 #+END_SRC
 * Email
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e")
 (require 'smtpmail)
 
-; smtp
+                                        ; smtp
 (setq message-send-mail-function 'smtpmail-send-it
-    smtpmail-stream-type 'starttls
-    smtpmail-default-smtp-server "smtp.stanford.edu"
-    smtpmail-smtp-server "smtp.stanford.edu"
-    smtpmail-smtp-service 587)
+      smtpmail-stream-type 'starttls
+      smtpmail-default-smtp-server "smtp.stanford.edu"
+      smtpmail-smtp-server "smtp.stanford.edu"
+      smtpmail-smtp-service 587)
 
 (require 'mu4e)
 
@@ -1854,7 +1840,7 @@ activated.
 (setq mu4e-sent-folder   "/Sent Items")
 (setq mu4e-trash-folder  "/Trash")
 
-; get mail
+                                        ; get mail
 (setq mu4e-get-mail-command "mbsync -c ~/.mbsyncrc uni"
       mu4e-html2text-command "w3m -T text/html"
       mu4e-update-interval 120
@@ -1877,18 +1863,18 @@ activated.
 ;; general emacs mail settings; used when composing e-mail
 ;; the non-mu4e-* stuff is inherited from emacs/message-mode
 (setq mu4e-reply-to-address "gmanohar@stanford.edu"
-    user-mail-address "gmanohar@stanford.edu"
-    user-full-name  "Gautam Manohar")
+      user-mail-address "gmanohar@stanford.edu"
+      user-full-name  "Gautam Manohar")
 
 ;; don't save message to Sent Messages, IMAP takes care of this
-; (setq mu4e-sent-messages-behavior 'delete)
+                                        ; (setq mu4e-sent-messages-behavior 'delete)
 
 ;; spell check
 (add-hook 'mu4e-compose-mode-hook
-        (defun my-do-compose-stuff ()
-           "My settings for message composition."
-           (set-fill-column 80)
-           (flyspell-mode)))
+          (defun my-do-compose-stuff ()
+            "My settings for message composition."
+            (set-fill-column 80)
+            (flyspell-mode)))
 #+END_SRC
 * End
 Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
