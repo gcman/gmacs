@@ -300,11 +300,40 @@ Save abbreviations upon saving a file.
 (keyfreq-mode 1)
 (keyfreq-autosave-mode 1)
 #+END_SRC
+*** Searching
+Use =ack= instead of =grep=.
+#+BEGIN_SRC emacs-lisp
+(defvar ack-history nil
+  "History for the `ack' command.")
+
+(defun ack (command-args)
+  (interactive
+   (let ((ack-command "ack --nofilter --nogroup --with-filename "))
+     (list (read-shell-command "Run ack (like this): "
+                               ack-command
+                               'ack-history))))
+  (let ((compilation-disable-input t))
+    (compilation-start (concat command-args " < " null-device)
+                       'grep-mode)))
+#+END_SRC
 *** Autocomplete
+**** Company
+#+BEGIN_SRC emacs-lisp
+(use-package company
+:diminish
+:config
+(company-tng-configure-default)
+:custom
+(company-idle-delay 0)
+(company-minimum-prefix-length 1)
+(company-selection-wrap-around t))
+(add-hook 'after-init-hook 'global-company-mode)
+#+END_SRC
 **** Ivy
 #+BEGIN_SRC emacs-lisp
 (use-package ivy
   :ensure t
+  :diminish
   :config
   (ivy-mode 1)
   (diminish 'ivy-mode)
@@ -316,6 +345,10 @@ Save abbreviations upon saving a file.
      (t      . ivy--regex-fuzzy)))
   (ivy-initial-inputs-alist nil))
 (use-package swiper)
+(use-package counsel)
+(use-package ivy-explorer
+:diminish (ivy-explorer-mode))
+(ivy-explorer-mode 1)
 #+END_SRC
 ** Packages
 *** Magit
@@ -376,7 +409,6 @@ Enable god-mode.
   :pin manual
   :config
   (pdf-tools-install)
-  (add-hook 'pdf-view-mode-hook (lambda () (pdf-view-midnight-minor-mode)))
   (setq pdf-view-midnight-colours '("#657b83" . "#fdf6e3"))
   (setq-default pdf-view-display-size 'fit-page) ;
   (setq pdf-annot-activate-created-annotations t)
@@ -384,7 +416,8 @@ Enable god-mode.
   (setq pdf-view-resize-factor 1.1)
   (define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
   (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
-  (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete))
+  (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete)
+  (add-hook 'pdf-view-mode-hook (lambda () (pdf-view-midnight-minor-mode))))
 #+END_SRC
 *** Webmode
 #+BEGIN_SRC emacs-lisp

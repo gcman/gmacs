@@ -17,10 +17,16 @@
  '(ivy-initial-inputs-alist nil t)
  '(ivy-re-builders-alist '((swiper . ivy--regex-plus) (t . ivy--regex-fuzzy)) t)
  '(ivy-use-virtual-buffers t)
+ '(package-selected-packages
+   '(ivy-explorer yasnippet which-key web-mode use-package swiper solarized-theme smart-mode-line rainbow-mode pdf-tools ox-hugo org-wc org-gcal org-cliplink org-bullets magit keyfreq ido-grid-mode god-mode dired-quick-sort diminish company cdlatex avy auctex amx adaptive-wrap))
+ '(pdf-view-midnight-colors '("#657b83" . "#fdf6e3"))
  '(safe-local-variable-values '((after-save-hook . gm/org-latex-export)))
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
- '(uniquify-strip-common-suffix t))
+ '(uniquify-strip-common-suffix t)
+ '(web-mode-code-indent-offset 2)
+ '(web-mode-css-indent-offset 2)
+ '(web-mode-markup-indent-offset 2))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
