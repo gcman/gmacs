@@ -1,7 +1,5 @@
 #+TITLE: Emacs Configuration
 * Starting Up
-** Balancing                                                         :noexport:
-("
 ** Daemon Mode
 #+BEGIN_SRC emacs-lisp
 (server-start)
@@ -73,7 +71,7 @@ It is no longer the 90s. Toolbars and their little icons are not cool.
 (tool-bar-mode -1)
 #+END_SRC
 **** Cursor Blinking
-The cursor should not blink.
+I find cursor blinking distracting.
 #+BEGIN_SRC emacs-lisp
 (blink-cursor-mode 0)
 (when (display-graphic-p)
@@ -171,51 +169,42 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 ** Ease of Use
 *** Ido Mode
 #+BEGIN_SRC emacs-lisp
-(use-package ido)
-(use-package ido-grid-mode)
-(use-package amx)
-(require 'flx-ido)
-(require 'ido-completing-read+)
-(ido-mode 1)
-(ido-grid-mode 1)
-(flx-ido-mode 1)
-(ido-ubiquitous-mode 1)
-(ido-everywhere 1)
-(amx-mode 1)
-(setq ido-grid-bind-keys t)
-(setq ido-enable-flex-matching t)
-(setq ido-use-filename-at-point 'guess)
-(setq ido-create-new-buffer 'always)
-(setq ido-use-faces nil)
-(setq ido-max-directory-size 100000)
-(setq ido-file-extensions-order '(".org" ".tex" ".py"))
-#+END_SRC
-*** Spellchek
-**** Highlight Mistakes
-#+BEGIN_SRC emacs-lisp
-(use-package flyspell
-    :defer 1
-    :hook (text-mode . flyspell-mode)
-    :diminish)
-#+END_SRC
-**** Autocomplete
-***** ignore case
-#+BEGIN_SRC emacs-lisp
-(setq completion-ignore-case t)
-#+END_SRC
-***** Company
-#+BEGIN_SRC emacs-lisp
-(use-package company
-    :diminish company-mode
-    :hook
-    (after-init . global-company-mode))
+(use-package ido
+  :init
+  (use-package ido-grid-mode)
+  (use-package amx)
+  (require 'flx-ido)
+  (require 'ido-completing-read+)
+  :config
+  (ido-mode 1)
+  (ido-grid-mode 1)
+  (flx-ido-mode 1)
+  (ido-ubiquitous-mode 1)
+  (ido-everywhere 1)
+  (amx-mode 1)
+  :custom
+  (ido-grid-bind-keys t)
+  (ido-enable-flex-matching t)
+  (ido-use-filename-at-point 'guess)
+  (ido-create-new-buffer 'always)
+  (ido-use-faces nil)
+  (ido-max-directory-size 100000)
+  (ido-file-extensions-order '(".org" ".tex" ".py")))
 #+END_SRC
 *** Better Defaults
+:PROPERTIES:
+:ORDERED:  t
+:END:
 All the things (perhaps they seem little) that just make sense to have.
 **** From Yes/No to y/n
 This makes things so much simpler. There's not any ambiguity to begin with.
 #+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+**** Confirm Kill Emacs
+I’ve accidentally closed this thing typing =C-x C-c= instead of =C-c C-x= way too many times.
+#+BEGIN_SRC emacs-lisp
+(setq confirm-kill-emacs 'y-or-n-p)
 #+END_SRC
 **** Sentences End With a Single Space
 This is necessary to make sentence navigation commands work for me.
@@ -227,7 +216,8 @@ This is necessary to make sentence navigation commands work for me.
 (delete-selection-mode 1)
 #+END_SRC
 **** Split Vertically by Default
-Gotta maximize that vertical screen space.
+Gotta maximize that vertical screen space. Besides, I always have 80 character
+limits on my lines.
 #+BEGIN_SRC emacs-lisp
 (setq split-height-threshold nil)
 (setq split-width-threshold 0)
@@ -257,6 +247,18 @@ Completely reload emacs, by reloading the init file.
 **** Dictionary
 #+BEGIN_SRC emacs-lisp
 (require 'sdcv-mode)
+#+END_SRC
+**** Transient Mark Mode
+#+BEGIN_SRC emacs-lisp
+(transient-mark-mode 1)
+#+END_SRC
+**** Electric Pairs Mode
+#+BEGIN_SRC emacs-lisp
+(electric-pair-mode 1)
+(setq electric-pair-pairs
+      '((?\( . ?\))
+        (?\" . ?\")
+        (?\{ . ?\})))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
@@ -304,7 +306,6 @@ Opens a file to the same place in which it was last closed.
 #+BEGIN_SRC emacs-lisp
 (save-place-mode 1)
 #+END_SRC
-
 *** Searching (Ivy, Avy, Swiper)
 Enable ivy-mode.
 #+BEGIN_SRC emacs-lisp
@@ -314,12 +315,13 @@ Enable ivy-mode.
   :config
   (ivy-mode 1)
   (diminish 'ivy-mode)
-  (setq ivy-use-virtual-buffers t)
-  (setq ivy-display-style 'fancy)
-  (setq ivy-re-builders-alist
+  :custom
+  (ivy-use-virtual-buffers t)
+  (ivy-display-style 'fancy)
+  (ivy-re-builders-alist
         '((swiper . ivy--regex-plus)
           (t      . ivy--regex-fuzzy)))
-  (setq ivy-initial-inputs-alist nil))
+  (ivy-initial-inputs-alist nil))
 #+END_SRC
 Get swiper to recentre the display when it exits.
 #+BEGIN_SRC emacs-lisp
@@ -359,14 +361,6 @@ Save them in the ~.emacs.d~ dir.
 Save abbreviations upon saving a file.
 #+BEGIN_SRC emacs-lisp
 (setq save-abbrevs 'silent)
-#+END_SRC
-*** Electric Pairs
-#+BEGIN_SRC emacs-lisp
-(electric-pair-mode 1)
-(setq electric-pair-pairs
-      '(
-        (?\" . ?\")
-        (?\{ . ?\})))
 #+END_SRC
 *** Key Frequency
 #+BEGIN_SRC emacs-lisp
@@ -452,16 +446,16 @@ Enable god-mode.
 (setq web-mode-code-indent-offset 2)
 #+END_SRC
 ** Theme
+*** Solarized Light
+#+BEGIN_SRC emacs-lisp
+(use-package solarized-theme
+  :init (load-theme 'solarized-light t))
+#+END_SRC
 *** Font Face
 Normally use Hack.
 #+BEGIN_SRC emacs-lisp
 (set-face-font 'default "Hack")
 (set-frame-font "Hack" nil t)
-#+END_SRC
-*** Solarized Light
-#+BEGIN_SRC emacs-lisp
-(use-package solarized-theme)
-(load-theme 'solarized-light t)
 #+END_SRC
 *** Autofill
 Use visual line mode everywhere.
@@ -473,15 +467,6 @@ Nicely wrap lines for text mode.
 (add-hook 'text-mode-hook 'auto-fill-mode)
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
 (eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
-#+END_SRC
-Quickly autofill the entire buffer by paragraph.
-#+BEGIN_SRC emacs-lisp
-(defun fill-buffer ()
-  (interactive)
-  (save-excursion
-    (save-restriction
-      (widen)
-      (fill-region (point-min) (point-max)))))
 #+END_SRC
 **** 80 Columns
 #+BEGIN_SRC emacs-lisp
@@ -514,7 +499,6 @@ Native syntax highlighting for source blocks in org mode.
 (setq show-paren-delay 0)
 (setq show-paren-style 'expression)
 #+END_SRC
-**** Transient
 * Global Keybindings
 ** Easy M-x
 Alt is hard to type easily.
@@ -757,9 +741,10 @@ Easily enter god mode.
 ** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp
-(require 'org)
-(require 'ox-latex)
 (use-package org
+  :init
+  (require 'org)
+  (require 'ox-latex)
   :diminish
   (org-indent-mode)
   :custom
@@ -782,7 +767,8 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
                            ("~/org/someday.org" :level . 1)
                            ("~/org/tickler.org" :maxlevel . 2)
-                           ("~/org/notes.org" :maxlevel . 2)))
+                           ("~/org/notes.org" :maxlevel . 2)
+                           ("~/website/content-org/blog.org" :maxlevel . 1)))
 (setq org-capture-templates '(("a" "Appointment" entry
                                (file "~/org/gcal.org")
                                "* %i%? \n%^T\n")
@@ -816,6 +802,10 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync)))
 #+END_SRC
 ** Prettifying
+#+BEGIN_SRC emacs-lisp
+(require 'typopunct)
+(typopunct-change-language 'english t)
+#+END_SRC
 *** Hide Emphasis
 #+BEGIN_SRC emacs-lisp
 (setq org-hide-emphasis-markers t)
@@ -842,49 +832,6 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 *** Visual Lines
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-mode-hook 'visual-line-mode)
-#+END_SRC
-*** Typography
-**** Quotation Marks
-#+BEGIN_SRC emacs-lisp
-(define-key org-mode-map "\"" #'endless/round-quotes)
-(defun endless/round-quotes (italicize)
-  "Insert “” and leave point in the middle.
-With prefix argument ITALICIZE, insert /“”/ instead
-\(meant for org-mode).
-Inside a code-block, just call `self-insert-command'."
-  (interactive "P")
-  (if (and (derived-mode-p 'org-mode)
-           (org-in-block-p '("src" "latex" "html")))
-      (call-interactively #'self-insert-command)
-    (if (looking-at "”[/=_\\*]?")
-        (goto-char (match-end 0))
-      (when italicize
-        (if (derived-mode-p 'markdown-mode)
-            (insert "__")
-          (insert "//"))
-        (forward-char -1))
-      (insert "“”")
-      (forward-char -1))))
-#+END_SRC
-**** Apostrophes
-#+BEGIN_SRC emacs-lisp
-(define-key org-mode-map "'" #'endless/apostrophe)
-
-(defun endless/apostrophe (opening)
-  "Insert ’ in prose or `self-insert-command' in code.
-With prefix argument OPENING, insert ‘’ instead and
-leave point in the middle.
-Inside a code-block, just call `self-insert-command'."
-  (interactive "P")
-  (if (and (derived-mode-p 'org-mode)
-           (org-in-block-p '("src" "latex" "html")))
-      (call-interactively #'self-insert-command)
-    (if (looking-at "['’][=_/\\*]?")
-        (goto-char (match-end 0))
-      (if (null opening)
-          (insert "’")
-        (insert "‘’")
-        (forward-char -1)))))
 #+END_SRC
 ** LaTeX
 *** Cleverref
@@ -1423,10 +1370,6 @@ pressed, the leader key is erased and the snippet is expanded.
 #+BEGIN_SRC emacs-lisp
 (require 'hydra)
 #+END_SRC
-For the fraction command, we use general.el.
-#+BEGIN_SRC emacs-lisp
-(require 'general)
-#+END_SRC
 *** Helper Functions
 **** Delete n Characters
 Delete n characters before the point.
@@ -1507,7 +1450,9 @@ activated.
   ("t" (gm/snippet "list" "list") "list")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "s") 'hydra-s/body)
+(define-key org-mode-map (kbd "s") 'hydra-s/body)
+
+;; (define-key org-mode-map (kbd "s") 'hydra-s/body)
 #+END_SRC
 *** Cubed, Subset
 #+BEGIN_SRC emacs-lisp
@@ -1518,7 +1463,7 @@ activated.
   ("c" (gm/snippet "cc" "subset") "subset")
   ("-" (insert "-") "dash"))
 
- (global-set-key (kbd "c") 'hydra-c/body)
+ (define-key org-mode-map (kbd "c") 'hydra-c/body)
 #+END_SRC
 *** Derivative
 #+BEGIN_SRC emacs-lisp
@@ -1535,7 +1480,7 @@ activated.
              (t (insert "v"))) "(p)derivative")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "d") 'hydra-d/body)
+(define-key org-mode-map (kbd "d") 'hydra-d/body)
 #+END_SRC
 *** Partial Derivative, Norm, Brackets
 #+BEGIN_SRC emacs-lisp
@@ -1549,7 +1494,7 @@ activated.
   ("{" (gm/snippet "lr{" "set") "set")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "r") 'hydra-r/body)
+(define-key org-mode-map (kbd "r") 'hydra-r/body)
 #+END_SRC
 *** Inverse, Integral, In
 #+BEGIN_SRC emacs-lisp
@@ -1566,7 +1511,7 @@ activated.
   ("n" (gm/snippet "inn" "in") "in")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "n") 'hydra-n/body)
+(define-key org-mode-map (kbd "n") 'hydra-n/body)
 #+END_SRC
 *** Maps To
 #+BEGIN_SRC emacs-lisp
@@ -1576,7 +1521,7 @@ activated.
 (">" (gm/snippet "!>" "maps-to") "maps-to")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "!") 'hydra-exc/body)
+(define-key org-mode-map (kbd "!") 'hydra-exc/body)
 #+END_SRC
 *** Implies
 #+BEGIN_SRC emacs-lisp
@@ -1587,7 +1532,7 @@ activated.
 ("=" (gm/snippet "==" "split-equals") "&=")
 ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "=") 'hydra-eq/body)
+(define-key org-mode-map (kbd "=") 'hydra-eq/body)
 #+END_SRC
 *** Limit, Sin
 #+BEGIN_SRC emacs-lisp
@@ -1607,7 +1552,7 @@ activated.
          (hydra-n/body)) "(a)sin")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "i") 'hydra-i/body)
+(define-key org-mode-map (kbd "i") 'hydra-i/body)
 #+END_SRC
 *** Sum
 #+BEGIN_SRC emacs-lisp
@@ -1621,7 +1566,7 @@ activated.
   ("n" (gm/snippet "fun" "function") "function")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "u") 'hydra-u/body)
+(define-key org-mode-map (kbd "u") 'hydra-u/body)
 #+END_SRC
 *** Less Than
 #+BEGIN_SRC emacs-lisp
@@ -1634,7 +1579,7 @@ activated.
      (insert "e")) "less-than")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "l") 'hydra-l/body)
+(define-key org-mode-map (kbd "l") 'hydra-l/body)
 #+END_SRC
 *** Greater Than
 #+BEGIN_SRC emacs-lisp
@@ -1644,7 +1589,7 @@ activated.
   ("e" (gm/snippet "ge" "greater-than") "greater than")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "g") 'hydra-g/body)
+(define-key org-mode-map (kbd "g") 'hydra-g/body)
 #+END_SRC
 *** Pairsum
 #+BEGIN_SRC emacs-lisp
@@ -1654,7 +1599,7 @@ activated.
   ("s" (gm/snippet "ps" "pairsum") "pairsum")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "p") 'hydra-p/body)
+(define-key org-mode-map (kbd "p") 'hydra-p/body)
 #+END_SRC
 *** Set, Sec
 #+BEGIN_SRC emacs-lisp
@@ -1671,7 +1616,7 @@ activated.
          (insert "q")) "neq")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "e") 'hydra-e/body)
+(define-key org-mode-map (kbd "e") 'hydra-e/body)
 #+END_SRC
 *** Times
 #+BEGIN_SRC emacs-lisp
@@ -1681,7 +1626,7 @@ activated.
 ("x" (gm/snippet "xx" "times") "times")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "x") 'hydra-x/body)
+(define-key org-mode-map (kbd "x") 'hydra-x/body)
 #+END_SRC
 *** Infinity, Log, Interval, (Arc)cos, (Arc)cot
 #+BEGIN_SRC emacs-lisp
@@ -1703,7 +1648,7 @@ activated.
   ("+" (gm/snippet "o+" "oplus") "oplus")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "o") 'hydra-o/body)
+(define-key org-mode-map (kbd "o") 'hydra-o/body)
 #+END_SRC
 *** Tan, Arctan
 #+BEGIN_SRC emacs-lisp
@@ -1718,7 +1663,7 @@ activated.
   ("r" (gm/snippet "star" "star") "star")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "a") 'hydra-a/body)
+(define-key org-mode-map (kbd "a") 'hydra-a/body)
 #+END_SRC
 *** Fraction, Floor
 #+BEGIN_SRC emacs-lisp
@@ -1729,7 +1674,7 @@ activated.
   ("r" (gm/snippet "fr" "frac") "frac")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "f") 'hydra-f/body)
+(define-key org-mode-map (kbd "f") 'hydra-f/body)
 #+END_SRC
 *** Absolute Value, Nabla
 #+BEGIN_SRC emacs-lisp
@@ -1742,7 +1687,7 @@ activated.
   ("l" (gm/snippet "nabl" "nabla") "nabla")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "b") 'hydra-b/body)
+(define-key org-mode-map (kbd "b") 'hydra-b/body)
 #+END_SRC
 *** Number Systems
 **** Real
@@ -1753,7 +1698,7 @@ activated.
   ("R" (gm/snippet "RR" "real") "real")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "R") 'hydra-R/body)
+(define-key org-mode-map (kbd "R") 'hydra-R/body)
 #+END_SRC
 **** Rational
 #+BEGIN_SRC emacs-lisp
@@ -1763,7 +1708,7 @@ activated.
   ("Q" (gm/snippet "QQ" "rational") "rational")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "Q") 'hydra-Q/body)
+(define-key org-mode-map (kbd "Q") 'hydra-Q/body)
 #+END_SRC
 **** Complex
 #+BEGIN_SRC emacs-lisp
@@ -1773,7 +1718,7 @@ activated.
   ("C" (gm/snippet "CC" "complex") "complex")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "C") 'hydra-C/body)
+(define-key org-mode-map (kbd "C") 'hydra-C/body)
 #+END_SRC
 **** Integer
 #+BEGIN_SRC emacs-lisp
@@ -1783,7 +1728,7 @@ activated.
   ("Z" (gm/snippet "ZZ" "integers") "integers")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "Z") 'hydra-Z/body)
+(define-key org-mode-map (kbd "Z") 'hydra-Z/body)
 #+END_SRC
 **** Natural
 #+BEGIN_SRC emacs-lisp
@@ -1793,7 +1738,7 @@ activated.
   ("N" (gm/snippet "NN" "natural") "natural")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "N") 'hydra-N/body)
+(define-key org-mode-map (kbd "N") 'hydra-N/body)
 #+END_SRC
 **** Cal L
 #+BEGIN_SRC emacs-lisp
@@ -1803,7 +1748,7 @@ activated.
   ("L" (gm/snippet "LL" "cal-L") "cal-L")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "L") 'hydra-L/body)
+(define-key org-mode-map (kbd "L") 'hydra-L/body)
 #+END_SRC
 **** Cal M
 #+BEGIN_SRC emacs-lisp
@@ -1813,7 +1758,7 @@ activated.
   ("M" (gm/snippet "MM" "cal-M") "cal-M")
   ("-" (insert "-") "dash"))
 
-(global-set-key (kbd "M") 'hydra-M/body)
+(define-key org-mode-map (kbd "M") 'hydra-M/body)
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
