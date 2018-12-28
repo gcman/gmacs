@@ -19,8 +19,7 @@ On start-up, display how quickly Emacs started up.
 #+BEGIN_SRC emacs-lisp
 (when (>= emacs-major-version 24)
   (require 'package)
-  (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
-  )
+  (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t))
 #+END_SRC
 Use ~use-package~.
 #+BEGIN_SRC emacs-lisp
@@ -96,7 +95,7 @@ replace the built-in one with ours.
 (setq auto-save-timeout 99999)
 (defvar bjm/auto-save-timer nil
   "Timer to run `bjm/auto-save-silent'")
-(defvar bjm/auto-save-interval 5
+(defvar bjm/auto-save-interval 60
   "How often in seconds of idle time to auto-save with `bjm/auto-save-silent'")
 (defun bjm/auto-save-silent ()
   "Auto-save all buffers silently"
@@ -167,34 +166,7 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 (setq indent-line-function 'insert-tab)
 #+END_SRC
 ** Ease of Use
-*** Ido Mode
-#+BEGIN_SRC emacs-lisp
-(use-package ido
-  :init
-  (use-package ido-grid-mode)
-  (use-package amx)
-  (require 'flx-ido)
-  (require 'ido-completing-read+)
-  :config
-  (ido-mode 1)
-  (ido-grid-mode 1)
-  (flx-ido-mode 1)
-  (ido-ubiquitous-mode 1)
-  (ido-everywhere 1)
-  (amx-mode 1)
-  :custom
-  (ido-grid-bind-keys t)
-  (ido-enable-flex-matching t)
-  (ido-use-filename-at-point 'guess)
-  (ido-create-new-buffer 'always)
-  (ido-use-faces nil)
-  (ido-max-directory-size 100000)
-  (ido-file-extensions-order '(".org" ".tex" ".py")))
-#+END_SRC
 *** Better Defaults
-:PROPERTIES:
-:ORDERED:  t
-:END:
 All the things (perhaps they seem little) that just make sense to have.
 **** From Yes/No to y/n
 This makes things so much simpler. There's not any ambiguity to begin with.
@@ -301,41 +273,6 @@ Opens a file to the same place in which it was last closed.
 #+BEGIN_SRC emacs-lisp
 (save-place-mode 1)
 #+END_SRC
-*** Searching (Ivy, Avy, Swiper)
-Enable ivy-mode.
-#+BEGIN_SRC emacs-lisp
-(use-package ivy)
-(use-package swiper
-  :ensure t
-  :config
-  (ivy-mode 1)
-  (diminish 'ivy-mode)
-  :custom
-  (ivy-use-virtual-buffers t)
-  (ivy-display-style 'fancy)
-  (ivy-re-builders-alist
-   '((swiper . ivy--regex-plus)
-     (t      . ivy--regex-fuzzy)))
-  (ivy-initial-inputs-alist nil))
-#+END_SRC
-Get swiper to recentre the display when it exits.
-#+BEGIN_SRC emacs-lisp
-(defun bjm-swiper-recenter (&rest args)
-  "recenter display after swiper"
-  (recenter)
-  )
-(advice-add 'swiper :after #'bjm-swiper-recenter)
-#+END_SRC
-**** Easily Navigate to Word (Avy Mode)
-#+BEGIN_SRC emacs-lisp
-(use-package avy :ensure t
-  :commands (avy-goto-char)
-  :config
-  (setq avy-background t)
-  :custom-face
-  (avy-lead-face ((t(:weight bold))))
-  (avy-lead-face-0 ((t(:weight bold)))))
-#+END_SRC
 *** Abbreviations
 Load them.
 #+BEGIN_SRC emacs-lisp
@@ -362,6 +299,23 @@ Save abbreviations upon saving a file.
 (use-package keyfreq)
 (keyfreq-mode 1)
 (keyfreq-autosave-mode 1)
+#+END_SRC
+*** Autocomplete
+**** Ivy
+#+BEGIN_SRC emacs-lisp
+(use-package ivy
+  :ensure t
+  :config
+  (ivy-mode 1)
+  (diminish 'ivy-mode)
+  :custom
+  (ivy-use-virtual-buffers t)
+  (ivy-display-style 'fancy)
+  (ivy-re-builders-alist
+   '((swiper . ivy--regex-plus)
+     (t      . ivy--regex-fuzzy)))
+  (ivy-initial-inputs-alist nil))
+(use-package swiper)
 #+END_SRC
 ** Packages
 *** Magit
@@ -434,11 +388,12 @@ Enable god-mode.
 #+END_SRC
 *** Webmode
 #+BEGIN_SRC emacs-lisp
-(use-package web-mode)
-(add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
-(setq web-mode-markup-indent-offset 2)
-(setq web-mode-css-indent-offset 2)
-(setq web-mode-code-indent-offset 2)
+(use-package web-mode
+  :init (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
+  :custom
+  (web-mode-markup-indent-offset 2)
+  (web-mode-css-indent-offset 2)
+  (web-mode-code-indent-offset 2))
 #+END_SRC
 ** Theme
 *** Solarized Light
@@ -453,10 +408,6 @@ Normally use Hack.
 (set-frame-font "Hack" nil t)
 #+END_SRC
 *** Autofill
-Use visual line mode everywhere.
-#+BEGIN_SRC emacs-lisp
-(global-visual-line-mode 1)
-#+END_SRC
 Nicely wrap lines for text mode.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'text-mode-hook 'auto-fill-mode)
@@ -521,16 +472,65 @@ Use shell like ~C-h~ instead of Backspace.
 (define-key key-translation-map [?\C-h] [?\C-?])
 (bind-key "<f1>" 'help-command)
 #+END_SRC
-** Easy Kill
-Add extra keybinding to account for missing.
+** Better Cut/Paste
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-x C-k" 'kill-region)
-(bind-key "C-c C-k" 'kill-region)
+(defun xah-cut-line-or-region ()
+  "Cut current line, or text selection.
+When `universal-argument' is called first, cut whole buffer (respects `narrow-to-region').
+
+URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
+Version 2015-06-10"
+  (interactive)
+  (if current-prefix-arg
+      (progn ; not using kill-region because we don't want to include previous kill
+        (kill-new (buffer-string))
+        (delete-region (point-min) (point-max)))
+    (progn (if (use-region-p)
+               (kill-region (region-beginning) (region-end) t)
+             (kill-region (line-beginning-position) (line-beginning-position 2))))))
+
+(defun xah-copy-line-or-region ()
+  "Copy current line, or text selection.
+When called repeatedly, append copy subsequent lines.
+When `universal-argument' is called first, copy whole buffer (respects `narrow-to-region').
+
+URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
+Version 2018-09-10"
+  (interactive)
+  (if current-prefix-arg
+      (progn
+        (copy-region-as-kill (point-min) (point-max)))
+    (if (use-region-p)
+        (progn
+          (copy-region-as-kill (region-beginning) (region-end)))
+      (if (eq last-command this-command)
+          (if (eobp)
+              (progn )
+            (progn
+              (kill-append "\n" nil)
+              (kill-append
+               (buffer-substring-no-properties (line-beginning-position) (line-end-position))
+               nil)
+              (progn
+                (end-of-line)
+                (forward-char))))
+        (if (eobp)
+            (if (eq (char-before) 10 )
+                (progn )
+              (progn
+                (copy-region-as-kill (line-beginning-position) (line-end-position))
+                (end-of-line)))
+          (progn
+            (copy-region-as-kill (line-beginning-position) (line-end-position))
+            (end-of-line)
+            (forward-char)))))))
+
+(bind-key "C-k" 'xah-cut-line-or-region)
+(bind-key "M-w" 'xah-copy-line-or-region)
 #+END_SRC
 ** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
-(global-unset-key (kbd "C-z"))
-(global-set-key  (kbd "C-z") 'undo)
+(bind-key "C-z" 'undo)
 (bind-key "C-x C-u" 'undo)
 #+END_SRC
 ** Better Buffers
@@ -547,103 +547,6 @@ Use ibuffer.
 (require 'ibuffer)
 (bind-key "C-x C-b" 'ibuffer)
 (autoload 'ibuffer "ibuffer" "List buffers." t)
-#+END_SRC
-**** Ibuffer Hydra
-Courtesy of [[https://github.com/abo-abo/hydra/wiki/Ibuffer][hydra wiki]].
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-ibuffer-main (:color pink :hint nil)
-  "
- ^Navigation^ | ^Mark^        | ^Actions^        | ^View^
--^----------^-+-^----^--------+-^-------^--------+-^----^-------
-  _k_:    ʌ   | _m_: mark     | _D_: delete      | _g_: refresh
- _RET_: visit | _u_: unmark   | _S_: save        | _s_: sort
-  _j_:    v   | _*_: specific | _a_: all actions | _/_: filter
--^----------^-+-^----^--------+-^-------^--------+-^----^-------
-"
-  ("j" ibuffer-forward-line)
-  ("RET" ibuffer-visit-buffer :color blue)
-  ("k" ibuffer-backward-line)
-
-  ("m" ibuffer-mark-forward)
-  ("u" ibuffer-unmark-forward)
-  ("*" hydra-ibuffer-mark/body :color blue)
-
-  ("D" ibuffer-do-delete)
-  ("S" ibuffer-do-save)
-  ("a" hydra-ibuffer-action/body :color blue)
-
-  ("g" ibuffer-update)
-  ("s" hydra-ibuffer-sort/body :color blue)
-  ("/" hydra-ibuffer-filter/body :color blue)
-
-  ("o" ibuffer-visit-buffer-other-window "other window" :color blue)
-  ("q" quit-window "quit ibuffer" :color blue)
-  ("." nil "toggle hydra" :color blue))
-
-(defhydra hydra-ibuffer-mark (:color teal :columns 5
-                                     :after-exit (hydra-ibuffer-main/body))
-  "Mark"
-  ("*" ibuffer-unmark-all "unmark all")
-  ("M" ibuffer-mark-by-mode "mode")
-  ("m" ibuffer-mark-modified-buffers "modified")
-  ("u" ibuffer-mark-unsaved-buffers "unsaved")
-  ("s" ibuffer-mark-special-buffers "special")
-  ("r" ibuffer-mark-read-only-buffers "read-only")
-  ("/" ibuffer-mark-dired-buffers "dired")
-  ("e" ibuffer-mark-dissociated-buffers "dissociated")
-  ("h" ibuffer-mark-help-buffers "help")
-  ("z" ibuffer-mark-compressed-file-buffers "compressed")
-  ("b" hydra-ibuffer-main/body "back" :color blue))
-
-(defhydra hydra-ibuffer-action (:color teal :columns 4
-                                       :after-exit
-                                       (if (eq major-mode 'ibuffer-mode)
-                                           (hydra-ibuffer-main/body)))
-  "Action"
-  ("A" ibuffer-do-view "view")
-  ("E" ibuffer-do-eval "eval")
-  ("F" ibuffer-do-shell-command-file "shell-command-file")
-  ("I" ibuffer-do-query-replace-regexp "query-replace-regexp")
-  ("H" ibuffer-do-view-other-frame "view-other-frame")
-  ("N" ibuffer-do-shell-command-pipe-replace "shell-cmd-pipe-replace")
-  ("M" ibuffer-do-toggle-modified "toggle-modified")
-  ("O" ibuffer-do-occur "occur")
-  ("P" ibuffer-do-print "print")
-  ("Q" ibuffer-do-query-replace "query-replace")
-  ("R" ibuffer-do-rename-uniquely "rename-uniquely")
-  ("T" ibuffer-do-toggle-read-only "toggle-read-only")
-  ("U" ibuffer-do-replace-regexp "replace-regexp")
-  ("V" ibuffer-do-revert "revert")
-  ("W" ibuffer-do-view-and-eval "view-and-eval")
-  ("X" ibuffer-do-shell-command-pipe "shell-command-pipe")
-  ("b" nil "back"))
-
-(defhydra hydra-ibuffer-sort (:color amaranth :columns 3)
-  "Sort"
-  ("i" ibuffer-invert-sorting "invert")
-  ("a" ibuffer-do-sort-by-alphabetic "alphabetic")
-  ("v" ibuffer-do-sort-by-recency "recently used")
-  ("s" ibuffer-do-sort-by-size "size")
-  ("f" ibuffer-do-sort-by-filename/process "filename")
-  ("m" ibuffer-do-sort-by-major-mode "mode")
-  ("b" hydra-ibuffer-main/body "back" :color blue))
-
-(defhydra hydra-ibuffer-filter (:color amaranth :columns 4)
-  "Filter"
-  ("m" ibuffer-filter-by-used-mode "mode")
-  ("M" ibuffer-filter-by-derived-mode "derived mode")
-  ("n" ibuffer-filter-by-name "name")
-  ("c" ibuffer-filter-by-content "content")
-  ("e" ibuffer-filter-by-predicate "predicate")
-  ("f" ibuffer-filter-by-filename "filename")
-  (">" ibuffer-filter-by-size-gt "size")
-  ("<" ibuffer-filter-by-size-lt "size")
-  ("/" ibuffer-filter-disable "disable")
-  ("b" hydra-ibuffer-main/body "back" :color blue))
-#+END_SRC
-Use with period.
-#+BEGIN_SRC emacs-lisp
-(define-key ibuffer-mode-map "." 'hydra-ibuffer-main/body)
 #+END_SRC
 ** Window Management
 #+BEGIN_SRC emacs-lisp
@@ -684,7 +587,7 @@ Add aliases to do this easily.
 #+END_SRC
 ** Org LaTeX Export
 #+BEGIN_SRC emacs-lisp
-(global-set-key  (kbd "C-c b") 'gm/org-latex-export)
+(bind-key "C-c b" 'gm/org-latex-export)
 #+END_SRC
 ** Dictionary
 #+BEGIN_SRC emacs-lisp
@@ -692,15 +595,13 @@ Add aliases to do this easily.
 #+END_SRC
 ** Find Inbox
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c o")
-                (lambda () (interactive) (find-file "~/org/inbox.org")))
+(bind-key "C-c o" (lambda () (interactive) (find-file "~/org/inbox.org")))
 #+END_SRC
 ** Complete Reload
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c r" 'gm/reload)
 #+END_SRC
 ** Org Cliplink
-
 Paste URL with extracted title as the description.
 #+BEGIN_SRC emacs-lisp
 (use-package org-cliplink)
@@ -778,7 +679,11 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
                            ("j" "Journal" entry
                             (file+datetree "~/org/journal.org")
                             "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
-                           )))
+                           ))
+  :delight (org-indent-mode))
+(setq org-hide-emphasis-markers t)
+(setq org-startup-indented t)
+(define-key org-mode-map (kbd "C-k") 'xah-cut-line-or-region)
 #+END_SRC
 *** Google Calendar
 #+BEGIN_SRC emacs-lisp
@@ -792,14 +697,6 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync)))
 #+END_SRC
 ** Prettifying
-*** Hide Emphasis
-#+BEGIN_SRC emacs-lisp
-(setq org-hide-emphasis-markers t)
-#+END_SRC
-*** Hide Macro Marks
-#+BEGIN_SRC emacs-lisp
-(setq org-hide-emphasis-markers t)
-#+END_SRC
 *** Org Bullets
 #+BEGIN_SRC emacs-lisp
 (use-package org-bullets)
@@ -815,11 +712,16 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
 #+END_SRC
-*** Visual Lines
-#+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook 'visual-line-mode)
-#+END_SRC
 ** LaTeX
+*** Export Settings
+#+BEGIN_SRC emacs-lisp
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
+(setq org-highlight-latex-and-related '(latex))
+(setq org-latex-to-pdf-process
+ '("xelatex -interaction nonstopmode %f"
+   "xelatex -interaction nonstopmode %f")) ;; for multiple passes
+(setq org-export-with-smart-quotes t)
+#+END_SRC
 *** Cleverref
 #+BEGIN_SRC emacs-lisp
 (defun org-latex-ref-to-cref (text backend info)
@@ -830,12 +732,6 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 (add-to-list 'org-export-filter-final-output-functions
              'org-latex-ref-to-cref)
 #+END_SRC
-*** XeTeX
-#+BEGIN_SRC emacs-lisp
-(setq org-latex-to-pdf-process
-      '("xelatex -interaction nonstopmode %f"
-        "xelatex -interaction nonstopmode %f")) ;; for multiple passes
-#+END_SRC
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
 (defvar org-electric-pairs '((?$ . ?$) )) "Electric pairs for org-mode."
@@ -844,20 +740,6 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
   (setq-local electric-pair-text-pairs electric-pair-pairs))
 (add-hook 'org-mode-hook 'dollar-add-electric-pairs)
 (add-hook 'LaTeX-mode-hook 'dollar-add-electric-pairs)
-#+END_SRC
-*** Highlighting
-Inline LaTeX such as $y = mx + b$ will appear in a different colour.
-#+BEGIN_SRC emacs-lisp
-(setq org-highlight-latex-and-related '(latex))
-#+END_SRC
-*** Scaling Preview
-By default, it's really small on my HiDPI screen.
-#+BEGIN_SRC emacs-lisp
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
-#+END_SRC
-*** Export LaTeX Quotes
-#+BEGIN_SRC emacs-lisp
-(setq org-export-with-smart-quotes t)
 #+END_SRC
 *** Don't Break Paragraph on Comments
 Remove comments from org document when exporting to LaTeX.
@@ -1006,7 +888,7 @@ line are justified."
      (overlay-put (ov-at) 'before-string (make-string offset ? )))))
 
 ;; advise the function to a
-(advice-add 'org--format-latex-make-overlay :after 'org-justify-fragment-overlay)
+;; (advice-add 'org--format-latex-make-overlay :after 'org-justify-fragment-overlay)
 #+END_SRC
 *** CDLaTeX
 #+BEGIN_SRC emacs-lisp
@@ -1151,7 +1033,6 @@ are exported to a filename derived from the headline text."
 (setq TeX-source-correlate-method 'synctex)
 (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
 (add-hook 'LaTeX-mode-hook 'visual-line-mode)
-(add-hook 'LaTeX-mode-hook 'flyspell-mode)
 (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 (add-hook 'LaTeX-mode-hook 'TeX-fold-mode)
 (defun turn-on-outline-minor-mode ()
@@ -1326,6 +1207,7 @@ Insert math with semicolon.
 #+BEGIN_SRC emacs-lisp
 (setq cdlatex-math-symbol-prefix ?;)
 #+END_SRC
+
 * Snippets
 ** Load Snippets
 #+BEGIN_SRC emacs-lisp
@@ -1819,65 +1701,4 @@ activated.
     (insert ";")))
 
 (bind-key ";" 'gm/semicolon)
-#+END_SRC
-* Email
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e")
-(require 'smtpmail)
-
-                                        ; smtp
-(setq message-send-mail-function 'smtpmail-send-it
-      smtpmail-stream-type 'starttls
-      smtpmail-default-smtp-server "smtp.stanford.edu"
-      smtpmail-smtp-server "smtp.stanford.edu"
-      smtpmail-smtp-service 587)
-
-(require 'mu4e)
-
-(setq mu4e-maildir (expand-file-name "~/email/mbsyncmail"))
-
-(setq mu4e-drafts-folder "/Drafts")
-(setq mu4e-sent-folder   "/Sent Items")
-(setq mu4e-trash-folder  "/Trash")
-
-                                        ; get mail
-(setq mu4e-get-mail-command "mbsync -c ~/.mbsyncrc uni"
-      mu4e-html2text-command "w3m -T text/html"
-      mu4e-update-interval 120
-      mu4e-headers-auto-update t
-      mu4e-compose-signature-auto-include nil)
-
-(setq mu4e-maildir-shortcuts
-      '( ("/INBOX"               . ?i)
-         ("/Sent Items"   . ?s)
-         ("/Deleted Items"       . ?t)
-         ("/Drafts"    . ?d)))
-
-;; show images
-(setq mu4e-show-images t)
-
-;; use imagemagick, if available
-(when (fboundp 'imagemagick-register-types)
-  (imagemagick-register-types))
-
-;; general emacs mail settings; used when composing e-mail
-;; the non-mu4e-* stuff is inherited from emacs/message-mode
-(setq mu4e-reply-to-address "gmanohar@stanford.edu"
-      user-mail-address "gmanohar@stanford.edu"
-      user-full-name  "Gautam Manohar")
-
-;; don't save message to Sent Messages, IMAP takes care of this
-                                        ; (setq mu4e-sent-messages-behavior 'delete)
-
-;; spell check
-(add-hook 'mu4e-compose-mode-hook
-          (defun my-do-compose-stuff ()
-            "My settings for message composition."
-            (set-fill-column 80)
-            (flyspell-mode)))
-#+END_SRC
-* End
-Finally, close the ~let~ block we opened way back when and set a higher garbage-collection.
-#+BEGIN_SRC emacs-lisp
-(setq gc-cons-threshold 20000000)
 #+END_SRC
