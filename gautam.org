@@ -516,51 +516,41 @@ Native syntax highlighting for source blocks in org mode.
 #+END_SRC
 **** Transient
 * Global Keybindings
-** Bind Key
-#+BEGIN_SRC emacs-lisp
-(require 'bind-key)
-(use-package which-key
-  :defer nil
-  :diminish which-key-mode
-  :config
-  (which-key-mode))
-#+END_SRC
-** The Actual Keybindings
-*** Easy M-x
+** Easy M-x
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-SPC") 'execute-extended-command)
 (global-set-key (kbd "C-M-SPC") 'amx-major-mode-commands)
 (global-set-key (kbd "C-c C-SPC") 'execute-extended-command)
 #+END_SRC
-*** Set Mark
+** Set Mark
 Need a replacement because we rebound ~C-SPC~ above.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-t") 'set-mark-command)
 #+END_SRC
-*** Shell Backwards Kill Word
+** Shell Backwards Kill Word
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-w") 'backward-kill-word)
 #+END_SRC
-*** Shell Backspace
+** Shell Backspace
 Use shell like ~C-h~ instead of Backspace.
 #+BEGIN_SRC emacs-lisp
 (define-key key-translation-map [?\C-h] [?\C-?])
 (global-set-key (kbd "<f1>") 'help-command)
 #+END_SRC
-*** Easy Kill
+** Easy Kill
 Add extra keybinding to account for missing.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x C-k") 'kill-region)
 (global-set-key (kbd "C-c C-k") 'kill-region)
 #+END_SRC
-*** Normal Undo Binding
+** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
 (global-unset-key (kbd "C-z"))
 (global-set-key  (kbd "C-z") 'undo)
 (global-set-key (kbd "C-x C-u") 'undo)
 #+END_SRC
-*** Better Buffers
+** Better Buffers
 Kill better.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x k") 'bjm/kill-this-buffer)
@@ -672,20 +662,20 @@ Use with period.
 #+BEGIN_SRC emacs-lisp
 (define-key ibuffer-mode-map "." 'hydra-ibuffer-main/body)
 #+END_SRC
-*** Window Management
+** Window Management
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x 1") 'delete-other-windows)
 (global-set-key (kbd "C-x 2") 'split-window-below)
 (global-set-key (kbd "C-x 3") 'split-window-right)
 (global-set-key (kbd "C-x 0") 'delete-window)
 #+END_SRC
-*** Word Count
+** Word Count
 Count org-wc.
 #+BEGIN_SRC emacs-lisp
 (use-package org-wc)
 (global-set-key (kbd "<C-f9>") 'org-wc-display)
 #+END_SRC
-*** Transpose
+** Transpose
 **** Sentences and Paragraphs
 Add aliases to do this easily.
 #+BEGIN_SRC emacs-lisp
@@ -696,7 +686,7 @@ Add aliases to do this easily.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-r") 'transpose-chars)
 #+END_SRC
-*** Search
+** Search
 **** Swiper
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-s") 'swiper)
@@ -705,28 +695,29 @@ Add aliases to do this easily.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "M-i") 'avy-goto-char-2)
 #+END_SRC
-*** Magit
+** Magit
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-x g") 'magit-status)
 #+END_SRC
-*** Org LaTeX Export
+** Org LaTeX Export
 #+BEGIN_SRC emacs-lisp
 (global-set-key  (kbd "C-c b") 'gm/org-latex-export)
 #+END_SRC
-*** Dictionary
+** Dictionary
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c d") 'sdcv-search)
 #+END_SRC
-*** Find Inbox
+** Find Inbox
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c o")
                 (lambda () (interactive) (find-file "~/org/inbox.org")))
 #+END_SRC
-*** Complete Reload
+** Complete Reload
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c r") 'gm/reload)
 #+END_SRC
-*** Org Cliplink
+** Org Cliplink
+
 Paste URL with extracted title as the description.
 #+BEGIN_SRC emacs-lisp
 (use-package org-cliplink)
@@ -1064,6 +1055,25 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
 (add-hook 'equation-preview-mode-hook
           (lambda ()
             (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)))
+#+END_SRC
+**** Justify
+Obtained from [[http://kitchingroup.cheme.cmu.edu/blog/2016/11/06/Justifying-LaTeX-preview-fragments-in-org-mode/][Justifying LaTeX preview fragments in org-mode]].
+#+BEGIN_SRC emacs-lisp
+(defun org-justify-fragment-overlay (beg end image imagetype)
+  "Adjust the justification of a LaTeX fragment.
+The justification is set by :justify in
+`org-format-latex-options'. Only equations at the beginning of a
+line are justified."
+  (cond
+   ((and (= beg (line-beginning-position))
+              (string-match "equation" (buffer-substring-no-properties beg end))))
+    (let* ((img (create-image image))
+           (width (car (image-size img)))
+           (offset (floor (- (/ (window-text-width) 2) (/ width 2)))))
+      (overlay-put (ov-at) 'before-string (make-string offset ? )))))
+
+;; advise the function to a
+(advice-add 'org--format-latex-make-overlay :after 'org-justify-fragment-overlay)
 #+END_SRC
 *** CDLaTeX
 #+BEGIN_SRC emacs-lisp
