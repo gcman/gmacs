@@ -393,7 +393,6 @@ Enable god-mode.
   :pin manual
   :config
   (pdf-tools-install)
-  (setq-default pdf-view-midnight-colours '("#657b83" . "#fdf6e3"))
   (setq-default pdf-view-display-size 'fit-page) ;
   (setq pdf-annot-activate-created-annotations t)
   (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
@@ -641,10 +640,6 @@ Eliminate the shift key for inputting symbols.
 (key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
 #+END_SRC
-*** Org Preview Latex
-#+BEGIN_SRC emacs-lisp
-(key-chord-define-global "df" 'my/org-toggle-latex-fragment)
-#+END_SRC
 *** God Mode
 Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
@@ -752,7 +747,6 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
   (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
   (setq-local electric-pair-text-pairs electric-pair-pairs))
 (add-hook 'org-mode-hook 'dollar-add-electric-pairs)
-(add-hook 'LaTeX-mode-hook 'dollar-add-electric-pairs)
 #+END_SRC
 *** Don't Break Paragraph on Comments
 Remove comments from org document when exporting to LaTeX.
@@ -766,7 +760,7 @@ Remove comments from org document when exporting to LaTeX.
               "")))
 (add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
-*** Equation Preview
+*** Equation Auto Preview
 Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]].
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
@@ -885,25 +879,6 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
   (let ((var gm/eq-preview))
     (setq gm/eq-preview (not var))))
 (bind-key "C-c p" 'gm/toggle-equation-preview)
-#+END_SRC
-**** Justify
-Obtained from [[http://kitchingroup.cheme.cmu.edu/blog/2016/11/06/Justifying-LaTeX-preview-fragments-in-org-mode/][Justifying LaTeX preview fragments in org-mode]].
-#+BEGIN_SRC emacs-lisp
-(defun org-justify-fragment-overlay (beg end image imagetype)
-  "Adjust the justification of a LaTeX fragment.
-The justification is set by :justify in
-`org-format-latex-options'. Only equations at the beginning of a
-line are justified."
-  (cond
-   ((and (= beg (line-beginning-position))
-         (string-match "equation" (buffer-substring-no-properties beg end))))
-   (let* ((img (create-image image))
-          (width (car (image-size img)))
-          (offset (floor (- (/ (window-text-width) 2) (/ width 2)))))
-     (overlay-put (ov-at) 'before-string (make-string offset ? )))))
-
-;; advise the function to a
-;; (advice-add 'org--format-latex-make-overlay :after 'org-justify-fragment-overlay)
 #+END_SRC
 *** CDLaTeX
 #+BEGIN_SRC emacs-lisp
