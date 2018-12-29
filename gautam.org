@@ -280,7 +280,7 @@ Load them.
 #+END_SRC
 Always use this wonderful tool.
 #+BEGIN_SRC emacs-lispn
-(set-default 'abbrev-mode t)
+(abbrev-mode 1)
 #+END_SRC
 Because it's always on, we don't need to know about it.
 #+BEGIN_SRC emacs-lisp
@@ -316,20 +316,7 @@ Use =ack= instead of =grep=.
     (compilation-start (concat command-args " < " null-device)
                        'grep-mode)))
 #+END_SRC
-*** Autocomplete
-**** Company
-#+BEGIN_SRC emacs-lisp
-(use-package company
-:diminish
-:config
-(company-tng-configure-default)
-:custom
-(company-idle-delay 0)
-(company-minimum-prefix-length 1)
-(company-selection-wrap-around t))
-(add-hook 'after-init-hook 'global-company-mode)
-#+END_SRC
-**** Ivy
+*** Ivy
 #+BEGIN_SRC emacs-lisp
 (use-package ivy
   :ensure t
@@ -346,9 +333,6 @@ Use =ack= instead of =grep=.
   (ivy-initial-inputs-alist nil))
 (use-package swiper)
 (use-package counsel)
-(use-package ivy-explorer
-:diminish (ivy-explorer-mode))
-(ivy-explorer-mode 1)
 #+END_SRC
 ** Packages
 *** Magit
@@ -409,7 +393,7 @@ Enable god-mode.
   :pin manual
   :config
   (pdf-tools-install)
-  (setq pdf-view-midnight-colours '("#657b83" . "#fdf6e3"))
+  (setq-default pdf-view-midnight-colours '("#657b83" . "#fdf6e3"))
   (setq-default pdf-view-display-size 'fit-page) ;
   (setq pdf-annot-activate-created-annotations t)
   (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward)
@@ -479,10 +463,6 @@ Native syntax highlighting for source blocks in org mode.
 (setq show-paren-style 'expression)
 #+END_SRC
 * Global Keybindings
-** Bind Key
-#+BEGIN_SRC emacs-lisp
-(require 'bind-key)
-#+END_SRC
 ** Easy M-x
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
@@ -836,13 +816,10 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
     (cond ((or (eq 'latex-fragment fr-type) ;; latex stuffs
                (eq 'latex-environment fr-type))
            (when (cw/org-curr-fragment) (org-preview-latex-fragment))) ;; only toggle preview when we're in a valid region (for inserting in the front of a fragment)
-
-
           ((eq 'link fr-type) ;; for images
            (let ((fr-end (org-element-property :end (org-element-context))))
              (org-display-inline-images nil t fr-begin fr-end))))
     ))
-
 
 (defun cw/org-auto-toggle-fragment-display ()
   "Automatically toggle a displayable org mode fragment"
@@ -895,14 +872,19 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
            (setq cw/org-last-fragment curr))
           ))))
 
-(define-minor-mode equation-preview-mode
-  nil
-  ;; The indicator for the mode line.
-  "Eq"
-  nil)
-(add-hook 'equation-preview-mode-hook
-          (lambda ()
-            (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)))
+(defvar gm/eq-preview nil)
+(defun gm/toggle-equation-preview ()
+  (interactive)
+  (if gm/eq-preview
+      (progn
+        (remove-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display)
+        (message "Equation preview disabled."))
+    (progn
+      (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display)
+      (message "Equation preview enabled.")))
+  (let ((var gm/eq-preview))
+    (setq gm/eq-preview (not var))))
+(bind-key "C-c p" 'gm/toggle-equation-preview)
 #+END_SRC
 **** Justify
 Obtained from [[http://kitchingroup.cheme.cmu.edu/blog/2016/11/06/Justifying-LaTeX-preview-fragments-in-org-mode/][Justifying LaTeX preview fragments in org-mode]].
