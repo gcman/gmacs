@@ -37,7 +37,7 @@
       "** %^{Heading}
 :PROPERTIES:
 :CREATED: %U
-:END:")) t)
+:END:")))
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
  '(org-refile-targets
@@ -49,7 +49,7 @@
  '(org-todo-keywords
    '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
  '(package-selected-packages
-   '(ivy-explorer yasnippet which-key web-mode use-package swiper solarized-theme smart-mode-line rainbow-mode pdf-tools ox-hugo org-wc org-gcal org-cliplink org-bullets magit keyfreq ido-grid-mode god-mode dired-quick-sort diminish company cdlatex avy auctex amx adaptive-wrap))
+   '(trie ivy-explorer yasnippet which-key web-mode use-package swiper solarized-theme smart-mode-line rainbow-mode pdf-tools ox-hugo org-wc org-gcal org-cliplink org-bullets magit keyfreq ido-grid-mode god-mode dired-quick-sort diminish company cdlatex avy auctex amx adaptive-wrap))
  '(pdf-view-midnight-colors '("#657b83" . "#fdf6e3"))
  '(preview-default-preamble
    '("\\RequirePackage["
