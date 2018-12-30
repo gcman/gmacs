@@ -95,7 +95,7 @@ replace the built-in one with ours.
 (setq auto-save-timeout 99999)
 (defvar bjm/auto-save-timer nil
   "Timer to run `bjm/auto-save-silent'")
-(defvar bjm/auto-save-interval 60
+(defvar bjm/auto-save-interval 15
   "How often in seconds of idle time to auto-save with `bjm/auto-save-silent'")
 (defun bjm/auto-save-silent ()
   "Auto-save all buffers silently"
@@ -465,6 +465,24 @@ Native syntax highlighting for source blocks in org mode.
 (setq show-paren-style 'expression)
 #+END_SRC
 * Global Keybindings
+** Conditional Keybindings
+Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
+#+BEGIN_SRC emacs-lisp
+(defmacro define-conditional-key (keymap key def
+                                                 &rest body)
+  "In KEYMAP, define key sequence KEY as DEF conditionally.
+This is like `define-key', except the definition
+\"disappears\" whenever BODY evaluates to nil."
+  (declare (indent 3)
+           (debug (form form form &rest sexp)))
+  `(define-key ,keymap ,key
+     '(menu-item
+       ,(format "maybe-%s" (or (car (cdr-safe def)) def))
+       nil
+       :filter (lambda (&optional _)
+                 (when ,(macroexp-progn body)
+                   ,def)))))
+#+END_SRC
 ** Easy M-x
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
@@ -1075,11 +1093,8 @@ Automatically turn on when using LaTeX.
 ** Load Snippets
 #+BEGIN_SRC emacs-lisp
 (setq yas-snippet-dirs '("~/.emacs.d/snippets"))
-(use-package yasnippet)
-(eval-after-load "diminish"
-  '(progn
-     (eval-after-load "yasnippet"
-       '(diminish 'yas-minor-mode))))
+(use-package yasnippet
+  :diminish (yas-minor-mode))
 (yas-global-mode 1)
 #+END_SRC
 ** SPC Expansion
@@ -1091,7 +1106,7 @@ Use SPC instead of TAB to expand snippets.
   (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
 #+END_SRC
 ** Vim-like Ultisnips
-Use texmathp to tell if you are in math mode.
+Use =texmathp= to tell if you are in math mode.
 #+BEGIN_SRC emacs-lisp
 (require 'texmathp)
 #+END_SRC
@@ -1101,6 +1116,8 @@ pressed, the leader key is erased and the snippet is expanded.
 #+BEGIN_SRC emacs-lisp
 (require 'hydra)
 #+END_SRC
+To automate the generation of hydras, I use a data structure called a prefix
+tree, also known as a tree.
 #+BEGIN_SRC emacs-lisp
 (require 'strie)
 #+END_SRC
@@ -1132,8 +1149,7 @@ the given string, not including the last character, precedes the point.
 (defun gm/prefix-before-point (key)
   (let ((len (length key)))
     (equal (substring key 0 (1- len))
-           (gm/last-n-chars (1- len)))
-    ))
+           (gm/last-n-chars (1- len)))))
 #+END_SRC
 **** Math Mode Snippet
 #+BEGIN_SRC emacs-lisp
@@ -1143,9 +1159,7 @@ the given string, not including the last character, precedes the point.
         (progn
           (gm/delete-chars (- len 1))
           (gm/expand-snippet snippet))
-      (insert (substring key (- len 1) len))
-      )
-    ))
+      (insert (substring key (- len 1) len)))))
 #+END_SRC
 **** Set of Snippets
 This function is a work in progress. I’d like to write a macro to reduce the
@@ -1185,20 +1199,18 @@ activated.
   ("-" (insert "-") "dash"))
 
 (define-key org-mode-map (kbd "s") 'hydra-s/body)
-
-;; (define-key org-mode-map (kbd "s") 'hydra-s/body)
 #+END_SRC
-*** Cubed, Subset
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-c (:color blue
-                          :body-pre (insert "c")
-                          :idle 1.0)
-  ("b" (gm/snippet "cb" "cubed") "cubed")
-  ("c" (gm/snippet "cc" "subset") "subset")
-  ("-" (insert "-") "dash"))
+# *** Cubed, Subset
+# #+BEGIN_SRC emacs-lisp
+# (defhydra hydra-c (:color blue
+#                           :body-pre (insert "c")
+#                           :idle 1.0)
+#   ("b" (gm/snippet "cb" "cubed") "cubed")
+#   ("c" (gm/snippet "cc" "subset") "subset")
+#   ("-" (insert "-") "dash"))
 
-(define-key org-mode-map (kbd "c") 'hydra-c/body)
-#+END_SRC
+# (define-key org-mode-map (kbd "c") 'hydra-c/body)
+# #+END_SRC
 *** Derivative
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-d (:color blue
