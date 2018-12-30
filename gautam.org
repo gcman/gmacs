@@ -1161,350 +1161,137 @@ the given string, not including the last character, precedes the point.
           (gm/expand-snippet snippet))
       (insert (substring key (- len 1) len)))))
 #+END_SRC
-**** Set of Snippets
-This function is a work in progress. I’d like to write a macro to reduce the
-amount of redundant code needed to set up the snippets. Ideally, I could just
-provide a list of pairs of the string to be expanded and the snippet to be
-activated.
+**** Generate Snippets
+I wrote this code to reduce the amount of redundant code needed to set up the snippets.
+This function is a work in progress.
+
+This macro is the main helper.
 #+BEGIN_SRC emacs-lisp
-(defmacro gm/snippet-set (leader hydraname snippets extras)
-  `(defhydra ,hydraname (:color blue :body-pre (insert leader) :idle 1.0)
-     ,@(cl-loop for kv in snippets
-		        collect (list (substring (car kv) (length (car kv)) (1- (length (car kv)))) (list 'gm/snippet (car kv) (cdr kv)) (cdr kv)))
-     ("0" nil "0")
-     ("1" nil "1")
-     ("2" nil "2")
-     ("3" nil "3")
-     ("4" nil "4")
-     ("5" nil "5")
-     ("6" nil "6")
-     ("7" nil "7")
-     ("8" nil "8")
-     ("9" nil "9")
-     ("-" nil "dash")
-     ,@(cl-loop for kv in extras
-                collect (list kv))))
+(defmacro gm/math-hydra (name)
+  `(defhydra ,(intern (concat "math-" name))
+     (:color blue :body-pre (insert ,(substring name (1- (length name)) (length name))) :base-map (make-sparse-keymap) :idle 1.0)
+     ,@(loop for x in
+             ;; for each partial string of trie
+             ;; (for example <c, cc, ce, cei, ceil> and so on)
+             ;; loop through completion candidates that are one character longer
+             (loop for candidate in (strie-complete gm/math-trie name) if (= (length candidate) (1+ (length name)))
+                   collect candidate)
+             ;; expand if the partial string has a snippet expansion
+             ;; otherwise, proceed to next step in trie traversal
+             collect (if (strie-get gm/math-trie x)
+                         (list (substring x (1- (length x)) (length x)) `(gm/snippet ,x ,(strie-get gm/math-trie x)) (strie-get gm/math-trie x))
+                       (list (substring x (1- (length x)) (length x)) (intern (concat "math-" x "/body" )) "proceed")))))
 #+END_SRC
-*** Squared, Square Root
+Setting up the data structures.
 #+BEGIN_SRC emacs-lisp
-(defhydra hydra-s (:color blue
-                          :body-pre (insert "s")
-                          :idle 1.0)
-  ("q" (if (gm/prefix-before-point "sq")
-           (cond ((gm/prefix-before-point "nsq") (gm/snippet "nsq" "nsqrt"))
-                 (t (gm/snippet "sq" "sqrt")))
-         (insert "n")) "(a)tan")
-  ("r" (gm/snippet "sr" "squared") "squared")
-  ("t" (gm/snippet "list" "list") "list")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "s") 'hydra-s/body)
+(defun gm/math-setup ()
+  (setq gm/math-trie (strie-new))
+  (loop for (key . value) in gm/math-snippets
+        do (strie-add gm/math-trie key value))
+  (loop for (key . value) in gm/math-snippets
+        do (loop for i from 1 to (1- (length key))
+                 do (strie-add gm/math-trie (substring key 0 i) nil)))
+  (loop for name in (strie-bfs-keys gm/math-trie) if (not (assoc name gm/math-snippets))
+        collect (eval (macroexpand `(gm/math-hydra ,name)))))
+(add-hook 'org-mode-hook 'gm/math-setup)
 #+END_SRC
-# *** Cubed, Subset
-# #+BEGIN_SRC emacs-lisp
-# (defhydra hydra-c (:color blue
-#                           :body-pre (insert "c")
-#                           :idle 1.0)
-#   ("b" (gm/snippet "cb" "cubed") "cubed")
-#   ("c" (gm/snippet "cc" "subset") "subset")
-#   ("-" (insert "-") "dash"))
-
-# (define-key org-mode-map (kbd "c") 'hydra-c/body)
-# #+END_SRC
-*** Derivative
+*** Math Snippets
 #+BEGIN_SRC emacs-lisp
-(defhydra hydra-d (:color blue
-                          :body-pre (insert "d")
-                          :idle 1.0)
-  ("d" (cond ((gm/prefix-before-point "dd")
-              (cond ((gm/prefix-before-point "pdd") (gm/snippet "pdd" "partial"))
-                    (t (gm/snippet "dd" "derivative-one-term"))))
-             (t (insert "d"))) "(p)differential")
-  ("v" (cond ((gm/prefix-before-point "dv")
-              (cond ((gm/prefix-before-point "pdv") (gm/snippet "pdv" "partial-derivative"))
-                    (t (gm/snippet "dv" "derivative"))))
-             (t (insert "v"))) "(p)derivative")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "d") 'hydra-d/body)
+(setq gm/math-snippets
+      '(("sq" . "sqrt")
+        ("nsq" . "nsqrt")
+        ("sr" . "squared")
+        ("list" . "list")
+        ("cc" . "subset")
+        ("cb" . "cubed")
+        ("dd" . "derivative-one-term")
+        ("pdd" . "partial")
+        ("part" . "partial")
+        ("dv" . "derivative")
+        ("pdv" . "partial-derivative")
+        ("norm" . "norm")
+        ("lr9" . "parentheses")
+        ("lr[" . "brackets")
+        ("lr{" . "set")
+        ("set" . "set")
+        ("int" . "integral")
+        ("iint" . "iintegral")
+        ("oint" . "ointegral")
+        ("dint" . "dintegral")
+        ("inv" . "inverse")
+        ("inn" . "in")
+        ("!>" . "maps-to")
+        ("=>" . "implies")
+        ("&&" . "split-equals")
+        ("lim" . "limit")
+        ("ceil" . "ceiling")
+        ("fl" . "floor")
+        ("dim" . "dim")
+        ("im" . "image")
+        ("ker" . "kernel")
+        ("span" . "span")
+        ("neq" . "neq")
+        ("sin" . "sin")
+        ("asin" . "asin")
+        ("cos" . "cos")
+        ("acos" . "acos")
+        ("tan" . "tan")
+        ("atan" . "atan")
+        ("cot" . "cot")
+        ("cot" . "acot")
+        ("sec" . "sec")
+        ("sum" . "sum")
+        ("pairsum" . "pairsum")
+        ("ps" . "pairsum")
+        ("fun" . "function")
+        ("le" . "less-than")
+        ("ge" . "greater-than")
+        ("xx" . "times")
+        ("log" . "log")
+        ("bol" . "bol")
+        ("oo" . "infinity")
+        ("o+" . "oplus")
+        ("star" . "star")
+        ("frac" . "frac")
+        ("abs" . "abs")
+        ("nabl" . "nabla")
+        ("RR" . "real")
+        ("QQ" . "rational")
+        ("CC" . "complex")
+        ("NN" . "natural")
+        ("ZZ" . "integers")
+        ("LL" . "cal-L")
+        ("MM" . "cal-M")))
 #+END_SRC
-*** Partial Derivative, Norm, Brackets
+*** Math Keybindings
+Haven't figured out a way to automate this yet. It's not a big deal, as it won't
+change that often.
 #+BEGIN_SRC emacs-lisp
-(defhydra hydra-r (:color blue
-                          :body-pre (insert "r")
-                          :idle 1.0)
-  ("t" (gm/snippet "part" "partial-derivative") "partial")
-  ("m" (gm/snippet "norm" "norm") "norm")
-  ("9" (gm/snippet "lr9" "parentheses") "parentheses")
-  ("[" (gm/snippet "lr[" "brackets") "brackets")
-  ("{" (gm/snippet "lr{" "set") "set")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "r") 'hydra-r/body)
-#+END_SRC
-*** Inverse, Integral, In
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-n (:color blue
-                          :body-pre (insert "n")
-                          :idle 1.0)
-  ("t" (if (gm/prefix-before-point "int")
-           (cond ((gm/prefix-before-point "iint") (gm/snippet "iint" "iintegral"))
-                 ((gm/prefix-before-point "oint") (gm/snippet "oint" "ointegral"))
-                 ((gm/prefix-before-point "dint") (gm/snippet "dint" "dintegral"))
-                 (t (gm/snippet "int" "integral")))
-         (insert "t")) "integral")
-  ("v" (gm/snippet "inv" "inverse") "inverse")
-  ("n" (gm/snippet "inn" "in") "in")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "n") 'hydra-n/body)
-#+END_SRC
-*** Maps To
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-exc (:color blue
-                            :body-pre (insert "!")
-                            :idle 1.0)
-  (">" (gm/snippet "!>" "maps-to") "maps-to")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "!") 'hydra-exc/body)
-#+END_SRC
-*** Implies
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-eq (:color blue
-                           :body-pre (insert "=")
-                           :idle 1.0)
-  (">" (gm/snippet "=>" "implies") "implies")
-  ("=" (gm/snippet "==" "split-equals") "&=")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "=") 'hydra-eq/body)
-#+END_SRC
-*** Limit, Sin
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-i (:color blue
-                          :body-pre (insert "i")
-                          :idle 1.0)
-  ("m" (gm/snippet "lim" "limit") "limit")
-  ("l" (gm/snippet "ceil" "ceiling") "ceiling")
-  ("m" (if (gm/prefix-before-point "im")
-           (cond ((gm/prefix-before-point "dim") (gm/snippet "dim" "dim"))
-                 ((gm/prefix-before-point "lim") (gm/snippet "lim" "limit"))
-                 (t (gm/snippet "im" "image")))
-         (insert "m")) "dimension/image")
-  ("n" (if (gm/prefix-before-point "sin")
-           (cond ((gm/prefix-before-point "asin") (gm/snippet "asin" "asin"))
-                 (t (gm/snippet "sin" "sin")))
-         (hydra-n/body)) "(a)sin")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "i") 'hydra-i/body)
-#+END_SRC
-*** Sum
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-u (:color blue
-                          :body-pre (insert "u")
-                          :idle 1.0)
-  ("m" (if (gm/prefix-before-point "sum")
-           (cond ((gm/prefix-before-point "pairsum") (gm/snippet "pairsum" "pairsum"))
-                 (t (gm/snippet "sum" "sum")))
-         (insert "m")) "sum")
-  ("n" (gm/snippet "fun" "function") "function")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "u") 'hydra-u/body)
-#+END_SRC
-*** Less Than
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-l (:color blue
-                          :body-pre (insert "l")
-                          :idle 1.0)
-  ("e"
-   (if (and (and (texmathp) (gm/prefix-before-point "le")) (not (gm/prefix-before-point "\\le")))
-       (gm/snippet "le" "less-than")
-     (insert "e")) "less-than")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "l") 'hydra-l/body)
-#+END_SRC
-*** Greater Than
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-g (:color blue
-                          :body-pre (insert "g")
-                          :idle 1.0)
-  ("e" (gm/snippet "ge" "greater-than") "greater than")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "g") 'hydra-g/body)
-#+END_SRC
-*** Pairsum
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-p (:color blue
-                          :body-pre (insert "p")
-                          :idle 1.0)
-  ("s" (gm/snippet "ps" "pairsum") "pairsum")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "p") 'hydra-p/body)
-#+END_SRC
-*** Set, Sec
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-e (:color blue
-                          :body-pre (insert "e")
-                          :idle 1.0)
-  ("t" (gm/snippet "set" "set") "set")
-  ("c" (gm/snippet "sec" "sec") "sec")
-  ("r" (gm/snippet "ker" "kernel") "kernel")
-  ("q" (if (gm/prefix-before-point "neq")
-           (if (texmathp)
-               (gm/snippet "neq" "neq")
-             (gm/snippet "neq" "unnumbered-equation"))
-         (insert "q")) "neq")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "e") 'hydra-e/body)
-#+END_SRC
-*** Times
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-x (:color blue
-                          :body-pre (insert "x")
-                          :idle 1.0)
-  ("x" (gm/snippet "xx" "times") "times")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "x") 'hydra-x/body)
-#+END_SRC
-*** Infinity, Log, Interval, (Arc)cos, (Arc)cot
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-o (:color blue
-                          :body-pre (insert "o")
-                          :idle 1.0)
-  ("g" (gm/snippet "log" "log") "log")
-  ("l" (gm/snippet "bol" "bol") "centered interval")
-  ("o" (gm/snippet "oo" "infinity") "infinity")
-  ("s" (if (gm/prefix-before-point "cos")
-           (cond ((gm/prefix-before-point "acos") (gm/snippet "acos" "acos"))
-                 (t (gm/snippet "cos" "cos")))
-         (insert "s")) "(a)cos")
-  ("t" (cond ((gm/prefix-before-point "cot")
-              (cond ((gm/prefix-before-point "acot") (gm/snippet "acot" "acot"))
-                    (t (gm/snippet "cot" "cot"))))
-             ((gm/prefix-before-point "not") (gm/snippet "not" "not"))
-             (t (insert "t"))) "(a)cot")
-  ("+" (gm/snippet "o+" "oplus") "oplus")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "o") 'hydra-o/body)
-#+END_SRC
-*** Tan, Arctan
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-a (:color blue
-                          :body-pre (insert "a")
-                          :idle 1.0)
-  ("n" (cond ((gm/prefix-before-point "tan")
-              (cond ((gm/prefix-before-point "atan") (gm/snippet "atan" "atan"))
-                    (t (gm/snippet "tan" "tan"))))
-             ((gm/prefix-before-point "span") (gm/snippet "span" "span"))
-             (t (insert "n"))) "(a)tan")
-  ("r" (gm/snippet "star" "star") "star")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "a") 'hydra-a/body)
-#+END_SRC
-*** Fraction, Floor
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-f (:color blue
-                          :body-pre (insert "f")
-                          :idle 1.0)
-  ("l" (gm/snippet "fl" "floor") "floor")
-  ("r" (gm/snippet "fr" "frac") "frac")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "f") 'hydra-f/body)
-#+END_SRC
-*** Absolute Value, Nabla
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-b (:color blue
-                          :body-pre (insert "b")
-                          :idle 1.0)
-  ("s" (if (gm/prefix-before-point "abs")
-           (gm/snippet "abs" "abs")
-         (hydra-s/body) "abs"))
-  ("l" (gm/snippet "nabl" "nabla") "nabla")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "b") 'hydra-b/body)
-#+END_SRC
-*** Number Systems
-**** Real
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-R (:color blue
-                          :body-pre (insert "R")
-                          :idle 1.0)
-  ("R" (gm/snippet "RR" "real") "real")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "R") 'hydra-R/body)
-#+END_SRC
-**** Rational
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-Q (:color blue
-                          :body-pre (insert "Q")
-                          :idle 1.0)
-  ("Q" (gm/snippet "QQ" "rational") "rational")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "Q") 'hydra-Q/body)
-#+END_SRC
-**** Complex
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-C (:color blue
-                          :body-pre (insert "C")
-                          :idle 1.0)
-  ("C" (gm/snippet "CC" "complex") "complex")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "C") 'hydra-C/body)
-#+END_SRC
-**** Integer
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-Z (:color blue
-                          :body-pre (insert "Z")
-                          :idle 1.0)
-  ("Z" (gm/snippet "ZZ" "integers") "integers")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "Z") 'hydra-Z/body)
-#+END_SRC
-**** Natural
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-N (:color blue
-                          :body-pre (insert "N")
-                          :idle 1.0)
-  ("N" (gm/snippet "NN" "natural") "natural")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "N") 'hydra-N/body)
-#+END_SRC
-**** Cal L
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-L (:color blue
-                          :body-pre (insert "L")
-                          :idle 1.0)
-  ("L" (gm/snippet "LL" "cal-L") "cal-L")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "L") 'hydra-L/body)
-#+END_SRC
-**** Cal M
-#+BEGIN_SRC emacs-lisp
-(defhydra hydra-M (:color blue
-                          :body-pre (insert "M")
-                          :idle 1.0)
-  ("M" (gm/snippet "MM" "cal-M") "cal-M")
-  ("-" (insert "-") "dash"))
-
-(define-key org-mode-map (kbd "M") 'hydra-M/body)
+(define-conditional-key org-mode-map "a" 'math-a/body (texmathp))
+(define-conditional-key org-mode-map "b" 'math-b/body (texmathp))
+(define-conditional-key org-mode-map "c" 'math-c/body (texmathp))
+(define-conditional-key org-mode-map "d" 'math-d/body (texmathp))
+(define-conditional-key org-mode-map "f" 'math-f/body (texmathp))
+(define-conditional-key org-mode-map "g" 'math-g/body (texmathp))
+(define-conditional-key org-mode-map "i" 'math-i/body (texmathp))
+(define-conditional-key org-mode-map "k" 'math-k/body (texmathp))
+(define-conditional-key org-mode-map "l" 'math-l/body (texmathp))
+(define-conditional-key org-mode-map "n" 'math-m/body (texmathp))
+(define-conditional-key org-mode-map "o" 'math-o/body (texmathp))
+(define-conditional-key org-mode-map "p" 'math-p/body (texmathp))
+(define-conditional-key org-mode-map "s" 'math-s/body (texmathp))
+(define-conditional-key org-mode-map "t" 'math-t/body (texmathp))
+(define-conditional-key org-mode-map "x" 'math-x/body (texmathp))
+(define-conditional-key org-mode-map "!" 'math-!/body (texmathp))
+(define-conditional-key org-mode-map "=" 'math-=/body (texmathp))
+(define-conditional-key org-mode-map "&" 'math-&/body (texmathp))
+(define-conditional-key org-mode-map "C" 'math-C/body (texmathp))
+(define-conditional-key org-mode-map "L" 'math-L/body (texmathp))
+(define-conditional-key org-mode-map "M" 'math-M/body (texmathp))
+(define-conditional-key org-mode-map "N" 'math-N/body (texmathp))
+(define-conditional-key org-mode-map "Q" 'math-Q/body (texmathp))
+(define-conditional-key org-mode-map "R" 'math-R/body (texmathp))
+(define-conditional-key org-mode-map "Z" 'math-Z/body (texmathp))
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
@@ -1572,11 +1359,5 @@ activated.
   ("." (insert " \\cdots ") "···")
   ("-" (gm/snippet "" "conjugate") "-"))
 
-(defun gm/semicolon ()
-  (interactive)
-  (if (texmathp)
-      (hydra-semicolon-a/body)
-    (insert ";")))
-
-(bind-key ";" 'gm/semicolon)
+(define-conditional-key org-mode-map ";" 'hydra-semicolon-a/body (texmathp))
 #+END_SRC

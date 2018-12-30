@@ -2,4 +2,4 @@
 # name: new-math-snippet
 # key: nms
 # --
-("$1" (gm/snippet "$2" "$3") "$3")$0
+("$1" . "$2")$0
