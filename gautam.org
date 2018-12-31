@@ -1122,8 +1122,8 @@ Folders and keybinds for accessing those folders.
 #+BEGIN_SRC emacs-lisp
 (setq mu4e-maildir (expand-file-name "~/email/mbsyncmail"))
 (setq mu4e-drafts-folder "/Drafts"
- mu4e-sent-folder "/Sent Items")
-mu4e-trash-folder "/Trash")
+      mu4e-sent-folder "/Sent Items"
+      mu4e-trash-folder "/Trash")
 (setq mu4e-maildir-shortcuts
       '(("/INBOX" . ?i)
         ("/Sent Items" . ?s)
@@ -1131,7 +1131,7 @@ mu4e-trash-folder "/Trash")
         ("/Drafts" . ?d)
         ("/Archived" . ?a)))
 #+END_SRC
-Utilities and improvements of receiving and viewing email.
+Utilities and improvements of receiving and viewing
 #+BEGIN_SRC emacs-lisp
 (setq mu4e-get-mail-command "mbsync -c ~/.mbsyncrc uni"
       mu4e-html2text-command "w3m -T text/html"
