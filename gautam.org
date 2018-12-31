@@ -343,7 +343,7 @@ Use =ack= instead of =grep=.
 *** Programming
 Check syntax.
 #+BEGIN_SRC emacs-lisp
-(require 'flycheck)
+(use-package flycheck)
 (global-flycheck-mode)
 #+END_SRC
 **** Python
@@ -445,13 +445,14 @@ Enable god-mode.
 *** Solarized Light
 #+BEGIN_SRC emacs-lisp
 (use-package solarized-theme
-  :init (load-theme 'solarized-light t))
+  :config (load-theme 'solarized-light t))
 #+END_SRC
 *** Font Face
 Normally use Hack.
 #+BEGIN_SRC emacs-lisp
 (set-face-font 'default "Hack")
 (set-frame-font "Hack" nil t)
+(set-face-font 'variable-pitch "Palatino Linotype")
 #+END_SRC
 *** Autofill
 #+BEGIN_SRC emacs-lisp

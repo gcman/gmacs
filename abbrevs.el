@@ -61,6 +61,8 @@
 
 (define-abbrev-table 'elisp-byte-code-mode-abbrev-table '())
 
+(define-abbrev-table 'elpy-refactor-mode-abbrev-table '())
+
 (define-abbrev-table 'emacs-lisp-mode-abbrev-table '())
 
 (define-abbrev-table 'epa-info-mode-abbrev-table '())
@@ -69,6 +71,8 @@
 
 (define-abbrev-table 'epa-key-mode-abbrev-table '())
 
+(define-abbrev-table 'eshell-mode-abbrev-table '())
+
 (define-abbrev-table 'eww-bookmark-mode-abbrev-table '())
 
 (define-abbrev-table 'eww-buffers-mode-abbrev-table '())
@@ -76,6 +80,10 @@
 (define-abbrev-table 'eww-history-mode-abbrev-table '())
 
 (define-abbrev-table 'eww-mode-abbrev-table '())
+
+(define-abbrev-table 'ffip-diff-mode-abbrev-table '())
+
+(define-abbrev-table 'flycheck-error-list-mode-abbrev-table '())
 
 (define-abbrev-table 'flymake-diagnostics-buffer-mode-abbrev-table '())
 
@@ -93,6 +101,8 @@
 
 (define-abbrev-table 'gnus-sticky-article-mode-abbrev-table '())
 
+(define-abbrev-table 'grep-mode-abbrev-table '())
+
 (define-abbrev-table 'help-mode-abbrev-table '())
 
 (define-abbrev-table 'html-mode-abbrev-table '())
@@ -100,6 +110,8 @@
 (define-abbrev-table 'ibuffer-mode-abbrev-table '())
 
 (define-abbrev-table 'idl-mode-abbrev-table '())
+
+(define-abbrev-table 'inferior-python-mode-abbrev-table '())
 
 (define-abbrev-table 'ivy-occur-grep-mode-abbrev-table '())
 
@@ -205,6 +217,12 @@
 (define-abbrev-table 'process-menu-mode-abbrev-table '())
 
 (define-abbrev-table 'prog-mode-abbrev-table '())
+
+(define-abbrev-table 'python-mode-abbrev-table '())
+
+(define-abbrev-table 'python-mode-skeleton-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'scss-mode-abbrev-table '())
 
