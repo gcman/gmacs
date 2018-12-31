@@ -344,7 +344,7 @@ Use =ack= instead of =grep=.
 Check syntax.
 #+BEGIN_SRC emacs-lisp
 (use-package flycheck)
-(global-flycheck-mode)
+(add-hook 'prog-mode-hook #'flycheck-mode)
 #+END_SRC
 **** Python
 #+BEGIN_SRC emacs-lisp
@@ -404,18 +404,15 @@ Enable god-mode.
 (use-package god-mode
   :ensure t)
 #+END_SRC
-**** Indicate Mode with Modeline
+Indicate mode with modeline.
 #+BEGIN_SRC emacs-lisp
-(defun me//god-mode-indicator ()
-  (cond (god-local-mode
-         (progn
-           (set-cursor-color "#dc322f")))
-        (t
-         (progn
-           (set-cursor-color "#657b83")))))
+(defun gm/god-mode-indicator ()
+  (if (god-local-mode)
+      (progn (set-cursor-color "#dc322f"))
+    (progn (set-cursor-color "657b83"))))
 
-(add-hook 'god-mode-enabled-hook #'me//god-mode-indicator)
-(add-hook 'god-mode-disabled-hook #'me//god-mode-indicator)
+(add-hook 'god-mode-enabled-hook #'gm/god-mode-indicator)
+(add-hook 'god-mode-disabled-hook #'gm/god-mode-indicator)
 #+END_SRC
 *** PDF Tools
 #+BEGIN_SRC emacs-lisp
@@ -452,7 +449,8 @@ Normally use Hack.
 #+BEGIN_SRC emacs-lisp
 (set-face-font 'default "Hack")
 (set-frame-font "Hack" nil t)
-(set-face-font 'variable-pitch "Palatino Linotype")
+(custom-set-faces
+ '(variable-pitch ((t (:family "Palatino Linotype")))))
 #+END_SRC
 *** Autofill
 #+BEGIN_SRC emacs-lisp
@@ -757,10 +755,8 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 ** Prettifying
 *** Org Bullets
 #+BEGIN_SRC emacs-lisp
-(use-package org-bullets)
-(add-hook 'org-mode-hook
-          (defun org-bullets-mode-enable ()
-            (org-bullets-mode 1)))
+(use-package org-bullets
+  :hook (org-mode org-bullets-mode))
 #+END_SRC
 *** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
@@ -768,27 +764,11 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 (font-lock-add-keywords 'org-mode
                         '(("^ *\\([-]\\) "
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-
 #+END_SRC
 ** LaTeX
-*** Export Settings
+*** CDLaTeX
 #+BEGIN_SRC emacs-lisp
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
-(setq org-highlight-latex-and-related '(latex))
-(setq org-latex-to-pdf-process
- '("xelatex -interaction nonstopmode %f"
-   "xelatex -interaction nonstopmode %f")) ;; for multiple passes
-(setq org-export-with-smart-quotes t)
-#+END_SRC
-*** Cleverref
-#+BEGIN_SRC emacs-lisp
-(defun org-latex-ref-to-cref (text backend info)
-  "Use \\cref instead of \\ref in latex export."
-  (when (org-export-derived-backend-p backend 'latex)
-    (replace-regexp-in-string "\\\\ref{" "\\\\cref{" text)))
-
-(add-to-list 'org-export-filter-final-output-functions
-             'org-latex-ref-to-cref)
+(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
 #+END_SRC
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
@@ -930,99 +910,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
     (setq gm/eq-preview (not var))))
 (bind-key "C-c p" 'gm/toggle-equation-preview)
 #+END_SRC
-*** CDLaTeX
-#+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-#+END_SRC
-*** Export Classes
-**** Tufte-LaTeX
-#+BEGIN_SRC emacs-lisp
-(require 'ox-tufte-latex)
-(require 'ox-extra)
-#+END_SRC
-***** Command Links
-****** No Option
-#+BEGIN_SRC emacs-lisp
-(org-add-link-type
- "latex" nil
- (lambda (path desc format)
-   (when(eq format 'latex)
-     (format "\\%s{%s}" path desc))))
-#+END_SRC
-****** One Option
-#+BEGIN_SRC emacs-lisp
-(org-add-link-type
- "latex-opt" nil
- (lambda (path desc format)
-   (when (eq format 'latex)
-     (let* ((desc-list (split-string desc ";"))
-            (opt (nth 1 desc-list))
-            (arg (nth 0 desc-list)))
-       (format "\\%s%s{%s}" path
-               (if (equal "" opt) opt (format "[%s]" opt))
-               arg)))))
-#+END_SRC
-***** Classes
-****** Handout
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'org-latex-classes
-             '("tufte-handout"
-               "\\documentclass[symmetric,nobib]{gm-tufte-handout}
-   [NO-DEFAULT-PACKAGES]"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")))
-#+END_SRC
-****** Book
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'org-latex-classes
-             '("tufte-book"
-               "\\documentclass[twoside,nobib]{tufte-book}
-  [NO-DEFAULT-PACKAGES]"
-               ("\\part{%s}" . "\\part*{%s}")
-               ("\\chapter{%s}" . "\\chapter*{%s}")
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")))
-#+END_SRC
-***** Biber
-#+BEGIN_SRC emacs-lisp
-(setq org-latex-pdf-process
-      '("pdflatex -interaction nonstopmode -output-directory %o %f"
-        "biber %b"
-        "pdflatex -interaction nonstopmode -output-directory %o %f"
-        "pdflatex -interaction nonstopmode -output-directory %o %f"))
-#+END_SRC
-***** Keyword Search
-#+BEGIN_SRC emacs-lisp
-(defun jk-org-kwds ()
-  "parse the buffer and return a cons list of (property . value)
-from lines like:
-,#+PROPERTY: value"
-  (org-element-map (org-element-parse-buffer 'element) 'keyword
-    (lambda (keyword) (cons (org-element-property :key keyword)
-                            (org-element-property :value keyword)))))
-
-(defun jk-org-kwd (KEYWORD)
-  "get the value of a KEYWORD in the form of #+KEYWORD: value"
-  (cdr (assoc KEYWORD (jk-org-kwds))))
-#+END_SRC
-**** Assignment
-#+BEGIN_SRC emacs-lisp
-(with-eval-after-load 'ox-latex
-  (add-to-list 'org-latex-classes
-               '("assignment"
-                 "\\documentclass[12pt]{article}
-\\usepackage{uts-assignment}
-\\renewcommand{\\maketitle}{}
-[NO-DEFAULT-PACKAGES]
-[EXTRA]"
-                 ("\\section{%s}" . "\\section*{%s}")
-                 ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")
-                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
-#+END_SRC
-*** Mass Export
+*** Export
 #+BEGIN_SRC emacs-lisp
 (defun org-export-headlines-to-pdf ()
   "Export all subtrees that are *not* tagged with :noexport: to
@@ -1059,53 +947,125 @@ are exported to a filename derived from the headline text."
     (org-export-headlines-to-pdf)
     (widen)))
 #+END_SRC
+**** Export Classes
+***** Tufte-LaTeX
+#+BEGIN_SRC emacs-lisp
+(require 'ox-tufte-latex)
+(require 'ox-extra)
+#+END_SRC
+****** Command Links
+******* No Option
+#+BEGIN_SRC emacs-lisp
+(org-add-link-type
+ "latex" nil
+ (lambda (path desc format)
+   (when(eq format 'latex)
+     (format "\\%s{%s}" path desc))))
+#+END_SRC
+******* One Option
+#+BEGIN_SRC emacs-lisp
+(org-add-link-type
+ "latex-opt" nil
+ (lambda (path desc format)
+   (when (eq format 'latex)
+     (let* ((desc-list (split-string desc ";"))
+            (opt (nth 1 desc-list))
+            (arg (nth 0 desc-list)))
+       (format "\\%s%s{%s}" path
+               (if (equal "" opt) opt (format "[%s]" opt))
+               arg)))))
+#+END_SRC
+****** Classes
+******* Handout
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'org-latex-classes
+             '("tufte-handout"
+               "\\documentclass[symmetric,nobib]{gm-tufte-handout}
+   [NO-DEFAULT-PACKAGES]"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")))
+#+END_SRC
+******* Book
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'org-latex-classes
+             '("tufte-book"
+               "\\documentclass[twoside,nobib]{tufte-book}
+  [NO-DEFAULT-PACKAGES]"
+               ("\\part{%s}" . "\\part*{%s}")
+               ("\\chapter{%s}" . "\\chapter*{%s}")
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")))
+#+END_SRC
+****** Biber
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-pdf-process
+      '("pdflatex -interaction nonstopmode -output-directory %o %f"
+        "biber %b"
+        "pdflatex -interaction nonstopmode -output-directory %o %f"
+        "pdflatex -interaction nonstopmode -output-directory %o %f"))
+#+END_SRC
+****** Keyword Search
+#+BEGIN_SRC emacs-lisp
+(defun jk-org-kwds ()
+  "parse the buffer and return a cons list of (property . value)
+from lines like:
+,#+PROPERTY: value"
+  (org-element-map (org-element-parse-buffer 'element) 'keyword
+    (lambda (keyword) (cons (org-element-property :key keyword)
+                            (org-element-property :value keyword)))))
+
+(defun jk-org-kwd (KEYWORD)
+  "get the value of a KEYWORD in the form of #+KEYWORD: value"
+  (cdr (assoc KEYWORD (jk-org-kwds))))
+#+END_SRC
+***** Assignment
+#+BEGIN_SRC emacs-lisp
+(with-eval-after-load 'ox-latex
+  (add-to-list 'org-latex-classes
+               '("assignment"
+                 "\\documentclass[12pt]{article}
+\\usepackage{uts-assignment}
+\\renewcommand{\\maketitle}{}
+[NO-DEFAULT-PACKAGES]
+[EXTRA]"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+END_SRC
+**** Export Settings
+#+BEGIN_SRC emacs-lisp
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
+(setq org-highlight-latex-and-related '(latex))
+(setq org-latex-to-pdf-process
+ '("xelatex -interaction nonstopmode %f"
+   "xelatex -interaction nonstopmode %f")) ;; for multiple passes
+(setq org-export-with-smart-quotes t)
+#+END_SRC
+**** Cleverref
+#+BEGIN_SRC emacs-lisp
+(defun org-latex-ref-to-cref (text backend info)
+  "Use \\cref instead of \\ref in latex export."
+  (when (org-export-derived-backend-p backend 'latex)
+    (replace-regexp-in-string "\\\\ref{" "\\\\cref{" text)))
+
+(add-to-list 'org-export-filter-final-output-functions
+             'org-latex-ref-to-cref)
+#+END_SRC
 * TeX
-** AUCTeX
+Of course we use =auctex=. I do most of my LaTeX editing in Org Mode now.
 #+BEGIN_SRC emacs-lisp
 (use-package auctex
   :defer t
-  :ensure t)
-(require 'tex-site)
-(setq TeX-auto-save t)
-(setq TeX-parse-self t)
-(setq TeX-PDF-mode t)
-(setq preview-auto-cache-preamble t)
-(setq TeX-source-correlate-method 'synctex)
-(add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
-(add-hook 'LaTeX-mode-hook 'visual-line-mode)
-(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-(add-hook 'LaTeX-mode-hook 'TeX-fold-mode)
-(defun turn-on-outline-minor-mode ()
-  (outline-minor-mode 1))
-(add-hook 'LaTeX-mode-hook 'turn-on-outline-minor-mode)
-(add-hook 'latex-mode-hook 'turn-on-outline-minor-mode)
-(setq outline-minor-mode-prefix "\C-c \C-o") ; Or something else
-(setq LaTeX-eqnarray-label "eq"
-      LaTeX-equation-label "eq"
-      LaTeX-figure-label "fig"
-      LaTeX-table-label "tab"
-      LaTeX-myChapter-label "chap"
-      TeX-auto-save t
-      TeX-newline-function 'reindent-then-newline-and-indent
-      TeX-parse-self t
-      LaTeX-section-hook
-      '(LaTeX-section-heading
-        LaTeX-section-title
-        LaTeX-section-toc
-        LaTeX-section-section
-        LaTeX-section-label))
-#+END_SRC
-*** Prettifying
-Don't make super and subscripts smaller.
-#+BEGIN_SRC emacs-lisp
-(setq font-latex-fontify-script nil)
+  :ensure t
+  :init (require 'tex-site)
+  :config (setq font-latex-fontify-script nil))
 #+END_SRC
 ** Electric Dollars and Parens
 Insert dollar signs electrically.
 #+BEGIN_SRC emacs-lisp
-(add-hook 'TeX-mode-hook
-	      (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
-			              (cons "$" "$"))))
 (add-hook 'LaTeX-mode-hook
 	      (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
 			              (cons "$" "$"))))
@@ -1113,11 +1073,8 @@ Insert dollar signs electrically.
 ** CDLaTeX
 I use this package to easily insert math characters.
 #+BEGIN_SRC emacs-lisp
-(use-package cdlatex)
-#+END_SRC
-Automatically turn on when using LaTeX.
-#+BEGIN_SRC emacs-lisp
-(add-hook 'LaTeX-mode-hook 'turn-on-cdlatex)
+(use-package cdlatex
+  :hook (LaTeX-mode turn-on-cdlatex))
 #+END_SRC
 * Mail
 Set up the requirements.
