@@ -1,4 +1,5 @@
 #+TITLE: Emacs Configuration
+#+PROPERTY: header-args :results silent
 * Starting Up
 ** Daemon Mode
 #+BEGIN_SRC emacs-lisp
@@ -32,15 +33,20 @@ Always.
 (setq use-package-always-ensure t)
 #+END_SRC
 Use ~M-x package-refresh-contents~ to reload the list of packages after adding the package sources for the first time.
-** Add Elisp Directory and Other Files
+** Add Elisp Directory and Custom Directory
+If I ever need to load files outside of my package system, I know where to find
+them. I also set up ~use-package~ here.
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "/home/gautam/.emacs.d/elisp/")
+(add-to-list 'load-path "~/.emacs.d/elisp/")
 (setq use-package-verbose t)
 (setq use-package-always-ensure t)
 (require 'use-package)
 #+END_SRC
-If I ever need to load files outside of my package system, I know where to find
-them. I also set up ~use-package~ here.
+I put custom variables outside of my init.el file.
+#+BEGIN_SRC emacs-lisp
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file)
+#+END_SRC
 ** Common Lisp
 #+BEGIN_SRC emacs-lisp
 (require 'cl)
@@ -102,7 +108,7 @@ replace the built-in one with ours.
   (interactive)
   (do-auto-save t))
 (setq bjm/auto-save-timer
-      (run-with-idle-timer 0 bjm/auto-save-interval 'bjm/auto-save-silent))
+      (run-with-idle-timer 0 bjm/auto-save-interval #'bjm/auto-save-silent))
 #+END_SRC
 **** Modeline
 Keep a simpler modeline...
@@ -130,7 +136,7 @@ What time is it, Mr. Emacs?
 #+END_SRC
 *** Ban Whitespace
 #+BEGIN_SRC emacs-lisp
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'before-save-hook #'delete-trailing-whitespace)
 #+END_SRC
 *** Indentation
 **** Keep Things Indented
@@ -156,14 +162,14 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 #+BEGIN_SRC emacs-lisp
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
 (setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
-(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+(setq mouse-wheel-follow-mouse t) ;; scroll window under mouse
 (setq scroll-step 1) ;; keyboard scroll one line at a time
 #+END_SRC
 *** Indentation
 #+BEGIN_SRC emacs-lisp
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
-(setq indent-line-function 'insert-tab)
+(setq indent-line-function #'insert-tab)
 #+END_SRC
 ** Ease of Use
 *** Better Defaults
@@ -335,11 +341,23 @@ Use =ack= instead of =grep=.
 (use-package counsel)
 #+END_SRC
 *** Programming
+Check syntax.
+#+BEGIN_SRC emacs-lisp
+(require 'flycheck)
+(global-flycheck-mode)
+#+END_SRC
 **** Python
 #+BEGIN_SRC emacs-lisp
-(add-hook 'python-mode-hook
-          (lambda () (setq python-indent-offset 4)))
-(add-hook 'python-mode-hook 'linum-relative-mode)
+(add-hook 'python-mode-hook #'linum-relative-mode)
+#+END_SRC
+Turn Emacs into basically a Python IDE.
+#+BEGIN_SRC emacs-lisp
+(elpy-enable)
+(setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+(use-package py-autopep8)
+(add-hook 'python-mode-hook #'elpy-mode)
+(add-hook 'elpy-mode-hook #'py-autopep8-enable-on-save)
+(add-hook 'elpy-mode-hook #'flycheck-mode)
 #+END_SRC
 *** Expand Region
 #+BEGIN_SRC emacs-lisp
@@ -362,7 +380,7 @@ Have the most up-to-date version of the buffer when using dired.
 (defun xah-dired-mode-setup ()
   "to be run as hook for `dired-mode'."
   (dired-hide-details-mode 1))
-(add-hook 'dired-mode-hook 'xah-dired-mode-setup)
+(add-hook 'dired-mode-hook #'xah-dired-mode-setup)
 #+END_SRC
 **** Copy and Delete
 Allow dired to recursively copy and delete directories. ~always~ ensures that no
@@ -412,7 +430,7 @@ Enable god-mode.
   (define-key pdf-view-mode-map (kbd "h") 'pdf-annot-add-highlight-markup-annotation)
   (define-key pdf-view-mode-map (kbd "t") 'pdf-annot-add-text-annotation)
   (define-key pdf-view-mode-map (kbd "D") 'pdf-annot-delete)
-  (add-hook 'pdf-view-mode-hook (lambda () (pdf-view-midnight-minor-mode))))
+  :hook (pdf-view-mode pdf-view-midnight-minor-mode))
 #+END_SRC
 *** Webmode
 #+BEGIN_SRC emacs-lisp
@@ -476,7 +494,7 @@ Native syntax highlighting for source blocks in org mode.
 (setq show-paren-delay 0)
 (setq show-paren-style 'expression)
 #+END_SRC
-* Global Keybindings
+* Keybindings
 ** Conditional Keybindings
 Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
 #+BEGIN_SRC emacs-lisp
@@ -495,25 +513,26 @@ This is like `define-key', except the definition
                  (when ,(macroexp-progn body)
                    ,def)))))
 #+END_SRC
-** Easy M-x
+** Better Defaults
+These are what I think are better bindings for or better versions of the default
+commands.
+*** Easy M-x
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-SPC" 'execute-extended-command)
 (bind-key "C-M-SPC" 'amx-major-mode-commands)
 (bind-key "C-c C-SPC" 'execute-extended-command)
 #+END_SRC
-** Set Mark
+*** Set Mark
 Need a replacement because we rebound ~C-SPC~ above.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-t" 'set-mark-command)
 #+END_SRC
-** Shell Backspace
-Use shell like ~C-h~ instead of Backspace.
+*** Shell Kill Word
 #+BEGIN_SRC emacs-lisp
-(define-key key-translation-map [?\C-h] [?\C-?])
-(bind-key "<f1>" 'help-command)
+(bind-key "C-w" 'backward-kill-word)
 #+END_SRC
-** Better Cut/Paste
+*** Cut/Paste
 #+BEGIN_SRC emacs-lisp
 (defun xah-cut-line-or-region ()
   "Cut current line, or text selection.
@@ -569,12 +588,12 @@ Version 2018-09-10"
 (bind-key "C-k" 'xah-cut-line-or-region)
 (bind-key "M-w" 'xah-copy-line-or-region)
 #+END_SRC
-** Normal Undo Binding
+*** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-z" 'undo)
 (bind-key "C-x C-u" 'undo)
 #+END_SRC
-** Better Buffers
+*** Better Buffers
 Kill better.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-x k" 'bjm/kill-this-buffer)
@@ -589,34 +608,40 @@ Use ibuffer.
 (bind-key "C-x C-b" 'ibuffer)
 (autoload 'ibuffer "ibuffer" "List buffers." t)
 #+END_SRC
-** Window Management
+*** Window Management
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-x 1" 'delete-other-windows)
 (bind-key "C-x 2" 'split-window-below)
 (bind-key "C-x 3" 'split-window-right)
 (bind-key "C-x 0" 'delete-window)
 #+END_SRC
+*** Transpose
+***** Sentences and Paragraphs
+Add aliases to do this easily.
+#+BEGIN_SRC emacs-lisp
+(defalias 'ts 'transpose-sentences)
+(defalias 'tp 'transpose-paragraphs)
+#+END_SRC
+***** Characters
+#+BEGIN_SRC emacs-lisp
+(bind-key "C-r" 'transpose-chars)
+#+END_SRC
+*** Search
+#+BEGIN_SRC emacs-lisp
+(bind-key "C-s" 'swiper)
+#+END_SRC
+*** Unbind Fill Column
+I never use this command but keep accidentally hitting it instead of =C-x C-f=.
+#+BEGIN_SRC emacs-lisp
+(unbind-key "C-x f")
+#+END_SRC
+
 ** Word Count
 Count org-wc.
 #+BEGIN_SRC emacs-lisp
 (use-package org-wc)
 (bind-key "<C-f9>" 'org-wc-display)
 (bind-key "C-c w" 'org-wc-display)
-#+END_SRC
-** Transpose
-**** Sentences and Paragraphs
-Add aliases to do this easily.
-#+BEGIN_SRC emacs-lisp
-(defalias 'ts 'transpose-sentences)
-(defalias 'tp 'transpose-paragraphs)
-#+END_SRC
-**** Characters
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-r" 'transpose-chars)
-#+END_SRC
-** Search
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-s" 'swiper)
 #+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
@@ -643,11 +668,6 @@ Paste URL with extracted title as the description.
 #+BEGIN_SRC emacs-lisp
 (use-package org-cliplink)
 (bind-key "C-c y" 'org-cliplink)
-#+END_SRC
-** Unbind Fill Column
-I never use this command but keep accidentally hitting it instead of =C-x C-f=.
-#+BEGIN_SRC emacs-lisp
-(unbind-key "C-x f")
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
