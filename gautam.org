@@ -334,6 +334,18 @@ Use =ack= instead of =grep=.
 (use-package swiper)
 (use-package counsel)
 #+END_SRC
+*** Programming
+**** Python
+#+BEGIN_SRC emacs-lisp
+(add-hook 'python-mode-hook
+          (lambda () (setq python-indent-offset 4)))
+(add-hook 'python-mode-hook 'linum-relative-mode)
+#+END_SRC
+*** Expand Region
+#+BEGIN_SRC emacs-lisp
+(use-package expand-region)
+(bind-key "C-=" 'er/expand-region)
+#+END_SRC
 ** Packages
 *** Magit
 #+BEGIN_SRC emacs-lisp
