@@ -507,10 +507,6 @@ Need a replacement because we rebound ~C-SPC~ above.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-t" 'set-mark-command)
 #+END_SRC
-** Shell Backwards Kill Word
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-w" 'backward-kill-word)
-#+END_SRC
 ** Shell Backspace
 Use shell like ~C-h~ instead of Backspace.
 #+BEGIN_SRC emacs-lisp
@@ -605,6 +601,7 @@ Count org-wc.
 #+BEGIN_SRC emacs-lisp
 (use-package org-wc)
 (bind-key "<C-f9>" 'org-wc-display)
+(bind-key "C-c w" 'org-wc-display)
 #+END_SRC
 ** Transpose
 **** Sentences and Paragraphs
@@ -618,13 +615,8 @@ Add aliases to do this easily.
 (bind-key "C-r" 'transpose-chars)
 #+END_SRC
 ** Search
-**** Swiper
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-s" 'swiper)
-#+END_SRC
-**** Avy
-#+BEGIN_SRC emacs-lisp
-(bind-key "M-i" 'avy-goto-char-2)
 #+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
@@ -651,6 +643,11 @@ Paste URL with extracted title as the description.
 #+BEGIN_SRC emacs-lisp
 (use-package org-cliplink)
 (bind-key "C-c y" 'org-cliplink)
+#+END_SRC
+** Unbind Fill Column
+I never use this command but keep accidentally hitting it instead of =C-x C-f=.
+#+BEGIN_SRC emacs-lisp
+(unbind-key "C-x f")
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
