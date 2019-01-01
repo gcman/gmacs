@@ -398,6 +398,11 @@ extension. Use ~S~ to use in a dired buffer.
   :config
   (dired-quick-sort-setup))
 #+END_SRC
+**** Sudo
+#+BEGIN_SRC emacs-lisp
+(use-package sudo-edit)
+(bind-key "C-c C-x r" 'sudo-edit)
+#+END_SRC
 *** God Mode
 Enable god-mode.
 #+BEGIN_SRC emacs-lisp
@@ -407,9 +412,9 @@ Enable god-mode.
 Indicate mode with modeline.
 #+BEGIN_SRC emacs-lisp
 (defun gm/god-mode-indicator ()
-  (if (god-local-mode)
-      (progn (set-cursor-color "#dc322f"))
-    (progn (set-cursor-color "657b83"))))
+  (cond (god-local-mode
+         (progn (set-cursor-color "#dc322f")))
+        (t (progn (set-cursor-color "#657b83")))))
 
 (add-hook 'god-mode-enabled-hook #'gm/god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'gm/god-mode-indicator)
@@ -755,8 +760,8 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 ** Prettifying
 *** Org Bullets
 #+BEGIN_SRC emacs-lisp
-(use-package org-bullets
-  :hook (org-mode org-bullets-mode))
+(use-package org-bullets)
+(add-hook 'org-mode-hook #'org-bullets-mode)
 #+END_SRC
 *** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
