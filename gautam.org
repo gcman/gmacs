@@ -796,6 +796,10 @@ Remove comments from org document when exporting to LaTeX.
 (add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
 *** Equation Auto Preview
+Not too small.
+#+BEGIN_SRC emacs-lisp
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
+#+END_SRC
 Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]].
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
@@ -1294,7 +1298,7 @@ Setting up the data structures.
         ("oo" . "infinity")
         ("o+" . "oplus")
         ("star" . "star")
-        ("frac" . "frac")
+        ("fr" . "frac")
         ("abs" . "abs")
         ("nabl" . "nabla")
         ("RR" . "real")
@@ -1318,7 +1322,7 @@ change that often.
 (define-conditional-key org-mode-map "i" 'math-i/body (texmathp))
 (define-conditional-key org-mode-map "k" 'math-k/body (texmathp))
 (define-conditional-key org-mode-map "l" 'math-l/body (texmathp))
-(define-conditional-key org-mode-map "n" 'math-m/body (texmathp))
+(define-conditional-key org-mode-map "n" 'math-n/body (texmathp))
 (define-conditional-key org-mode-map "o" 'math-o/body (texmathp))
 (define-conditional-key org-mode-map "p" 'math-p/body (texmathp))
 (define-conditional-key org-mode-map "s" 'math-s/body (texmathp))
