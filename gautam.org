@@ -1156,14 +1156,13 @@ Use =texmathp= to tell if you are in math mode.
 #+BEGIN_SRC emacs-lisp
 (require 'texmathp)
 #+END_SRC
-Using a hydra, I setup automatic expansion of yasnippets; when a leader key is
-pressed, that key is inserted, but if the next key of a defined sequence is
-pressed, the leader key is erased and the snippet is expanded.
+I use a hydra for snippets that just insert/replace text in math mode and thus
+don't require the use of =yasnippets=.
 #+BEGIN_SRC emacs-lisp
 (require 'hydra)
 #+END_SRC
-To automate the generation of hydras, I use a data structure called a prefix
-tree, also known as a tree.
+To automate the generation of my main math snippets, I use a data structure
+called a prefix tree, also known as a trie.
 #+BEGIN_SRC emacs-lisp
 (require 'strie)
 #+END_SRC
@@ -1180,66 +1179,50 @@ Return the last n characters before the point.
 (defun gm/last-n-chars (n)
   (buffer-substring-no-properties (- (point) n) (point)))
 #+END_SRC
-**** Expand Snippet
-#+BEGIN_SRC emacs-lisp
-(defun gm/expand-snippet (name)
-  (yas-expand-snippet (yas-lookup-snippet name)))
-#+END_SRC
-**** Check Correct Prefix
-Most of my snippets for math mode are longer than two characters. In this case,
-I need to check that the correct characters precede the typed ones before
-executing a snippet. For example, I should only execute the "sin" snippet after
-typing "in" if the character "s" precedes "in." This function returns true if
-the given string, not including the last character, precedes the point.
-#+BEGIN_SRC emacs-lisp
-(defun gm/prefix-before-point (key)
-  (let ((len (length key)))
-    (equal (substring key 0 (1- len))
-           (gm/last-n-chars (1- len)))))
-#+END_SRC
 **** Math Mode Snippet
 #+BEGIN_SRC emacs-lisp
 (defun gm/snippet (key snippet)
   (let ((len (length key)))
-    (if (and (eq major-mode 'org-mode) (and (texmathp) (gm/prefix-before-point key)))
         (progn
           (gm/delete-chars (- len 1))
-          (gm/expand-snippet snippet))
-      (insert (substring key (- len 1) len)))))
+          (yas-expand-snippet (yas-lookup-snippet snippet)))))
 #+END_SRC
 **** Generate Snippets
-I wrote this code to reduce the amount of redundant code needed to set up the snippets.
-This function is a work in progress.
-
-This macro is the main helper.
-#+BEGIN_SRC emacs-lisp
-(defmacro gm/math-hydra (name)
-  `(defhydra ,(intern (concat "math-" name))
-     (:color blue :body-pre (insert ,(substring name (1- (length name)) (length name))) :base-map (make-sparse-keymap) :idle 1.0)
-     ,@(loop for x in
-             ;; for each partial string of trie
-             ;; (for example <c, cc, ce, cei, ceil> and so on)
-             ;; loop through completion candidates that are one character longer
-             (loop for candidate in (strie-complete gm/math-trie name) if (= (length candidate) (1+ (length name)))
-                   collect candidate)
-             ;; expand if the partial string has a snippet expansion
-             ;; otherwise, proceed to next step in trie traversal
-             collect (if (strie-get gm/math-trie x)
-                         (list (substring x (1- (length x)) (length x)) `(gm/snippet ,x ,(strie-get gm/math-trie x)) (strie-get gm/math-trie x))
-                       (list (substring x (1- (length x)) (length x)) (intern (concat "math-" x "/body" )) "proceed")))))
-#+END_SRC
-Setting up the data structures.
+I wrote this to reduce the amount of redundant code needed to set up the
+snippets. First, we create a suffix tree of all the math snippets
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-setup ()
   (setq gm/math-trie (strie-new))
   (loop for (key . value) in gm/math-snippets
-        do (strie-add gm/math-trie key value))
-  (loop for (key . value) in gm/math-snippets
-        do (loop for i from 1 to (1- (length key))
-                 do (strie-add gm/math-trie (substring key 0 i) nil)))
-  (loop for name in (strie-bfs-keys gm/math-trie) if (not (assoc name gm/math-snippets))
-        collect (eval (macroexpand `(gm/math-hydra ,name)))))
-(add-hook 'org-mode-hook 'gm/math-setup)
+        do (strie-add gm/math-trie (reverse key) value))
+
+  (setq gm/math-suffix (mapcar #'car (strie-children gm/math-trie)))
+
+  (setq gm/math-completion
+        (loop for x in gm/math-suffix
+              collect (list x (mapcar (lambda (s) (reverse (substring s 1 (length s))))
+                                      (strie-complete gm/math-trie x)))
+              collect (eval (macroexpand
+                             `(define-conditional-key org-mode-map
+                                  ,x (lambda () (interactive)
+                                       (gm/math-snippet ,x)) (texmathp)))))))
+(add-hook 'org-mode-hook #'gm/math-setup)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-snippet (key)
+  (setq buff-cand
+        (loop for i from 1 to 7
+              collect (gm/last-n-chars i)))
+  (setq comp (cadr (assoc key gm/math-completion)))
+  (setq cand (loop for x in buff-cand if (member x comp)
+                   collect x))
+  (setq snippet (assoc
+                      (concat (car (sort cand
+                                         (lambda (a b) ('> (length a) (length b))))) key)
+                      gm/math-snippets))
+  (if snippet
+      (gm/snippet (car snippet) (cdr snippet)) (insert key)
+    ))
 #+END_SRC
 *** Math Snippets
 #+BEGIN_SRC emacs-lisp
@@ -1309,36 +1292,6 @@ Setting up the data structures.
         ("LL" . "cal-L")
         ("MM" . "cal-M")))
 #+END_SRC
-*** Math Keybindings
-Haven't figured out a way to automate this yet. It's not a big deal, as it won't
-change that often.
-#+BEGIN_SRC emacs-lisp
-(define-conditional-key org-mode-map "a" 'math-a/body (texmathp))
-(define-conditional-key org-mode-map "b" 'math-b/body (texmathp))
-(define-conditional-key org-mode-map "c" 'math-c/body (texmathp))
-(define-conditional-key org-mode-map "d" 'math-d/body (texmathp))
-(define-conditional-key org-mode-map "f" 'math-f/body (texmathp))
-(define-conditional-key org-mode-map "g" 'math-g/body (texmathp))
-(define-conditional-key org-mode-map "i" 'math-i/body (texmathp))
-(define-conditional-key org-mode-map "k" 'math-k/body (texmathp))
-(define-conditional-key org-mode-map "l" 'math-l/body (texmathp))
-(define-conditional-key org-mode-map "n" 'math-n/body (texmathp))
-(define-conditional-key org-mode-map "o" 'math-o/body (texmathp))
-(define-conditional-key org-mode-map "p" 'math-p/body (texmathp))
-(define-conditional-key org-mode-map "s" 'math-s/body (texmathp))
-(define-conditional-key org-mode-map "t" 'math-t/body (texmathp))
-(define-conditional-key org-mode-map "x" 'math-x/body (texmathp))
-(define-conditional-key org-mode-map "!" 'math-!/body (texmathp))
-(define-conditional-key org-mode-map "=" 'math-=/body (texmathp))
-(define-conditional-key org-mode-map "&" 'math-&/body (texmathp))
-(define-conditional-key org-mode-map "C" 'math-C/body (texmathp))
-(define-conditional-key org-mode-map "L" 'math-L/body (texmathp))
-(define-conditional-key org-mode-map "M" 'math-M/body (texmathp))
-(define-conditional-key org-mode-map "N" 'math-N/body (texmathp))
-(define-conditional-key org-mode-map "Q" 'math-Q/body (texmathp))
-(define-conditional-key org-mode-map "R" 'math-R/body (texmathp))
-(define-conditional-key org-mode-map "Z" 'math-Z/body (texmathp))
-#+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
@@ -1405,5 +1358,5 @@ change that often.
   ("." (insert " \\cdots ") "···")
   ("-" (gm/snippet "" "conjugate") "-"))
 
-(define-conditional-key org-mode-map ";" 'hydra-semicolon-a/body (texmathp))
+(define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (texmathp))
 #+END_SRC
