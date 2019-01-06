@@ -369,6 +369,21 @@ Turn Emacs into basically a Python IDE.
 #+BEGIN_SRC emacs-lisp
 (use-package magit)
 #+END_SRC
+But no more juggling window configurations after committing.
+#+BEGIN_SRC emacs-lisp
+(defadvice magit-status (around magit-fullscreen activate)
+  (window-configuration-to-register :magit-fullscreen)
+  ad-do-it
+  (delete-other-windows))
+
+(defun magit-quit-session ()
+  "Restores the previous window configuration and kills the magit buffer"
+  (interactive)
+  (kill-buffer)
+  (jump-to-register :magit-fullscreen))
+
+(define-key magit-status-mode-map (kbd "q") 'magit-quit-session)
+#+END_SRC
 *** Dired
 **** Revert Buffer
 Have the most up-to-date version of the buffer when using dired.
@@ -614,6 +629,14 @@ From [[http://endlessparentheses.com/fill-and-unfill-paragraphs-with-a-single-ke
 (global-set-key [remap fill-paragraph]
                 #'endless/fill-or-unfill)
 #+END_SRC
+*** Join Line
+This allows me to combine text over multiple lines into one line.
+#+BEGIN_SRC emacs-lisp
+(bind-key "M-j"
+            (lambda ()
+                  (interactive)
+                  (join-line -1)))
+#+END_SRC
 *** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-z" 'undo)
@@ -623,6 +646,44 @@ From [[http://endlessparentheses.com/fill-and-unfill-paragraphs-with-a-single-ke
 Kill better.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-x k" 'bjm/kill-this-buffer)
+#+END_SRC
+Exterminate better.
+#+BEGIN_SRC emacs-lisp
+(defun delete-current-buffer-file ()
+  "Removes file connected to current buffer and kills buffer."
+  (interactive)
+  (let ((filename (buffer-file-name))
+        (buffer (current-buffer))
+        (name (buffer-name)))
+    (if (not (and filename (file-exists-p filename)))
+        (ido-kill-buffer)
+      (when (yes-or-no-p "Are you sure you want to remove this file? ")
+        (delete-file filename)
+        (kill-buffer buffer)
+        (message "File '%s' successfully removed" filename)))))
+
+(bind-key "C-x C-k" 'delete-current-buffer-file)
+#+END_SRC
+Rename better.
+#+BEGIN_SRC emacs-lisp
+(defun rename-current-buffer-file ()
+  "Renames current buffer and file it is visiting."
+  (interactive)
+  (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not (and filename (file-exists-p filename)))
+        (error "Buffer '%s' is not visiting a file!" name)
+      (let ((new-name (read-file-name "New name: " filename)))
+        (if (get-buffer new-name)
+            (error "A buffer named '%s' already exists!" new-name)
+          (rename-file filename new-name 1)
+          (rename-buffer new-name)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil)
+          (message "File '%s' successfully renamed to '%s'"
+                   name (file-name-nondirectory new-name)))))))
+
+(bind-key "C-x C-r" 'rename-current-buffer-file)
 #+END_SRC
 Switch better.
 #+BEGIN_SRC emacs-lisp
@@ -770,6 +831,22 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (setq org-hide-emphasis-markers t)
 (setq org-startup-indented t)
 (define-key org-mode-map (kbd "C-k") 'xah-cut-line-or-region)
+#+END_SRC
+I would rather the progress in a todo list (for example, [4/5]) be automatically
+updated when something changes.
+#+BEGIN_SRC emacs-lisp
+(defun myorg-update-parent-cookie ()
+  (when (equal major-mode 'org-mode)
+    (save-excursion
+      (ignore-errors
+        (org-back-to-heading)
+        (org-update-parent-todo-statistics)))))
+
+(defadvice org-kill-line (after fix-cookies activate)
+  (myorg-update-parent-cookie))
+
+(defadvice xah-kill-line-or-region (after fix-cookies activate)
+  (myorg-update-parent-cookie))
 #+END_SRC
 *** Google Calendar
 #+BEGIN_SRC emacs-lisp
