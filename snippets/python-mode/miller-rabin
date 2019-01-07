@@ -1,6 +1,7 @@
 # -*- mode: snippet -*-
 # name: miller-rabin
 # key: tool-mr
+# expand-env: ((yas/indent-line t))
 # --
 def try_composite(a, d, n, s):
     """Helper function for Miller-Rabin

@@ -1,6 +1,7 @@
 # -*- mode: snippet -*-
 # name: egcd
 # key: tool-egcd
+# expand-env: ((yas/indent-line t))
 # --
 def egcd(a, b):
     """Extended Euclidean Algorithm"""

@@ -345,6 +345,12 @@ Check syntax.
 #+BEGIN_SRC emacs-lisp
 (use-package flycheck)
 (add-hook 'prog-mode-hook #'flycheck-mode)
+(add-hook 'prog-mode-hook #'linum-relative-mode)
+(add-hook 'web-mode-hook #'linum-relative-mode)
+#+END_SRC
+Relative line numbers, useful for vim-like navigation with God Mode.
+#+BEGIN_SRC emacs-lisp
+(use-package linum-relative)
 #+END_SRC
 **** Python
 #+BEGIN_SRC emacs-lisp
@@ -534,7 +540,7 @@ This is like `define-key', except the definition
 #+END_SRC
 ** Better Defaults
 These are what I think are better bindings for or better versions of the default
-commands.
+ commands.
 *** Easy M-x
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
@@ -725,7 +731,11 @@ I never use this command but keep accidentally hitting it instead of =C-x C-f=.
 #+BEGIN_SRC emacs-lisp
 (unbind-key "C-x f")
 #+END_SRC
-
+*** Unbind Return
+I sometimes activate this when exiting God Mode.
+#+BEGIN_SRC emacs-lisp
+(unbind-key "C-j")
+#+END_SRC
 ** Word Count
 Count org-wc.
 #+BEGIN_SRC emacs-lisp
@@ -783,7 +793,7 @@ Eliminate the shift key for inputting symbols.
 *** God Mode
 Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
-(key-chord-define-global "jk" 'god-local-mode)
+(key-chord-define-global "jk" 'god-mode-all)
 #+END_SRC
 * Org
 ** Setup
@@ -833,7 +843,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (define-key org-mode-map (kbd "C-k") 'xah-cut-line-or-region)
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
-updated when something changes.
+updated when I archive a subtree.
 #+BEGIN_SRC emacs-lisp
 (defun myorg-update-parent-cookie ()
   (when (equal major-mode 'org-mode)
@@ -842,10 +852,7 @@ updated when something changes.
         (org-back-to-heading)
         (org-update-parent-todo-statistics)))))
 
-(defadvice org-kill-line (after fix-cookies activate)
-  (myorg-update-parent-cookie))
-
-(defadvice xah-kill-line-or-region (after fix-cookies activate)
+(defadvice org-archive-subtree (after fix-cookies activate)
   (myorg-update-parent-cookie))
 #+END_SRC
 *** Google Calendar

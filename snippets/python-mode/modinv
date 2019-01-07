@@ -1,6 +1,7 @@
 # -*- mode: snippet -*-
 # name: modinv
 # key: tool-modinv
+# expand-env: ((yas/indent-line t))
 # --
 def inv(a, m):
     """Modular inverse"""
