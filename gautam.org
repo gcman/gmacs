@@ -887,6 +887,12 @@ updated when I archive a subtree.
         org-gcal-file-alist '(("gcmanohar001@gmail.com" . "~/org/gcal.org"))))
 (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync)))
 #+END_SRC
+*** Org Babel
+#+BEGIN_SRC emacs-lisp
+(org-babel-do-load-languages
+ 'org-babel-load-languages '((python . t)))
+(setq org-babel-python-command "python3.6")
+#+END_SRC
 ** Prettifying
 *** Org Bullets
 #+BEGIN_SRC emacs-lisp
@@ -907,8 +913,7 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 #+END_SRC
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
-(defvar org-electric-pairs '((?$ . ?$) ))[
-"Electric pairs for org-mode."
+(defvar org-electric-pairs '((?$ . ?$) ))
 (defun dollar-add-electric-pairs ()
   (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
   (setq-local electric-pair-text-pairs electric-pair-pairs))
@@ -1252,7 +1257,7 @@ Utilities and improvements of receiving and viewing.
 #+BEGIN_SRC emacs-lisp
 (setq mu4e-get-mail-command "mbsync -c ~/.mbsyncrc uni"
       mu4e-html2text-command "w3m -T text/html"
-      mu4e-update-interval 120
+      mu4e-update-interval 600
       mu4e-headers-auto-update t
       mu4e-compose-signature-auto-include nil
       mu4e-hide-index-messages t
@@ -1273,9 +1278,23 @@ Utilities and improvements of receiving and viewing.
 #+END_SRC
 Nice stuff to have for sending emails.
 #+BEGIN_SRC emacs-lisp
-(setq mu4e-compose-format-flowed t)
 (require 'org-mu4e)
-(setq org-mu4e-convert-to-html t)
+(require 'org-mime)
+(defun mu4e-compose-org-mail ()
+  (interactive)
+  (mu4e-compose-new)
+  (org-mu4e-compose-org-mode))
+(bind-key "C-c O" #'mu4e-compose-org-mail)
+(defun htmlize-and-send ()
+  "When in an org-mu4e-compose-org-mode message, htmlize and send it."
+  (interactive)
+  (when (and (not (org-in-src-block-p))
+             (member 'org~mu4e-mime-switch-headers-or-body post-command-hook))
+    (end-of-buffer)
+    (insert "\n#+latex_header: \\usepackage{gm-math}")
+    (org-mime-htmlize)
+    (message-send-and-exit)))
+(add-hook 'org-ctrl-c-ctrl-c-hook 'htmlize-and-send)
 #+END_SRC
 ** Add Attachments with Dired
 Use =C-c C-a=.
@@ -1366,7 +1385,7 @@ snippets. First, we create a suffix tree of all the math snippets
                              `(define-conditional-key org-mode-map
                                   ,x (lambda () (interactive)
                                        (gm/math-snippet ,x)) (texmathp)))))))
-(add-hook 'org-mode-hook #'gm/math-setup)
+(add-hook 'org-mode-hook 'gm/math-setup)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
