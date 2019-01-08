@@ -17,6 +17,10 @@
 
 (define-abbrev-table 'bookmark-edit-annotation-mode-abbrev-table '())
 
+(define-abbrev-table 'browse-kill-ring-edit-mode-abbrev-table '())
+
+(define-abbrev-table 'browse-kill-ring-mode-abbrev-table '())
+
 (define-abbrev-table 'c++-mode-abbrev-table '())
 
 (define-abbrev-table 'c-mode-abbrev-table '())
