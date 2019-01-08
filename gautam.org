@@ -371,6 +371,22 @@ Turn Emacs into basically a Python IDE.
 (bind-key "C-=" 'er/expand-region)
 #+END_SRC
 ** Packages
+*** Async
+Run Emacs processes asynchronously.
+#+BEGIN_SRC emacs-lisp
+(require 'async)
+#+END_SRC
+Authorize actions.
+#+BEGIN_SRC emacs-lisp
+(use-package auth-source
+  :no-require t
+  :config (setq auth-sources '("~/.authinfo.gpg")))
+#+END_SRC
+Bytecompile packages for faster loading.
+#+BEGIN_SRC emacs-lisp
+(async-bytecomp-package-mode 1)
+(setq async-bytecomp-allowed-packages '(all))
+#+END_SRC
 *** Magit
 #+BEGIN_SRC emacs-lisp
 (use-package magit)
@@ -391,6 +407,11 @@ But no more juggling window configurations after committing.
 (define-key magit-status-mode-map (kbd "q") 'magit-quit-session)
 #+END_SRC
 *** Dired
+**** Async
+#+BEGIN_SRC emacs-lisp
+(autoload 'dired-async-mode "dired-async.el" nil t)
+(dired-async-mode 1)
+#+END_SRC
 **** Revert Buffer
 Have the most up-to-date version of the buffer when using dired.
 #+BEGIN_SRC emacs-lisp
@@ -886,7 +907,8 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 #+END_SRC
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
-(defvar org-electric-pairs '((?$ . ?$) )) "Electric pairs for org-mode."
+(defvar org-electric-pairs '((?$ . ?$) ))[
+"Electric pairs for org-mode."
 (defun dollar-add-electric-pairs ()
   (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
   (setq-local electric-pair-text-pairs electric-pair-pairs))
@@ -1199,12 +1221,14 @@ Set up the requirements.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e")
 (require 'smtpmail)
+(require 'smtpmail-async)
 (require 'mu4e)
 #+END_SRC
 SMTP for sending emails. The =stream-type= is important because Stanford's email
 servers require that outgoing email use TLS encryption.
 #+BEGIN_SRC emacs-lisp
-(setq message-send-mail-function 'smtpmail-send-it
+(setq send-mail-function 'async-smtpmail-send-it
+      message-send-mail-function 'async-smtpmail-send-it
       smtpmail-debug-info t
       smtpmail-stream-type 'starttls
       smtpmail-default-smtp-server "smtp.stanford.edu"
@@ -1216,33 +1240,60 @@ Folders and keybinds for accessing those folders.
 (setq mu4e-maildir (expand-file-name "~/email/mbsyncmail"))
 (setq mu4e-drafts-folder "/Drafts"
       mu4e-sent-folder "/Sent Items"
-      mu4e-trash-folder "/Trash")
+      mu4e-trash-folder "/Deleted Items")
 (setq mu4e-maildir-shortcuts
       '(("/INBOX" . ?i)
         ("/Sent Items" . ?s)
         ("/Deleted Items" . ?t)
         ("/Drafts" . ?d)
-        ("/Archived" . ?a)))
+        ("/archive" . ?a)))
 #+END_SRC
-Utilities and improvements of receiving and viewing
+Utilities and improvements of receiving and viewing.
 #+BEGIN_SRC emacs-lisp
 (setq mu4e-get-mail-command "mbsync -c ~/.mbsyncrc uni"
       mu4e-html2text-command "w3m -T text/html"
       mu4e-update-interval 120
       mu4e-headers-auto-update t
-      mu4e-compose-signature-auto-include nil)
+      mu4e-compose-signature-auto-include nil
+      mu4e-hide-index-messages t
+      message-kill-buffer-on-exit t)
+(setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
 (setq mu4e-show-images t)
 (when (fboundp 'imagemagick-register-types)
   (imagemagick-register-types))
 (setq mu4e-reply-to-address "gmanohar@stanford.edu"
       user-mail-address "gmanohar@stanford.edu"
-      user-full-name  "Gautam Manohar")
+      user-full-name "Gautam Manohar")
 (setq mu4e-sent-messages-behavior 'delete)
 (add-hook 'mu4e-compose-mode-hook
-          (defun my-do-compose-stuff ()
+          (defun gm-do-compose-stuff ()
             "My settings for message composition."
             (set-fill-column 80)
             (flyspell-mode)))
+#+END_SRC
+Nice stuff to have for sending emails.
+#+BEGIN_SRC emacs-lisp
+(setq mu4e-compose-format-flowed t)
+(require 'org-mu4e)
+(setq org-mu4e-convert-to-html t)
+#+END_SRC
+** Add Attachments with Dired
+Use =C-c C-a=.
+#+BEGIN_SRC emacs-lisp
+(require 'gnus-dired)
+(defun gnus-dired-mail-buffers ()
+  "Return a list of active message buffers."
+  (let (buffers)
+    (save-current-buffer
+      (dolist (buffer (buffer-list t))
+        (set-buffer buffer)
+        (when (and (derived-mode-p 'message-mode)
+                   (null message-sent-message-via))
+          (push (buffer-name buffer) buffers))))
+    (nreverse buffers)))
+
+(setq gnus-dired-mail-mode 'mu4e-user-agent)
+(add-hook 'dired-mode-hook 'turn-on-gnus-dired-mode)
 #+END_SRC
 * Snippets
 ** Load Snippets
@@ -1327,7 +1378,7 @@ snippets. First, we create a suffix tree of all the math snippets
                    collect x))
   (setq snippet (assoc
                       (concat (car (sort cand
-                                         (lambda (a b) ('> (length a) (length b))))) key)
+                                         (lambda (a b) (> (length a) (length b))))) key)
                       gm/math-snippets))
   (if snippet
       (gm/snippet (car snippet) (cdr snippet)) (insert key)
