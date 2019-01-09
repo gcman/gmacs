@@ -1323,7 +1323,7 @@ Use SPC instead of TAB to expand snippets.
 (define-key yas-minor-mode-map (kbd "SPC")
   (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
 #+END_SRC
-** Vim-like Ultisnips
+** Fast Latex Snippets
 Use =texmathp= to tell if you are in math mode.
 #+BEGIN_SRC emacs-lisp
 (require 'texmathp)
@@ -1388,7 +1388,7 @@ snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
   (setq buff-cand
-        (loop for i from 1 to 7
+        (loop for i from 1 to 6
               collect (gm/last-n-chars i)))
   (setq comp (cadr (assoc key gm/math-completion)))
   (setq cand (loop for x in buff-cand if (member x comp)
@@ -1437,10 +1437,17 @@ This function eases the entry of subscripts such as $x_0$.
 (defun gm/math-subscript ()
   (when (memq (get-char-code-property (char-before) 'general-category)
       '(Ll Lu Lo Lt Lm Mn Mc Me Nl))
-      (insert  "_"))
-)
+      (insert  "_")))
 (define-conditional-key org-mode-map "0" (gm/math-subscript) (texmathp))
 (define-conditional-key org-mode-map "1" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "2" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "3" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "4" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "5" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "6" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "7" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "8" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "9" (gm/math-subscript) (texmathp))
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp

@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: nat-logarithm
+# key: math-nat-logarithm
+# --
+\ln $0
