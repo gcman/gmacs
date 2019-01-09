@@ -1172,7 +1172,6 @@ from lines like:
 #+END_SRC
 **** Export Settings
 #+BEGIN_SRC emacs-lisp
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
 (setq org-highlight-latex-and-related '(latex))
 (setq org-latex-to-pdf-process
  '("xelatex -interaction nonstopmode %f"
@@ -1419,16 +1418,29 @@ And finally some utility functions.
    (list
     (read-string "Snippet key: ")
     (read-string "Snippet name: ")))
-  (when (and (not (string= "" snippet-key))
-             (not (string= "" snippet-name)))
+  (unless (or (string= "" snippet-key)
+              (string= "" snippet-name))
     (add-to-list 'gm/math-snippets (cons snippet-key snippet-name))
-    (find-file (expand-file-name
-                (concat (concat (car (yas-snippet-dirs)) "/latex-mode/")
-                        snippet-name)))
-    (yas-expand-snippet (yas-lookup-snippet "new-math-snippet"))
+    (setq file-cand (expand-file-name
+                     (concat (concat (car (yas-snippet-dirs)) "/latex-mode/")
+                             snippet-name)))
+    (unless (file-exists-p file-cand)
+      (find-file file-cand)
+      (yas-expand-snippet (yas-lookup-snippet "new-math-snippet")))
     (gm/print-to-file gm/math-snippet-file gm/math-snippets)
-    ;; (gm/math-setup)
+    (gm/math-setup)
     ))
+#+END_SRC
+**** Subscripts
+This function eases the entry of subscripts such as $x_0$.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-subscript ()
+  (when (memq (get-char-code-property (char-before) 'general-category)
+      '(Ll Lu Lo Lt Lm Mn Mc Me Nl))
+      (insert  "_"))
+)
+(define-conditional-key org-mode-map "0" (gm/math-subscript) (texmathp))
+(define-conditional-key org-mode-map "1" (gm/math-subscript) (texmathp))
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
@@ -1466,6 +1478,7 @@ And finally some utility functions.
   ("t" (insert "\\tau") "τ")
   ("u" (insert "\\upsilon") "υ")
   ("U" (insert " \\cup ") "∪")
+  ("v" (insert "\\vec ") "v")
   ("w" (insert "\\xi") "ξ")
   ("W" (insert "\\Xi") "Ξ")
   ("x" (insert "\\chi") "χ")
@@ -1485,6 +1498,7 @@ And finally some utility functions.
 (defhydra hydra-semicolon-b (:color blue :idle 1.0 :columns 8)
   (";" hydra-semicolon-a/body "base")
   (" " (insert "; " "semicolon"))
+  ("A" (insert "\\aleph") "ℵ")
   ("e" (insert "\\varepsilon") "ε")
   ("f" (insert "\\phi") "φ")
   ("F" (insert "\\mathbb{F}") "𝔽")

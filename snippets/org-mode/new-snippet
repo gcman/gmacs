@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: new-math-snippet
-# key: nms
-# --
-("$1" . "$2")$0

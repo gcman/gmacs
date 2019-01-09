@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: trace
+# key: math-trace
+# --
+\Tr{$1}$0

@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: for-all
+# key: math-for-all
+# --
+\forall $0

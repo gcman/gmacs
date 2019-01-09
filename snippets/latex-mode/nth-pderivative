@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: nth-pderivative
+# key: math-nth-pderivative
+# --
+\pd[${1:n}]{${2:x}}$0

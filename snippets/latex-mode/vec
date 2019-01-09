@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: vec
+# key: math-vec
+# --
+\vec $0

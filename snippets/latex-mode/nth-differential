@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: nth-differential
+# key: math-nth-differential
+# --
+\dv[${1:n}]{$2}{${3:x}}$0

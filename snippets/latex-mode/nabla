@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: nabla
+# key: math-nabla
 # --
-\nabla
+\nabla $0

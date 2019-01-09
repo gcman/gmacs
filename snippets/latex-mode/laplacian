@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: laplacian
+# key: math-laplacian
+# --
+\Lapl{$1}$0

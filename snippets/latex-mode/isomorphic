@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: isomorphic
+# key: math-isomorphic
+# --
+\Iso $0

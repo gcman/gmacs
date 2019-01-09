@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: proportional-to
+# key: math-proportional-to
+# --
+\propto $0

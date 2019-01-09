@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: nth-derivative
+# key: math-nth-derivative
+# --
+\d[${1:n}]{${2:x}}$0
