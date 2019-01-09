@@ -1431,23 +1431,28 @@ And finally some utility functions.
     (gm/math-setup)
     ))
 #+END_SRC
-**** Subscripts
-This function eases the entry of subscripts such as $x_0$.
+**** Subscripts/Indices
+This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
+digit is pressed, if the last character is a letter, then a subscript is
+created. If this subscript is extended to a number with more than 1 digit,
+brackets are added to ensure proper LaTeX rendering.
 #+BEGIN_SRC emacs-lisp
+(defun gm/char-is-letter (char)
+  (memq (get-char-code-property char 'general-category)
+        '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
 (defun gm/math-subscript ()
-  (when (memq (get-char-code-property (char-before) 'general-category)
-      '(Ll Lu Lo Lt Lm Mn Mc Me Nl))
-      (insert  "_")))
-(define-conditional-key org-mode-map "0" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "1" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "2" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "3" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "4" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "5" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "6" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "7" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "8" (gm/math-subscript) (texmathp))
-(define-conditional-key org-mode-map "9" (gm/math-subscript) (texmathp))
+  (cond ((gm/char-is-letter (char-before)) (insert "_"))
+        ((string-match "\_[0-9]" (gm/last-n-chars 2))
+         (save-excursion
+           (backward-char)
+           (insert "\{")
+           (forward-char)
+           (insert "\}")))))
+(loop for n from 0 to 9
+      collect (eval (macroexpand
+                     `(define-conditional-key org-mode-map
+                          (number-to-string ,n)
+                          (gm/math-subscript) (texmathp)))))
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp

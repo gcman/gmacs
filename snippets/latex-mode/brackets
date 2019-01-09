@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: brackets
+# key: math-brackets
 # --
 \left\[$1\right\]
