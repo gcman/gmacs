@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: curl
+# key: math-curl
+# --
+\Curl{$1}$0

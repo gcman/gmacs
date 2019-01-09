@@ -5,6 +5,7 @@
 !elisp/*
 !README.md
 !.gitignore
+!abbrevs.el
 !init.el
 !gautam.org
-!abbrevs.el
+!math-snippets

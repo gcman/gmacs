@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: gradient
+# key: math-gradient
+# --
+\Grad{$1}$0
