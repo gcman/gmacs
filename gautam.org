@@ -1324,6 +1324,7 @@ Use SPC instead of TAB to expand snippets.
   (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
 #+END_SRC
 ** Fast Latex Snippets
+*** Requirements
 Use =texmathp= to tell if you are in math mode.
 #+BEGIN_SRC emacs-lisp
 (require 'texmathp)
@@ -1440,6 +1441,7 @@ brackets are added to ensure proper LaTeX rendering.
 (defun gm/char-is-letter (char)
   (memq (get-char-code-property char 'general-category)
         '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
+
 (defun gm/math-subscript ()
   (cond ((gm/char-is-letter (char-before)) (insert "_"))
         ((string-match "\_[0-9]" (gm/last-n-chars 2))
@@ -1448,6 +1450,9 @@ brackets are added to ensure proper LaTeX rendering.
            (insert "\{")
            (forward-char)
            (insert "\}")))))
+#+END_SRC
+Activate the subscript command for all digits.
+#+BEGIN_SRC emacs-lisp
 (loop for n from 0 to 9
       collect (eval (macroexpand
                      `(define-conditional-key org-mode-map
@@ -1464,10 +1469,12 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
   (let (start my-string)
     (setq start (line-beginning-position) )
     (setq my-string (buffer-substring-no-properties start (point)))))
+
 (defun gm/math-insert-frac-match (match)
   (when match
     (progn (insert (concat "\\frac{" match "}{"))
            (save-excursion (insert "}")))))
+
 (defun gm/math-frac-helper (regexp)
   (let (my-line start end match)
     (setq my-line (gm/line-to-point))
@@ -1479,11 +1486,10 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
                              (- end (line-beginning-position))))
       (delete-region start end))
     (gm/math-insert-frac-match match)))
+
 (defun gm/math-frac ()
   (interactive)
-  (cond ((string-match "[0-9]" (char-to-string (char-before)))
-         (gm/math-frac-helper "[0-9]+"))
-        ((string-match "[\])]" (char-to-string (char-before)))
+  (cond ((string-match "[\])]" (char-to-string (char-before)))
          (let (match)
            (progn
              (set-mark-command nil)
@@ -1491,7 +1497,10 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
              (setq match (buffer-substring-no-properties (region-beginning) (region-end)))
              (delete-region (region-beginning) (region-end))
              (gm/math-insert-frac-match (substring match 1 -1)))))
+        ((string-match "[0-9a-z]" (char-to-string (char-before)))
+         (gm/math-frac-helper "[0-9A-Za-z_^]*"))
         (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
+
 (define-conditional-key org-mode-map "/" #'gm/math-frac (texmathp))
 #+END_SRC
 *** Math Symbols
