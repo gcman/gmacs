@@ -1454,6 +1454,46 @@ brackets are added to ensure proper LaTeX rendering.
                           (number-to-string ,n)
                           (gm/math-subscript) (texmathp)))))
 #+END_SRC
+**** Fraction
+Typing "/" after an appropriate block (a number or a balanced set of
+parentheses) creates a fraction with this block in the numerator and the point
+in the denominator. The outside parentheses will be removed; for example, =(\sin
+x)= and then =/= will result in =\frac{\sin x}{|}=.
+#+BEGIN_SRC emacs-lisp
+(defun gm/line-to-point ()
+  (let (start my-string)
+    (setq start (line-beginning-position) )
+    (setq my-string (buffer-substring-no-properties start (point)))))
+(defun gm/math-insert-frac-match (match)
+  (when match
+    (progn (insert (concat "\\frac{" match "}{"))
+           (save-excursion (insert "}")))))
+(defun gm/math-frac-helper (regexp)
+  (let (my-line start end match)
+    (setq my-line (gm/line-to-point))
+    (when (looking-back regexp (line-beginning-position) t)
+      (setq start (match-beginning 0))
+      (setq end (match-end 0))
+      (setq match (substring my-line
+                             (- start (line-beginning-position))
+                             (- end (line-beginning-position))))
+      (delete-region start end))
+    (gm/math-insert-frac-match match)))
+(defun gm/math-frac ()
+  (interactive)
+  (cond ((string-match "[0-9]" (char-to-string (char-before)))
+         (gm/math-frac-helper "[0-9]+"))
+        ((string-match "[\])]" (char-to-string (char-before)))
+         (let (match)
+           (progn
+             (set-mark-command nil)
+             (backward-sexp)
+             (setq match (buffer-substring-no-properties (region-beginning) (region-end)))
+             (delete-region (region-beginning) (region-end))
+             (gm/math-insert-frac-match (substring match 1 -1)))))
+        (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
+(define-conditional-key org-mode-map "/" #'gm/math-frac (texmathp))
+#+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)

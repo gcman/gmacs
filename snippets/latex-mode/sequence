@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: sequence
+# key: math-sequence
+# --
+(${1:a}_${2:n})_{$2\in${4:\mathbb{N}}}$0
