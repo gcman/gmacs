@@ -897,10 +897,6 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 #+END_SRC
 ** LaTeX
-*** CDLaTeX
-#+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-#+END_SRC
 *** Autocomplete ~$~
 #+BEGIN_SRC emacs-lisp
 (defvar org-electric-pairs '((?$ . ?$) ))
@@ -1502,6 +1498,16 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
         (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
 
 (define-conditional-key org-mode-map "/" #'gm/math-frac (texmathp))
+#+END_SRC
+**** Simplify Super/Subscripts
+#+BEGIN_SRC emacs-lisp
+(defun gm/simplify-math-script (&rest r)
+  (when (string-match "[_^]{.}" (gm/last-n-chars 4))
+    (save-excursion
+      (delete-backward-char 1)
+      (backward-char)
+      (delete-backward-char 1))))
+(advice-add 'yas-next-field-or-maybe-expand-snippet :after #'gm/simplify-math-script)
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
