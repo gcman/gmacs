@@ -26,6 +26,8 @@ Use ~use-package~.
 #+END_SRC
 Always.
 #+BEGIN_SRC emacs-lisp
+(require 'use-package)
+(setq use-package-verbose t)
 (setq use-package-always-ensure t)
 #+END_SRC
 Use ~M-x package-refresh-contents~ to reload the list of packages after adding the package sources for the first time.
@@ -34,9 +36,6 @@ If I ever need to load files outside of my package system, I know where to find
 them. I also set up ~use-package~ here.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "~/.emacs.d/elisp/")
-(setq use-package-verbose t)
-(setq use-package-always-ensure t)
-(require 'use-package)
 #+END_SRC
 I put custom variables outside of my init.el file.
 #+BEGIN_SRC emacs-lisp
@@ -321,7 +320,6 @@ Use =ack= instead of =grep=.
 *** Ivy
 #+BEGIN_SRC emacs-lisp
 (use-package ivy
-  :ensure t
   :diminish
   :config
   (ivy-mode 1)
@@ -427,7 +425,6 @@ Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a dired buffer.
 #+BEGIN_SRC emacs-lisp
 (use-package dired-quick-sort
-  :ensure t
   :config
   (dired-quick-sort-setup))
 #+END_SRC
@@ -439,8 +436,7 @@ extension. Use ~S~ to use in a dired buffer.
 *** God Mode
 Enable god-mode.
 #+BEGIN_SRC emacs-lisp
-(use-package god-mode
-  :ensure t)
+(use-package god-mode)
 #+END_SRC
 Indicate mode with modeline.
 #+BEGIN_SRC emacs-lisp
@@ -475,6 +471,18 @@ Indicate mode with modeline.
   (web-mode-markup-indent-offset 2)
   (web-mode-css-indent-offset 2)
   (web-mode-code-indent-offset 2))
+#+END_SRC
+*** Screencast
+**** Show Keypresses
+#+BEGIN_SRC emacs-lisp
+(require 'keycast)
+#+END_SRC
+**** GIF Screencast
+#+BEGIN_SRC emacs-lisp
+(require 'gif-screencast)
+(with-eval-after-load 'gif-screencast
+  (define-key gif-screencast-mode-map (kbd "<f8>") 'gif-screencast-toggle-pause)
+  (define-key gif-screencast-mode-map (kbd "<f9>") 'gif-screencast-stop))
 #+END_SRC
 ** Theme
 *** Solarized Light
@@ -807,7 +815,7 @@ Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
 (key-chord-define-global "jk" 'god-mode-all)
 #+END_SRC
-* Org
+* Org Mode
 ** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp
@@ -816,7 +824,6 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   (require 'org)
   (require 'ox-latex)
   (use-package ox-hugo
-    :ensure t
     :after ox)
   :bind (("C-c l" . org-store-link)
          ("C-c a" . org-agenda)
@@ -851,6 +858,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   :delight (org-indent-mode))
 (setq org-hide-emphasis-markers t)
 (setq org-startup-indented t)
+(setcar (nthcdr 4 org-emphasis-regexp-components) 10)
 (define-key org-mode-map (kbd "C-k") 'xah-cut-line-or-region)
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
@@ -870,7 +878,6 @@ updated when I archive a subtree.
 #+BEGIN_SRC emacs-lisp
 (setq package-check-signature nil)
 (use-package org-gcal
-  :ensure t
   :config
   (setq org-gcal-client-id "980401579277-lhd730utipsj73s9d73qkkecrjjdlveo.apps.googleusercontent.com"
         org-gcal-client-secret "U4e1D8tH9TEC15sIeXKSqTE1"
@@ -1189,7 +1196,6 @@ Of course we use =auctex=. I do most of my LaTeX editing in Org Mode now.
 #+BEGIN_SRC emacs-lisp
 (use-package auctex
   :defer t
-  :ensure t
   :init (require 'tex-site)
   :config (setq font-latex-fontify-script nil))
 #+END_SRC
@@ -1454,6 +1460,7 @@ Activate the subscript command for all digits.
                      `(define-conditional-key org-mode-map
                           (number-to-string ,n)
                           (gm/math-subscript) (texmathp)))))
+(define-conditional-key org-mode-map "9" (gm/math-subscript) (texmathp))
 #+END_SRC
 **** Fraction
 Typing "/" after an appropriate block (a number or a balanced set of
@@ -1468,8 +1475,10 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
 
 (defun gm/math-insert-frac-match (match)
   (when match
-    (progn (insert (concat "\\frac{" match "}{"))
-           (save-excursion (insert "}")))))
+    (progn (yas-expand-snippet (yas-lookup-snippet "frac"))
+           (insert match)
+           (yas-next-field)
+           )))
 
 (defun gm/math-frac-helper (regexp)
   (let (my-line start end match)
@@ -1490,11 +1499,14 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
            (progn
              (set-mark-command nil)
              (backward-sexp)
-             (setq match (buffer-substring-no-properties (region-beginning) (region-end)))
+             (setq match (buffer-substring-no-properties
+                          (region-beginning) (region-end)))
              (delete-region (region-beginning) (region-end))
              (gm/math-insert-frac-match (substring match 1 -1)))))
+        ((string-match "}" (char-to-string (char-before)))
+         (gm/math-frac-helper "[\\][A-Za-z]*[\[{].*[\]}]"))
         ((string-match "[0-9a-z]" (char-to-string (char-before)))
-         (gm/math-frac-helper "[0-9A-Za-z_^]*"))
+         (gm/math-frac-helper "[\\]?[0-9A-Za-z_^]*"))
         (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
 
 (define-conditional-key org-mode-map "/" #'gm/math-frac (texmathp))
@@ -1507,7 +1519,8 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
       (delete-backward-char 1)
       (backward-char)
       (delete-backward-char 1))))
-(advice-add 'yas-next-field-or-maybe-expand-snippet :after #'gm/simplify-math-script)
+(advice-add 'yas-next-field-or-maybe-expand-snippet
+            :after #'gm/simplify-math-script)
 #+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp

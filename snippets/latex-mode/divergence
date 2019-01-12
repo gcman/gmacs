@@ -2,4 +2,4 @@
 # name: divergence
 # key: math-divergence
 # --
-\Div{$1}$0
+\Div $0

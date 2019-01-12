@@ -2,4 +2,4 @@
 # name: curl
 # key: math-curl
 # --
-\Curl{$1}$0
+\Curl $0
