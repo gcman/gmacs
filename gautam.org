@@ -858,6 +858,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   :delight (org-indent-mode))
 (setq org-hide-emphasis-markers t)
 (setq org-startup-indented t)
+(setq org-agenda-start-on-weekday nil)
 (setcar (nthcdr 4 org-emphasis-regexp-components) 10)
 (define-key org-mode-map (kbd "C-k") 'xah-cut-line-or-region)
 #+END_SRC
