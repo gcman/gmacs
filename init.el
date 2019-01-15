@@ -1,2 +1,1 @@
-(server-start)
 (org-babel-load-file (expand-file-name "~/.emacs.d/gautam.org"))

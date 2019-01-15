@@ -1,6 +1,20 @@
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
+** Start Server
+Always load up a server when you open Emacs. If a server is already running,
+make sure not to start another one.
+#+BEGIN_SRC emacs-lisp
+(defun --running-as-server ()
+    "Returns true if `server-start' has been called."
+  (condition-case nil
+      (and (boundp 'server-process)
+           (memq (process-status server-process)
+                 '(connect listen open run)))
+    (error)))
+
+(unless (--running-as-server) (server-start))
+#+END_SRC
 ** Time Startup
 On start-up, display how quickly Emacs started up.
 #+BEGIN_SRC emacs-lisp
@@ -344,7 +358,8 @@ Check syntax.
 #+END_SRC
 Relative line numbers, useful for vim-like navigation with God Mode.
 #+BEGIN_SRC emacs-lisp
-(use-package linum-relative)
+(use-package linum-relative
+  :defer t)
 #+END_SRC
 **** Python
 #+BEGIN_SRC emacs-lisp
@@ -361,7 +376,8 @@ Turn Emacs into basically a Python IDE.
 #+END_SRC
 *** Expand Region
 #+BEGIN_SRC emacs-lisp
-(use-package expand-region)
+(use-package expand-region
+  :defer t)
 (bind-key "C-=" 'er/expand-region)
 #+END_SRC
 ** Packages
@@ -378,22 +394,24 @@ Authorize actions.
 #+END_SRC
 *** Magit
 #+BEGIN_SRC emacs-lisp
-(use-package magit)
+(use-package magit
+  :defer t)
 #+END_SRC
 But no more juggling window configurations after committing.
 #+BEGIN_SRC emacs-lisp
-(defadvice magit-status (around magit-fullscreen activate)
-  (window-configuration-to-register :magit-fullscreen)
-  ad-do-it
-  (delete-other-windows))
+(with-eval-after-load 'magit
+  (defadvice magit-status (around magit-fullscreen activate)
+    (window-configuration-to-register :magit-fullscreen)
+    ad-do-it
+    (delete-other-windows))
 
-(defun magit-quit-session ()
-  "Restores the previous window configuration and kills the magit buffer"
-  (interactive)
-  (kill-buffer)
-  (jump-to-register :magit-fullscreen))
+  (defun magit-quit-session ()
+    "Restores the previous window configuration and kills the magit buffer"
+    (interactive)
+    (kill-buffer)
+    (jump-to-register :magit-fullscreen))
 
-(define-key magit-status-mode-map (kbd "q") 'magit-quit-session)
+  (define-key magit-status-mode-map (kbd "q") 'magit-quit-session))
 #+END_SRC
 *** Dired
 **** Async
@@ -430,7 +448,8 @@ extension. Use ~S~ to use in a dired buffer.
 #+END_SRC
 **** Sudo
 #+BEGIN_SRC emacs-lisp
-(use-package sudo-edit)
+(use-package sudo-edit
+  :defer t)
 (bind-key "C-c C-x r" 'sudo-edit)
 #+END_SRC
 *** God Mode
@@ -759,7 +778,8 @@ I sometimes activate this when exiting God Mode.
 ** Word Count
 Count org-wc.
 #+BEGIN_SRC emacs-lisp
-(use-package org-wc)
+(use-package org-wc
+  :defer t)
 (bind-key "<C-f9>" 'org-wc-display)
 (bind-key "C-c w" 'org-wc-display)
 #+END_SRC
@@ -786,7 +806,8 @@ Count org-wc.
 ** Org Cliplink
 Paste URL with extracted title as the description.
 #+BEGIN_SRC emacs-lisp
-(use-package org-cliplink)
+(use-package org-cliplink
+  :defer t)
 (bind-key "C-c y" 'org-cliplink)
 #+END_SRC
 ** Keychord
@@ -879,6 +900,7 @@ updated when I archive a subtree.
 #+BEGIN_SRC emacs-lisp
 (setq package-check-signature nil)
 (use-package org-gcal
+  :defer t
   :config
   (setq org-gcal-client-id "980401579277-lhd730utipsj73s9d73qkkecrjjdlveo.apps.googleusercontent.com"
         org-gcal-client-secret "U4e1D8tH9TEC15sIeXKSqTE1"
@@ -1206,12 +1228,6 @@ Insert dollar signs electrically.
 (add-hook 'LaTeX-mode-hook
 	      (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
 			              (cons "$" "$"))))
-#+END_SRC
-** CDLaTeX
-I use this package to easily insert math characters.
-#+BEGIN_SRC emacs-lisp
-(use-package cdlatex
-  :hook (LaTeX-mode turn-on-cdlatex))
 #+END_SRC
 * Mail
 Set up the requirements.
