@@ -339,19 +339,36 @@ Use =ack= instead of =grep=.
   (ivy-mode 1)
   (diminish 'ivy-mode)
   :custom
-  (ivy-use-virtual-buffers t)
-  (ivy-display-style 'fancy)
   (ivy-re-builders-alist
    '((swiper . ivy--regex-plus)
+     (ivy-switch-buffer . ivy--regex-plus)
      (t      . ivy--regex-fuzzy)))
+  (ivy-use-virtual-buffers t)
+  (ivy-display-style 'fancy)
   (ivy-initial-inputs-alist nil))
+(use-package flx)
 (use-package swiper)
 (use-package counsel)
+(use-package smex)
+#+END_SRC
+*** Proselinting
+#+BEGIN_SRC emacs-lisp
+(use-package flycheck)
+(global-flycheck-mode)
+(flycheck-define-checker proselint
+  "A linter for prose."
+  :command ("proselint" source-inplace)
+  :error-patterns
+  ((warning line-start (file-name) ":" line ":" column ": "
+	    (id (one-or-more (not (any " "))))
+	    (message) line-end))
+  :modes (text-mode org-mode markdown-mode gfm-mode))
+
+(add-to-list 'flycheck-checkers 'proselint)
 #+END_SRC
 *** Programming
 Check syntax.
 #+BEGIN_SRC emacs-lisp
-(use-package flycheck)
 (add-hook 'prog-mode-hook #'flycheck-mode)
 (add-hook 'prog-mode-hook #'linum-relative-mode)
 (add-hook 'web-mode-hook #'linum-relative-mode)
@@ -373,6 +390,10 @@ Turn Emacs into basically a Python IDE.
 (add-hook 'python-mode-hook #'elpy-mode)
 (add-hook 'elpy-mode-hook #'py-autopep8-enable-on-save)
 (add-hook 'elpy-mode-hook #'flycheck-mode)
+#+END_SRC
+*** Company
+#+BEGIN_SRC emacs-lisp
+(use-package company)
 #+END_SRC
 *** Expand Region
 #+BEGIN_SRC emacs-lisp
@@ -583,9 +604,7 @@ These are what I think are better bindings for or better versions of the default
 *** Easy M-x
 Alt is hard to type easily.
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-SPC" 'execute-extended-command)
-(bind-key "C-M-SPC" 'amx-major-mode-commands)
-(bind-key "C-c C-SPC" 'execute-extended-command)
+(bind-key "C-SPC" 'counsel-M-x)
 #+END_SRC
 *** Set Mark
 Need a replacement because we rebound ~C-SPC~ above.
@@ -732,7 +751,7 @@ Rename better.
 #+END_SRC
 Switch better.
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-x b" 'ido-switch-buffer)
+(bind-key "C-x b" 'ivy-switch-buffer)
 #+END_SRC
 Use ibuffer.
 #+BEGIN_SRC emacs-lisp
@@ -1270,6 +1289,7 @@ Utilities and improvements of receiving and viewing.
       mu4e-compose-signature-auto-include nil
       mu4e-hide-index-messages t
       message-kill-buffer-on-exit t)
+(setq mu4e-change-filenames-when-moving t)
 (setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
 (setq mu4e-show-images t)
 (when (fboundp 'imagemagick-register-types)
