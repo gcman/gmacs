@@ -1283,100 +1283,51 @@ Insert dollar signs electrically.
 * Mail
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e")
+(use-package notmuch)
 (require 'smtpmail)
 (require 'smtpmail-async)
-(require 'mu4e)
 #+END_SRC
-SMTP for sending emails. The =stream-type= is important because Stanford's email
-servers require that outgoing email use TLS encryption.
+Set up the mail directory and draft location.
+#+BEGIN_SRC emacs-lisp
+(setq message-directory "~/mail/")
+(setq message-auto-save-directory "~/mail/draft")
+(setq message-fcc-dirs "~/mail/mbsyncmail/Sent Items")
+#+END_SRC
+Provide my email and name.
+#+BEGIN_SRC emacs-lisp
+(setq mail-user-agent 'message-user-agent
+      user-mail-address gm/email
+      user-full-name "Gautam Manohar")
+#+END_SRC
+SMTP for sending mail. The =stream-type= is important because I want my outgoing
+mail to at least use TLS encryption. One day, though, I would like to adopt a
+more rigorous system of encryption.
 #+BEGIN_SRC emacs-lisp
 (setq send-mail-function 'async-smtpmail-send-it
       message-send-mail-function 'async-smtpmail-send-it
       smtpmail-debug-info t
+      smtpmail-debug-verb t
       smtpmail-stream-type 'starttls
-      smtpmail-default-smtp-server 'gm/send-mail-server
-      smtpmail-smtp-server 'gm/send-mail-server
+      smtpmail-smtp-server gm/send-mail-server
       smtpmail-smtp-service 587)
 #+END_SRC
-Folders and keybinds for accessing those folders.
+Nice stuff to have for sending mail.
 #+BEGIN_SRC emacs-lisp
-(setq mu4e-maildir (expand-file-name "~/mail/mbsyncmail"))
-(setq mu4e-drafts-folder "/Drafts"
-      mu4e-sent-folder "/Sent Items"
-      mu4e-trash-folder "/Deleted Items")
-(setq mu4e-maildir-shortcuts
-      '(("/INBOX" . ?i)
-        ("/Sent Items" . ?s)
-        ("/Deleted Items" . ?t)
-        ("/Drafts" . ?d)
-        ("/archive" . ?a)))
+(setq message-kill-buffer-on-exit t)
+(setq notmuch-address-command 'internal)
 #+END_SRC
-Utilities and improvements of receiving and viewing.
+Some commonly used searches.
 #+BEGIN_SRC emacs-lisp
-(setq mu4e-get-mail-command "mbsync -c ~/.mbsyncrc uni"
-      mu4e-html2text-command "w3m -T text/html"
-      mu4e-update-interval 600
-      mu4e-headers-auto-update t
-      mu4e-compose-signature-auto-include nil
-      mu4e-hide-index-messages t
-      message-kill-buffer-on-exit t)
-(setq mu4e-change-filenames-when-moving t)
-(setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
-(setq mu4e-show-images t)
-(when (fboundp 'imagemagick-register-types)
-  (imagemagick-register-types))
-(setq mu4e-reply-to-address 'gm/email
-      user-mail-address 'gm/email
-      user-full-name "Gautam Manohar")
-(add-hook 'mu4e-compose-mode-hook
-          (defun gm-do-compose-stuff ()
-            "My settings for message composition."
-            (set-fill-column 80)
-            (flyspell-mode)))
+(setq notmuch-saved-searches
+      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order oldest-first)
+        (:name "flagged" :query "tag:flagged" :key "f")
+        (:name "sent" :query "tag:sent" :key "s" :sort-order newest-first)
+        (:name "drafts" :query "tag:draft" :key "d")
+        (:name "all mail" :query "*" :key "a" :sort-order newest-first)))
 #+END_SRC
-Nice stuff to have for sending emails.
+Keybindings to open mail buffer.
 #+BEGIN_SRC emacs-lisp
-(require 'org-mu4e)
-(require 'org-mime)
-(defun mu4e-compose-org-mail ()
-  (interactive)
-  (mu4e-compose-new)
-  (org-mu4e-compose-org-mode))
-(bind-key "C-c O" #'mu4e-compose-org-mail)
-(defun htmlize-and-send ()
-  "When in an org-mu4e-compose-org-mode message, htmlize and send it."
-  (interactive)
-  (when (and (not (org-in-src-block-p))
-             (member 'org~mu4e-mime-switch-headers-or-body post-command-hook))
-    (end-of-buffer)
-    (insert "\n#+latex_header: \\usepackage{gm-math}")
-    (org-mime-htmlize)
-    (message-send-and-exit)))
-(add-hook 'org-ctrl-c-ctrl-c-hook 'htmlize-and-send)
-#+END_SRC
-Easy access.
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-c m" #'mu4e)
-(bind-key "<f12>" #'mu4e)
-#+END_SRC
-** Add Attachments with Dired
-Use =C-c C-a=.
-#+BEGIN_SRC emacs-lisp
-(require 'gnus-dired)
-(defun gnus-dired-mail-buffers ()
-  "Return a list of active message buffers."
-  (let (buffers)
-    (save-current-buffer
-      (dolist (buffer (buffer-list t))
-        (set-buffer buffer)
-        (when (and (derived-mode-p 'message-mode)
-                   (null message-sent-message-via))
-          (push (buffer-name buffer) buffers))))
-    (nreverse buffers)))
-
-(setq gnus-dired-mail-mode 'mu4e-user-agent)
-(add-hook 'dired-mode-hook 'turn-on-gnus-dired-mode)
+(bind-key "C-c m" 'notmuch)
 #+END_SRC
 * Snippets
 ** Load Snippets
