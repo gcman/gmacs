@@ -401,6 +401,12 @@ Turn Emacs into basically a Python IDE.
   :defer t)
 (bind-key "C-=" 'er/expand-region)
 #+END_SRC
+*** Highlighting/Comments
+#+BEGIN_SRC emacs-lisp
+(require 'ov-highlight)
+(bind-key "C-c h" 'ov-highlight/body)
+(bind-key "C-c C-h" 'ov-highlight/body)
+#+END_SRC
 ** Packages
 *** Async
 Run Emacs processes asynchronously.
@@ -1652,3 +1658,8 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
 
 (define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (texmathp))
 #+END_SRC
+* COMMENT Local Variables
+#  ov-highlight-data: KCgxMTU3NCAxMTU4MSAoZmFjZSAoOmJhY2tncm91bmQgIk9yYW5nZTEiKSBtb3VzZS1mYWNlIGhpZ2hsaWdodCBsb2NhbC1tYXAgKGtleW1hcCAobW91c2UtMSBsYW1iZGEgbmlsIChpbnRlcmFjdGl2ZSkgKHNldHEgb3YtaGlnaGxpZ2h0LXdpbmRvdy1jb25maWd1cmF0aW9uIChjdXJyZW50LXdpbmRvdy1jb25maWd1cmF0aW9uKSkgKGxldCAoKGNiIChjdXJyZW50LWJ1ZmZlcikpIChjdXJyZW50LW5vdGUgKG92ZXJsYXktZ2V0IChvdi1hdCkgJ2hlbHAtZWNobykpKSAoc3dpdGNoLXRvLWJ1ZmZlciAiKm92LW5vdGUqIikgKGVyYXNlLWJ1ZmZlcikgKG9yZy1tb2RlKSAoaW5zZXJ0IChvciBjdXJyZW50LW5vdGUgIiIpKSAobGV0ICgobWFwIChtYWtlLXNwYXJzZS1rZXltYXApKSkgKHNldHEgaGVhZGVyLWxpbmUtZm9ybWF0ICJDbGljayBoZXJlIG9yIHR5cGUgQy1jIEMtYyB0byBmaW5pc2guIEMteCBrIHRvIGNhbmNlbC4iKSkgKGxvY2FsLXNldC1rZXkgKGtiZCAiQy14IGsiKSBgKGxhbWJkYSBuaWwgKGludGVyYWN0aXZlKSAoa2lsbC1idWZmZXIpKSkgKGxvY2FsLXNldC1rZXkgKGtiZCAiQy1jIEMtYyIpIGAobGFtYmRhIG5pbCAoaW50ZXJhY3RpdmUpIChsZXQgKCh0b29sdGlwIChidWZmZXItc3Vic3RyaW5nLW5vLXByb3BlcnRpZXMgKHBvaW50LW1pbikgKHBvaW50LW1heCkpKSkgKGtpbGwtYnVmZmVyKSAoc2V0LXdpbmRvdy1jb25maWd1cmF0aW9uIG92LWhpZ2hsaWdodC13aW5kb3ctY29uZmlndXJhdGlvbikgKHNldHEgb3YtaGlnaGxpZ2h0LXdpbmRvdy1jb25maWd1cmF0aW9uIG5pbCkgKG92ZXJsYXktcHV0IChvdi1hdCkgJ2hlbHAtZWNobyB0b29sdGlwKSkpKSkpKSBoZWxwLWVjaG8gIlRlc3QiIG92LWhpZ2hsaWdodGVyIHQgb3YtdHlwZSAiY29tbWVudCIpKSk=
+# Local Variables:
+# eval: (ov-highlight-load)
+# End:
