@@ -51,10 +51,14 @@ them. I also set up ~use-package~ here.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "~/.emacs.d/elisp/")
 #+END_SRC
-I put custom variables outside of my init.el file.
+I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file)
+#+END_SRC
+I put my personal information in =private.el=.
+#+BEGIN_SRC emacs-lisp
+(load "~/.emacs.d/private.el")
 #+END_SRC
 ** Common Lisp
 #+BEGIN_SRC emacs-lisp
@@ -948,11 +952,7 @@ updated when I archive a subtree.
 #+BEGIN_SRC emacs-lisp
 (setq package-check-signature nil)
 (use-package org-gcal
-  :defer t
-  :config
-  (setq org-gcal-client-id "980401579277-lhd730utipsj73s9d73qkkecrjjdlveo.apps.googleusercontent.com"
-        org-gcal-client-secret "U4e1D8tH9TEC15sIeXKSqTE1"
-        org-gcal-file-alist '(("gcmanohar001@gmail.com" . "~/org/gcal.org"))))
+  :defer t)
 (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync)))
 #+END_SRC
 *** Org Babel
@@ -1292,8 +1292,8 @@ servers require that outgoing email use TLS encryption.
       message-send-mail-function 'async-smtpmail-send-it
       smtpmail-debug-info t
       smtpmail-stream-type 'starttls
-      smtpmail-default-smtp-server "smtp.stanford.edu"
-      smtpmail-smtp-server "smtp.stanford.edu"
+      smtpmail-default-smtp-server 'gm/send-mail-server
+      smtpmail-smtp-server 'gm/send-mail-server
       smtpmail-smtp-service 587)
 #+END_SRC
 Folders and keybinds for accessing those folders.
@@ -1323,8 +1323,8 @@ Utilities and improvements of receiving and viewing.
 (setq mu4e-show-images t)
 (when (fboundp 'imagemagick-register-types)
   (imagemagick-register-types))
-(setq mu4e-reply-to-address "gmanohar@stanford.edu"
-      user-mail-address "gmanohar@stanford.edu"
+(setq mu4e-reply-to-address 'gm/email
+      user-mail-address 'gm/email
       user-full-name "Gautam Manohar")
 (add-hook 'mu4e-compose-mode-hook
           (defun gm-do-compose-stuff ()
@@ -1659,7 +1659,7 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
 (define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (texmathp))
 #+END_SRC
 * COMMENT Local Variables
-#  ov-highlight-data: KCgxMTU3NCAxMTU4MSAoZmFjZSAoOmJhY2tncm91bmQgIk9yYW5nZTEiKSBtb3VzZS1mYWNlIGhpZ2hsaWdodCBsb2NhbC1tYXAgKGtleW1hcCAobW91c2UtMSBsYW1iZGEgbmlsIChpbnRlcmFjdGl2ZSkgKHNldHEgb3YtaGlnaGxpZ2h0LXdpbmRvdy1jb25maWd1cmF0aW9uIChjdXJyZW50LXdpbmRvdy1jb25maWd1cmF0aW9uKSkgKGxldCAoKGNiIChjdXJyZW50LWJ1ZmZlcikpIChjdXJyZW50LW5vdGUgKG92ZXJsYXktZ2V0IChvdi1hdCkgJ2hlbHAtZWNobykpKSAoc3dpdGNoLXRvLWJ1ZmZlciAiKm92LW5vdGUqIikgKGVyYXNlLWJ1ZmZlcikgKG9yZy1tb2RlKSAoaW5zZXJ0IChvciBjdXJyZW50LW5vdGUgIiIpKSAobGV0ICgobWFwIChtYWtlLXNwYXJzZS1rZXltYXApKSkgKHNldHEgaGVhZGVyLWxpbmUtZm9ybWF0ICJDbGljayBoZXJlIG9yIHR5cGUgQy1jIEMtYyB0byBmaW5pc2guIEMteCBrIHRvIGNhbmNlbC4iKSkgKGxvY2FsLXNldC1rZXkgKGtiZCAiQy14IGsiKSBgKGxhbWJkYSBuaWwgKGludGVyYWN0aXZlKSAoa2lsbC1idWZmZXIpKSkgKGxvY2FsLXNldC1rZXkgKGtiZCAiQy1jIEMtYyIpIGAobGFtYmRhIG5pbCAoaW50ZXJhY3RpdmUpIChsZXQgKCh0b29sdGlwIChidWZmZXItc3Vic3RyaW5nLW5vLXByb3BlcnRpZXMgKHBvaW50LW1pbikgKHBvaW50LW1heCkpKSkgKGtpbGwtYnVmZmVyKSAoc2V0LXdpbmRvdy1jb25maWd1cmF0aW9uIG92LWhpZ2hsaWdodC13aW5kb3ctY29uZmlndXJhdGlvbikgKHNldHEgb3YtaGlnaGxpZ2h0LXdpbmRvdy1jb25maWd1cmF0aW9uIG5pbCkgKG92ZXJsYXktcHV0IChvdi1hdCkgJ2hlbHAtZWNobyB0b29sdGlwKSkpKSkpKSBoZWxwLWVjaG8gIlRlc3QiIG92LWhpZ2hsaWdodGVyIHQgb3YtdHlwZSAiY29tbWVudCIpKSk=
+#  ov-highlight-data: bmls
 # Local Variables:
 # eval: (ov-highlight-load)
 # End:
