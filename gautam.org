@@ -1,6 +1,10 @@
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
+** Lexical Scoping
+#+BEGIN_SRC emacs-lisp
+;; -*- lexical-binding: t; -*-
+#+END_SRC
 ** Start Server
 Always load up a server when you open Emacs. If a server is already running,
 make sure not to start another one.
@@ -62,7 +66,7 @@ I put my personal information in =private.el=.
 #+END_SRC
 ** Common Lisp
 #+BEGIN_SRC emacs-lisp
-(require 'cl)
+(require 'cl-lib)
 #+END_SRC
 * General Configuration
 ** Graphics
@@ -989,8 +993,7 @@ Remove comments from org document when exporting to LaTeX.
 (defun delete-org-comments (backend)
   (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
                                     'comment 'identity))
-        do
-        (setf (buffer-substring (org-element-property :begin comment)
+        do (setf (buffer-substring (org-element-property :begin comment)
                                 (org-element-property :end comment))
               "")))
 (add-hook 'org-export-before-processing-hook 'delete-org-comments)
@@ -1298,7 +1301,7 @@ servers require that outgoing email use TLS encryption.
 #+END_SRC
 Folders and keybinds for accessing those folders.
 #+BEGIN_SRC emacs-lisp
-(setq mu4e-maildir (expand-file-name "~/email/mbsyncmail"))
+(setq mu4e-maildir (expand-file-name "~/mail/mbsyncmail"))
 (setq mu4e-drafts-folder "/Drafts"
       mu4e-sent-folder "/Sent Items"
       mu4e-trash-folder "/Deleted Items")
@@ -1658,8 +1661,3 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
 
 (define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (texmathp))
 #+END_SRC
-* COMMENT Local Variables
-#  ov-highlight-data: bmls
-# Local Variables:
-# eval: (ov-highlight-load)
-# End:
