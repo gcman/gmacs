@@ -184,14 +184,9 @@ no arguments."
 (ov-highlight-make "insert" '(:foreground "blue"))
 
 ;; A user-selected color
-(ov-highlight-make "color" (lambda ()
-			       (list :background
-				     (plist-get
-				      (get-text-property
-				       0 'face
-				       (completing-read
-					"Color: "
-					(progn
+(ov-highlight-make "color"
+		   (lambda ()
+		     (let* ((candidates (progn
 					  (save-selected-window
 					    (list-colors-display))
 					  (prog1
@@ -200,8 +195,16 @@ no arguments."
 							  (append (list line)
 								  (s-split " " line t)))
 							(s-split "\n" (buffer-string))))
-					    (kill-buffer "*Colors*")))))
-				      :background))))
+					    (kill-buffer "*Colors*"))))
+			    (choice (completing-read
+				     "Color: "
+				     candidates)))
+		       (list :background
+			     (plist-get
+			      (get-text-property
+			       0 'face
+			       (car (cdr (assoc choice candidates))))
+			      :background)))))
 
 ;; Change font color
 (ov-highlight-make "foreground" (lambda ()
