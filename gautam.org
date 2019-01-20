@@ -181,6 +181,7 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 (setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
 (setq mouse-wheel-follow-mouse t) ;; scroll window under mouse
 (setq scroll-step 1) ;; keyboard scroll one line at a time
+(setq scroll-margin 3) ;; give the cursor some buffer room before scrolling window
 #+END_SRC
 *** Indentation
 #+BEGIN_SRC emacs-lisp
