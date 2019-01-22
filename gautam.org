@@ -1249,7 +1249,6 @@ from lines like:
              '("gm-notes"
                "\\documentclass[10pt,twoside]{article}
 \\usepackage{gm-notes}
-\\renewcommand{\\maketitle}{}
 [NO-DEFAULT-PACKAGES]
 [EXTRA]"
                ("\\section{%s}" . "\\section*{%s}")
