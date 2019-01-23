@@ -249,14 +249,14 @@ no arguments."
 					  (insert (or current-note ""))
 					  (let ((map (make-sparse-keymap)))
 					    (setq header-line-format
-						  "Click here or type C-c C-c to finish. C-x k to cancel."))
+						  "Click here or type s-<return> to finish. C-x k to cancel."))
 					  (local-set-key
 					   (kbd "C-x k")
 					   `(lambda ()
 					      (interactive)
 					      (kill-buffer)))
 					  (local-set-key
-					   (kbd "C-c C-c")
+					   (kbd "s-<return>")
 					   `(lambda ()
 					      (interactive)
 					      (let ((tooltip (buffer-substring-no-properties
@@ -276,7 +276,7 @@ no arguments."
 			       (let ((map (make-sparse-keymap)))
 				 (setq header-line-format
 				       (propertize
-					"Enter comment. Type C-c C-c to finish. C-x k to cancel."
+					"Enter comment. Type s-<return> to finish. C-x k to cancel."
 					'local-map map)))
 
 			       (use-local-map (copy-keymap org-mode-map))
@@ -290,7 +290,7 @@ no arguments."
 
 			       ;; Finish comment
 			       (local-set-key
-				(kbd "C-c C-c")
+				(kbd "s-<return>")
 				`(lambda ()
 				   (interactive)
 				   (let ((tooltip (buffer-substring-no-properties
@@ -520,16 +520,16 @@ The list is from first to last."
 	  (insert (or current-note ""))
 	  ;; (let ((map (make-sparse-keymap)))
 	  ;;   (setq header-line-format
-	  ;; 	  "Click here or type C-c C-c to finish. C-x k to cancel."))
+	  ;; 	  "Click here or type s-<return> to finish. C-x k to cancel."))
 	  (setq header-line-format
-		"Click here or type C-c C-c to finish. C-x k to cancel.")
+		"Click here or type s-<return> to finish. C-x k to cancel.")
 	  (local-set-key
 	   (kbd "C-x k")
 	   `(lambda ()
 	      (interactive)
 	      (kill-buffer)))
 	  (local-set-key
-	   (kbd "C-c C-c")
+	   (kbd "s-<return>")
 	   `(lambda ()
 	      (interactive)
 	      (let ((tooltip (buffer-substring-no-properties (point-min) (point-max))))
