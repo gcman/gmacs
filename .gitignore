@@ -1,8 +1,7 @@
 *
 !snippets/
-!snippets/*
+!elpa/
 !elisp/
-!elisp/*
 !README.md
 !.gitignore
 !abbrevs.el

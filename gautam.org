@@ -540,10 +540,10 @@ Indicate mode with modeline.
   (define-key gif-screencast-mode-map (kbd "<f9>") 'gif-screencast-stop))
 #+END_SRC
 ** Theme
-*** Solarized Light
+*** Solarized
 #+BEGIN_SRC emacs-lisp
 (use-package solarized-theme
-  :config (load-theme 'solarized-light t))
+  :config (load-theme 'solarized-dark t))
 #+END_SRC
 *** Font Face
 Normally use Hack.
