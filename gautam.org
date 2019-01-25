@@ -837,8 +837,14 @@ Count org-wc.
 #+BEGIN_SRC emacs-lisp
 (use-package org-wc
   :defer t)
-(bind-key "<C-f9>" 'org-wc-display)
-(bind-key "C-c w" 'org-wc-display)
+(defun gm/wc-display-current-subtree (arg)
+  (interactive "P")
+  (if arg
+      (org-wc-display nil)
+    (save-restriction
+      (org-narrow-to-subtree)
+      (org-wc-display nil))))
+(bind-key "C-c w" 'gm/wc-display-current-subtree)
 #+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
