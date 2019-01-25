@@ -844,7 +844,7 @@ Count org-wc.
     (save-restriction
       (org-narrow-to-subtree)
       (org-wc-display nil))))
-(bind-key "C-c w" 'gm/wc-display-current-subtree)
+(bind-key "C-c w" 'gm/wc-display-current-subtree org-mode-map)
 #+END_SRC
 ** Magit
 #+BEGIN_SRC emacs-lisp
@@ -852,7 +852,7 @@ Count org-wc.
 #+END_SRC
 ** Org LaTeX Export
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-c b" 'gm/org-latex-export)
+(bind-key "C-c b" 'gm/org-latex-export org-mode-map)
 #+END_SRC
 ** Dictionary
 #+BEGIN_SRC emacs-lisp
@@ -871,7 +871,7 @@ Paste URL with extracted title as the description.
 #+BEGIN_SRC emacs-lisp
 (use-package org-cliplink
   :defer t)
-(bind-key "C-c y" 'org-cliplink)
+(bind-key "C-c y" 'org-cliplink org-mode-map)
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
@@ -945,7 +945,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 (setq org-startup-indented t)
 (setq org-agenda-start-on-weekday nil)
 (setcar (nthcdr 4 org-emphasis-regexp-components) 10)
-(define-key org-mode-map (kbd "C-k") 'xah-cut-line-or-region)
+(bind-key (kbd "C-k") 'xah-cut-line-or-region org-mode-map)
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
 updated when I archive a subtree.
