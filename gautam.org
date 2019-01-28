@@ -424,9 +424,9 @@ Run Emacs processes asynchronously.
 #+END_SRC
 Authorize actions.
 #+BEGIN_SRC emacs-lisp
-(use-package auth-source
-  :no-require t
-  :config (setq auth-sources '("~/.authinfo.gpg")))
+(require 'auth-source-pass)
+(auth-source-pass-enable)
+(setq auth-sources '("~/.authinfo.gpg"))
 #+END_SRC
 *** Magit
 #+BEGIN_SRC emacs-lisp
