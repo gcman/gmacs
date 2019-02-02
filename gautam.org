@@ -594,6 +594,18 @@ Native syntax highlighting for source blocks in org mode.
 (setq show-paren-delay 0)
 (setq show-paren-style 'expression)
 #+END_SRC
+**** Except in Large Buffers
+#+BEGIN_SRC emacs-lisp
+(defun buffer-too-big-p ()
+  (or (> (buffer-size) (* 5000 80))
+      (> (line-number-at-pos (point-max)) 5000)))
+(add-hook 'prog-mode-hook
+          (lambda ()
+            ;; turn off `linum-mode' when there are more than 5000 lines
+            (when (buffer-too-big-p)
+              (linum-mode -1)
+              (font-lock-mode -1))))
+#+END_SRC
 * Keybindings
 ** Conditional Keybindings
 Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
