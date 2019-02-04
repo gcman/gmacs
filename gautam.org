@@ -10,13 +10,12 @@ Always load up a server when you open Emacs. If a server is already running,
 make sure not to start another one.
 #+BEGIN_SRC emacs-lisp
 (defun --running-as-server ()
-    "Returns true if `server-start' has been called."
+  "Returns true if `server-start' has been called."
   (condition-case nil
       (and (boundp 'server-process)
            (memq (process-status server-process)
                  '(connect listen open run)))
     (error)))
-
 (unless (--running-as-server) (server-start))
 #+END_SRC
 ** Time Startup
