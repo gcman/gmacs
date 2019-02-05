@@ -2,4 +2,4 @@
 # name: enter-math-mode
 # key: snippet-enter-math-mode
 # --
-\\($1\\)$0
+\\($0\\)
