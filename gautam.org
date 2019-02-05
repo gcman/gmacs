@@ -444,9 +444,9 @@ But no more juggling window configurations after committing.
     "Restores the previous window configuration and kills the magit buffer"
     (interactive)
     (kill-buffer)
-    (jump-to-register :magit-fullscreen))
+    (jump-to-register :magit-fullscreen)))
 
-  (bind-key "q" 'magit-quit-session magit-status-mode-map)
+(bind-key "q" #'magit-quit-session magit-status-mode-map)
 #+END_SRC
 *** Dired
 **** Async
@@ -1365,10 +1365,14 @@ Keybindings to open mail buffer.
 (yas-global-mode 1)
 #+END_SRC
 ** SPC Expansion
-Use SPC instead of TAB to expand snippets.
+Use SPC instead of TAB to expand snippets. We need to bind =TAB= to =org-cycle= even
+though that is the default, because otherwise binding =TAB= to =nil= in
+=yas-minor-mode= overrides the default behaviour.
 #+BEGIN_SRC emacs-lisp
 (bind-key "<tab>" nil yas-minor-mode-map)
 (bind-key "TAB" nil yas-minor-mode-map)
+(bind-key "<tab>" 'org-cycle org-mode-map)
+(bind-key "TAB" 'org-cycle org-mode-map)
 (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand)
           yas-minor-mode-map)
 #+END_SRC
