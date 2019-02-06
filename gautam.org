@@ -740,7 +740,7 @@ Version 2017-01-08"
     (put this-command 'compact-p (not compact-p))))
 
 (global-set-key [remap fill-paragraph]
-                #'endless/fill-or-unfill)
+                #'xah-fill-or-unfill)
 #+END_SRC
 *** Join Line
 This allows me to combine text over multiple lines into one line.
