@@ -444,9 +444,9 @@ But no more juggling window configurations after committing.
     "Restores the previous window configuration and kills the magit buffer"
     (interactive)
     (kill-buffer)
-    (jump-to-register :magit-fullscreen)))
+    (jump-to-register :magit-fullscreen))
 
-(bind-key "q" #'magit-quit-session magit-status-mode-map)
+  (bind-key "q" #'magit-quit-session magit-status-mode-map))
 #+END_SRC
 *** Dired
 **** Async
@@ -1264,8 +1264,7 @@ from lines like:
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-latex-classes
              '("gm-notes"
-               "\\documentclass[10pt,twoside]{article}
-\\usepackage{gm-notes}
+               "\\documentclass{gm-notes}
 [NO-DEFAULT-PACKAGES]
 [EXTRA]"
                ("\\section{%s}" . "\\section*{%s}")
@@ -1371,8 +1370,8 @@ though that is the default, because otherwise binding =TAB= to =nil= in
 #+BEGIN_SRC emacs-lisp
 (bind-key "<tab>" nil yas-minor-mode-map)
 (bind-key "TAB" nil yas-minor-mode-map)
-(bind-key "<tab>" 'org-cycle org-mode-map)
-(bind-key "TAB" 'org-cycle org-mode-map)
+;; (bind-key "<tab>" 'org-cycle org-mode-map)
+;; (bind-key "TAB" 'org-cycle org-mode-map)
 (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand)
           yas-minor-mode-map)
 #+END_SRC
@@ -1489,66 +1488,49 @@ And finally some utility functions.
 Modified from the =cdlatex-tab= function in =cdlatex.el=.
 #+BEGIN_SRC emacs-lisp
 (defun math-tab ()
-  "This function jumps to the next point in math mode where one would reasonably
-expect that more input can be put in.
-To do that, the cursor is moved according to the following rules:
-The cursor stops...
-- before closing brackets if preceding-char is any of -({[]})
-- after  closing brackets, but not if following-char is any of ({[_^
-- just after $, if the cursor was before that $.
-- at end of non-empty lines
-- at the beginning of empty lines
-- before a SPACE at beginning of line
-- after first of several SPACE
-Sounds strange?  Try it out!"
   (interactive)
-  (catch 'stop
-    (cond
-     ((looking-at "}\\|\\]\\|)")
-      (forward-char 1)
-      (if (looking-at "[^_\\^({\\[]")
-          ;; stop after closing bracket, unless ^_[{( follow
-          (throw 'stop t)))
-     ((= (following-char) ?$)
-      (while (= (following-char) ?$) (forward-char 1))
-      (throw 'stop t))
-     ((= (following-char) ?\ )
-      ;; stop after first of many spaces
-      (forward-char 1)
-      (re-search-forward "[^ ]")
-      (if (/= (preceding-char) ?\n) (forward-char -1)))
-     (t
-      (forward-char 1)))
-    ;; move to next possible stopping site and check out the place
-    (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
-      (forward-char -1)
-      (cond
-       ((= (following-char) ?\ )
-        ;; stop at first space or b-o-l
-        (if (not (bolp)) (forward-char 1)) (throw 'stop t))
-       ((= (following-char) ?\n)
-        ;; stop at line end, but not after \\
-        (if (and (bolp) (not (eobp)))
-            (throw 'stop t)
-          (if (equal "\\\\" (buffer-substring-no-properties
-                             (- (point) 2) (point)))
-              (forward-char 1)
-            (throw 'stop t))))
-       (t
-        ;; Stop before )}] if preceding-char is any parenthesis
-        (if (or (= (char-syntax (preceding-char)) ?\()
-                (= (char-syntax (preceding-char)) ?\))
-                (= (preceding-char) ?-))
-            (throw 'stop t)
+  (if (texmathp)
+      (catch 'stop
+        (cond
+         ((looking-at "}\\|\\]\\|)")
           (forward-char 1)
           (if (looking-at "[^_\\^({\\[]")
-              ;; stop after closing bracket, unless ^_[{( follow
-              (throw 'stop t))))))))
+              (throw 'stop t)))
+         ((= (following-char) ?$)
+          (while (= (following-char) ?$) (forward-char 1))
+          (throw 'stop t))
+         ((= (following-char) ?\ )
+          (forward-char 1)
+          (re-search-forward "[^ ]")
+          (if (/= (preceding-char) ?\n) (forward-char -1)))
+         (t
+          (forward-char 1)))
+        (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
+          (forward-char -1)
+          (cond
+           ((= (following-char) ?\ )
+            (if (not (bolp)) (forward-char 1)) (throw 'stop t))
+           ((= (following-char) ?\n)
+            (if (and (bolp) (not (eobp)))
+                (throw 'stop t)
+              (if (equal "\\\\" (buffer-substring-no-properties
+                                 (- (point) 2) (point)))
+                  (forward-char 1)
+                (throw 'stop t))))
+           (t
+            (if (or (= (char-syntax (preceding-char)) ?\()
+                    (= (char-syntax (preceding-char)) ?\))
+                    (= (preceding-char) ?-))
+                (throw 'stop t)
+              (forward-char 1)
+              (if (looking-at "[^_\\^({\\[]")
+                  (throw 'stop t)))))))
+    (org-cycle)))
 #+END_SRC
 Bind to tab.
 #+BEGIN_SRC emacs-lisp
-(define-conditional-key org-mode-map (kbd "<tab>") #'math-tab (texmathp))
-(define-conditional-key org-mode-map (kbd "TAB") #'math-tab (texmathp))
+(bind-key (kbd "<tab>") #'math-tab org-mode-map)
+(bind-key (kbd "TAB") #'math-tab org-mode-map)
 #+END_SRC
 **** Subscripts/Indices
 This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
