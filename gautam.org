@@ -1265,6 +1265,7 @@ from lines like:
 (add-to-list 'org-latex-classes
              '("gm-notes"
                "\\documentclass{gm-notes}
+\\usepackage{gm-math}
 [NO-DEFAULT-PACKAGES]
 [EXTRA]"
                ("\\section{%s}" . "\\section*{%s}")
@@ -1353,7 +1354,12 @@ Some commonly used searches.
 #+END_SRC
 Keybindings to open mail buffer.
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-c m" 'notmuch)
+(defun gm/open-mail ()
+  (interactive)
+  (shell-command "systemctl --user start checkmail.timer")
+  (notmuch))
+
+(bind-key "C-c m" #'gm/open-mail)
 #+END_SRC
 * Snippets
 ** Load Snippets
@@ -1370,8 +1376,6 @@ though that is the default, because otherwise binding =TAB= to =nil= in
 #+BEGIN_SRC emacs-lisp
 (bind-key "<tab>" nil yas-minor-mode-map)
 (bind-key "TAB" nil yas-minor-mode-map)
-;; (bind-key "<tab>" 'org-cycle org-mode-map)
-;; (bind-key "TAB" 'org-cycle org-mode-map)
 (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand)
           yas-minor-mode-map)
 #+END_SRC
