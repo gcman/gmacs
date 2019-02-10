@@ -1356,12 +1356,15 @@ Some commonly used searches.
         (:name "drafts" :query "tag:draft" :key "d")
         (:name "all mail" :query "*" :key "a" :sort-order newest-first)))
 #+END_SRC
-Keybindings to open mail buffer.
+Accessing mail, including checking for new mail.
 #+BEGIN_SRC emacs-lisp
 (defun gm/open-mail ()
   (interactive)
   (shell-command "systemctl --user start checkmail.timer")
   (notmuch))
+
+(advice-add 'notmuch-poll-and-refresh-this-buffer :before
+            (lambda (&rest r) (interactive) (shell-command "~/checkmail.sh")))
 
 (bind-key "C-c m" #'gm/open-mail)
 #+END_SRC
