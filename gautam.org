@@ -262,6 +262,10 @@ Also, I have lots of disk space, and not so much patience when I lose an importa
 (setq vc-make-backup-files t)
 (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
 #+END_SRC
+Store more undo information in memory.
+#+BEGIN_SRC emacs-lisp
+(setq undo-limit 250000)
+#+END_SRC
 **** History
 It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
 #+BEGIN_SRC emacs-lisp
