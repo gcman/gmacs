@@ -743,8 +743,7 @@ Version 2017-01-08"
         (fill-region p1 p2)))
     (put this-command 'compact-p (not compact-p))))
 
-(global-set-key [remap fill-paragraph]
-                #'xah-fill-or-unfill)
+(bind-key "M-q" #'xah-fill-or-unfill)
 #+END_SRC
 *** Join Line
 This allows me to combine text over multiple lines into one line.
@@ -1256,6 +1255,23 @@ from lines like:
                  "\\documentclass[12pt]{article}
 \\usepackage{uts-assignment}
 \\renewcommand{\\maketitle}{}
+[NO-DEFAULT-PACKAGES]
+[EXTRA]"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+#+END_SRC
+***** MLA
+#+BEGIN_SRC emacs-lisp
+(with-eval-after-load 'ox-latex
+  (add-to-list 'org-latex-classes
+               '("gm-mla"
+                 "\\documentclass[12pt]{article}
+\\usepackage{uts-mla}
+\\renewcommand{\\maketitle}{}
+\\renewcommand{\\tableofcontents}{}
 [NO-DEFAULT-PACKAGES]
 [EXTRA]"
                  ("\\section{%s}" . "\\section*{%s}")
