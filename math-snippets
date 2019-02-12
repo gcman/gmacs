@@ -72,13 +72,13 @@ oint,ointegral
 oo,infinity
 opl,oplus
 ox,otimes
-pairsum,pairsum
 part,partial
 pd,partial
 pm,plus-minus
 prod,product
 prop,proportional-to
 ps,pairsum
+psum,pairsum
 pv,partial-derivative
 sec,sec
 seq,sequence

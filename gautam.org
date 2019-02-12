@@ -1454,13 +1454,17 @@ snippets. First, we create a suffix tree of all the math snippets.
                              `(define-conditional-key org-mode-map
                                   ,x (lambda () (interactive)
                                        (gm/math-snippet ,x)) (texmathp))))))
-  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
+  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets))
 
 (add-hook 'org-mode-hook #'gm/math-setup)
+#+END_SRC
+Then, we set up the creation of an actual snippet (note that its length is
+capped at 5 characters). The longest snippet is currently =binom=, for the
+binomial coefficient (choose function).
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
   (setq buff-cand
-        (loop for i from 1 to 6
+        (loop for i from 1 to 5
               collect (gm/last-n-chars i)))
   (setq comp (cadr (assoc key gm/math-completion)))
   (setq cand (loop for x in buff-cand if (member x comp)
@@ -1481,6 +1485,7 @@ And finally some utility functions.
           do (princ (concat key "," value "\n") (current-buffer)))))
 
 (defun gm/new-math-snippet (snippet-key snippet-name)
+  """Creates a new math snippet. If the given 'snippet-name' does not already exist, the given snippet-key is added as another expansion for that snippet name. Otherwise, the user is prompted with a yasnippet file in which they may write the code into which the snippet should expand."""
   (interactive
    (list
     (read-string "Snippet key: ")
