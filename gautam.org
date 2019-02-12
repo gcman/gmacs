@@ -1402,6 +1402,12 @@ called a prefix tree, also known as a trie.
 #+BEGIN_SRC emacs-lisp
 (require 'strie)
 #+END_SRC
+I use this file manipulation library to load and dump the math snippet data to a
+file.
+#+BEGIN_SRC emacs-lisp
+(use-package f)
+(use-package s)
+#+END_SRC
 *** Helper Functions
 **** Delete n Characters
 Delete n characters before the point.
@@ -1428,9 +1434,12 @@ I wrote this to reduce the amount of redundant code needed to set up the
 snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp
 (setq gm/math-snippet-file "~/.emacs.d/math-snippets")
+
 (defun gm/math-setup ()
   (interactive)
-  (setq gm/math-snippets (gm/read-from-file gm/math-snippet-file))
+  (setq gm/math-snippets
+        (loop for snippet in (s-split "\n" (f-read gm/math-snippet-file) t)
+              collect (cons (car (s-split "," snippet)) (car (cdr (s-split "," snippet))))))
   (setq gm/math-trie (strie-new))
   (loop for (key . value) in gm/math-snippets
         do (strie-add gm/math-trie (reverse key) value))
@@ -1445,10 +1454,9 @@ snippets. First, we create a suffix tree of all the math snippets.
                              `(define-conditional-key org-mode-map
                                   ,x (lambda () (interactive)
                                        (gm/math-snippet ,x)) (texmathp))))))
-  (gm/print-to-file gm/math-snippet-file gm/math-snippets)
-)
-(add-hook 'org-mode-hook 'gm/math-setup)
-#+END_SRC
+  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
+
+(add-hook 'org-mode-hook #'gm/math-setup)
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
   (setq buff-cand
@@ -1462,20 +1470,15 @@ snippets. First, we create a suffix tree of all the math snippets.
                                          (lambda (a b) (> (length a) (length b))))) key)
                       gm/math-snippets))
   (if snippet
-      (gm/snippet (car snippet) (cdr snippet)) (insert key)
-    ))
+      (gm/snippet (car snippet) (cdr snippet)) (insert key)))
 #+END_SRC
 And finally some utility functions.
 #+BEGIN_SRC emacs-lisp
-(defun gm/print-to-file (filename data)
+(defun gm/print-sorted-math-snippets-to-file (filename data)
+  (sort data (lambda (a b) (string< (car a) (car b))))
   (with-temp-file filename
-    (prin1 data (current-buffer))))
-
-(defun gm/read-from-file (filename)
-  (with-temp-buffer
-    (insert-file-contents filename)
-    (cl-assert (eq (point) (point-min)))
-    (read (current-buffer))))
+    (loop for (key . value) in data
+          do (princ (concat key "," value "\n") (current-buffer)))))
 
 (defun gm/new-math-snippet (snippet-key snippet-name)
   (interactive
@@ -1491,9 +1494,8 @@ And finally some utility functions.
     (unless (file-exists-p file-cand)
       (find-file file-cand)
       (yas-expand-snippet (yas-lookup-snippet "new-math-snippet")))
-    (gm/print-to-file gm/math-snippet-file gm/math-snippets)
-    (gm/math-setup)
-    ))
+    (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
+    (gm/math-setup)))
 #+END_SRC
 **** Tab Jump to Next LaTeX Position
 Modified from the =cdlatex-tab= function in =cdlatex.el=.
