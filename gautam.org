@@ -1216,6 +1216,18 @@ are exported to a filename derived from the headline text."
                (if (equal "" opt) opt (format "[%s]" opt))
                arg)))))
 #+END_SRC
+******* One Option (After Main)
+#+BEGIN_SRC emacs-lisp
+(org-add-link-type
+ "latex-opt-after" nil
+ (lambda (path desc format)
+   (when (eq format 'latex)
+     (let* ((desc-list (split-string desc ";"))
+            (opt (nth 1 desc-list))
+            (arg (nth 0 desc-list)))
+       (format "\\%s%s{%s}" path arg
+               (if (equal "" opt) opt (format "[%s]" opt)))))))
+#+END_SRC
 ****** Class Options
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-latex-classes
@@ -1276,9 +1288,7 @@ from lines like:
 [EXTRA]"
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")
-                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+                 ("\\subsubsection{%s}" . "\\subsubection*{%s}"))))
 #+END_SRC
 ***** Math Notes
 #+BEGIN_SRC emacs-lisp
@@ -1286,13 +1296,10 @@ from lines like:
              '("gm-notes"
                "\\documentclass{gm-notes}
 \\usepackage{gm-math}
-[NO-DEFAULT-PACKAGES]
-[EXTRA]"
+[NO-DEFAULT-PACKAGES]"
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
 #+END_SRC
 **** Export Settings
 #+BEGIN_SRC emacs-lisp

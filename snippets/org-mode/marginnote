@@ -2,4 +2,4 @@
 # name: margin-note
 # key: <m
 # --
-[[latex:marginpar][$0]]
+[[latex:mn][$0]]
