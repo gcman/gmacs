@@ -933,7 +933,6 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   (org-default-notes-file "~/org/inbox.org")
   (org-agenda-files '("~/org/inbox.org"
                       "~/org/gtd.org"
-                      "~/org/tickler.org"
                       "~/org/notes.org"
                       "~/org/gcal.org"))
   (org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
@@ -947,9 +946,6 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
                            ("t" "Todo [inbox]" entry
                             (file "~/org/inbox.org")
                             "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
-                           ("T" "Tickler" entry
-                            (file+headline "~/org/tickler.org" "Tickler")
-                            "* %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
                            ("j" "Journal" entry
                             (file+datetree "~/org/journal.org")
                             "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
@@ -1225,7 +1221,7 @@ are exported to a filename derived from the headline text."
      (let* ((desc-list (split-string desc ";"))
             (opt (nth 1 desc-list))
             (arg (nth 0 desc-list)))
-       (format "\\%s%s{%s}" path arg
+       (format "\\%s{%s}%s" path arg
                (if (equal "" opt) opt (format "[%s]" opt)))))))
 #+END_SRC
 ****** Class Options
