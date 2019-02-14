@@ -51,7 +51,7 @@
  '(nrepl-message-colors
    '("#dc322f" "#cb4b16" "#b58900" "#546E00" "#B4C342" "#00629D" "#2aa198" "#d33682" "#6c71c4"))
  '(org-agenda-files
-   '("~/org/inbox.org" "~/org/gtd.org" "~/org/tickler.org" "~/org/notes.org" "~/org/gcal.org"))
+   '("~/org/inbox.org" "~/org/gtd.org" "~/org/notes.org" "~/org/gcal.org"))
  '(org-capture-templates
    '(("a" "Appointment" entry
       (file "~/org/gcal.org")

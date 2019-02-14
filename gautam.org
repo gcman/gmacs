@@ -948,8 +948,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
                             "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
                            ("j" "Journal" entry
                             (file+datetree "~/org/journal.org")
-                            "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
-                           ))
+                            "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")))
   :delight (org-indent-mode))
 (setq org-hide-emphasis-markers t)
 (setq org-startup-indented t)
