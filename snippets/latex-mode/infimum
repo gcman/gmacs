@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: infimum
+# key: math-infimum
+# --
+\Inf $0
