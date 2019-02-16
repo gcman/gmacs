@@ -998,10 +998,7 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 ** LaTeX
 *** Keychord for Math Mode
 #+BEGIN_SRC emacs-lisp
-(defun gm/enter-math ()
-  (interactive)
-  (yas-expand-snippet (yas-lookup-snippet "enter-math-mode")))
-(key-chord-define org-mode-map "r4" #'gm/enter-math)
+(key-chord-define org-mode-map "r4" #'gm/enter-math-mode)
 #+END_SRC
 *** Autocomplete ~$$~
 #+BEGIN_SRC emacs-lisp
@@ -1427,6 +1424,19 @@ file.
 (use-package s)
 #+END_SRC
 *** Helper Functions
+**** Enter Math Mode
+This command will enter inline math mode if not in math mode, and exit otherwise.
+#+BEGIN_SRC emacs-lisp
+(defun gm/enter-math-mode ()
+  (interactive)
+  (if (texmathp)
+      (progn
+        (goto-char (org-element-property :begin (org-element-context)))
+        (forward-char)
+        (forward-sexp))
+    (insert "\\(\\)")
+    (backward-char 2)))
+#+END_SRC
 **** Delete n Characters
 Delete n characters before the point.
 #+BEGIN_SRC emacs-lisp
