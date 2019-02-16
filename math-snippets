@@ -8,7 +8,6 @@ QQ,rational
 RR,real
 ZZ,integers
 [,square-brackets
-\\le,less-than
 ^,superscript
 _,subscript
 abs,abs
@@ -43,7 +42,7 @@ ge,greater-than
 gr,gradient
 iint,iintegral
 im,image
-inf,infinity
+inf,infimum
 inn,in
 int,integral
 inv,inverse
@@ -91,6 +90,7 @@ sr,squared
 st,such-that
 star,star
 sum,sum
+sup,supremum
 tan,tan
 then,implies
 to,to

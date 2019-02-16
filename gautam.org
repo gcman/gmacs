@@ -1445,6 +1445,7 @@ Return the last n characters before the point.
   (let ((len (length key)))
         (progn
           (gm/delete-chars (- len 1))
+          (when (= (char-before) ?\\) (gm/delete-chars 1))
           (yas-expand-snippet (yas-lookup-snippet snippet)))))
 #+END_SRC
 **** Generate Snippets
