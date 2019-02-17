@@ -86,7 +86,7 @@
  '(org-todo-keywords
    '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
  '(package-selected-packages
-   '(f counsel-notmuch notmuch alert smex flx htmlize emacs-async linum-relative ace-window browse-kill-ring sudo pdf-tools auctex org-bullets org-gcal ox-hugo org-cliplink org-wc rainbow-mode elpy flycheck counsel swiper ivy use-package))
+   '(unfill f counsel-notmuch notmuch alert smex flx htmlize emacs-async linum-relative ace-window browse-kill-ring sudo pdf-tools auctex org-bullets org-gcal ox-hugo org-cliplink org-wc rainbow-mode elpy flycheck counsel swiper ivy use-package))
  '(pos-tip-background-color "#eee8d5")
  '(pos-tip-foreground-color "#586e75")
  '(preview-auto-cache-preamble t)
