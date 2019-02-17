@@ -75,7 +75,7 @@
       "** %^{Heading}
 :PROPERTIES:
 :CREATED: %U
-:END:")) t)
+:END:")))
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
  '(org-refile-targets
@@ -95,7 +95,8 @@
      ("," . preview-default-option-list)
      "]{preview}[2004/11/05]"))
  '(safe-local-variable-values
-   '((after-save-hook . org-babel-tangle)
+   '((after-save-hook . org-hugo-export-wim-to-md)
+     (after-save-hook . org-babel-tangle)
      (eval ov-highlight-load)
      (after-save-hook . gm/org-latex-export)
      (org-hugo-auto-export-on-save . t)))

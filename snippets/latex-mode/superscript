@@ -2,4 +2,4 @@
 # name: superscript
 # key: math-superscript
 # --
-^{$1}$0
+^{$1}

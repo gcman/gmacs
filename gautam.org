@@ -1615,7 +1615,7 @@ Activate the subscript command for all digits.
       (delete-backward-char 1)
       (backward-char)
       (delete-backward-char 1))))
-(advice-add 'yas-next-field-or-maybe-expand-snippet
+(advice-add 'yas-exit-snippet
             :after #'gm/simplify-math-script)
 #+END_SRC
 **** Fraction
