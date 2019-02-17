@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: star
+# key: math-star
 # --
 ^\star $0
