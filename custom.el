@@ -64,20 +64,45 @@
 :PROPERTIES:
 :CREATED: %U
 :END:")
-     ("T" "Tickler" entry
-      (file+headline "~/org/tickler.org" "Tickler")
-      "* %i%?
-:PROPERTIES:
-:CREATED: %U
-:END:")
      ("j" "Journal" entry
       (file+datetree "~/org/journal.org")
       "** %^{Heading}
 :PROPERTIES:
 :CREATED: %U
-:END:")))
+:END:")
+     ("e" "euler" entry
+      (file+olp "~/website/content-org/blog.org" "Euler")
+      "** Project Euler %^{Problem Number}: %^{Problem Name} %^g
+:PROPERTIES:
+:EXPORT_FILE_NAME: %\\1
+:EXPORT_DATE: %u
+:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.
+:END:
+*** Problem Statement
+%?
+*** My Algorithm")))
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
+ '(org-format-latex-header
+   "\\documentclass{article}
+\\usepackage[usenames]{color}
+[PACKAGES]
+[DEFAULT-PACKAGES]
+\\pagestyle{empty}             % do not remove
+\\usepackage{gm-math}
+% The settings below are copied from fullpage.sty
+\\setlength{\\textwidth}{\\paperwidth}
+\\addtolength{\\textwidth}{-3cm}
+\\setlength{\\oddsidemargin}{1.5cm}
+\\addtolength{\\oddsidemargin}{-2.54cm}
+\\setlength{\\evensidemargin}{\\oddsidemargin}
+\\setlength{\\textheight}{\\paperheight}
+\\addtolength{\\textheight}{-\\headheight}
+\\addtolength{\\textheight}{-\\headsep}
+\\addtolength{\\textheight}{-\\footskip}
+\\addtolength{\\textheight}{-3cm}
+\\setlength{\\topmargin}{1.5cm}
+\\addtolength{\\topmargin}{-2.54cm}")
  '(org-refile-targets
    '(("~/org/gtd.org" :maxlevel . 3)
      ("~/org/someday.org" :level . 1)
