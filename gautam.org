@@ -1581,11 +1581,11 @@ brackets are added to ensure proper LaTeX rendering.
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-mode-hook
-          (dotimes (n 10)
+          (lambda () (dotimes (n 10)
             (eval (macroexpand
                    `(define-conditional-key org-mode-map
                         (number-to-string ,n)
-                        (gm/math-subscript (number-to-string ,n)) (texmathp))))))
+                        (gm/math-subscript (number-to-string ,n)) (texmathp)))))))
 #+END_SRC
 **** Simplify Super/Subscripts
 #+BEGIN_SRC emacs-lisp
