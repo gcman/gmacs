@@ -914,15 +914,19 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
                         ("~/org/someday.org" :level . 1)
                         ("~/org/tickler.org" :maxlevel . 2)
                         ("~/org/notes.org" :maxlevel . 2)))
-  (org-capture-templates '(("a" "Appointment" entry
-                            (file "~/org/gcal.org")
-                            "* %i%? \n%^T\n")
-                           ("t" "Todo [inbox]" entry
-                            (file "~/org/inbox.org")
-                            "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
-                           ("j" "Journal" entry
-                            (file+datetree "~/org/journal.org")
-                            "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")))
+  (org-capture-templates
+   '(("a" "Appointment" entry
+      (file "~/org/gcal.org")
+      "* %i%? \n%^T\n")
+     ("t" "Todo [inbox]" entry
+      (file "~/org/inbox.org")
+      "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
+     ("j" "Journal" entry
+      (file+datetree "~/org/journal.org")
+      "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
+     ("e" "euler" entry
+      (file+olp "~/website/content-org/blog.org" "Euler")
+      "** Project Euler %^{Problem Number}: %^{Problem Name} %^g\n:PROPERTIES:\n:EXPORT_FILE_NAME: %\\1\n:EXPORT_DATE: %u\n:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.\n:END:\n*** Problem Statement\n%?\n*** My Algorithm")))
   :delight (org-indent-mode))
 (setq org-hide-emphasis-markers t)
 (setq org-startup-indented t)
