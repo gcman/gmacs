@@ -364,6 +364,7 @@ Use =ack= instead of =grep=.
 (use-package smex)
 #+END_SRC
 *** Proselinting
+Check for style and grammar mistakes.
 #+BEGIN_SRC emacs-lisp
 (use-package flycheck)
 (global-flycheck-mode)
@@ -402,6 +403,24 @@ Turn Emacs into basically a Python IDE.
 (add-hook 'python-mode-hook #'elpy-mode)
 (add-hook 'elpy-mode-hook #'py-autopep8-enable-on-save)
 (add-hook 'elpy-mode-hook #'flycheck-mode)
+#+END_SRC
+**** Lisp
+Vim-like speed key bindings, better than =paredit=.
+#+BEGIN_SRC emacs-lisp
+(use-package lispy)
+#+END_SRC
+Always activate.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+#+END_SRC
+Although I usually do major Elisp testing/debugging in the =*scratch*= buffer, I
+often do smaller such tasks using the =eval= minibuffer (accessed with =M-:=). Now I
+can use =lispy= in there.
+#+BEGIN_SRC emacs-lisp
+(defun conditionally-enable-lispy ()
+  (when (eq this-command 'eval-expression)
+    (lispy-mode 1)))
+(add-hook 'minibuffer-setup-hook #'conditionally-enable-lispy)
 #+END_SRC
 *** Company
 #+BEGIN_SRC emacs-lisp
@@ -768,7 +787,7 @@ Rename better.
   (let ((name (buffer-name))
         (filename (buffer-file-name)))
     (if (not (and filename (file-exists-p filename)))
-        (error "Buffer '%s' is not visiting a file!" name)
+        (error "Buffer '%s' is not visiting a file." name)
       (let ((new-name (read-file-name "New name: " filename)))
         (if (get-buffer new-name)
             (error "A buffer named '%s' already exists!" new-name)
