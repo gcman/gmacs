@@ -1567,26 +1567,30 @@ brackets are added to ensure proper LaTeX rendering.
   (memq (get-char-code-property char 'general-category)
         '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
 
-(defun gm/math-subscript ()
+(defun gm/math-subscript (n)
+  (interactive)
   (cond ((gm/char-is-letter (char-before)) (insert "_"))
         ((string-match "\_[0-9]" (gm/last-n-chars 2))
          (save-excursion
            (backward-char)
            (insert "\{")
            (forward-char)
-           (insert "\}")))))
+           (insert "\}"))))
+  (insert n))
 #+END_SRC
-Activate the subscript command for all digits.
+Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp
-(loop for n from 0 to 9
-      collect (eval (macroexpand
-                     `(define-conditional-key org-mode-map
-                          (number-to-string ,n)
-                          (gm/math-subscript) (texmathp)))))
-(define-conditional-key org-mode-map "9" (gm/math-subscript) (texmathp))
+(add-hook 'org-mode-hook
+          (dotimes (n 10)
+            (eval (macroexpand
+                   `(define-conditional-key org-mode-map
+                        (number-to-string ,n)
+                        (gm/math-subscript (number-to-string ,n)) (texmathp))))))
 #+END_SRC
 **** Simplify Super/Subscripts
 #+BEGIN_SRC emacs-lisp
+(defun gm/enclose-sub-super-script (s)
+  (if (and (> (length s) 1) (not (eq (substring s 0 1) "{"))) (concat "{" s "}") s))
 (defun gm/simplify-math-script (&rest r)
   (when (string-match "[_^]{.}" (gm/last-n-chars 4))
     (save-excursion
