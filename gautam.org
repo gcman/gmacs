@@ -407,6 +407,12 @@ Turn Emacs into basically a Python IDE.
 #+BEGIN_SRC emacs-lisp
 (use-package company)
 #+END_SRC
+*** Which Key Mode
+Helpful when you want to see completion for a certain sequence of prefix keys.
+#+BEGIN_SRC emacs-lisp
+(use-package which-key)
+(which-key-mode)
+#+END_SRC
 *** Expand Region
 #+BEGIN_SRC emacs-lisp
 (use-package expand-region
@@ -1444,24 +1450,25 @@ snippets. First, we create a suffix tree of all the math snippets.
 
 (defun gm/math-setup ()
   (interactive)
-  (setq gm/math-snippets
-        (loop for snippet in (s-split "\n" (f-read gm/math-snippet-file) t)
-              collect (cons (car (s-split "," snippet)) (car (cdr (s-split "," snippet))))))
-  (setq gm/math-trie (strie-new))
-  (loop for (key . value) in gm/math-snippets
-        do (strie-add gm/math-trie (reverse key) value))
+  (prog1
+      (setq gm/math-snippets
+            (loop for snippet in (s-split "\n" (f-read gm/math-snippet-file) t)
+                  collect (cons (car (s-split "," snippet)) (car (cdr (s-split "," snippet))))))
+    (setq gm/math-trie (strie-new))
+    (loop for (key . value) in gm/math-snippets
+          do (strie-add gm/math-trie (reverse key) value))
 
-  (setq gm/math-suffix (mapcar #'car (strie-children gm/math-trie)))
+    (setq gm/math-suffix (mapcar #'car (strie-children gm/math-trie)))
 
-  (setq gm/math-completion
-        (loop for x in gm/math-suffix
-              collect (list x (mapcar (lambda (s) (reverse (substring s 1 (length s))))
-                                      (strie-complete gm/math-trie x)))
-              collect (eval (macroexpand
-                             `(define-conditional-key org-mode-map
-                                  ,x (lambda () (interactive)
-                                       (gm/math-snippet ,x)) (texmathp))))))
-  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets))
+    (setq gm/math-completion
+          (loop for x in gm/math-suffix
+                collect (list x (mapcar (lambda (s) (reverse (substring s 1 (length s))))
+                                        (strie-complete gm/math-trie x)))
+                collect (eval (macroexpand
+                               `(define-conditional-key org-mode-map
+                                    ,x (lambda () (interactive)
+                                         (gm/math-snippet ,x)) (texmathp))))))
+    (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)))
 
 (add-hook 'org-mode-hook #'gm/math-setup)
 #+END_SRC
@@ -1483,14 +1490,17 @@ binomial coefficient (choose function).
   (if snippet
       (gm/snippet (car snippet) (cdr snippet)) (insert key)))
 #+END_SRC
-And finally some utility functions.
+And finally some utility functions. First we get a way to dump our snippet data
+to a file.
 #+BEGIN_SRC emacs-lisp
 (defun gm/print-sorted-math-snippets-to-file (filename data)
-  (sort data (lambda (a b) (string< (car a) (car b))))
+  (setq data (sort data (lambda (a b) (string< (car a) (car b)))))
   (with-temp-file filename
     (loop for (key . value) in data
-          do (princ (concat key "," value "\n") (current-buffer)))))
-
+          do (insert (concat key "," value "\n")))))
+#+END_SRC
+Now we give the user a way to easily add snippets.
+#+BEGIN_SRC emacs-lisp
 (defun gm/new-math-snippet (snippet-key snippet-name)
   """Creates a new math snippet. If the given 'snippet-name' does not already exist, the given snippet-key is added as another expansion for that snippet name. Otherwise, the user is prompted with a yasnippet file in which they may write the code into which the snippet should expand."""
   (interactive
@@ -1567,38 +1577,34 @@ brackets are added to ensure proper LaTeX rendering.
   (memq (get-char-code-property char 'general-category)
         '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
 
-(defun gm/math-subscript (n)
-  (interactive)
+(defun gm/math-subscript (&rest r)
   (cond ((gm/char-is-letter (char-before)) (insert "_"))
         ((string-match "\_[0-9]" (gm/last-n-chars 2))
          (save-excursion
            (backward-char)
            (insert "\{")
            (forward-char)
-           (insert "\}"))))
-  (insert n))
+           (insert "\}")))))
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook
-          (lambda () (dotimes (n 10)
-            (eval (macroexpand
-                   `(define-conditional-key org-mode-map
-                        (number-to-string ,n)
-                        (gm/math-subscript (number-to-string ,n)) (texmathp)))))))
+(defun gm/bind-subscript (n)
+  (eval (macroexpand
+         `(define-conditional-key org-mode-map
+              (number-to-string ,n)
+              (gm/math-subscript) (texmathp)))))
+(dotimes (n 10) (gm/bind-subscript n))
+(gm/bind-subscript 9)
 #+END_SRC
 **** Simplify Super/Subscripts
 #+BEGIN_SRC emacs-lisp
-(defun gm/enclose-sub-super-script (s)
-  (if (and (> (length s) 1) (not (eq (substring s 0 1) "{"))) (concat "{" s "}") s))
 (defun gm/simplify-math-script (&rest r)
   (when (string-match "[_^]{.}" (gm/last-n-chars 4))
     (save-excursion
       (delete-backward-char 1)
       (backward-char)
       (delete-backward-char 1))))
-(advice-add 'yas-exit-snippet
-            :after #'gm/simplify-math-script)
+(add-hook 'yas-exit-snippet-hook #'gm/simplify-math-script)
 #+END_SRC
 **** Fraction
 Typing "/" after an appropriate block (a number or a balanced set of
@@ -1717,4 +1723,4 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
   ("-" (gm/snippet "" "conjugate") "-"))
 
 (define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (texmathp))
-#+END_SRC
+#+END_
