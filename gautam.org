@@ -1529,7 +1529,7 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
         (cond
          ((looking-at "}\\|\\]\\|)")
           (forward-char 1)
-          (if (looking-at "[^_\\^({\\[]")
+          (if (or (looking-at "\\\\") (looking-at "[^_\\^({\\[]"))
               (throw 'stop t)))
          ((= (following-char) ?$)
           (while (= (following-char) ?$) (forward-char 1))

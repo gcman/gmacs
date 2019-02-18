@@ -120,7 +120,12 @@
      ("," . preview-default-option-list)
      "]{preview}[2004/11/05]"))
  '(safe-local-variable-values
-   '((after-save-hook . org-hugo-export-wim-to-md)
+   '((after-save-hook lambda nil
+                      (save-excursion
+                        (org-hugo-export-wim-to-md)))
+     (after-save-hook lambda nil
+                      (save-excursion org-hugo-export-wim-to-md))
+     (after-save-hook . org-hugo-export-wim-to-md)
      (after-save-hook . org-babel-tangle)
      (eval ov-highlight-load)
      (after-save-hook . gm/org-latex-export)
