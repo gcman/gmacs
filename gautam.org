@@ -1723,4 +1723,4 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
   ("-" (gm/snippet "" "conjugate") "-"))
 
 (define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (texmathp))
-#+END_
+#+END_SRC

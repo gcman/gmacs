@@ -16,6 +16,7 @@ ale,ale
 aleph,aleph
 asin,asin
 atan,atan
+bigop,big-operator
 binom,choose
 bol,bol
 cb,cubed
