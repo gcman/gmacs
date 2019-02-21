@@ -80,9 +80,10 @@
 :END:
 *** Problem Statement
 %?
-*** My Algorithm")))
+*** My Algorithm")) t)
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
+ '(org-ellipsis "⤵#")
  '(org-format-latex-header
    "\\documentclass{article}
 \\usepackage[usenames]{color}
@@ -111,7 +112,7 @@
  '(org-todo-keywords
    '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
  '(package-selected-packages
-   '(lispy which-key unfill f counsel-notmuch notmuch alert smex flx htmlize emacs-async linum-relative ace-window browse-kill-ring sudo pdf-tools auctex org-bullets org-gcal ox-hugo org-cliplink org-wc rainbow-mode elpy flycheck counsel swiper ivy use-package))
+   '(beacon hungry-delete lispy which-key unfill f counsel-notmuch notmuch alert smex flx htmlize emacs-async linum-relative ace-window browse-kill-ring sudo pdf-tools auctex org-bullets org-gcal ox-hugo org-cliplink org-wc rainbow-mode elpy flycheck counsel swiper ivy use-package))
  '(pos-tip-background-color "#eee8d5")
  '(pos-tip-foreground-color "#586e75")
  '(preview-auto-cache-preamble t)

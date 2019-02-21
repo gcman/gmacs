@@ -9,14 +9,15 @@
 Always load up a server when you open Emacs. If a server is already running,
 make sure not to start another one.
 #+BEGIN_SRC emacs-lisp
-(defun --running-as-server ()
-  "Returns true if `server-start' has been called."
-  (condition-case nil
-      (and (boundp 'server-process)
-           (memq (process-status server-process)
-                 '(connect listen open run)))
-    (error)))
-(unless (--running-as-server) (server-start))
+;; (defun --running-as-server ()
+;;   "Returns true if `server-start' has been called."
+;;   (condition-case nil
+;;       (and (boundp 'server-process)
+;;            (memq (process-status server-process)
+;;                  '(connect listen open run)))
+;;     (error)))
+;; (unless (--running-as-server) (server-start))
+(server-start)
 #+END_SRC
 ** Time Startup
 On start-up, display how quickly Emacs started up.
@@ -681,17 +682,12 @@ This used to be a feature of Emacs.
 (defun xah-cut-line-or-region ()
   "Cut current line, or text selection.
 When `universal-argument' is called first, cut whole buffer (respects `narrow-to-region').
-
 URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
 Version 2015-06-10"
   (interactive)
-  (if current-prefix-arg
-      (progn ; not using kill-region because we don't want to include previous kill
-        (kill-new (buffer-string))
-        (delete-region (point-min) (point-max)))
     (progn (if (use-region-p)
                (kill-region (region-beginning) (region-end) t)
-             (kill-region (line-beginning-position) (line-beginning-position 2))))))
+             (kill-region (line-beginning-position) (line-beginning-position 2)))))
 
 (defun xah-copy-line-or-region ()
   "Copy current line, or text selection.
@@ -757,6 +753,82 @@ This allows me to combine text over multiple lines into one line.
 (bind-key "C-z" 'undo)
 (bind-key "C-x C-u" 'undo)
 #+END_SRC
+*** Forward Paragraph
+Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
+Binds Part 2: A peeve with paragraphs · Endless Parentheses]].
+#+BEGIN_SRC emacs-lisp
+(bind-key "M-a" 'endless/backward-paragraph)
+(bind-key "M-e" 'endless/forward-paragraph)
+
+(defun endless/forward-paragraph (&optional n)
+  "Advance just past next blank line."
+  (interactive "p")
+  (let ((para-commands
+         '(endless/forward-paragraph endless/backward-paragraph)))
+    ;; Only push mark if it's not active and we're not repeating.
+    (or (use-region-p)
+        (not (member this-command para-commands))
+        (member last-command para-commands)
+        (push-mark))
+    ;; The actual movement.
+    (dotimes (_ (abs n))
+      (if (> n 0)
+          (skip-chars-forward "\n[:blank:]")
+        (skip-chars-backward "\n[:blank:]"))
+      (if (search-forward-regexp
+           "\n[[:blank:]]*\n[[:blank:]]*" nil t (cl-signum n))
+          (goto-char (match-end 0))
+        (goto-char (if (> n 0) (point-max) (point-min)))))))
+
+(defun endless/backward-paragraph (&optional n)
+  "Go back up to previous blank line."
+  (interactive "p")
+  (endless/forward-paragraph (- n)))
+#+END_SRC
+*** Better Narrowing
+From [[http://endlessparentheses.com/emacs-narrow-or-widen-dwim.html][Emacs narrow-or-widen-dwim · Endless Parentheses]].
+#+BEGIN_SRC emacs-lisp
+(defun narrow-or-widen-dwim (p)
+  "Widen if buffer is narrowed, narrow-dwim otherwise.
+Dwim means: region, org-src-block, org-subtree, or
+defun, whichever applies first. Narrowing to
+org-src-block actually calls `org-edit-src-code'.
+
+With prefix P, don't widen, just narrow even if buffer
+is already narrowed."
+  (interactive "P")
+  (declare (interactive-only))
+  (cond ((and (buffer-narrowed-p) (not p)) (widen))
+        ((region-active-p)
+         (narrow-to-region (region-beginning)
+                           (region-end)))
+        ((derived-mode-p 'org-mode)
+         ;; `org-edit-src-code' is not a real narrowing
+         ;; command. Remove this first conditional if
+         ;; you don't want it.
+         (cond ((ignore-errors (org-edit-src-code) t)
+                (delete-other-windows))
+               ((ignore-errors (org-narrow-to-block) t))
+               (t (org-narrow-to-subtree))))
+        ((derived-mode-p 'latex-mode)
+         (LaTeX-narrow-to-environment))
+        (t (narrow-to-defun))))
+
+(define-key ctl-x-map "n" #'narrow-or-widen-dwim)
+#+END_SRC
+Then we can use =narrow-or-widen-dwim= to easily edit org =src= blocks.
+#+BEGIN_SRC emacs-lisp
+(eval-after-load 'org-src
+  '(define-key org-src-mode-map
+     "\C-x\C-s" #'org-edit-src-exit))
+#+END_SRC
+*** Delete Better
+When using =C-d= or =Backspace=, delete all white space in a certain direction, and
+not just one.
+#+BEGIN_SRC emacs-lisp
+(use-package hungry-delete)
+(global-hungry-delete-mode)
+#+END_SRC
 *** Better Buffers
 Kill better.
 #+BEGIN_SRC emacs-lisp
@@ -809,6 +881,14 @@ Use ibuffer.
 (require 'ibuffer)
 (bind-key "C-x C-b" 'ibuffer)
 (autoload 'ibuffer "ibuffer" "List buffers." t)
+#+END_SRC
+*** Beacon Mode
+Never lose your cursor again.
+#+BEGIN_SRC emacs-lisp
+(use-package beacon)
+(beacon-mode 1)
+(setq beacon-push-mark 35)
+(setq beacon-color "#b58900")
 #+END_SRC
 *** Window Management
 #+BEGIN_SRC emacs-lisp
@@ -951,7 +1031,8 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
       "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
      ("e" "euler" entry
       (file+olp "~/website/content-org/blog.org" "Euler")
-      "** Project Euler %^{Problem Number}: %^{Problem Name} %^g\n:PROPERTIES:\n:EXPORT_FILE_NAME: %\\1\n:EXPORT_DATE: %u\n:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.\n:END:\n*** Problem Statement\n%?\n*** My Algorithm")))
+      "** Project Euler %^{Problem Number}: %^{Problem Name} %^g\n:PROPERTIES:\n:EXPORT_FILE_NAME: %\\1\n:EXPORT_DATE: %u\n:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.\n:END:\n*** Problem Statement\n%?\n*** My Algorithm"))
+   (org-src-lang-modes '(("emacs-lisp" 'lispy-mode))))
   :delight (org-indent-mode))
 (setq org-hide-emphasis-markers t)
 (setq org-startup-indented t)
@@ -982,8 +1063,10 @@ updated when I archive a subtree.
 *** Org Babel
 #+BEGIN_SRC emacs-lisp
 (org-babel-do-load-languages
- 'org-babel-load-languages '((python . t)))
+ 'org-babel-load-languages '((python . t)
+                             (latex . t)))
 (setq org-babel-python-command "python3.6")
+(setq org-babel-latex-command "pdflatex")
 #+END_SRC
 ** Prettifying
 *** Org Bullets
