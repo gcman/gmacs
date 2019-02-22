@@ -83,7 +83,7 @@
 *** My Algorithm")) t)
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
- '(org-ellipsis "⤵#")
+ '(org-ellipsis "⬎")
  '(org-format-latex-header
    "\\documentclass{article}
 \\usepackage[usenames]{color}
