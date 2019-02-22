@@ -9,14 +9,6 @@
 Always load up a server when you open Emacs. If a server is already running,
 make sure not to start another one.
 #+BEGIN_SRC emacs-lisp
-;; (defun --running-as-server ()
-;;   "Returns true if `server-start' has been called."
-;;   (condition-case nil
-;;       (and (boundp 'server-process)
-;;            (memq (process-status server-process)
-;;                  '(connect listen open run)))
-;;     (error)))
-;; (unless (--running-as-server) (server-start))
 (server-start)
 #+END_SRC
 ** Time Startup
@@ -1001,6 +993,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   :init
   (require 'org)
   (require 'ox-latex)
+  (require 'org-protocol)
   (use-package ox-hugo
     :after ox)
   :bind (("C-c l" . org-store-link)
@@ -1031,7 +1024,10 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
       "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
      ("e" "euler" entry
       (file+olp "~/website/content-org/blog.org" "Euler")
-      "** Project Euler %^{Problem Number}: %^{Problem Name} %^g\n:PROPERTIES:\n:EXPORT_FILE_NAME: %\\1\n:EXPORT_DATE: %u\n:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.\n:END:\n*** Problem Statement\n%?\n*** My Algorithm"))
+      "** Project Euler %^{Problem Number}: %^{Problem Name} %^g\n:PROPERTIES:\n:EXPORT_FILE_NAME: %\\1\n:EXPORT_DATE: %u\n:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.\n:END:\n*** Problem Statement\n%?\n*** My Algorithm")
+     ("b" "Bookmark"  entry
+      (file "~/org/inbox.org")
+      "* [[%:link][%:description]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%:initial\n%?"))
    (org-src-lang-modes '(("emacs-lisp" 'lispy-mode))))
   :delight (org-indent-mode))
 (setq org-hide-emphasis-markers t)
