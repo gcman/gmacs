@@ -1499,9 +1499,13 @@ don't require the use of =yasnippets=.
 (require 'hydra)
 #+END_SRC
 To automate the generation of my main math snippets, I use a data structure
-called a prefix tree, also known as a trie.
+called a radix tree.
 #+BEGIN_SRC emacs-lisp
-(require 'strie)
+(require 'radix-tree)
+#+END_SRC
+I use =dash.el= to help with some better list processing.
+#+BEGIN_SRC emacs-lisp
+(require 'dash)
 #+END_SRC
 I use this file manipulation library to load and dump the math snippet data to a
 file.
@@ -1544,53 +1548,63 @@ Return the last n characters before the point.
           (when (= (char-before) ?\\) (gm/delete-chars 1))
           (yas-expand-snippet (yas-lookup-snippet snippet)))))
 #+END_SRC
+**** Get String from File
+Put file contents into string. Not recommended for large files.
+#+BEGIN_SRC emacs-lisp
+(defun get-string-from-file (path)
+  (with-temp-buffer
+    (insert-file-contents path)
+    (buffer-string)))
+#+END_SRC
 **** Generate Snippets
 I wrote this to reduce the amount of redundant code needed to set up the
 snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp
-(setq gm/math-snippet-file "~/.emacs.d/math-snippets")
+(setq gm/math-snippet-file "~/.emacs.d/math-snippets.el")
 
 (defun gm/math-setup ()
-  (interactive)
-  (prog1
-      (setq gm/math-snippets
-            (loop for snippet in (s-split "\n" (f-read gm/math-snippet-file) t)
-                  collect (cons (car (s-split "," snippet)) (car (cdr (s-split "," snippet))))))
-    (setq gm/math-trie (strie-new))
-    (loop for (key . value) in gm/math-snippets
-          do (strie-add gm/math-trie (reverse key) value))
+  (setq gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
+  (setq gm/math-suffix
+        (--reduce-from (radix-tree-insert acc (car it) (cdr it))
+                       radix-tree-empty (mapcar (lambda (x) (cons (reverse (car x)) (cdr x)))
+                                                gm/math-snippets)))
+  (loop for x in (delete-dups (mapcar (lambda (x) (substring (car x) (1- (length (car x))) (length (car x)))) gm/math-snippets))
+        collect (eval (macroexpand
+                       `(define-conditional-key org-mode-map
+                            ,x (lambda () (interactive)
+                                 (gm/math-snippet ,x)) (texmathp)))))
 
-    (setq gm/math-suffix (mapcar #'car (strie-children gm/math-trie)))
-
-    (setq gm/math-completion
-          (loop for x in gm/math-suffix
-                collect (list x (mapcar (lambda (s) (reverse (substring s 1 (length s))))
-                                        (strie-complete gm/math-trie x)))
-                collect (eval (macroexpand
-                               `(define-conditional-key org-mode-map
-                                    ,x (lambda () (interactive)
-                                         (gm/math-snippet ,x)) (texmathp))))))
-    (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)))
+  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets))
 
 (add-hook 'org-mode-hook #'gm/math-setup)
+#+END_SRC
+We make a completion function.
+#+BEGIN_SRC emacs-lisp
+(defun radix-tree-keys (subtree prefix)
+  (let (keys '())
+    (radix-tree-iter-mappings (radix-tree-subtree subtree prefix)
+			                  (lambda (key val)
+				                (!cons (cons (concat prefix key) val) keys)))
+    keys))
+#+END_SRC
+And a function to get the possible completion candidates from the buffer.
+#+BEGIN_SRC emacs-lisp
+(defun gm/buff-cand (n key)
+  (loop for i from 1 to n
+        collect (concat (gm/last-n-chars i) key)))
 #+END_SRC
 Then, we set up the creation of an actual snippet (note that its length is
 capped at 5 characters). The longest snippet is currently =binom=, for the
 binomial coefficient (choose function).
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
-  (setq buff-cand
-        (loop for i from 1 to 5
-              collect (gm/last-n-chars i)))
-  (setq comp (cadr (assoc key gm/math-completion)))
-  (setq cand (loop for x in buff-cand if (member x comp)
-                   collect x))
-  (setq snippet (assoc
-                      (concat (car (sort cand
-                                         (lambda (a b) (> (length a) (length b))))) key)
-                      gm/math-snippets))
-  (if snippet
-      (gm/snippet (car snippet) (cdr snippet)) (insert key)))
+  (setq buff-cand (gm/buff-cand 5 key))
+  (setq completions
+(loop for x in (radix-tree-keys gm/math-suffix key) if (member (reverse (car x)) buff-cand)
+        collect x))
+(setq snippet (car (sort completions (lambda (a b) (> (length (car a)) (length (car b)))))))
+(if snippet
+    (gm/snippet (car snippet) (cdr snippet)) (insert key)))
 #+END_SRC
 And finally some utility functions. First we get a way to dump our snippet data
 to a file.
@@ -1598,8 +1612,7 @@ to a file.
 (defun gm/print-sorted-math-snippets-to-file (filename data)
   (setq data (sort data (lambda (a b) (string< (car a) (car b)))))
   (with-temp-file filename
-    (loop for (key . value) in data
-          do (insert (concat key "," value "\n")))))
+    (insert (pp data))))
 #+END_SRC
 Now we give the user a way to easily add snippets.
 #+BEGIN_SRC emacs-lisp

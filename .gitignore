@@ -4,8 +4,8 @@
 !elisp/
 !README.md
 !.gitignore
+!math-snippets.el
 !abbrevs.el
 !custom.el
 !init.el
 !gautam.org
-!math-snippets
