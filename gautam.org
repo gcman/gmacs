@@ -1765,6 +1765,32 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
 
 (define-conditional-key org-mode-map "/" #'gm/math-frac (texmathp))
 #+END_SRC
+**** Insert LaTeX Newline
+I wanted to make writing environments like =split= and =align= easier, so that I
+wouldn't have to manually add the newline (=\\=) at the end of each line required
+to make LaTeX happy.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-split-p ()
+  (when (texmathp)
+    (save-excursion
+      (goto-char (cdr texmathp-why))
+      (forward-line)
+      (when (equal (buffer-substring-no-properties (line-beginning-position) (line-end-position))
+                   "\\begin{split}") t))))
+
+(defun gm/tex-newline ()
+  (interactive)
+  (if (equal (buffer-substring-no-properties (line-beginning-position) (line-end-position))
+             "\\begin{split}")
+      (newline)
+    (progn (end-of-line)
+           (if (equal (gm/last-n-chars 2) "\\\\")
+               (forward-line)
+             (insert " \\\\")
+             (newline)))))
+
+(define-conditional-key org-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
+#+END_SRC
 *** Math Symbols
 #+BEGIN_SRC emacs-lisp
 (defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
