@@ -958,6 +958,25 @@ Paste URL with extracted title as the description.
   :defer t)
 (bind-key "C-c y" 'org-cliplink org-mode-map)
 #+END_SRC
+** Switch Theme
+I only use Solarized Light and Dark, and I switch between them depending on my
+surroundings. If I am in a brightly lit room, I prefer to use the light theme
+because the dark theme allows too much glare. If it is late at night, I prefer
+the dark theme, because there is less bright light going into my eyes.
+#+BEGIN_SRC emacs-lisp
+(setq gm/theme nil)
+(defun gm/switch-theme ()
+  (interactive)
+  (if (equal gm/theme nil)
+      (progn (load-theme 'solarized-light)
+             (setq gm/theme t))
+    (progn (load-theme 'solarized-dark)
+           (setq gm/theme nil)))
+  (org-bullets-mode)
+  (org-bullets-mode))
+
+(bind-key "C-c t" #'gm/switch-theme)
+#+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
 (require 'key-chord)
@@ -1409,6 +1428,7 @@ Insert dollar signs electrically.
 			              (cons "$" "$"))))
 #+END_SRC
 * Mail
+
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp
 (use-package notmuch)
@@ -1458,7 +1478,8 @@ Accessing mail, including checking for new mail.
 (defun gm/open-mail ()
   (interactive)
   (shell-command "systemctl --user start checkmail.timer")
-  (notmuch))
+  (notmuch)
+  (notmuch-refresh-all-buffers))
 
 (advice-add 'notmuch-poll-and-refresh-this-buffer :before
             (lambda (&rest r) (interactive) (shell-command "~/checkmail.sh")))
