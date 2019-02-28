@@ -619,7 +619,94 @@ default; set PAGE-P to non-nil to rotate only the current page.
             (pdf-view-revert-buffer nil t)
           (error "Rotation error!"))))))
 #+END_SRC
-
+*** Webmode
+#+BEGIN_SRC emacs-lisp
+(use-package web-mode
+  :init (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
+  :custom
+  (web-mode-markup-indent-offset 2)
+  (web-mode-css-indent-offset 2)
+  (web-mode-code-indent-offset 2))
+#+END_SRC
+*** Screencast
+**** Show Keypresses
+#+BEGIN_SRC emacs-lisp
+(require 'keycast)
+#+END_SRC
+**** GIF Screencast
+#+BEGIN_SRC emacs-lisp
+(require 'gif-screencast)
+(with-eval-after-load 'gif-screencast
+  (bind-key "<f8>" 'gif-screencast-toggle-pause gif-screencast-mode-map)
+  (bind-key "<f9>" 'gif-screencast-stop) gif-screencast-mode-map)
+#+END_SRC
+** Theme
+*** Solarized
+#+BEGIN_SRC emacs-lisp
+(use-package solarized-theme
+  :config (load-theme 'solarized-dark t))
+#+END_SRC
+*** Font Face
+Normally use Hack.
+#+BEGIN_SRC emacs-lisp
+(set-face-font 'default "Hack")
+(set-frame-font "Hack" nil t)
+(custom-set-faces
+ '(variable-pitch ((t (:family "Palatino Linotype")))))
+#+END_SRC
+*** Autofill
+#+BEGIN_SRC emacs-lisp
+(global-visual-line-mode 1)
+#+END_SRC
+Nicely wrap lines for text mode.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'text-mode-hook 'auto-fill-mode)
+(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
+(eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
+#+END_SRC
+**** 80 Columns
+#+BEGIN_SRC emacs-lisp
+(add-hook 'text-mode-hook
+          (lambda() (set-fill-column 80)))
+#+END_SRC
+*** Highlighting
+**** Syntax
+#+BEGIN_SRC emacs-lisp
+(global-font-lock-mode 1)
+#+END_SRC
+**** Rainbow Mode
+#+BEGIN_SRC emacs-lisp
+(use-package rainbow-mode)
+(rainbow-mode 1)
+(diminish 'rainbow-mode)
+#+END_SRC
+**** Source Code Blocks
+Native syntax highlighting for source blocks in org mode.
+#+BEGIN_SRC emacs-lisp
+(setq org-src-fontify-natively t
+      org-src-tab-acts-natively t
+      org-confirm-babel-evaluate nil
+      org-edit-src-content-indentation 0)
+#+END_SRC
+**** Parentheses
+#+BEGIN_SRC emacs-lisp
+(setq blink-matching-paren nil)
+(show-paren-mode t)
+(setq show-paren-delay 0)
+(setq show-paren-style 'expression)
+#+END_SRC
+**** Except in Large Buffers
+#+BEGIN_SRC emacs-lisp
+(defun buffer-too-big-p ()
+  (or (> (buffer-size) (* 5000 80))
+      (> (line-number-at-pos (point-max)) 5000)))
+(add-hook 'prog-mode-hook
+          (lambda ()
+            ;; turn off `linum-mode' when there are more than 5000 lines
+            (when (buffer-too-big-p)
+              (linum-mode -1)
+              (font-lock-mode -1))))
+#+END_SRC
 * Keybindings
 ** Conditional Keybindings
 Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
