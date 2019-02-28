@@ -703,8 +703,8 @@ This allows me to combine text over multiple lines into one line.
 Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
 Binds Part 2: A peeve with paragraphs · Endless Parentheses]].
 #+BEGIN_SRC emacs-lisp
-(bind-key "M-a" 'endless/backward-paragraph)
-(bind-key "M-e" 'endless/forward-paragraph)
+(bind-key "M-p" 'endless/backward-paragraph)
+(bind-key "M-n" 'endless/forward-paragraph)
 
 (defun endless/forward-paragraph (&optional n)
   "Advance just past next blank line."
@@ -730,6 +730,11 @@ Binds Part 2: A peeve with paragraphs · Endless Parentheses]].
   "Go back up to previous blank line."
   (interactive "p")
   (endless/forward-paragraph (- n)))
+#+END_SRC
+However, this is messed up in Org Mode.
+#+BEGIN_SRC emacs-lisp
+(bind-key "M-p" #'backward-paragraph org-mode-map)
+(bind-key "M-n" #'forward-paragraph org-mode-map)
 #+END_SRC
 *** Better Narrowing
 From [[http://endlessparentheses.com/emacs-narrow-or-widen-dwim.html][Emacs narrow-or-widen-dwim · Endless Parentheses]].
