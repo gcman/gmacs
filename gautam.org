@@ -299,7 +299,7 @@ Load them.
 (load "~/.emacs.d/abbrevs.el")
 #+END_SRC
 Always use this wonderful tool.
-#+BEGIN_SRC emacs-lispn
+#+BEGIN_SRC emacs-lisp
 (abbrev-mode 1)
 #+END_SRC
 Because it's always on, we don't need to know about it.
@@ -356,23 +356,16 @@ Use =ack= instead of =grep=.
 (use-package counsel)
 (use-package smex)
 #+END_SRC
-*** Proselinting
-Check for style and grammar mistakes.
-#+BEGIN_SRC emacs-lisp
-(use-package flycheck)
-(global-flycheck-mode)
-(flycheck-define-checker proselint
-  "A linter for prose."
-  :command ("proselint" source-inplace)
-  :error-patterns
-  ((warning line-start (file-name) ":" line ":" column ": "
-	    (id (one-or-more (not (any " "))))
-	    (message) line-end))
-  :modes (text-mode org-mode markdown-mode gfm-mode))
-
-(add-to-list 'flycheck-checkers 'proselint)
-#+END_SRC
 *** Programming
+Set up =flycheck=.
+#+BEGIN_SRC emacs-lisp
+(use-package flycheck
+  :defer t
+  :diminish
+  :init (global-flycheck-mode)
+  :custom
+  (flycheck-display-errors-delay .3))
+  #+END_SRC
 Check syntax.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'prog-mode-hook #'flycheck-mode)
@@ -383,6 +376,32 @@ Relative line numbers, useful for vim-like navigation with God Mode.
 #+BEGIN_SRC emacs-lisp
 (use-package linum-relative
   :defer t)
+#+END_SRC
+**** Flycheck Hydra
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-flycheck (:color blue)
+  "
+  ^
+  ^Flycheck^          ^Errors^            ^Checker^
+  ^────────^──────────^──────^────────────^───────^─────
+  _q_ quit            _<_ previous        _?_ describe
+  _M_ manual          _>_ next            _d_ disable
+  _v_ verify setup    _f_ check           _m_ mode
+  ^^                  _l_ list            _s_ select
+  ^^                  ^^                  ^^
+  "
+  ("q" nil)
+  ("<" flycheck-previous-error :color pink)
+  (">" flycheck-next-error :color pink)
+  ("?" flycheck-describe-checker)
+  ("M" flycheck-manual)
+  ("d" flycheck-disable-checker)
+  ("f" flycheck-buffer)
+  ("l" flycheck-list-errors)
+  ("m" flycheck-mode)
+  ("s" flycheck-select-checker)
+  ("v" flycheck-verify-setup))
+(bind-key "C-c f" #'hydra-flycheck/body)
 #+END_SRC
 **** Python
 #+BEGIN_SRC emacs-lisp
@@ -414,6 +433,28 @@ can use =lispy= in there.
   (when (eq this-command 'eval-expression)
     (lispy-mode 1)))
 (add-hook 'minibuffer-setup-hook #'conditionally-enable-lispy)
+#+END_SRC
+We don't want annoying comments about having, for example, =;;; package ---
+summary= at the top of an Emacs Lisp file.
+#+BEGIN_SRC emacs-lisp
+(defun disable-fylcheck-in-org-src-block ()
+  (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
+
+(add-hook 'org-src-mode-hook 'disable-fylcheck-in-org-src-block)
+#+END_SRC
+*** Proselinting
+Check prose style.
+#+BEGIN_SRC emacs-lisp
+(flycheck-define-checker proselint
+  "A linter for prose."
+  :command ("proselint" source-inplace)
+  :error-patterns
+  ((warning line-start (file-name) ":" line ":" column ": "
+	    (id (one-or-more (not (any " "))))
+	    (message) line-end))
+  :modes (text-mode org-mode markdown-mode gfm-mode))
+
+(add-to-list 'flycheck-checkers 'proselint)
 #+END_SRC
 *** Company
 #+BEGIN_SRC emacs-lisp
@@ -538,6 +579,7 @@ Basic configuration.
   (bind-key "h" 'pdf-annot-add-highlight-markup-annotation pdf-view-mode-map)
   (bind-key "t" 'pdf-annot-add-text-annotation pdf-view-mode-map)
   (bind-key "D" 'pdf-annot-delete pdf-view-mode-map)
+  (bind-key "r" #'pdf-view--rotate pdf-view-mode-map)
   :hook (pdf-view-mode pdf-view-midnight-minor-mode))
 #+END_SRC
 Allow rotation.
@@ -577,10 +619,7 @@ default; set PAGE-P to non-nil to rotate only the current page.
             (pdf-view-revert-buffer nil t)
           (error "Rotation error!"))))))
 #+END_SRC
-Bind rotation.
-#+BEGIN_SRC emacs-lisp
-(bind-key "r" #'pdf-view--rotate pdf-view-mode-map)
-#+END_SRC
+
 * Keybindings
 ** Conditional Keybindings
 Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
@@ -1549,7 +1588,8 @@ snippets. First, we create a suffix tree of all the math snippets.
                             ,x (lambda () (interactive)
                                  (gm/math-snippet ,x)) (texmathp)))))
 
-  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets))
+  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
+  (message nil))
 
 (add-hook 'org-mode-hook #'gm/math-setup)
 #+END_SRC
