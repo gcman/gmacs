@@ -525,6 +525,7 @@ Indicate mode with modeline.
 (add-hook 'god-mode-disabled-hook #'gm/god-mode-indicator)
 #+END_SRC
 *** PDF Tools
+Basic configuration.
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
   :pin manual
@@ -539,93 +540,46 @@ Indicate mode with modeline.
   (bind-key "D" 'pdf-annot-delete pdf-view-mode-map)
   :hook (pdf-view-mode pdf-view-midnight-minor-mode))
 #+END_SRC
-*** Webmode
+Allow rotation.
 #+BEGIN_SRC emacs-lisp
-(use-package web-mode
-  :init (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
-  :custom
-  (web-mode-markup-indent-offset 2)
-  (web-mode-css-indent-offset 2)
-  (web-mode-code-indent-offset 2))
+(defun pdf-view--rotate (&optional counterclockwise-p page-p)
+  "Rotate PDF 90 degrees.  Requires pdftk to work.\n
+Clockwise rotation is the default; set COUNTERCLOCKWISE-P to
+non-nil for the other direction.  Rotate the whole document by
+default; set PAGE-P to non-nil to rotate only the current page.
+\nWARNING: overwrites the original file, so be careful!"
+  (interactive)
+  ;; error out when pdftk is not installed
+  (if (null (executable-find "pdftk"))
+      (error "Rotation requires pdftk")
+    ;; only rotate in pdf-view-mode
+    (when (eq major-mode 'pdf-view-mode)
+      (let* ((rotate (if counterclockwise-p "left" "right"))
+             (file   (format "\"%s\"" (pdf-view-buffer-file-name)))
+             (page   (pdf-view-current-page))
+             (pages  (cond ((not page-p)                        ; whole doc?
+                            (format "1-end%s" rotate))
+                           ((= page 1)                          ; first page?
+                            (format "%d%s %d-end"
+                                    page rotate (1+ page)))
+                           ((= page (pdf-info-number-of-pages)) ; last page?
+                            (format "1-%d %d%s"
+                                    (1- page) page rotate))
+                           (t                                   ; interior page?
+                            (format "1-%d %d%s %d-end"
+                                    (1- page) page rotate (1+ page))))))
+        ;; empty string if it worked
+        (if (string= "" (shell-command-to-string
+                         (format (concat "pdftk %s cat %s "
+                                         "output %s.NEW "
+                                         "&& mv %s.NEW %s")
+                                 file pages file file file)))
+            (pdf-view-revert-buffer nil t)
+          (error "Rotation error!"))))))
 #+END_SRC
-*** Screencast
-**** Show Keypresses
+Bind rotation.
 #+BEGIN_SRC emacs-lisp
-(require 'keycast)
-#+END_SRC
-**** GIF Screencast
-#+BEGIN_SRC emacs-lisp
-(require 'gif-screencast)
-(with-eval-after-load 'gif-screencast
-  (bind-key "<f8>" 'gif-screencast-toggle-pause gif-screencast-mode-map)
-  (bind-key "<f9>" 'gif-screencast-stop) gif-screencast-mode-map)
-#+END_SRC
-** Theme
-*** Solarized
-#+BEGIN_SRC emacs-lisp
-(use-package solarized-theme
-  :config (load-theme 'solarized-dark t))
-#+END_SRC
-*** Font Face
-Normally use Hack.
-#+BEGIN_SRC emacs-lisp
-(set-face-font 'default "Hack")
-(set-frame-font "Hack" nil t)
-(custom-set-faces
- '(variable-pitch ((t (:family "Palatino Linotype")))))
-#+END_SRC
-*** Autofill
-#+BEGIN_SRC emacs-lisp
-(global-visual-line-mode 1)
-#+END_SRC
-Nicely wrap lines for text mode.
-#+BEGIN_SRC emacs-lisp
-(add-hook 'text-mode-hook 'auto-fill-mode)
-(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
-(eval-after-load "diminish" '(diminish 'auto-fill-mode-mode))
-#+END_SRC
-**** 80 Columns
-#+BEGIN_SRC emacs-lisp
-(add-hook 'text-mode-hook
-          (lambda() (set-fill-column 80)))
-#+END_SRC
-*** Highlighting
-**** Syntax
-#+BEGIN_SRC emacs-lisp
-(global-font-lock-mode 1)
-#+END_SRC
-**** Rainbow Mode
-#+BEGIN_SRC emacs-lisp
-(use-package rainbow-mode)
-(rainbow-mode 1)
-(diminish 'rainbow-mode)
-#+END_SRC
-**** Source Code Blocks
-Native syntax highlighting for source blocks in org mode.
-#+BEGIN_SRC emacs-lisp
-(setq org-src-fontify-natively t
-      org-src-tab-acts-natively t
-      org-confirm-babel-evaluate nil
-      org-edit-src-content-indentation 0)
-#+END_SRC
-**** Parentheses
-#+BEGIN_SRC emacs-lisp
-(setq blink-matching-paren nil)
-(show-paren-mode t)
-(setq show-paren-delay 0)
-(setq show-paren-style 'expression)
-#+END_SRC
-**** Except in Large Buffers
-#+BEGIN_SRC emacs-lisp
-(defun buffer-too-big-p ()
-  (or (> (buffer-size) (* 5000 80))
-      (> (line-number-at-pos (point-max)) 5000)))
-(add-hook 'prog-mode-hook
-          (lambda ()
-            ;; turn off `linum-mode' when there are more than 5000 lines
-            (when (buffer-too-big-p)
-              (linum-mode -1)
-              (font-lock-mode -1))))
+(bind-key "r" #'pdf-view--rotate pdf-view-mode-map)
 #+END_SRC
 * Keybindings
 ** Conditional Keybindings
@@ -1428,7 +1382,6 @@ Insert dollar signs electrically.
 			              (cons "$" "$"))))
 #+END_SRC
 * Mail
-
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp
 (use-package notmuch)
