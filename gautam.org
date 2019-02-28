@@ -49,12 +49,12 @@ them. I also set up ~use-package~ here.
 #+END_SRC
 I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
-(setq custom-file "~/.emacs.d/custom.el")
+(setq custom-file "~/.emacs.d/custom")
 (load custom-file)
 #+END_SRC
 I put my personal information in =private.el=.
 #+BEGIN_SRC emacs-lisp
-(load "~/.emacs.d/private.el")
+(load "~/.emacs.d/private")
 #+END_SRC
 ** Common Lisp
 #+BEGIN_SRC emacs-lisp
@@ -880,15 +880,10 @@ is already narrowed."
          (narrow-to-region (region-beginning)
                            (region-end)))
         ((derived-mode-p 'org-mode)
-         ;; `org-edit-src-code' is not a real narrowing
-         ;; command. Remove this first conditional if
-         ;; you don't want it.
          (cond ((ignore-errors (org-edit-src-code) t)
                 (delete-other-windows))
                ((ignore-errors (org-narrow-to-block) t))
                (t (org-narrow-to-subtree))))
-        ((derived-mode-p 'latex-mode)
-         (LaTeX-narrow-to-environment))
         (t (narrow-to-defun))))
 
 (define-key ctl-x-map "n" #'narrow-or-widen-dwim)
