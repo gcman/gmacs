@@ -695,10 +695,8 @@ Native syntax highlighting for source blocks in org mode.
 #+END_SRC
 **** Parentheses
 #+BEGIN_SRC emacs-lisp
-(setq blink-matching-paren nil)
-(show-paren-mode t)
-(setq show-paren-delay 0)
-(setq show-paren-style 'expression)
+(use-package rainbow-delimiters)
+(rainbow-delimiters-mode t)
 #+END_SRC
 **** Except in Large Buffers
 #+BEGIN_SRC emacs-lisp
