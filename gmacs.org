@@ -213,11 +213,6 @@ replace the built-in one with ours.
       (run-with-idle-timer 0 bjm/auto-save-interval #'bjm/auto-save-silent))
 #+END_SRC
 **** Modeline
-Keep a simpler modeline...
-#+BEGIN_SRC emacs-lisp
-(use-package diminish)
-#+END_SRC
-and a smarter one.
 #+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
   :defer 2
@@ -268,7 +263,7 @@ character 0, but from where they are indented.
 *** Indentation
 #+BEGIN_SRC emacs-lisp
 (setq-default indent-tabs-mode nil
-              tab-width 4)
+              tab-width 2)
 (setq indent-line-function #'insert-tab)
 #+END_SRC
 ** Ease of Use
@@ -485,7 +480,7 @@ Save abbreviations upon saving a file.
 Set up =flycheck=.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package flycheck
-  :delight "Ψ"
+  :diminish (flycheck-mode " Ψ")
   :config (global-flycheck-mode)
     <<proselint>>
   :custom (flycheck-display-errors-delay .3)
@@ -573,6 +568,7 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
 #+BEGIN_SRC emacs-lisp
 (use-package which-key
   :defer 2
+  :diminish
   :config (which-key-mode))
 #+END_SRC
 *** Expand Region
@@ -674,11 +670,11 @@ Indicate mode with modeline.
 (add-hook 'god-mode-enabled-hook #'gm/god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'gm/god-mode-indicator)
 #+END_SRC
-*** PDF Tools
+*** COMMENT PDF Tools
 Basic configuration.
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
-  :pin manual
+  :defer 2
   :config
   (setq-default pdf-view-display-size 'fit-page)
   (setq pdf-annot-activate-created-annotations t)
@@ -688,10 +684,17 @@ Basic configuration.
   (bind-key "t" 'pdf-annot-add-text-annotation pdf-view-mode-map)
   (bind-key "D" 'pdf-annot-delete pdf-view-mode-map)
   (bind-key "r" #'pdf-view--rotate pdf-view-mode-map)
-  :diminish pdf-view-midnight-minor-mode)
-
-(add-hook 'pdf-view-mode-hook #'pdf-view-midnight-minor-mode)
-(add-hook 'pdf-view-mode-hook #'pdf-view-fit-width-to-window)
+  :diminish pdf-view-midnight-minor-mode
+  :bind (:map pdf-view-mode-map
+              ("C-s" . counsel-grep-or-swiper)
+              ("h" . pdf-annot-add-highlight-markup-annotation)
+              ("t" . pdf-annot-add-text-annotation)
+              ("D". pdf-annot-delete)
+              ("r" . pdf-view--rotate))
+  :hook
+  (pdf-view-mode . pdf-view-midnight-minor-mode)
+  (pdf-view-mode . pdf-view-fit-width-to-window))
+(pdf-tools-install)
 #+END_SRC
 Allow rotation.
 #+BEGIN_SRC emacs-lisp
@@ -1091,6 +1094,7 @@ Use ibuffer.
 Never lose your cursor again.
 #+BEGIN_SRC emacs-lisp
 (use-package beacon
+  :diminish (beacon-mode " ☀")
   :config (beacon-mode 1)
   :custom
   (beacon-push-mark 35)
