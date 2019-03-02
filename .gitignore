@@ -1,11 +1,12 @@
 *
 !snippets/
-!elpa/
+!packages/
 !elisp/
 !README.md
 !.gitignore
 !math-snippets.el
 !abbrevs.el
 !custom.el
+!early-init.el
 !init.el
-!gautam.org
+!gmacs.org
