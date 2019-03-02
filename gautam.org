@@ -2,18 +2,18 @@
 #+PROPERTY: header-args :results silent
 * Starting Up
 ** Lexical Scoping
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 ;; -*- lexical-binding: t; -*-
 #+END_SRC
 ** Start Server
 Always load up a server when you open Emacs. If a server is already running,
 make sure not to start another one.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (server-start)
 #+END_SRC
 ** Time Startup
 On start-up, display how quickly Emacs started up.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-startup-hook
           (lambda ()
             (message "Emacs ready in %s with %d garbage collections."
@@ -23,19 +23,19 @@ On start-up, display how quickly Emacs started up.
                      gcs-done)))
 #+END_SRC
 ** Add Package Sources
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (when (>= emacs-major-version 24)
   (require 'package)
   (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t))
 #+END_SRC
 Use ~use-package~.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
 #+END_SRC
 Always.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'use-package)
 (setq use-package-verbose t)
 (setq use-package-always-ensure t)
@@ -44,20 +44,20 @@ Use ~M-x package-refresh-contents~ to reload the list of packages after adding t
 ** Add Elisp Directory and Custom Directory
 If I ever need to load files outside of my package system, I know where to find
 them. I also set up ~use-package~ here.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "~/.emacs.d/elisp/")
 #+END_SRC
 I put custom variables outside of my =init.el= file.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq custom-file "~/.emacs.d/custom")
 (load custom-file)
 #+END_SRC
 I put my personal information in =private.el=.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (load "~/.emacs.d/private")
 #+END_SRC
 ** Common Lisp
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'cl-lib)
 #+END_SRC
 * General Configuration
@@ -65,28 +65,28 @@ I put my personal information in =private.el=.
 *** Decluttering
 **** Splash Screen
 Get rid of that ugly splash screen.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq inhibit-splash-screen t)
 #+END_SRC
 **** Fullscreen
 Start emacs in glorious fullscreen.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 (setq frame-title-format "")
 #+END_SRC
 **** Bars
 Menus are not required; neither is the scroll bar.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (menu-bar-mode -1)
 (scroll-bar-mode -1)
 #+END_SRC
 It is no longer the 90s. Toolbars and their little icons are not cool.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (tool-bar-mode -1)
 #+END_SRC
 **** Cursor Blinking
 I find cursor blinking distracting.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (blink-cursor-mode 0)
 (when (display-graphic-p)
   (setq-default cursor-type 'box))
@@ -94,19 +94,19 @@ I find cursor blinking distracting.
 #+END_SRC
 **** Bells
 Visual, not audible bells.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq ring-bell-function 'ignore)
 (setq visible-bell t)
 #+END_SRC
 **** Auto-revert
 Turn off reverting buffer messages.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq auto-revert-verbose nil)
 #+END_SRC
 **** Autosave
 Turn off autosave messages. To do this, we define our own auto-save function and
 replace the built-in one with ours.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq auto-save-timeout 99999)
 (defvar bjm/auto-save-timer nil
   "Timer to run `bjm/auto-save-silent'")
@@ -121,12 +121,12 @@ replace the built-in one with ours.
 #+END_SRC
 **** Modeline
 Keep a simpler modeline...
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package diminish
   :defer 1)
 #+END_SRC
 and a smarter one.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
   :defer 2
   :config
@@ -135,21 +135,21 @@ and a smarter one.
 *** Modeline
 **** Time
 What time is it, Mr. Emacs?
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (display-time-mode 1)
 (setq display-time-format "%l:%M%p")
 #+END_SRC
 **** Column
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (column-number-mode 1)
 #+END_SRC
 *** Ban Whitespace
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
 #+END_SRC
 *** Indentation
 **** Keep Things Indented
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package aggressive-indent
   :disabled
   :diminish aggressive-indent-mode
@@ -159,7 +159,7 @@ What time is it, Mr. Emacs?
 #+END_SRC
 **** Wrap Indented Lines Sensibly
 This way, indented lines that are wrapped with ~visual-line-mode~ do not begin at character 0, but from where they are indented.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package adaptive-wrap)
 (when (fboundp 'adaptive-wrap-prefix-mode)
   (defun my-activate-adaptive-wrap-prefix-mode ()
@@ -168,7 +168,7 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
   (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
 #+END_SRC
 *** Mouse Scrolling
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
 (setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
 (setq mouse-wheel-follow-mouse t) ;; scroll window under mouse
@@ -176,7 +176,7 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 (setq scroll-margin 3) ;; give the cursor some buffer room before scrolling window
 #+END_SRC
 *** Indentation
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
 (setq indent-line-function #'insert-tab)
@@ -186,57 +186,57 @@ This way, indented lines that are wrapped with ~visual-line-mode~ do not begin a
 All the things (perhaps they seem little) that just make sense to have.
 **** From Yes/No to y/n
 This makes things so much simpler. There's not any ambiguity to begin with.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 **** Sentences End With a Single Space
 This is necessary to make sentence navigation commands work for me.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq sentence-end-double-space nil)
 #+END_SRC
 **** Delete The Selection
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (delete-selection-mode 1)
 #+END_SRC
 **** Split Vertically by Default
 Gotta maximize that vertical screen space. Besides, I always have 80 character
 limits on my lines.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq split-height-threshold nil)
 (setq split-width-threshold 0)
 #+END_SRC
 **** Kill Current Buffer
 Kill the current buffer.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun bjm/kill-this-buffer ()
   (interactive)
   (kill-buffer (current-buffer)))
 #+END_SRC
 **** Remember File Variables
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun risky-local-variable-p (sym &optional _ignored) nil)
 #+END_SRC
 **** Reload Files On Update
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (global-auto-revert-mode t)
 #+END_SRC
 **** Complete Reload
 Completely reload emacs, by reloading the init file.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/reload ()
   (interactive)
   (load-file "~/.emacs.d/init.el"))
 #+END_SRC
 **** Dictionary
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'sdcv-mode)
 #+END_SRC
 **** Transient Mark Mode
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (transient-mark-mode 1)
 #+END_SRC
 **** Electric Pairs Mode
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (electric-pair-mode 1)
 (setq electric-pair-pairs
       '((?\( . ?\))
@@ -245,23 +245,23 @@ Completely reload emacs, by reloading the init file.
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
 #+END_SRC
 Also, I have lots of disk space, and not so much patience when I lose an important file. So I save lots.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq delete-old-versions -1)
 (setq version-control t)
 (setq vc-make-backup-files t)
 (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
 #+END_SRC
 Store more undo information in memory.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq undo-limit 250000)
 #+END_SRC
 **** History
 It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq savehist-file "~/.emacs.d/savehist")
 (savehist-mode 1)
 (setq history-length t)
@@ -274,12 +274,12 @@ It's nice to have a history of commands so that when you open a new emacs instan
 #+END_SRC
 ***** Desktop
 On a similar note, save the desktop.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (desktop-save-mode 1)
 (setq desktop-restore-eager 250)
 #+END_SRC
 Make two buffers with the same file name distinguishable.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package uniquify
   :defer 1
   :ensure nil
@@ -290,39 +290,39 @@ Make two buffers with the same file name distinguishable.
 #+END_SRC
 ***** Save Place
 Opens a file to the same place in which it was last closed.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (save-place-mode 1)
 #+END_SRC
 *** Abbreviations
 Load them.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (load "~/.emacs.d/abbrevs.el")
 #+END_SRC
 Always use this wonderful tool.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (abbrev-mode 1)
 #+END_SRC
 Because it's always on, we don't need to know about it.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (diminish 'abbrev-mode)
 #+END_SRC
 Save them in the ~.emacs.d~ dir.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq abbrev-file-name "~/.emacs.d/abbrevs.el")
 #+END_SRC
 Save abbreviations upon saving a file.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq save-abbrevs 'silent)
 #+END_SRC
 *** Key Frequency
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package keyfreq)
 (keyfreq-mode 1)
 (keyfreq-autosave-mode 1)
 #+END_SRC
 *** Searching
 Use =ack= instead of =grep=.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defvar ack-history nil
   "History for the `ack' command.")
 
@@ -337,7 +337,7 @@ Use =ack= instead of =grep=.
                        'grep-mode)))
 #+END_SRC
 *** Ivy
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package ivy
   :diminish
   :config
@@ -358,7 +358,7 @@ Use =ack= instead of =grep=.
 #+END_SRC
 *** Programming
 Set up =flycheck=.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package flycheck
   :defer t
   :diminish
@@ -367,18 +367,18 @@ Set up =flycheck=.
   (flycheck-display-errors-delay .3))
   #+END_SRC
 Check syntax.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'prog-mode-hook #'flycheck-mode)
 (add-hook 'prog-mode-hook #'linum-relative-mode)
 (add-hook 'web-mode-hook #'linum-relative-mode)
 #+END_SRC
 Relative line numbers, useful for vim-like navigation with God Mode.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package linum-relative
   :defer t)
 #+END_SRC
 **** Flycheck Hydra
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defhydra hydra-flycheck (:color blue)
   "
   ^
@@ -405,14 +405,14 @@ Relative line numbers, useful for vim-like navigation with God Mode.
 #+END_SRC
 **** Python
 Indent with 4 spaces.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq python-indent-offset 4)
 #+END_SRC
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'python-mode-hook #'linum-relative-mode)
 #+END_SRC
 Turn Emacs into basically a Python IDE.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (elpy-enable)
 (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
 (use-package py-autopep8)
@@ -422,17 +422,17 @@ Turn Emacs into basically a Python IDE.
 #+END_SRC
 **** Lisp
 Vim-like speed key bindings, better than =paredit=.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package lispy)
 #+END_SRC
 Always activate.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
 #+END_SRC
 Although I usually do major Elisp testing/debugging in the =*scratch*= buffer, I
 often do smaller such tasks using the =eval= minibuffer (accessed with =M-:=). Now I
 can use =lispy= in there.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun conditionally-enable-lispy ()
   (when (eq this-command 'eval-expression)
     (lispy-mode 1)))
@@ -440,7 +440,7 @@ can use =lispy= in there.
 #+END_SRC
 We don't want annoying comments about having, for example, =;;; package ---
 summary= at the top of an Emacs Lisp file.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun disable-fylcheck-in-org-src-block ()
   (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
 
@@ -448,7 +448,7 @@ summary= at the top of an Emacs Lisp file.
 #+END_SRC
 *** Proselinting
 Check prose style.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (flycheck-define-checker proselint
   "A linter for prose."
   :command ("proselint" source-inplace)
@@ -461,23 +461,23 @@ Check prose style.
 (add-to-list 'flycheck-checkers 'proselint)
 #+END_SRC
 *** Company
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package company)
 #+END_SRC
 *** Which Key Mode
 Helpful when you want to see completion for a certain sequence of prefix keys.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package which-key)
 (which-key-mode)
 #+END_SRC
 *** Expand Region
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package expand-region
   :defer t)
 (bind-key "C-=" 'er/expand-region)
 #+END_SRC
 *** Highlighting/Comments
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'ov-highlight)
 (bind-key "C-c h" 'ov-highlight/body)
 (bind-key "C-c C-h" 'ov-highlight/body)
@@ -485,22 +485,22 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
 ** Packages
 *** Async
 Run Emacs processes asynchronously.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'async)
 #+END_SRC
 Authorize actions.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'auth-source-pass)
 (auth-source-pass-enable)
 (setq auth-sources '("~/.authinfo.gpg"))
 #+END_SRC
 *** Magit
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package magit
   :defer t)
 #+END_SRC
 But no more juggling window configurations after committing.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (with-eval-after-load 'magit
   (defadvice magit-status (around magit-fullscreen activate)
     (window-configuration-to-register :magit-fullscreen)
@@ -517,17 +517,17 @@ But no more juggling window configurations after committing.
 #+END_SRC
 *** Dired
 **** Async
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (autoload 'dired-async-mode "dired-async.el" nil t)
 (dired-async-mode 1)
 #+END_SRC
 **** Revert Buffer
 Have the most up-to-date version of the buffer when using dired.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 #+END_SRC
 **** Declutter
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun xah-dired-mode-setup ()
   "to be run as hook for `dired-mode'."
   (dired-hide-details-mode 1))
@@ -536,31 +536,31 @@ Have the most up-to-date version of the buffer when using dired.
 **** Copy and Delete
 Allow dired to recursively copy and delete directories. ~always~ ensures that no
 confirmation dialog comes up, and ~top~ does it only once.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq dired-recursive-copies (quote always))
 (setq dired-recursive-deletes (quote top))
 #+END_SRC
 **** Speed Sorting
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a dired buffer.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package dired-quick-sort
   :config
   (dired-quick-sort-setup))
 #+END_SRC
 **** Sudo
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package sudo-edit
   :defer t)
 (bind-key "C-c C-x r" 'sudo-edit)
 #+END_SRC
 *** God Mode
 Enable god-mode.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package god-mode)
 #+END_SRC
 Indicate mode with modeline.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/god-mode-indicator ()
   (cond (god-local-mode
          (progn (set-cursor-color "#dc322f")))
@@ -571,7 +571,7 @@ Indicate mode with modeline.
 #+END_SRC
 *** PDF Tools
 Basic configuration.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
   :pin manual
   :config
@@ -590,7 +590,7 @@ Basic configuration.
 (add-hook 'pdf-view-mode-hook #'pdf-view-fit-width-to-window)
 #+END_SRC
 Allow rotation.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun pdf-view--rotate (&optional counterclockwise-p page-p)
   "Rotate PDF 90 degrees.  Requires pdftk to work.\n
 Clockwise rotation is the default; set COUNTERCLOCKWISE-P to
@@ -627,7 +627,7 @@ default; set PAGE-P to non-nil to rotate only the current page.
           (error "Rotation error!"))))))
 #+END_SRC
 *** Webmode
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package web-mode
   :init (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
   :custom
@@ -637,11 +637,11 @@ default; set PAGE-P to non-nil to rotate only the current page.
 #+END_SRC
 *** Screencast
 **** Show Keypresses
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'keycast)
 #+END_SRC
 **** GIF Screencast
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'gif-screencast)
 (with-eval-after-load 'gif-screencast
   (bind-key "<f8>" 'gif-screencast-toggle-pause gif-screencast-mode-map)
@@ -649,61 +649,73 @@ default; set PAGE-P to non-nil to rotate only the current page.
 #+END_SRC
 ** Theme
 *** Solarized
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package solarized-theme
   :config (load-theme 'solarized-dark t))
 #+END_SRC
 *** Font Face
 Normally use Hack.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (set-face-font 'default "Hack")
 (set-frame-font "Hack" nil t)
 (custom-set-faces
  '(variable-pitch ((t (:family "Palatino Linotype")))))
 #+END_SRC
 *** Autofill
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (global-visual-line-mode 1)
 (diminish 'visual-line-mode)
 #+END_SRC
 Nicely wrap lines for text mode.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'text-mode-hook 'auto-fill-mode)
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
 (diminish 'auto-fill-mode)
 (diminish 'auto-fill-function)
 #+END_SRC
 **** 80 Columns
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'text-mode-hook
           (lambda() (set-fill-column 80)))
 #+END_SRC
 *** Highlighting
 **** Syntax
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (global-font-lock-mode 1)
 #+END_SRC
 **** Rainbow Mode
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package rainbow-mode)
 (rainbow-mode 1)
 (diminish 'rainbow-mode)
 #+END_SRC
 **** Source Code Blocks
 Native syntax highlighting for source blocks in org mode.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq org-src-fontify-natively t
       org-src-tab-acts-natively t
       org-confirm-babel-evaluate nil
       org-edit-src-content-indentation 0)
 #+END_SRC
 **** Parentheses
-#+BEGIN_SRC elisp
+Normally, I want the opening and closing parentheses highlighted. I used to set
+=show-paren-style= to =expression=, all that highlighting was not really necessary.
+#+BEGIN_SRC emacs-lisp
+(setq blink-matching-paren nil)
+(show-paren-mode t)
+(setq show-paren-delay 0)
+(setq show-paren-style 'parenthesis)
+#+END_SRC
+When I'm doing dedicated editing, it's sometimes nice to have more colours,
+especially for Lisps such as Emacs Lisp. However, it's too distracting in org
+mode source blocks, and it also slows down the point's movement, so I find it
+best not to enable it globally.
+#+BEGIN_SRC emacs-lisp
 (use-package rainbow-delimiters)
-(rainbow-delimiters-mode t)
+(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 #+END_SRC
 **** Except in Large Buffers
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun buffer-too-big-p ()
   (or (> (buffer-size) (* 5000 80))
       (> (line-number-at-pos (point-max)) 5000)))
@@ -717,7 +729,7 @@ Native syntax highlighting for source blocks in org mode.
 * Keybindings
 ** Conditional Keybindings
 Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defmacro define-conditional-key (keymap key def
                                                  &rest body)
   "In KEYMAP, define key sequence KEY as DEF conditionally.
@@ -738,26 +750,26 @@ These are what I think are better bindings for or better versions of the default
  commands.
 *** Easy M-x
 Alt is hard to type easily.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-SPC" 'counsel-M-x)
 #+END_SRC
 *** Set Mark
 Need a replacement because we rebound ~C-SPC~ above.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-t" 'set-mark-command)
 #+END_SRC
 *** Shell Kill Word
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-w" 'backward-kill-word)
 #+END_SRC
 *** Browse Kill Ring
 This used to be a feature of Emacs.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package browse-kill-ring)
 (browse-kill-ring-default-keybindings)
 #+END_SRC
 *** Cut/Paste
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun xah-cut-line-or-region ()
   "Cut current line, or text selection.
 When `universal-argument' is called first, cut whole buffer (respects `narrow-to-region').
@@ -808,7 +820,7 @@ Version 2018-09-10"
 (bind-key "M-w" 'xah-copy-line-or-region)
 #+END_SRC
 *** Fill/Unfill
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package unfill)
 (defun gm/fill-or-unfill ()
   (interactive)
@@ -821,21 +833,21 @@ Version 2018-09-10"
 #+END_SRC
 *** Join Line
 This allows me to combine text over multiple lines into one line.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "M-j"
             (lambda ()
                   (interactive)
                   (join-line -1)))
 #+END_SRC
 *** Normal Undo Binding
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-z" 'undo)
 (bind-key "C-x C-u" 'undo)
 #+END_SRC
 *** Forward Paragraph
 Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
 Binds Part 2: A peeve with paragraphs · Endless Parentheses]].
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "M-p" 'endless/backward-paragraph)
 (bind-key "M-n" 'endless/forward-paragraph)
 
@@ -865,13 +877,13 @@ Binds Part 2: A peeve with paragraphs · Endless Parentheses]].
   (endless/forward-paragraph (- n)))
 #+END_SRC
 However, this is messed up in Org Mode.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "M-p" #'backward-paragraph org-mode-map)
 (bind-key "M-n" #'forward-paragraph org-mode-map)
 #+END_SRC
 *** Better Narrowing
 From [[http://endlessparentheses.com/emacs-narrow-or-widen-dwim.html][Emacs narrow-or-widen-dwim · Endless Parentheses]].
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun narrow-or-widen-dwim (p)
   "Widen if buffer is narrowed, narrow-dwim otherwise.
 Dwim means: region, org-src-block, org-subtree, or
@@ -896,7 +908,7 @@ is already narrowed."
 (define-key ctl-x-map "n" #'narrow-or-widen-dwim)
 #+END_SRC
 Then we can use =narrow-or-widen-dwim= to easily edit org =src= blocks.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (eval-after-load 'org-src
   '(define-key org-src-mode-map
      "\C-x\C-s" #'org-edit-src-exit))
@@ -904,17 +916,17 @@ Then we can use =narrow-or-widen-dwim= to easily edit org =src= blocks.
 *** Delete Better
 When using =C-d= or =Backspace=, delete all white space in a certain direction, and
 not just one.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package hungry-delete)
 (global-hungry-delete-mode)
 #+END_SRC
 *** Better Buffers
 Kill better.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-x k" 'bjm/kill-this-buffer)
 #+END_SRC
 Exterminate better.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun delete-current-buffer-file ()
   "Removes file connected to current buffer and kills buffer."
   (interactive)
@@ -931,7 +943,7 @@ Exterminate better.
 (bind-key "C-x C-k" 'delete-current-buffer-file)
 #+END_SRC
 Rename better.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun rename-current-buffer-file ()
   "Renames current buffer and file it is visiting."
   (interactive)
@@ -952,25 +964,25 @@ Rename better.
 (bind-key "C-x C-r" 'rename-current-buffer-file)
 #+END_SRC
 Switch better.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-x b" 'ivy-switch-buffer)
 #+END_SRC
 Use ibuffer.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'ibuffer)
 (bind-key "C-x C-b" 'ibuffer)
 (autoload 'ibuffer "ibuffer" "List buffers." t)
 #+END_SRC
 *** Beacon Mode
 Never lose your cursor again.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package beacon)
 (beacon-mode 1)
 (setq beacon-push-mark 35)
 (setq beacon-color "#b58900")
 #+END_SRC
 *** Window Management
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package ace-window)
 (bind-key "C-x o" 'ace-window)
 (bind-key "M-o" 'ace-window)
@@ -982,31 +994,31 @@ Never lose your cursor again.
 *** Transpose
 ***** Sentences and Paragraphs
 Add aliases to do this easily.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defalias 'ts 'transpose-sentences)
 (defalias 'tp 'transpose-paragraphs)
 #+END_SRC
 ***** Characters
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-r" 'transpose-chars)
 #+END_SRC
 *** Search
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-s" 'swiper)
 #+END_SRC
 *** Unbind Fill Column
 I never use this command but keep accidentally hitting it instead of =C-x C-f=.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (unbind-key "C-x f")
 #+END_SRC
 *** Unbind Return
 I sometimes activate this when exiting God Mode.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (unbind-key "C-j")
 #+END_SRC
 ** Word Count
 Count org-wc.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package org-wc
   :defer t)
 (defun gm/wc-display-current-subtree (arg)
@@ -1019,28 +1031,28 @@ Count org-wc.
 (bind-key "C-c w" 'gm/wc-display-current-subtree org-mode-map)
 #+END_SRC
 ** Magit
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-x g" 'magit-status)
 #+END_SRC
 ** Org LaTeX Export
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-c b" 'gm/org-latex-export org-mode-map)
 #+END_SRC
 ** Dictionary
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-c d" 'sdcv-search)
 #+END_SRC
 ** Find Inbox
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-c o" (lambda () (interactive) (find-file "~/org/inbox.org")))
 #+END_SRC
 ** Complete Reload
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-c r" 'gm/reload)
 #+END_SRC
 ** Org Cliplink
 Paste URL with extracted title as the description.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package org-cliplink
   :defer t)
 (bind-key "C-c y" 'org-cliplink org-mode-map)
@@ -1050,7 +1062,7 @@ I only use Solarized Light and Dark, and I switch between them depending on my
 surroundings. If I am in a brightly lit room, I prefer to use the light theme
 because the dark theme allows too much glare. If it is late at night, I prefer
 the dark theme, because there is less bright light going into my eyes.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq gm/theme nil)
 (defun gm/switch-theme ()
   (interactive)
@@ -1065,13 +1077,13 @@ the dark theme, because there is less bright light going into my eyes.
 (bind-key "C-c t" #'gm/switch-theme)
 #+END_SRC
 ** Keychord
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'key-chord)
 (key-chord-mode 1)
 #+END_SRC
 *** Number Symbols
 Eliminate the shift key for inputting symbols.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (key-chord-define-global "1q" "!")
 (key-chord-define-global "2w" "@")
 (key-chord-define-global "3e" "#")
@@ -1088,13 +1100,13 @@ Eliminate the shift key for inputting symbols.
 The dollar sign ($) is especially useful for LaTeX.
 *** God Mode
 Easily enter god mode.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (key-chord-define-global "jk" 'god-mode-all)
 #+END_SRC
 * Org Mode
 ** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package org
   :init
   (require 'org)
@@ -1126,7 +1138,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
       (file "~/org/inbox.org")
       "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
      ("j" "Journal" entry
-      (file+datetree "~/org/journal.org")
+      (file+olp+datetree "~/org/journal.org")
       "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
      ("e" "euler" entry
       (file+olp "~/website/content-org/blog.org" "Euler")
@@ -1144,7 +1156,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
 updated when I archive a subtree.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun myorg-update-parent-cookie ()
   (when (equal major-mode 'org-mode)
     (save-excursion
@@ -1156,14 +1168,14 @@ updated when I archive a subtree.
   (myorg-update-parent-cookie))
 #+END_SRC
 *** Google Calendar
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq package-check-signature nil)
 (use-package org-gcal
   :defer t)
 (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync)))
 #+END_SRC
 *** Org Babel
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (org-babel-do-load-languages
  'org-babel-load-languages '((python . t)
                              (latex . t)))
@@ -1172,24 +1184,24 @@ updated when I archive a subtree.
 #+END_SRC
 ** Prettifying
 *** Org Bullets
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package org-bullets)
 (add-hook 'org-mode-hook #'org-bullets-mode)
 #+END_SRC
 *** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (font-lock-add-keywords 'org-mode
                         '(("^ *\\([-]\\) "
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 #+END_SRC
 ** LaTeX
 *** Keychord for Math Mode
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (key-chord-define org-mode-map "r4" #'gm/enter-math-mode)
 #+END_SRC
 *** Autocomplete ~$$~
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defvar org-electric-pairs '((?$ . ?$) ))
 (defun dollar-add-electric-pairs ()
   (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
@@ -1198,7 +1210,7 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 #+END_SRC
 *** Don't Break Paragraph on Comments
 Remove comments from org document when exporting to LaTeX.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun delete-org-comments (backend)
   (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
                                     'comment 'identity))
@@ -1209,11 +1221,11 @@ Remove comments from org document when exporting to LaTeX.
 #+END_SRC
 *** Equation Auto Preview
 Not too small.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
 #+END_SRC
 Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]].
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'ov)
 (defvar cw/org-last-fragment nil
   "Holds the type and position of last valid fragment we were on. Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)"
@@ -1332,7 +1344,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
 (bind-key "C-c p" 'gm/toggle-equation-preview)
 #+END_SRC
 *** Export
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun org-export-headlines-to-pdf ()
   "Export all subtrees that are *not* tagged with :noexport: to
 separate files.
@@ -1370,13 +1382,13 @@ are exported to a filename derived from the headline text."
 #+END_SRC
 **** Export Classes
 ***** Tufte-LaTeX
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'ox-tufte-latex)
 (require 'ox-extra)
 #+END_SRC
 ****** Command Links
 ******* No Option
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (org-add-link-type
  "latex" nil
  (lambda (path desc format)
@@ -1384,7 +1396,7 @@ are exported to a filename derived from the headline text."
      (format "\\%s{%s}" path desc))))
 #+END_SRC
 ******* One Option
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (org-add-link-type
  "latex-opt" nil
  (lambda (path desc format)
@@ -1397,7 +1409,7 @@ are exported to a filename derived from the headline text."
                arg)))))
 #+END_SRC
 ******* One Option (After Main)
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (org-add-link-type
  "latex-opt-after" nil
  (lambda (path desc format)
@@ -1409,7 +1421,7 @@ are exported to a filename derived from the headline text."
                (if (equal "" opt) opt (format "[%s]" opt)))))))
 #+END_SRC
 ****** Class Options
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-to-list 'org-latex-classes
              '("tufte-handout"
                "\\documentclass[symmetric,nobib]{gm-tufte-handout}
@@ -1418,7 +1430,7 @@ are exported to a filename derived from the headline text."
                ("\\subsection{%s}" . "\\subsection*{%s}")))
 #+END_SRC
 ****** Biber
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq org-latex-pdf-process
       '("pdflatex -interaction nonstopmode -output-directory %o %f"
         "biber %b"
@@ -1426,7 +1438,7 @@ are exported to a filename derived from the headline text."
         "pdflatex -interaction nonstopmode -output-directory %o %f"))
 #+END_SRC
 ****** Keyword Search
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun jk-org-kwds ()
   "parse the buffer and return a cons list of (property . value)
 from lines like:
@@ -1440,7 +1452,7 @@ from lines like:
   (cdr (assoc KEYWORD (jk-org-kwds))))
 #+END_SRC
 ***** Assignment
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (with-eval-after-load 'ox-latex
   (add-to-list 'org-latex-classes
                '("assignment"
@@ -1456,7 +1468,7 @@ from lines like:
                  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 #+END_SRC
 ***** MLA
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (with-eval-after-load 'ox-latex
   (add-to-list 'org-latex-classes
                '("gm-mla"
@@ -1471,7 +1483,7 @@ from lines like:
                  ("\\subsubsection{%s}" . "\\subsubection*{%s}"))))
 #+END_SRC
 ***** Math Notes
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-to-list 'org-latex-classes
              '("gm-notes"
                "\\documentclass{gm-notes}
@@ -1482,7 +1494,7 @@ from lines like:
                ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
 #+END_SRC
 **** Export Settings
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq org-highlight-latex-and-related '(latex))
 (setq org-latex-to-pdf-process
  '("xelatex -interaction nonstopmode %f"
@@ -1490,7 +1502,7 @@ from lines like:
 (setq org-export-with-smart-quotes t)
 #+END_SRC
 **** Cleverref
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun org-latex-ref-to-cref (text backend info)
   "Use \\cref instead of \\ref in latex export."
   (when (org-export-derived-backend-p backend 'latex)
@@ -1501,7 +1513,7 @@ from lines like:
 #+END_SRC
 * TeX
 Of course we use =auctex=. I do most of my LaTeX editing in Org Mode now.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package auctex
   :defer t
   :init (require 'tex-site)
@@ -1509,26 +1521,26 @@ Of course we use =auctex=. I do most of my LaTeX editing in Org Mode now.
 #+END_SRC
 ** Electric Dollars and Parens
 Insert dollar signs electrically.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (add-hook 'LaTeX-mode-hook
 	      (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
 			              (cons "$" "$"))))
 #+END_SRC
 * Mail
 Set up the requirements.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package notmuch)
 (require 'smtpmail)
 (require 'smtpmail-async)
 #+END_SRC
 Set up the mail directory and draft location.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq message-directory "~/mail/")
 (setq message-auto-save-directory "~/mail/draft")
 (setq message-fcc-dirs "~/mail/mbsyncmail/Sent Items")
 #+END_SRC
 Provide my email and name.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq mail-user-agent 'message-user-agent
       user-mail-address gm/email
       user-full-name "Gautam Manohar")
@@ -1536,7 +1548,7 @@ Provide my email and name.
 SMTP for sending mail. The =stream-type= is important because I want my outgoing
 mail to at least use TLS encryption. One day, though, I would like to adopt a
 more rigorous system of encryption.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq send-mail-function 'async-smtpmail-send-it
       message-send-mail-function 'async-smtpmail-send-it
       smtpmail-debug-info t
@@ -1546,12 +1558,12 @@ more rigorous system of encryption.
       smtpmail-smtp-service 587)
 #+END_SRC
 Nice stuff to have for sending mail.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq message-kill-buffer-on-exit t)
 (setq notmuch-address-command 'internal)
 #+END_SRC
 Some commonly used searches.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq notmuch-saved-searches
       '((:name "inbox" :query "tag:inbox" :key "i" :sort-order oldest-first)
         (:name "flagged" :query "tag:flagged" :key "f")
@@ -1560,7 +1572,7 @@ Some commonly used searches.
         (:name "all mail" :query "*" :key "a" :sort-order newest-first)))
 #+END_SRC
 Accessing mail, including checking for new mail.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/open-mail ()
   (interactive)
   (shell-command "systemctl --user start checkmail.timer")
@@ -1574,7 +1586,7 @@ Accessing mail, including checking for new mail.
 #+END_SRC
 * Snippets
 ** Load Snippets
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet
   :diminish (yas-minor-mode))
@@ -1584,7 +1596,7 @@ Accessing mail, including checking for new mail.
 Use SPC instead of TAB to expand snippets. We need to bind =TAB= to =org-cycle= even
 though that is the default, because otherwise binding =TAB= to =nil= in
 =yas-minor-mode= overrides the default behaviour.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key "<tab>" nil yas-minor-mode-map)
 (bind-key "TAB" nil yas-minor-mode-map)
 (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand)
@@ -1593,33 +1605,33 @@ though that is the default, because otherwise binding =TAB= to =nil= in
 ** Fast Latex Snippets
 *** Requirements
 Use =texmathp= to tell if you are in math mode.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'texmathp)
 #+END_SRC
 I use a hydra for snippets that just insert/replace text in math mode and thus
 don't require the use of =yasnippets=.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'hydra)
 #+END_SRC
 To automate the generation of my main math snippets, I use a data structure
 called a radix tree.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'radix-tree)
 #+END_SRC
 I use =dash.el= to help with some better list processing.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (require 'dash)
 #+END_SRC
 I use this file manipulation library to load and dump the math snippet data to a
 file.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (use-package f)
 (use-package s)
 #+END_SRC
 *** Helper Functions
 **** Enter Math Mode
 This command will enter inline math mode if not in math mode, and exit otherwise.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/enter-math-mode ()
   (interactive)
   (if (texmathp)
@@ -1632,18 +1644,18 @@ This command will enter inline math mode if not in math mode, and exit otherwise
 #+END_SRC
 **** Delete n Characters
 Delete n characters before the point.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/delete-chars (n)
   (dotimes (i n) (delete-char -1)))
 #+END_SRC
 **** Last n Characters Before Point
 Return the last n characters before the point.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/last-n-chars (n)
   (buffer-substring-no-properties (- (point) n) (point)))
 #+END_SRC
 **** Math Mode Snippet
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/snippet (key snippet)
   (let ((len (length key)))
         (progn
@@ -1653,7 +1665,7 @@ Return the last n characters before the point.
 #+END_SRC
 **** Get String from File
 Put file contents into string. Not recommended for large files.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun get-string-from-file (path)
   (with-temp-buffer
     (insert-file-contents path)
@@ -1662,7 +1674,7 @@ Put file contents into string. Not recommended for large files.
 **** Generate Snippets
 I wrote this to reduce the amount of redundant code needed to set up the
 snippets. First, we create a suffix tree of all the math snippets.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (setq gm/math-snippet-file "~/.emacs.d/math-snippets.el")
 
 (defun gm/math-setup ()
@@ -1683,7 +1695,7 @@ snippets. First, we create a suffix tree of all the math snippets.
 (add-hook 'org-mode-hook #'gm/math-setup)
 #+END_SRC
 We make a completion function.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun radix-tree-keys (subtree prefix)
   (let (keys '())
     (radix-tree-iter-mappings (radix-tree-subtree subtree prefix)
@@ -1692,7 +1704,7 @@ We make a completion function.
     keys))
 #+END_SRC
 And a function to get the possible completion candidates from the buffer.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/buff-cand (n key)
   (loop for i from 1 to n
         collect (concat (gm/last-n-chars i) key)))
@@ -1700,7 +1712,7 @@ And a function to get the possible completion candidates from the buffer.
 Then, we set up the creation of an actual snippet (note that its length is
 capped at 5 characters). The longest snippet is currently =binom=, for the
 binomial coefficient (choose function).
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
   (setq buff-cand (gm/buff-cand 5 key))
   (setq completions
@@ -1712,14 +1724,14 @@ binomial coefficient (choose function).
 #+END_SRC
 And finally some utility functions. First we get a way to dump our snippet data
 to a file.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/print-sorted-math-snippets-to-file (filename data)
   (setq data (sort data (lambda (a b) (string< (car a) (car b)))))
   (with-temp-file filename
     (insert (pp data))))
 #+END_SRC
 Now we give the user a way to easily add snippets.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/new-math-snippet (snippet-key snippet-name)
   """Creates a new math snippet. If the given 'snippet-name' does not already exist, the given snippet-key is added as another expansion for that snippet name. Otherwise, the user is prompted with a yasnippet file in which they may write the code into which the snippet should expand."""
   (interactive
@@ -1740,7 +1752,7 @@ Now we give the user a way to easily add snippets.
 #+END_SRC
 **** Tab Jump to Next LaTeX Position
 Modified from the =cdlatex-tab= function in =cdlatex.el=.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun math-tab ()
   (interactive)
   (if (texmathp)
@@ -1782,7 +1794,7 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
     (org-cycle)))
 #+END_SRC
 Bind to tab.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (bind-key (kbd "<tab>") #'math-tab org-mode-map)
 (bind-key (kbd "TAB") #'math-tab org-mode-map)
 #+END_SRC
@@ -1791,7 +1803,7 @@ This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
 digit is pressed, if the last character is a letter, then a subscript is
 created. If this subscript is extended to a number with more than 1 digit,
 brackets are added to ensure proper LaTeX rendering.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/char-is-letter (char)
   (memq (get-char-code-property char 'general-category)
         '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
@@ -1806,7 +1818,7 @@ brackets are added to ensure proper LaTeX rendering.
            (insert "\}")))))
 #+END_SRC
 Add subscript bindings to each of the ten digits.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/bind-subscript (n)
   (eval (macroexpand
          `(define-conditional-key org-mode-map
@@ -1816,7 +1828,7 @@ Add subscript bindings to each of the ten digits.
 (gm/bind-subscript 9)
 #+END_SRC
 **** Simplify Super/Subscripts
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/simplify-math-script (&rest r)
   (when (string-match "[_^]{.}" (gm/last-n-chars 4))
     (save-excursion
@@ -1830,7 +1842,7 @@ Typing "/" after an appropriate block (a number or a balanced set of
 parentheses) creates a fraction with this block in the numerator and the point
 in the denominator. The outside parentheses will be removed; for example, =(\sin
 x)= and then =/= will result in =\frac{\sin x}{|}=.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/line-to-point ()
   (let (start my-string)
     (setq start (line-beginning-position) )
@@ -1877,7 +1889,7 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
 I wanted to make writing environments like =split= and =align= easier, so that I
 wouldn't have to manually add the newline (=\\=) at the end of each line required
 to make LaTeX happy.
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/math-split-p ()
   (when (texmathp)
     (save-excursion
@@ -1900,7 +1912,7 @@ to make LaTeX happy.
 (define-conditional-key org-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
 *** Math Symbols
-#+BEGIN_SRC elisp
+#+BEGIN_SRC emacs-lisp
 (defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
   (";" hydra-semicolon-b/body "Level 2")
   ("SPC" (insert "; ") ";")
