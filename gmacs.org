@@ -161,16 +161,11 @@ deferral we set earlier.
 (use-package dash :demand t)
 (use-package f :demand t)
 (use-package s :demand t)
-(eval-when-compile (require 'cl-lib))
+(require 'cl-lib)
 #+END_SRC
 * General Configuration
 ** Graphics
 *** Decluttering
-**** Splash Screen
-Get rid of that ugly splash screen.
-#+BEGIN_SRC emacs-lisp
-;;(setq inhibit-splash-screen t)
-#+END_SRC
 **** Fullscreen
 Start emacs in glorious fullscreen.
 #+BEGIN_SRC emacs-lisp
@@ -305,6 +300,13 @@ Silences a function.
                 (save-silently t))
         ,@forms)))
 #+END_SRC
+**** λ!
+#+BEGIN_SRC emacs-lisp
+(defmacro λ! (&rest body)
+  "A shortcut for inline interactive lambdas."
+  (declare (doc-string 1))
+  `(lambda () (interactive) ,@body))
+#+END_SRC
 *** Better Defaults
 All the things (perhaps they seem little) that just make sense to have.
 **** From Yes/No to y/n
@@ -336,10 +338,6 @@ Kill the current buffer.
 (defun bjm/kill-this-buffer ()
   (interactive)
   (kill-buffer (current-buffer)))
-#+END_SRC
-**** Remember File Variables
-#+BEGIN_SRC emacs-lisp
-(defun risky-local-variable-p (sym &optional _ignored) nil)
 #+END_SRC
 **** Reload Files On Update
 #+BEGIN_SRC emacs-lisp
@@ -649,19 +647,18 @@ Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a dired buffer.
 #+BEGIN_SRC emacs-lisp
 (use-package dired-quick-sort
-  :config
-  (dired-quick-sort-setup))
+  :config (dired-quick-sort-setup))
 #+END_SRC
 **** Sudo
 #+BEGIN_SRC emacs-lisp
 (use-package sudo-edit
-  :defer t
   :bind (("C-c C-x r" . sudo-edit)))
 #+END_SRC
 *** God Mode
 Enable god-mode.
 #+BEGIN_SRC emacs-lisp
-(use-package god-mode)
+(use-package god-mode
+ :commands (god-local-mode god-mode-all))
 #+END_SRC
 Indicate mode with modeline.
 #+BEGIN_SRC emacs-lisp
@@ -733,20 +730,16 @@ default; set PAGE-P to non-nil to rotate only the current page.
 *** Webmode
 #+BEGIN_SRC emacs-lisp
 (use-package web-mode
-  :config (add-to-list 'auto-mode-alist '("\\.scss\\'" . web-mode))
+  :mode ("\\.scss\\'" . web-mode)
   :custom
   (web-mode-markup-indent-offset 2)
   (web-mode-css-indent-offset 2)
   (web-mode-code-indent-offset 2))
 #+END_SRC
 *** Screencast
-**** Show Keypresses
 #+BEGIN_SRC emacs-lisp
-(require 'keycast)
-#+END_SRC
-**** GIF Screencast
-#+BEGIN_SRC emacs-lisp
-(require 'gif-screencast)
+(autoload 'gif-screencast-toggle-pause "gif-screencast" "Start GIF Screencast" t)
+(autoload 'gif-screencast-toggle-pause "keycase" "Start GIF Screencast" t)
 (after! gif-screencast
   (bind-key "<f8>" 'gif-screencast-toggle-pause gif-screencast-mode-map)
   (bind-key "<f9>" 'gif-screencast-stop) gif-screencast-mode-map)
@@ -780,7 +773,6 @@ Nicely wrap lines for text mode.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'text-mode-hook 'auto-fill-mode)
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
-(diminish 'auto-fill-mode)
 (diminish 'auto-fill-function)
 #+END_SRC
 **** 80 Columns
@@ -821,7 +813,7 @@ mode source blocks, and it also slows down the point's movement, so I find it
 best not to enable it globally.
 #+BEGIN_SRC emacs-lisp
 (use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
+  :hook (emacs-lisp-mode . rainbow-delimiters-mode))
 #+END_SRC
 **** Except in Large Buffers
 #+BEGIN_SRC emacs-lisp
@@ -830,9 +822,9 @@ best not to enable it globally.
       (> (line-number-at-pos (point-max)) 5000)))
 (add-hook 'prog-mode-hook
           (lambda ()
-            ;; turn off `linum-mode' when there are more than 5000 lines
+            ;; turn off `linum-relative-mode' when there are more than 5000 lines
             (when (buffer-too-big-p)
-              (linum-mode -1)
+              (linum-relative-mode -1)
               (font-lock-mode -1))))
 #+END_SRC
 * Keybindings
@@ -875,6 +867,7 @@ Need a replacement because we rebound ~C-SPC~ above.
 This used to be a feature of Emacs.
 #+BEGIN_SRC emacs-lisp
 (use-package browse-kill-ring
+  :commands browse-kill-ring
   :config (browse-kill-ring-default-keybindings))
 #+END_SRC
 *** Cut/Paste
@@ -935,7 +928,8 @@ here.
 #+END_SRC
 *** Fill/Unfill
 #+BEGIN_SRC emacs-lisp
-(use-package unfill)
+(use-package unfill
+  :commands gm/fill-or-unfill)
 (defun gm/fill-or-unfill ()
   (interactive)
   (let ((length-of-line
@@ -948,10 +942,7 @@ here.
 *** Join Line
 This allows me to combine text over multiple lines into one line.
 #+BEGIN_SRC emacs-lisp
-(bind-key "M-j"
-            (lambda ()
-                  (interactive)
-                  (join-line -1)))
+(bind-key "M-j" (λ! (join-line -1)))
 #+END_SRC
 *** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
@@ -1024,7 +1015,7 @@ is already narrowed."
 #+END_SRC
 Then we can use =narrow-or-widen-dwim= to easily edit org =src= blocks.
 #+BEGIN_SRC emacs-lisp
-(eval-after-load 'org-src
+(with-eval-after-load 'org-src
   '(define-key org-src-mode-map
      "\C-x\C-s" #'org-edit-src-exit))
 #+END_SRC
@@ -1046,8 +1037,7 @@ Exterminate better.
   "Removes file connected to current buffer and kills buffer."
   (interactive)
   (let ((filename (buffer-file-name))
-        (buffer (current-buffer))
-        (name (buffer-name)))
+        (buffer (current-buffer)))
     (if (not (and filename (file-exists-p filename)))
         (ido-kill-buffer)
       (when (yes-or-no-p "Are you sure you want to remove this file? ")
@@ -1109,13 +1099,13 @@ Never lose your cursor again.
          ("C-x 3" . split-window-right)))
 #+END_SRC
 *** Transpose
-***** Sentences and Paragraphs
+**** Sentences and Paragraphs
 Add aliases to do this easily.
 #+BEGIN_SRC emacs-lisp
 (defalias 'ts 'transpose-sentences)
 (defalias 'tp 'transpose-paragraphs)
 #+END_SRC
-***** Characters
+**** Characters
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-r" 'transpose-chars)
 #+END_SRC
@@ -1154,7 +1144,7 @@ Count org-wc.
 #+END_SRC
 ** Find Inbox
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-c o" (lambda () (interactive) (find-file "~/org/inbox.org")))
+(bind-key "C-c o" (λ! (find-file "~/org/inbox.org")))
 #+END_SRC
 ** Complete Reload
 #+BEGIN_SRC emacs-lisp
@@ -1185,7 +1175,8 @@ the dark theme, because there is less bright light going into my eyes.
 (key-chord-mode 1)
 #+END_SRC
 *** Number Symbols
-Eliminate the shift key for inputting symbols.
+Eliminate the shift key for inputting symbols. The dollar sign ($) keychord is
+especially useful when typing LaTeX.
 #+BEGIN_SRC emacs-lisp
 (key-chord-define-global "1q" "!")
 (key-chord-define-global "2w" "@")
@@ -1200,7 +1191,6 @@ Eliminate the shift key for inputting symbols.
 (key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
 #+END_SRC
-The dollar sign ($) is especially useful for LaTeX.
 *** God Mode
 Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
@@ -1321,7 +1311,7 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 *** Don't Break Paragraph on Comments
 Remove comments from org document when exporting to LaTeX.
 #+BEGIN_SRC emacs-lisp
-(defun delete-org-comments (backend)
+(defun delete-org-comments ()
   (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
                                     'comment 'identity))
         do (setf (buffer-substring (org-element-property :begin comment)
@@ -1617,7 +1607,7 @@ from lines like:
 #+END_SRC
 **** Cleverref
 #+BEGIN_SRC emacs-lisp
-(defun org-latex-ref-to-cref (text backend)
+(defun org-latex-ref-to-cref (text)
   "Use \\cref instead of \\ref in latex export."
   (when (org-export-derived-backend-p backend 'latex)
     (replace-regexp-in-string "\\\\ref{" "\\\\cref{" text)))
@@ -1695,7 +1685,7 @@ Accessing mail, including checking for new mail.
   (notmuch-refresh-all-buffers))
 
 (advice-add 'notmuch-poll-and-refresh-this-buffer :before
-            (lambda (&rest r) (interactive) (shell-command "~/checkmail.sh")))
+            (λ! (shell-command "~/checkmail.sh")))
 
 (bind-key "C-c m" #'gm/open-mail)
 #+END_SRC
@@ -1714,7 +1704,7 @@ though that is the default, because otherwise binding =TAB= to =nil= in
   (bind-key "TAB" nil yas-minor-mode-map)
   (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand) yas-minor-mode-map))
 #+END_SRC
-** TODO Fast Latex Snippets
+** Fast Latex Snippets
 *** Requirements
 Use =texmathp= to tell if you are in math mode.
 #+BEGIN_SRC emacs-lisp
@@ -1741,12 +1731,6 @@ This command will enter inline math mode if not in math mode, and exit otherwise
     (insert "\\(\\)")
     (backward-char 2)))
 #+END_SRC
-**** Delete n Characters
-Delete n characters before the point.
-#+BEGIN_SRC emacs-lisp
-(defun gm/delete-chars (n)
-  (dotimes (i n) (delete-char -1)))
-#+END_SRC
 **** Last n Characters Before Point
 Return the last n characters before the point.
 #+BEGIN_SRC emacs-lisp
@@ -1758,8 +1742,8 @@ Return the last n characters before the point.
 (defun gm/snippet (key snippet)
   (let ((len (length key)))
         (progn
-          (gm/delete-chars (- len 1))
-          (when (= (char-before) ?\\) (gm/delete-chars 1))
+          (delete-char (- len 1))
+          (when (= (char-before) ?\\) (delete-char 1))
           (yas-expand-snippet (yas-lookup-snippet snippet)))))
 #+END_SRC
 **** Get String from File
@@ -1778,19 +1762,19 @@ snippets. First, we create a suffix tree of all the math snippets.
 
 (eval-when-compile
   (defun gm/math-setup ()
-    (setq gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
-    (setq gm/math-suffix
-          (--reduce-from (radix-tree-insert acc (car it) (cdr it))
-                         radix-tree-empty (mapcar (lambda (x) (cons (reverse (car x)) (cdr x)))
-                                                  gm/math-snippets)))
-    (loop for x in (delete-dups (mapcar (lambda (x) (substring (car x) (1- (length (car x))) (length (car x)))) gm/math-snippets))
-          collect (eval (macroexpand
-                         `(define-conditional-key org-mode-map
-                              ,x (lambda () (interactive)
-                                   (gm/math-snippet ,x)) (texmathp)))))
+    (quiet!
+     (setq gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
+     (setq gm/math-suffix
+           (--reduce-from (radix-tree-insert acc (car it) (cdr it))
+                          radix-tree-empty (mapcar (lambda (x) (cons (reverse (car x)) (cdr x)))
+                                                   gm/math-snippets)))
+     (loop for x in (delete-dups (mapcar (lambda (x) (substring (car x) (1- (length (car x))) (length (car x)))) gm/math-snippets))
+           collect (eval (macroexpand
+                          `(define-conditional-key org-mode-map
+                               ,x (λ! (gm/math-snippet ,x)) (texmathp)))))
 
-    (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
-    (message nil)))
+     (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
+     (message nil))))
 #+END_SRC
 We make a completion function.
 #+BEGIN_SRC emacs-lisp
@@ -1908,7 +1892,7 @@ brackets are added to ensure proper LaTeX rendering.
   (memq (get-char-code-property char 'general-category)
         '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
 
-(defun gm/math-subscript (&rest r)
+(defun gm/math-subscript (&rest)
   (cond ((gm/char-is-letter (char-before)) (insert "_"))
         ((string-match "\_[0-9]" (gm/last-n-chars 2))
          (save-excursion
@@ -1929,7 +1913,7 @@ Add subscript bindings to each of the ten digits.
 #+END_SRC
 **** Simplify Super/Subscripts
 #+BEGIN_SRC emacs-lisp
-(defun gm/simplify-math-script (&rest r)
+(defun gm/simplify-math-script (&rest)
   (when (string-match "[_^]{.}" (gm/last-n-chars 4))
     (save-excursion
       (delete-char -1)
