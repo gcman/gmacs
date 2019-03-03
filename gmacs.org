@@ -1697,6 +1697,7 @@ though that is the default, because otherwise binding =TAB= to =nil= in
 #+BEGIN_SRC emacs-lisp
 (setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet
+  :defer 3
   :diminish (yas-minor-mode)
   :config
   (yas-global-mode 1)
@@ -1706,24 +1707,51 @@ though that is the default, because otherwise binding =TAB= to =nil= in
 #+END_SRC
 ** Fast Latex Snippets
 *** Requirements
-Use =texmathp= to tell if you are in math mode.
-#+BEGIN_SRC emacs-lisp
-(require 'texmathp)
-#+END_SRC
 I use a hydra for snippets that just insert/replace text in math mode and thus
-don't require the use of =yasnippets=.
-To automate the generation of my main math snippets, I use a data structure
-called a radix tree.
+don't require the use of =yasnippets=. To maintain and generate my main snippets,
+I use a data structure called a radix tree.
 #+BEGIN_SRC emacs-lisp
 (require 'radix-tree)
 #+END_SRC
 *** Helper Functions
+**** Simpler texmathp
+The default =texmathp= function assumes that you are writing valid LaTeX code.
+This is all well and good when you are actually writing LaTeX, where things like
+the dollar sign have only one meaning, but I write documents almost
+entirely in Org Mode (I export them to LaTeX). Here the function easily gets
+confused. So I make my own for checking if you are in math mode, which just
+looks at the surrounding paragraph. We first make a list of math environments
+that our function will look for.
+#+BEGIN_SRC emacs-lisp
+(setq gm/math-environments '("equation" "align"))
+#+END_SRC
+The idea is that we search the regin from the beginning of the paragraph to the
+point for delimiters for inline math (=\(= and =\)=) and display math (=\begin{ENV}=
+and =\end{ENV=}, where =ENV= is an element of =gm/math-environments=). The one
+subtlety is that we also look at the starred versions of =ENV=. If there are more
+open delimiters than closed delimiters, then the point must be inside a math
+block, and so we return true.
+#+begin_SRC emacs-lisp
+(defun gm/in-math-p ()
+  (let ((end (point))
+        (start (save-excursion (org-backward-paragraph) (point))))
+    (defun gm/in-math-p-helper (s-begin)
+      (concat s-begin (mapconcat 'identity
+                                 (mapcar (lambda (s) (concat "\\(" s "\\)"))
+                                         gm/math-environments) "\\|") "[\\*]?}"))
+    (let ((inline-open (how-many "\\\\(" start end))
+          (inline-close (how-many "\\\\)" start end))
+          (env-open (how-many (gm/in-math-p-helper "\\\\begin{") start end))
+          (env-close (how-many (gm/in-math-p-helper "\\\\end{") start end)))
+      (or (> (- inline-open inline-close) 0)
+              (> (- env-open env-close) 0)))))
+#+END_SRC
 **** Enter Math Mode
 This command will enter inline math mode if not in math mode, and exit otherwise.
 #+BEGIN_SRC emacs-lisp
 (defun gm/enter-math-mode ()
   (interactive)
-  (if (texmathp)
+  (if (gm/in-math-p)
       (progn
         (goto-char (org-element-property :begin (org-element-context)))
         (forward-char)
@@ -1742,8 +1770,8 @@ Return the last n characters before the point.
 (defun gm/snippet (key snippet)
   (let ((len (length key)))
         (progn
-          (delete-char (- len 1))
-          (when (= (char-before) ?\\) (delete-char 1))
+          (delete-char (- 1 len)) ;; this has to be negative
+          (when (= (char-before) ?\\) (delete-char -1))
           (yas-expand-snippet (yas-lookup-snippet snippet)))))
 #+END_SRC
 **** Get String from File
@@ -1760,21 +1788,20 @@ snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/math-snippet-file (expand-file-name "math-snippets.el" gmacs-emacs-dir))
 
-(eval-when-compile
-  (defun gm/math-setup ()
-    (quiet!
-     (setq gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
-     (setq gm/math-suffix
-           (--reduce-from (radix-tree-insert acc (car it) (cdr it))
-                          radix-tree-empty (mapcar (lambda (x) (cons (reverse (car x)) (cdr x)))
-                                                   gm/math-snippets)))
-     (loop for x in (delete-dups (mapcar (lambda (x) (substring (car x) (1- (length (car x))) (length (car x)))) gm/math-snippets))
-           collect (eval (macroexpand
-                          `(define-conditional-key org-mode-map
-                               ,x (λ! (gm/math-snippet ,x)) (texmathp)))))
+(defun gm/math-setup ()
+  (quiet!
+   (setq gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
+   (setq gm/math-suffix
+         (--reduce-from (radix-tree-insert acc (car it) (cdr it))
+                        radix-tree-empty (mapcar (lambda (x) (cons (reverse (car x)) (cdr x)))
+                                                 gm/math-snippets)))
+   (loop for x in (delete-dups (mapcar (lambda (x) (substring (car x) (1- (length (car x))) (length (car x)))) gm/math-snippets))
+         collect (eval (macroexpand
+                        `(define-conditional-key org-mode-map
+                             ,x (λ! (gm/math-snippet ,x)) (gm/in-math-p)))))
 
-     (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
-     (message nil))))
+   (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
+   (message nil)))
 #+END_SRC
 We make a completion function.
 #+BEGIN_SRC emacs-lisp
@@ -1787,24 +1814,22 @@ We make a completion function.
 #+END_SRC
 And a function to get the possible completion candidates from the buffer.
 #+BEGIN_SRC emacs-lisp
-(eval-when-compile
-  (defun gm/buff-cand (n key)
-    (loop for i from 1 to n
-          collect (concat (gm/last-n-chars i) key))))
+(defun gm/buff-cand (n key)
+  (loop for i from 1 to n
+        collect (concat (gm/last-n-chars i) key)))
 #+END_SRC
 Then, we set up the creation of an actual snippet (note that its length is
 capped at 5 characters). The longest snippet is currently =binom=, for the
 binomial coefficient (choose function).
 #+BEGIN_SRC emacs-lisp
-(eval-when-compile
-  (defun gm/math-snippet (key)
-    (setq buff-cand (gm/buff-cand 5 key))
-    (setq completions
-          (loop for x in (radix-tree-keys gm/math-suffix key) if (member (reverse (car x)) buff-cand)
-                collect x))
-    (setq snippet (car (sort completions (lambda (a b) (> (length (car a)) (length (car b)))))))
-    (if snippet
-        (gm/snippet (car snippet) (cdr snippet)) (insert key))))
+(defun gm/math-snippet (key)
+  (setq buff-cand (gm/buff-cand 5 key))
+  (setq completions
+        (loop for x in (radix-tree-keys gm/math-suffix key) if (member (reverse (car x)) buff-cand)
+              collect x))
+  (setq snippet (car (sort completions (lambda (a b) (> (length (car a)) (length (car b)))))))
+  (if snippet
+      (gm/snippet (car snippet) (cdr snippet)) (insert key)))
 #+END_SRC
 And finally some utility functions. First we get a way to dump our snippet data
 to a file.
@@ -1839,7 +1864,7 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
 #+BEGIN_SRC emacs-lisp
 (defun math-tab ()
   (interactive)
-  (if (texmathp)
+  (if (gm/in-math-p)
       (catch 'stop
         (cond
          ((looking-at "}\\|\\]\\|)")
@@ -1907,7 +1932,7 @@ Add subscript bindings to each of the ten digits.
   (eval (macroexpand
          `(define-conditional-key org-mode-map
               (number-to-string ,n)
-              (gm/math-subscript) (texmathp)))))
+              (gm/math-subscript) (gm/in-math-p)))))
 (dotimes (n 10) (gm/bind-subscript n))
 (gm/bind-subscript 9)
 #+END_SRC
@@ -1967,20 +1992,20 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
          (gm/math-frac-helper "[\\]?[0-9A-Za-z_^]*"))
         (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
 
-(define-conditional-key org-mode-map "/" #'gm/math-frac (texmathp))
+(define-conditional-key org-mode-map "/" #'gm/math-frac (gm/in-math-p))
 #+END_SRC
-**** Insert LaTeX Newline
+**** Easy Split Environments
 I wanted to make writing environments like =split= and =align= easier, so that I
 wouldn't have to manually add the newline (=\\=) at the end of each line required
 to make LaTeX happy.
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-split-p ()
-  (when (texmathp)
+  (when (gm/in-math-p)
     (save-excursion
-      (goto-char (cdr texmathp-why))
+      (org-backward-paragraph)
       (forward-line)
-      (when (equal (buffer-substring-no-properties (line-beginning-position) (line-end-position))
-                   "\\begin{split}") t))))
+      (equal (buffer-substring-no-properties (line-beginning-position) (line-end-position))
+                   "\\begin{split}"))))
 
 (defun gm/tex-newline ()
   (interactive)
@@ -2063,9 +2088,9 @@ to make LaTeX happy.
   ("." (insert " \\cdots ") "···")
   ("-" (gm/snippet "" "conjugate") "-"))
 
-(define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (texmathp))
+(define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (gm/in-math-p))
 #+END_SRC
 * Post Init
 #+BEGIN_SRC emacs-lisp
 (run-hooks 'gmacs-post-init-hook)
-#+END_SRC
+#+END_
