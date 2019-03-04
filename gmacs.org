@@ -1634,6 +1634,7 @@ Insert dollar signs electrically.
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp
 (use-package notmuch
+  :commands notmuch
   :init
   (require 'smtpmail)
   (require 'smtpmail-async))
@@ -1714,7 +1715,7 @@ I use a data structure called a radix tree.
 (require 'radix-tree)
 #+END_SRC
 *** Helper Functions
-**** Simpler texmathp
+**** Simpler =texmathp=
 The default =texmathp= function assumes that you are writing valid LaTeX code.
 This is all well and good when you are actually writing LaTeX, where things like
 the dollar sign have only one meaning, but I write documents almost
