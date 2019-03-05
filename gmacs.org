@@ -584,6 +584,16 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
 (bind-key "C-c h" 'ov-highlight/body)
 (bind-key "C-c C-h" 'ov-highlight/body)
 #+END_SRC
+*** Async Without Window
+#+BEGIN_SRC emacs-lisp
+(defun async-shell-command-no-window (command)
+  (interactive)
+  (let ((display-buffer-alist
+        (list (cons "\\*Async Shell Command\\*.*"
+          (cons #'display-buffer-no-window nil)))))
+    (async-shell-command
+     command)))
+#+END_SRC
 ** Packages
 *** Async
 Authorize actions.
@@ -1276,8 +1286,8 @@ updated when I archive a subtree.
 #+BEGIN_SRC emacs-lisp
 (setq package-check-signature nil)
 (use-package org-gcal
-  :defer t)
-(add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync)))
+  :commands org-gcal-sync)
+(add-hook 'org-agenda-mode-hook #'org-gcal-sync)
 #+END_SRC
 *** Org Babel
 #+BEGIN_SRC emacs-lisp
@@ -1634,16 +1644,16 @@ Insert dollar signs electrically.
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp
 (use-package notmuch
-  :commands notmuch
+  :commands (notmuch notmuch-refresh-all-buffers)
   :init
   (require 'smtpmail)
   (require 'smtpmail-async))
 #+END_SRC
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp
-(setq message-directory "~/mail/")
-(setq message-auto-save-directory "~/mail/draft")
-(setq message-fcc-dirs "~/mail/mbsyncmail/Sent Items")
+(setq message-directory "~/mail/"
+      message-auto-save-directory "~/mail/draft"
+      message-fcc-dirs "~/mail/mbsyncmail/Sent Items")
 #+END_SRC
 Provide my email and name.
 #+BEGIN_SRC emacs-lisp
@@ -1655,8 +1665,8 @@ SMTP for sending mail. The =stream-type= is important because I want my outgoing
 mail to at least use TLS encryption. One day, though, I would like to adopt a
 more rigorous system of encryption.
 #+BEGIN_SRC emacs-lisp
-(setq send-mail-function 'async-smtpmail-send-it
-      message-send-mail-function 'async-smtpmail-send-it
+(setq send-mail-function #'async-smtpmail-send-it
+      message-send-mail-function #'async-smtpmail-send-it
       smtpmail-debug-info t
       smtpmail-debug-verb t
       smtpmail-stream-type 'starttls
@@ -1665,13 +1675,13 @@ more rigorous system of encryption.
 #+END_SRC
 Nice stuff to have for sending mail.
 #+BEGIN_SRC emacs-lisp
-(setq message-kill-buffer-on-exit t)
-(setq notmuch-address-command 'internal)
+(setq message-kill-buffer-on-exit t
+      notmuch-address-command 'internal)
 #+END_SRC
 Some commonly used searches.
 #+BEGIN_SRC emacs-lisp
 (setq notmuch-saved-searches
-      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order oldest-first)
+      '((:name "inbox" :query "tag:unread" :key "i" :sort-order oldest-first)
         (:name "flagged" :query "tag:flagged" :key "f")
         (:name "sent" :query "tag:sent" :key "s" :sort-order newest-first)
         (:name "drafts" :query "tag:draft" :key "d")
@@ -1683,10 +1693,11 @@ Accessing mail, including checking for new mail.
   (interactive)
   (shell-command "systemctl --user start checkmail.timer")
   (notmuch)
-  (notmuch-refresh-all-buffers))
+  (notmuch-refresh-this-buffer))
 
-(advice-add 'notmuch-poll-and-refresh-this-buffer :before
-            (λ! (shell-command "~/checkmail.sh")))
+(run-with-timer 0 (* 15 60)
+                (lambda () (progn (shell-command "~/checkmail.sh")
+                                  (notmuch-refresh-all-buffers))))
 
 (bind-key "C-c m" #'gm/open-mail)
 #+END_SRC
@@ -1728,7 +1739,7 @@ that our function will look for.
 #+END_SRC
 The idea is that we search the regin from the beginning of the paragraph to the
 point for delimiters for inline math (=\(= and =\)=) and display math (=\begin{ENV}=
-and =\end{ENV=}, where =ENV= is an element of =gm/math-environments=). The one
+and =\end{ENV}=, where =ENV= is an element of =gm/math-environments=). The one
 subtlety is that we also look at the starred versions of =ENV=. If there are more
 open delimiters than closed delimiters, then the point must be inside a math
 block, and so we return true.

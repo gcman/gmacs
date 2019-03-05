@@ -19,3 +19,4 @@
     (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory))))
 
 ;;; init.el ends here
+(put 'list-timers 'disabled nil)
