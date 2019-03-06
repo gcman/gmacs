@@ -30,7 +30,7 @@
 :CREATED: %U
 :END:")
      ("j" "Journal" entry
-      (file+datetree "~/org/journal.org")
+      (file+olp+datetree "~/org/journal.org")
       "** %^{Heading}
 :PROPERTIES:
 :CREATED: %U
@@ -84,7 +84,8 @@
  '(org-todo-keywords
    '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
  '(package-selected-packages
-   '(sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap))
+   '(uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap))
+ '(pdf-misc-print-programm "/usr/bin/gtklp")
  '(preview-default-preamble
    '("\\RequirePackage{gm-math}" "\\RequirePackage["
      ("," . preview-default-option-list)
@@ -103,9 +104,9 @@
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-strip-common-suffix t)
- '(web-mode-code-indent-offset 2 t)
- '(web-mode-css-indent-offset 2 t)
- '(web-mode-markup-indent-offset 2 t))
+ '(web-mode-code-indent-offset 2)
+ '(web-mode-css-indent-offset 2)
+ '(web-mode-markup-indent-offset 2))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

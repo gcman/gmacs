@@ -1,6 +1,9 @@
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
+:PROPERTIES:
+:EXPORT_FILE_NAME: Starting_Up
+:END:
 ** Lexical Scoping
 #+BEGIN_SRC emacs-lisp
 ;; -*- lexical-binding: t; -*-
@@ -129,6 +132,8 @@ byte-compiled, Emacs will initialize packages on startup as usual.
     (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
   (unless (assoc-default "gnu" package-archives)
     (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t))
+  (unless (assoc-default "melpa-stable" package-archives)
+    (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t))
 
   (package-initialize)
   (unless (package-installed-p 'use-package)
@@ -146,7 +151,7 @@ We also require =diminish= and =bind= because I often use these keywords within
 ** Add Elisp Directory and Custom Directory
 I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
-(setq custom-file (expand-file-name "custom" gmacs-emacs-dir))
+(setq custom-file (expand-file-name "custom.el" gmacs-emacs-dir))
 (load custom-file)
 #+END_SRC
 I put my personal information in =private.el=.
@@ -161,7 +166,7 @@ deferral we set earlier.
 (use-package dash :demand t)
 (use-package f :demand t)
 (use-package s :demand t)
-(require 'cl-lib)
+(use-package cl-lib :ensure t :demand t)
 #+END_SRC
 * General Configuration
 ** Graphics
@@ -341,7 +346,7 @@ Kill the current buffer.
 #+END_SRC
 **** Reload Files On Update
 #+BEGIN_SRC emacs-lisp
-(global-auto-revert-mode t)
+(global-auto-revert-mode 1)
 #+END_SRC
 **** Complete Reload
 Completely reload emacs, by reloading the init file.
@@ -358,7 +363,7 @@ Completely reload emacs, by reloading the init file.
 #+END_SRC
 **** Dictionary
 #+BEGIN_SRC emacs-lisp
-(require 'sdcv-mode)
+(autoload 'sdcv-search "sdcv-mode")
 #+END_SRC
 **** Transient Mark Mode
 #+BEGIN_SRC emacs-lisp
@@ -375,13 +380,7 @@ Completely reload emacs, by reloading the init file.
 **** Uniquify
 Make two buffers with the same file name distinguishable.
 #+BEGIN_SRC emacs-lisp
-(use-package uniquify
-  :defer 1
-  :ensure nil
-  :custom
-  (uniquify-after-kill-buffer-p t)
-  (uniquify-buffer-name-style 'post-forward)
-  (uniquify-strip-common-suffix t))
+(require 'uniquify)
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
@@ -575,12 +574,12 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
 *** Expand Region
 #+BEGIN_SRC emacs-lisp
 (use-package expand-region
-  :defer t
+  :commands er/expand-region
   :bind (("C-=" . er/expand-region)))
 #+END_SRC
 *** Highlighting/Comments
 #+BEGIN_SRC emacs-lisp
-(require 'ov-highlight)
+(autoload 'ov-highlight/body "ov-highlight")
 (bind-key "C-c h" 'ov-highlight/body)
 (bind-key "C-c C-h" 'ov-highlight/body)
 #+END_SRC
@@ -593,6 +592,31 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
           (cons #'display-buffer-no-window nil)))))
     (async-shell-command
      command)))
+#+END_SRC
+*** Revert All Buffers
+#+BEGIN_SRC emacs-lisp
+(defun modi/revert-all-file-buffers ()
+  "Refresh all open file buffers without confirmation.
+Buffers in modified (not yet saved) state in emacs will not be reverted. They
+will be reverted though if they were modified outside emacs.
+Buffers visiting files which do not exist any more or are no longer readable
+will be killed."
+  (interactive)
+  (dolist (buf (buffer-list))
+    (let ((filename (buffer-file-name buf)))
+      ;; Revert only buffers containing files, which are not modified;
+      ;; do not try to revert non-file buffers like *Messages*.
+      (when (and filename
+                 (not (buffer-modified-p buf)))
+        (if (file-readable-p filename)
+            ;; If the file exists and is readable, revert the buffer.
+            (with-current-buffer buf
+              (revert-buffer t t))
+          ;; Otherwise, kill the buffer.
+          (let (kill-buffer-query-functions) ; No query done when killing buffer
+            (kill-buffer buf)
+            (message "Killed non-existing/unreadable file buffer: %s" filename))))))
+  (message "Finished reverting buffers."))
 #+END_SRC
 ** Packages
 *** Async
@@ -797,6 +821,7 @@ Nicely wrap lines for text mode.
 **** Rainbow Mode
 #+BEGIN_SRC emacs-lisp
 (use-package rainbow-mode
+  :defer 2
   :diminish
   :config (rainbow-mode 1))
 #+END_SRC
@@ -1025,8 +1050,8 @@ is already narrowed."
 #+END_SRC
 Then we can use =narrow-or-widen-dwim= to easily edit org =src= blocks.
 #+BEGIN_SRC emacs-lisp
-(with-eval-after-load 'org-src
-  '(define-key org-src-mode-map
+(after! org-src
+  (define-key org-src-mode-map
      "\C-x\C-s" #'org-edit-src-exit))
 #+END_SRC
 *** Delete Better
@@ -1084,9 +1109,8 @@ Switch better.
 #+END_SRC
 Use ibuffer.
 #+BEGIN_SRC emacs-lisp
-(require 'ibuffer)
-(bind-key "C-x C-b" 'ibuffer)
 (autoload 'ibuffer "ibuffer" "List buffers." t)
+(bind-key "C-x C-b" 'ibuffer)
 #+END_SRC
 *** Beacon Mode
 Never lose your cursor again.
@@ -1169,13 +1193,13 @@ the dark theme, because there is less bright light going into my eyes.
 (setq gm/theme nil)
 (defun gm/switch-theme ()
   (interactive)
+  (setq gm/theme (not gm/theme))
   (if (equal gm/theme nil)
       (progn (load-theme 'solarized-light)
-             (setq gm/theme t))
+             (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
     (progn (load-theme 'solarized-dark)
-           (setq gm/theme nil)))
-  (org-bullets-mode)
-  (org-bullets-mode))
+           (setq pdf-view-midnight-colors '("#839496" . "#002b36"))))
+  (modi/revert-all-file-buffers))
 
 (bind-key "C-c t" #'gm/switch-theme)
 #+END_SRC
@@ -1206,6 +1230,7 @@ Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
 (key-chord-define-global "jk" 'god-mode-all)
 #+END_SRC
+***
 * Org Mode
 ** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
@@ -1231,8 +1256,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
     :bind (:map org-mode-map
                 ("C-c y" . org-cliplink)))
   (use-package org-bullets
-    :demand t
-    :config (org-bullets-mode)
+    :commands org-bullets-mode
     :hook (org-mode . org-bullets-mode))
   :custom
   (org-directory "~/org/")
@@ -1264,10 +1288,14 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
       "* [[%:link][%:description]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%:initial\n%?"))
    (org-src-lang-modes '(("emacs-lisp" 'lispy-mode))))
   :diminish (org-indent-mode))
-(setq org-hide-emphasis-markers t)
-(setq org-startup-indented t)
-(setq org-agenda-start-on-weekday nil)
-(setcar (nthcdr 4 org-emphasis-regexp-components) 10)
+#+END_SRC
+Some extra settings that didn't work in the =use-package= block.
+#+BEGIN_SRC emacs-lisp
+(after! org
+  (setq org-hide-emphasis-markers t)
+  (setq org-startup-indented t)
+  (setq org-agenda-start-on-weekday nil)
+  (setcar (nthcdr 4 org-emphasis-regexp-components) 10))
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
 updated when I archive a subtree.
@@ -1286,19 +1314,19 @@ updated when I archive a subtree.
 #+BEGIN_SRC emacs-lisp
 (setq package-check-signature nil)
 (use-package org-gcal
-  :commands org-gcal-sync)
-(add-hook 'org-agenda-mode-hook #'org-gcal-sync)
+  :commands org-gcal-sync
+  :hook (org-agenda-mode . org-gcal-sync))
 #+END_SRC
 *** Org Babel
 #+BEGIN_SRC emacs-lisp
-(org-babel-do-load-languages
- 'org-babel-load-languages '((python . t)
-                             (latex . t)))
-(setq org-babel-python-command "python3.6")
-(setq org-babel-latex-command "pdflatex")
+(after! org
+  (org-babel-do-load-languages
+   'org-babel-load-languages '((python . t)
+                               (latex . t)))
+  (setq org-babel-python-command "python3.6")
+  (setq org-babel-latex-command "pdflatex"))
 #+END_SRC
 ** Prettifying
-*** Bullet List
 Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 #+BEGIN_SRC emacs-lisp
 (font-lock-add-keywords 'org-mode
@@ -1321,7 +1349,7 @@ Have lists begun by, for example, ~-~ look like a bullet-pointed list.
 *** Don't Break Paragraph on Comments
 Remove comments from org document when exporting to LaTeX.
 #+BEGIN_SRC emacs-lisp
-(defun delete-org-comments ()
+(defun delete-org-comments (backend)
   (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
                                     'comment 'identity))
         do (setf (buffer-substring (org-element-property :begin comment)
@@ -1439,7 +1467,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
            (setq cw/org-last-fragment curr))
           ))))
 
-(defvar gm/eq-preview nil)
+(setq gm/eq-preview nil)
 (defun gm/toggle-equation-preview ()
   (interactive)
   (if gm/eq-preview
@@ -1449,50 +1477,18 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
     (progn
       (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display)
       (message "Equation preview enabled.")))
-  (let ((var gm/eq-preview))
-    (setq gm/eq-preview (not var))))
+    (setq gm/eq-preview (not gm/eq-preview)))
 (bind-key "C-c p" 'gm/toggle-equation-preview)
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
-(defun org-export-headlines-to-pdf ()
-  "Export all subtrees that are *not* tagged with :noexport: to
-separate files.
-
-Subtrees that do not have the :EXPORT_FILE_NAME: property set
-are exported to a filename derived from the headline text."
-  (interactive)
-  (save-buffer)
-  (let ((modifiedp (buffer-modified-p)))
-    (save-excursion
-      (goto-char (point-min))
-      (goto-char (re-search-forward "^*"))
-      (set-mark (line-beginning-position))
-      (goto-char (point-max))
-      (org-map-entries
-       (lambda ()
-         (let ((export-file (org-entry-get (point) "EXPORT_FILE_NAME")))
-           (unless export-file
-             (org-set-property
-              "EXPORT_FILE_NAME"
-              (replace-regexp-in-string " " "_" (nth 4 (org-heading-components)))))
-           (deactivate-mark)
-           (org-latex-export-to-latex nil t)
-           (unless export-file (org-delete-property "EXPORT_FILE_NAME"))
-           (set-buffer-modified-p modifiedp)))
-       "-noexport" 'region-start-level))))
-
 (defun gm/org-latex-export ()
   (interactive)
   (save-excursion
     (search-backward "EXPORT_FILE_NAME")
-    (save-restriction
-    (org-narrow-to-subtree)
-    (org-export-headlines-to-pdf))))
-#+END_SRC
-We then bind this.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("C-c b" . gm/org-latex-export)
+    (org-latex-export-to-pdf t t)))
+
+(bind-key "C-c b" #'gm/org-latex-export org-mode-map)
 #+END_SRC
 **** Export Classes
 ***** Tufte-LaTeX
@@ -1504,35 +1500,38 @@ We then bind this.
 ******* No Option
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters
- "latex" nil
- (lambda (path desc format)
-   (when(eq format 'latex)
-     (format "\\%s{%s}" path desc))))
+ "latex"
+ :follow nil
+ :export (lambda (path desc format)
+           (when (eq format 'latex)
+             (format "\\%s{%s}" path desc))))
 #+END_SRC
 ******* One Option
 #+BEGIN_SRC emacs-lisp
-(org-link-set-parameters
- "latex-opt" nil
- (lambda (path desc format)
-   (when (eq format 'latex)
-     (let* ((desc-list (split-string desc ";"))
-            (opt (nth 1 desc-list))
-            (arg (nth 0 desc-list)))
-       (format "\\%s%s{%s}" path
-               (if (equal "" opt) opt (format "[%s]" opt))
-               arg)))))
+(org-add-link-type
+ "latex-opt"
+ :follow nilr
+ :export (lambda (path desc format)
+           (when (eq format 'latex)
+             (let* ((desc-list (split-string desc ";"))
+                    (opt (nth 1 desc-list))
+                    (arg (nth 0 desc-list)))
+               (format "\\%s%s{%s}" path
+                       (if (equal "" opt) opt (format "[%s]" opt))
+                       arg)))))
 #+END_SRC
 ******* One Option (After Main)
 #+BEGIN_SRC emacs-lisp
-(org-link-set-parameters
- "latex-opt-after" nil
- (lambda (path desc format)
-   (when (eq format 'latex)
-     (let* ((desc-list (split-string desc ";"))
-            (opt (nth 1 desc-list))
-            (arg (nth 0 desc-list)))
-       (format "\\%s{%s}%s" path arg
-               (if (equal "" opt) opt (format "[%s]" opt)))))))
+(org-add-link-type
+ "latex-opt-after"
+ :follow nil
+ :export (lambda (path desc format)
+           (when (eq format 'latex)
+             (let* ((desc-list (split-string desc ";"))
+                    (opt (nth 1 desc-list))
+                    (arg (nth 0 desc-list)))
+               (format "\\%s{%s}%s" path arg
+                       (if (equal "" opt) opt (format "[%s]" opt)))))))
 #+END_SRC
 ****** Class Options
 #+BEGIN_SRC emacs-lisp
@@ -1542,14 +1541,6 @@ We then bind this.
    [NO-DEFAULT-PACKAGES]"
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")))
-#+END_SRC
-****** Biber
-#+BEGIN_SRC emacs-lisp
-(setq org-latex-pdf-process
-      '("pdflatex -interaction nonstopmode -output-directory %o %f"
-        "biber %b"
-        "pdflatex -interaction nonstopmode -output-directory %o %f"
-        "pdflatex -interaction nonstopmode -output-directory %o %f"))
 #+END_SRC
 ****** Keyword Search
 #+BEGIN_SRC emacs-lisp
@@ -1567,8 +1558,7 @@ from lines like:
 #+END_SRC
 ***** Assignment
 #+BEGIN_SRC emacs-lisp
-(after! ox-latex
-  (add-to-list 'org-latex-classes
+(after! ox-latex (add-to-list 'org-latex-classes
                '("assignment"
                  "\\documentclass[12pt]{article}
 \\usepackage{uts-assignment}
@@ -1583,8 +1573,7 @@ from lines like:
 #+END_SRC
 ***** MLA
 #+BEGIN_SRC emacs-lisp
-(after! ox-latex
-  (add-to-list 'org-latex-classes
+(after! ox-latex (add-to-list 'org-latex-classes
                '("gm-mla"
                  "\\documentclass[12pt]{article}
 \\usepackage{uts-mla}
@@ -1598,38 +1587,23 @@ from lines like:
 #+END_SRC
 ***** Math Notes
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'org-latex-classes
-             '("gm-notes"
-               "\\documentclass{gm-notes}
-\\usepackage{gm-math}
+(after! ox-latex (add-to-list 'org-latex-classes
+               '("gm-notes"
+                 "\\documentclass{gm-notes}
 [NO-DEFAULT-PACKAGES]"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
 #+END_SRC
 **** Export Settings
 #+BEGIN_SRC emacs-lisp
 (setq org-highlight-latex-and-related '(latex))
-(setq org-latex-to-pdf-process
- '("xelatex -interaction nonstopmode %f"
-   "xelatex -interaction nonstopmode %f")) ;; for multiple passes
 (setq org-export-with-smart-quotes t)
-#+END_SRC
-**** Cleverref
-#+BEGIN_SRC emacs-lisp
-(defun org-latex-ref-to-cref (text)
-  "Use \\cref instead of \\ref in latex export."
-  (when (org-export-derived-backend-p backend 'latex)
-    (replace-regexp-in-string "\\\\ref{" "\\\\cref{" text)))
-
-(add-to-list 'org-export-filter-final-output-functions
-             'org-latex-ref-to-cref)
 #+END_SRC
 * TeX
 Of course we use =auctex=. I do most of my LaTeX editing in Org Mode now.
 #+BEGIN_SRC emacs-lisp
 (use-package auctex
-  :defer t
   :init (require 'tex-site)
   :config (setq font-latex-fontify-script nil))
 #+END_SRC
@@ -1644,10 +1618,13 @@ Insert dollar signs electrically.
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp
 (use-package notmuch
-  :commands (notmuch notmuch-refresh-all-buffers)
-  :init
+  :commands (notmuch)
+  :config
   (require 'smtpmail)
-  (require 'smtpmail-async))
+  (require 'smtpmail-async)
+  (run-with-timer 0 (* 15 60)
+                (lambda () (progn (shell-command "~/checkmail.sh")
+                                  (notmuch-refresh-all-buffers)))))
 #+END_SRC
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp
@@ -1694,10 +1671,6 @@ Accessing mail, including checking for new mail.
   (shell-command "systemctl --user start checkmail.timer")
   (notmuch)
   (notmuch-refresh-this-buffer))
-
-(run-with-timer 0 (* 15 60)
-                (lambda () (progn (shell-command "~/checkmail.sh")
-                                  (notmuch-refresh-all-buffers))))
 
 (bind-key "C-c m" #'gm/open-mail)
 #+END_SRC
@@ -2105,4 +2078,4 @@ to make LaTeX happy.
 * Post Init
 #+BEGIN_SRC emacs-lisp
 (run-hooks 'gmacs-post-init-hook)
-#+END_
+#+END_SRC
