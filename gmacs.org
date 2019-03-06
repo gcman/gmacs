@@ -78,6 +78,9 @@ list to make it easy for to extend to more directories if needed.
   (defvar gmacs-custom-dir (concat gmacs-emacs-dir "elisp/")
     "Where custom lisp files are stored")
 
+  (defvar gmacs-cache-dir (concat gmacs-emacs-dir "cache/")
+    "Where temporary files that could be deleted without anything terrible happening are stored.")
+
   (dolist (dir (list gmacs-packages-dir))
     (unless (file-directory-p dir)
       (make-directory dir t))))
@@ -385,14 +388,15 @@ Make two buffers with the same file name distinguishable.
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
 #+BEGIN_SRC emacs-lisp
-(setq backup-directory-alist '(("." . "~/.emacs.d/cache/backups")))
+(setq backup-directory-alist '(("." . "~.emacs.d/cache/backups/")))
 #+END_SRC
-Also, I have lots of disk space, and not so much patience when I lose an important file. So I save lots.
+Also, I have lots of disk space, and not so much patience when I lose an
+important file. So I save lots.
 #+BEGIN_SRC emacs-lisp
 (setq delete-old-versions -1)
 (setq version-control t)
 (setq vc-make-backup-files t)
-(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/cache/auto-save-list/" t)))
+(setq auto-save-file-name-transforms '((".*"  "~/.emacs.d/cache/auto-save-list/" t)))
 #+END_SRC
 Store more undo information in memory.
 #+BEGIN_SRC emacs-lisp
@@ -401,7 +405,11 @@ Store more undo information in memory.
 **** History
 It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
 #+BEGIN_SRC emacs-lisp
-(setq savehist-file (expand-file-name "cache/savehist" gmacs-emacs-dir))
+(setq savehist-file (expand-file-name "savehist" gmacs-cache-dir)
+      save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
+      recentf-save-file (expand-file-name "recentf" gmacs-cache-dir)
+      transiient-history-file (expand-file-name "transient-history.el" gmacs-cache-dir)
+      bookmark-default-file (expand-file-name "bookmarks" gmacs-cache-dir))
 (savehist-mode 1)
 (setq history-length t)
 (setq history-delete-duplicates t)
@@ -411,8 +419,7 @@ It's nice to have a history of commands so that when you open a new emacs instan
         search-ring
         regexp-search-ring))
 #+END_SRC
-***** Save Place
-Opens a file to the same place in which it was last closed.
+Open files to the same place in which they were last closed.
 #+BEGIN_SRC emacs-lisp
 (save-place-mode 1)
 #+END_SRC
@@ -471,7 +478,8 @@ Save abbreviations upon saving a file.
      (t      . ivy--regex-fuzzy)))
   (ivy-use-virtual-buffers t)
   (ivy-display-style 'fancy)
-  (ivy-initial-inputs-alist nil))
+  (ivy-initial-inputs-alist nil)
+  (smex-save-file (expand-file-name "smex" gmacs-cache-dir)))
 #+END_SRC
 *** Programming
 Set up =flycheck=.
@@ -594,6 +602,7 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
      command)))
 #+END_SRC
 *** Revert All Buffers
+From [[https://emacs.stackexchange.com/questions/24459/revert-all-open-buffers-and-ignore-errors][Emacs Stack Exchange]].
 #+BEGIN_SRC emacs-lisp
 (defun modi/revert-all-file-buffers ()
   "Refresh all open file buffers without confirmation.
@@ -625,6 +634,10 @@ Authorize actions.
 (require 'auth-source-pass)
 (auth-source-pass-enable)
 (setq auth-sources '("~/.authinfo.gpg"))
+#+END_SRC
+Set tramp connection history location.
+#+BEGIN_SRC emacs-lisp
+(setq tramp-persistency-file (expand-file-name "tramp" gmacs-cache-dir))
 #+END_SRC
 *** Magit
 Magit, the magical Git client, is an amazing porcelain for Git inside of Emacs.
@@ -1315,6 +1328,7 @@ updated when I archive a subtree.
 (setq package-check-signature nil)
 (use-package org-gcal
   :commands org-gcal-sync
+  :custom (org-gcal-dir gmacs-cache-dir)
   :hook (org-agenda-mode . org-gcal-sync))
 #+END_SRC
 *** Org Babel
@@ -1361,6 +1375,10 @@ Remove comments from org document when exporting to LaTeX.
 Not too small.
 #+BEGIN_SRC emacs-lisp
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
+#+END_SRC
+Where should it be?
+#+BEGIN_SRC emacs-lisp
+(setq org-preview-latex-image-directory "cache/ltximg/")
 #+END_SRC
 Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]].
 #+BEGIN_SRC emacs-lisp
@@ -1508,9 +1526,9 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
 #+END_SRC
 ******* One Option
 #+BEGIN_SRC emacs-lisp
-(org-add-link-type
+(org-link-set-parameters
  "latex-opt"
- :follow nilr
+ :follow nil
  :export (lambda (path desc format)
            (when (eq format 'latex)
              (let* ((desc-list (split-string desc ";"))
@@ -1522,7 +1540,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
 #+END_SRC
 ******* One Option (After Main)
 #+BEGIN_SRC emacs-lisp
-(org-add-link-type
+(org-link-set-parameters
  "latex-opt-after"
  :follow nil
  :export (lambda (path desc format)
@@ -1619,6 +1637,8 @@ Set up the requirements.
 #+BEGIN_SRC emacs-lisp
 (use-package notmuch
   :commands (notmuch)
+  :custom
+  (nms-settings-file (expand-file-name "network-security.data" gmacs-cache-dir))
   :config
   (require 'smtpmail)
   (require 'smtpmail-async)
