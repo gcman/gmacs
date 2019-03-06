@@ -1598,20 +1598,6 @@ from lines like:
 (setq org-highlight-latex-and-related '(latex))
 (setq org-export-with-smart-quotes t)
 #+END_SRC
-* TeX
-Of course we use =auctex=. I do most of my LaTeX editing in Org Mode now.
-#+BEGIN_SRC emacs-lisp
-(use-package auctex
-  :init (require 'tex-site)
-  :config (setq font-latex-fontify-script nil))
-#+END_SRC
-** Electric Dollars and Parens
-Insert dollar signs electrically.
-#+BEGIN_SRC emacs-lisp
-(add-hook 'LaTeX-mode-hook
-	      (lambda () (set (make-variable-buffer-local 'TeX-electric-math)
-			              (cons "$" "$"))))
-#+END_SRC
 * Mail
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp
