@@ -15,6 +15,7 @@
      (ivy-switch-buffer . ivy--regex-plus)
      (t . ivy--regex-fuzzy)) t)
  '(ivy-use-virtual-buffers t)
+ '(nms-settings-file "/home/gautam/.emacs.d/cache/network-security.data" t)
  '(org-agenda-files
    '("~/org/inbox.org" "~/org/gtd.org" "~/org/notes.org" "~/org/gcal.org"))
  '(org-capture-templates
@@ -76,6 +77,8 @@
 \\addtolength{\\textheight}{-3cm}
 \\setlength{\\topmargin}{1.5cm}
 \\addtolength{\\topmargin}{-2.54cm}")
+ '(org-gcal-dir "/home/gautam/.emacs.d/cache/")
+ '(org-latex-default-class "gm-notes")
  '(org-refile-targets
    '(("~/org/gtd.org" :maxlevel . 3)
      ("~/org/someday.org" :level . 1)
@@ -101,6 +104,7 @@
      (eval ov-highlight-load)
      (after-save-hook . gm/org-latex-export)
      (org-hugo-auto-export-on-save . t)))
+ '(smex-save-file "/home/gautam/.emacs.d/cache/smex")
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-strip-common-suffix t)

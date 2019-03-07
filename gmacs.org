@@ -199,22 +199,6 @@ Turn off reverting buffer messages.
 #+BEGIN_SRC emacs-lisp
 (setq auto-revert-verbose nil)
 #+END_SRC
-**** Autosave
-Turn off autosave messages. To do this, we define our own auto-save function and
-replace the built-in one with ours.
-#+BEGIN_SRC emacs-lisp
-(setq auto-save-timeout 99999)
-(defvar bjm/auto-save-timer nil
-  "Timer to run `bjm/auto-save-silent'")
-(defvar bjm/auto-save-interval 15
-  "How often in seconds of idle time to auto-save with `bjm/auto-save-silent'")
-(defun bjm/auto-save-silent ()
-  "Auto-save all buffers silently"
-  (interactive)
-  (do-auto-save t))
-(setq bjm/auto-save-timer
-      (run-with-idle-timer 0 bjm/auto-save-interval #'bjm/auto-save-silent))
-#+END_SRC
 **** Modeline
 #+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
@@ -368,7 +352,7 @@ Make two buffers with the same file name distinguishable.
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
 #+BEGIN_SRC emacs-lisp
-(setq backup-directory-alist '(("." . "cache/backups/")))
+(setq backup-directory-alist `(("." . ,(expand-file-name (concat gmacs-cache-dir "backups")))))
 #+END_SRC
 Also, I have lots of disk space, and not so much patience when I lose an
 important file. So I save lots.
@@ -376,7 +360,9 @@ important file. So I save lots.
 (setq delete-old-versions -1)
 (setq version-control t)
 (setq vc-make-backup-files t)
-(setq auto-save-file-name-transforms '((".*"  "cache/auto-save-list/" t)))
+(setq create-lockfiles nil)
+(setq auto-save-file-name-transforms `((".*" ,(expand-file-name (concat gmacs-cache-dir "auto-save")) t)))
+(setq auto-save-list-file-name (expand-file-name (concat gmacs-cache-dir "auto-save/.saves~")))
 #+END_SRC
 Store more undo information in memory.
 #+BEGIN_SRC emacs-lisp
@@ -385,10 +371,10 @@ Store more undo information in memory.
 **** History
 It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
 #+BEGIN_SRC emacs-lisp
-(setq savehist-file (expand-file-name "savehist" gmacs-cache-dir)
+(setq-default savehist-file (expand-file-name "savehist" gmacs-cache-dir)
       save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
       recentf-save-file (expand-file-name "recentf" gmacs-cache-dir)
-      transiient-history-file (expand-file-name "transient-history.el" gmacs-cache-dir)
+      transient-history-file (expand-file-name "transient-history.el" gmacs-cache-dir)
       bookmark-default-file (expand-file-name "bookmarks" gmacs-cache-dir))
 (savehist-mode 1)
 (setq history-length t)
@@ -704,7 +690,6 @@ Basic configuration.
   :mode (("\\.pdf\\'" . pdf-view-mode))
   :commands pdf-view-mode
   :config
-  (setq-default pdf-view-display-size 'fit-width)
   (setq pdf-annot-activate-created-annotations t)
   :diminish pdf-view-midnight-minor-mode
   :bind (:map pdf-view-mode-map
@@ -714,7 +699,8 @@ Basic configuration.
               ("D". pdf-annot-delete)
               ("r" . pdf-view--rotate))
   :hook
-  (pdf-view-mode . pdf-view-midnight-minor-mode))
+  (pdf-view-mode . pdf-view-midnight-minor-mode)
+  (pdf-view-mode . pdf-view-fit-width-to-window))
 (eval-when-compile (pdf-tools-install))
 #+END_SRC
 Allow rotation.
