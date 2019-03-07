@@ -293,6 +293,17 @@ live in the typewriter days where the
 #+BEGIN_SRC emacs-lisp
 (setq sentence-end-double-space nil)
 #+END_SRC
+**** Stop Cursor Going into Minibuffer Prompt
+Sometimes when going back in the minibuffer by using backspace or the left arrow
+key, the cursor will move right back into the prompt, and when you start to type
+again, Emacs will display the annoying message that the minibuffer text is read
+only. This prevents you from manually having to move the cursor out of the
+prompt and then back, or pressing =C-g= and starting over.
+#+BEGIN_SRC emacs-lisp
+(customize-set-variable
+ 'minibuffer-prompt-properties
+ (quote (read-only t cursor-intangible t face minibuffer-prompt)))
+#+END_SRC
 **** Delete The Selection
 #+BEGIN_SRC emacs-lisp
 (delete-selection-mode 1)
@@ -739,6 +750,10 @@ default; set PAGE-P to non-nil to rotate only the current page.
                                  file pages file file file)))
             (pdf-view-revert-buffer nil t)
           (error "Rotation error!"))))))
+#+END_SRC
+*** TeX
+#+BEGIN_SRC emacs-lisp
+(use-package auctex)
 #+END_SRC
 *** Webmode
 #+BEGIN_SRC emacs-lisp
