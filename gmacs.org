@@ -897,6 +897,7 @@ This used to be a feature of Emacs.
 #+BEGIN_SRC emacs-lisp
 (use-package browse-kill-ring
   :commands browse-kill-ring
+  :bind ("M-y" . browse-kill-ring)
   :config (browse-kill-ring-default-keybindings))
 #+END_SRC
 *** Cut/Paste
@@ -1232,7 +1233,6 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org
   :init
-  (require 'org)
   (require 'ox-latex)
   (require 'org-protocol)
   (use-package ox-hugo :after ox)
@@ -1297,6 +1297,10 @@ before an Org headline when a todo state is activated.
 (setq org-todo-keywords
       '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
+Automatically archive cancelled tasks.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-todo-state-tags-triggers '(("CANCELLED" ("ARCHIVE" . t))))
+#+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
 updated when I archive a subtree.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
@@ -1327,18 +1331,15 @@ my personal settings, =private.el=.
   :custom (org-gcal-dir gmacs-cache-dir)
   :hook (org-agenda-mode . org-gcal-sync))
 #+END_SRC
-*** Miscellaneous
-It's very useful to be able to see the word count of a subtree when I am writing
-a paper for school.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
-(use-package org-wc
-  :commands org-wc-display
-  :bind (:map org-mode-map ("C-c w" . gm/wc-display-current-subtree)))
-#+END_SRC
+*** Links
 I often use links to easily navigate to a relevant file in cases where I would
 rather not use =org-attach=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c l" . org-store-link)
+#+END_SRC
+Follow links using return rather than =C-c C-o.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-return-follows-link t)
 #+END_SRC
 I can use =org-cliplink= to paste in a website's URL with the link's description
 being the title of that website.
@@ -1346,6 +1347,14 @@ being the title of that website.
 (use-package org-cliplink
   :commands org-cliplink
   :bind (:map org-mode-map ("C-c y" . org-cliplink)))
+#+END_SRC
+*** Word Count
+It's very useful to be able to see the word count of a subtree when I am writing
+a paper for school.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(use-package org-wc
+  :commands org-wc-display
+  :bind (:map org-mode-map ("C-c w" . gm/wc-display-current-subtree)))
 #+END_SRC
 ** Prettifying
 *** Headlines
@@ -1385,12 +1394,32 @@ Have lists begun by, for example, =-= look like a bullet list.
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 #+END_SRC
 ** Programming
-Set up languages loaded for use in Org source blocks and their respective
-execution commands.
+Set up languages loaded for use in Org source blocks. I avoid using
+=org-babel-do-load-languages= because that requires loading the entire file =org.el=
+on startup, which is quite slow.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
-(org-babel-do-load-languages
-      'org-babel-load-languages '((python . t)
-                                  (latex . t)))
+(use-package ob-python
+  :ensure org-plus-contrib
+  :commands (org-babel-execute:python))
+
+(use-package ob-elisp
+  :ensure org-plus-contrib
+  :commands (org-babel-execute:elisp))
+
+(use-package ob-shell
+  :ensure org-plus-contrib
+  :commands
+  (org-babel-execute:sh
+   org-babel-expand-body:sh
+   org-babel-execute:bash
+   org-babel-expand-body:bash))
+
+(use-package ob-latex
+  :ensure org-plus-contrib
+  :commands (org-babel-execute:latex))
+#+END_SRC
+I then set up the default execution commands for my languages.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (setq org-babel-python-command "python3.6"
       org-babel-latex-command "pdflatex")
 #+END_SRC
