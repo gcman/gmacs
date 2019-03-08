@@ -958,7 +958,7 @@ here.
 *** Fill/Unfill
 #+BEGIN_SRC emacs-lisp
 (use-package unfill
-  :commands gm/fill-or-unfill)
+  :commands unfill-paragraph)
 (defun gm/fill-or-unfill ()
   (interactive)
   (let ((length-of-line
