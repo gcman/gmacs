@@ -429,35 +429,6 @@ Save abbreviations upon saving a file.
   (keyfreq-mode 1)
   (keyfreq-autosave-mode 1))
 #+END_SRC
-*** Ivy
-#+BEGIN_SRC emacs-lisp
-(use-package ivy
-  :diminish
-  :demand t
-  :config
-  (ivy-mode 1)
-  (use-package flx)
-  (use-package swiper
-    :commands (swiper swiper-all))
-  (use-package counsel
-    :demand t
-    :bind ([remap execute-extended-command] . counsel-M-x)
-    ([remap org-goto] . counsel-org-goto)
-    ([remap swiper] . counsel-grep-or-swiper)
-    :config
-    (setq counsel-grep-base-command
- "rg -i -M 120 --no-heading --line-number --color never '%s' %s"))
-  (use-package smex)
-  :custom
-  (ivy-re-builders-alist
-   '((swiper . ivy--regex-plus)
-     (ivy-switch-buffer . ivy--regex-plus)
-     (t      . ivy--regex-fuzzy)))
-  (ivy-use-virtual-buffers t)
-  (ivy-display-style 'fancy)
-  (ivy-initial-inputs-alist nil)
-  (smex-save-file (expand-file-name "smex" gmacs-cache-dir)))
-#+END_SRC
 *** Programming
 Set up =flycheck=.
 #+BEGIN_SRC emacs-lisp :noweb yes
@@ -677,6 +648,36 @@ extension. Use ~S~ to use in a dired buffer.
 (use-package sudo-edit
   :bind (("C-c C-x r" . sudo-edit)))
 #+END_SRC
+*** Ivy
+#+BEGIN_SRC emacs-lisp
+(use-package ivy
+  :diminish
+  :demand t
+  :config
+  (ivy-mode 1)
+  (use-package flx)
+  (use-package swiper
+    :commands (swiper swiper-all))
+  (use-package counsel
+    :demand t
+    :bind ([remap execute-extended-command] . counsel-M-x)
+    ([remap org-goto] . counsel-org-goto)
+    ([remap swiper] . counsel-grep-or-swiper)
+    :config
+    (setq counsel-grep-base-command
+ "rg -i -M 120 --no-heading --line-number --color never '%s' %s"))
+  (use-package smex)
+  :custom
+  (ivy-re-builders-alist
+   '((swiper . ivy--regex-plus)
+     (ivy-switch-buffer . ivy--regex-plus)
+     (t      . ivy--regex-fuzzy)))
+  (ivy-use-virtual-buffers t)
+  (ivy-display-style 'fancy)
+  (ivy-initial-inputs-alist nil)
+  (smex-save-file (expand-file-name "smex" gmacs-cache-dir)))
+#+END_SRC
+
 *** God Mode
 Enable god-mode.
 #+BEGIN_SRC emacs-lisp
@@ -1235,8 +1236,10 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   (require 'ox-latex)
   (require 'org-protocol)
   (use-package ox-hugo :after ox)
-  :bind (:map org-mode-map <<org-keys>>)
-  :config <<org-settings>>)
+  :bind (:map org-mode-map
+              <<org-keys>>)
+  :config
+  <<org-settings>>)
 #+END_SRC
 ** Utilities
 *** Locations
@@ -1265,12 +1268,12 @@ use. and we just set our "proper places."
 *** Capture
 I use Org Capture to organize my todo list, keep notes of ideas I think of, and
 kickstart blog posts.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-keys
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c c" . org-capture)
 #+END_SRC
 Here are my capture templates.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
-(org-capture-templates
+(setq org-capture-templates
  '(("a" "Appointment" entry
     (file "~/org/gcal.org")
     "* %i%? \n%^T\n")
@@ -1309,7 +1312,7 @@ updated when I archive a subtree.
 #+END_SRC
 *** Google Calendar
 I manage deadlines with Org Agenda.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-keys
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c a" . org-agenda)
 #+END_SRC
 However, that's not quite enough, because when I'm out and about, I want whatever
@@ -1320,7 +1323,7 @@ my personal settings, =private.el=.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (use-package org-gcal
   :commands org-gcal-sync
-  :init (package-check-signature nil)
+  :init (setq package-check-signature nil)
   :custom (org-gcal-dir gmacs-cache-dir)
   :hook (org-agenda-mode . org-gcal-sync))
 #+END_SRC
@@ -1334,7 +1337,7 @@ a paper for school.
 #+END_SRC
 I often use links to easily navigate to a relevant file in cases where I would
 rather not use =org-attach=.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-keys
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c l" . org-store-link)
 #+END_SRC
 I can use =org-cliplink= to paste in a website's URL with the link's description
@@ -1359,7 +1362,7 @@ accordance with the level of the heading, so I always use =org-indent-mode=.
 Because it's always active, it's best to diminish it.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (setq org-startup-indented t)
-(diminish org-indent-mode)
+(diminish 'org-indent-mode)
 #+END_SRC
 *** Emphasis Markers
 It looks much cleaner if we omit emphasis markers such as the =*= asterisks that
@@ -1385,10 +1388,10 @@ Have lists begun by, for example, =-= look like a bullet list.
 Set up languages loaded for use in Org source blocks and their respective
 execution commands.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
-(setq org-babel-do-load-languages
+(org-babel-do-load-languages
       'org-babel-load-languages '((python . t)
-                                  (latex . t))
-      org-babel-python-command "python3.6"
+                                  (latex . t)))
+(setq org-babel-python-command "python3.6"
       org-babel-latex-command "pdflatex")
 #+END_SRC
 ** LaTeX
@@ -1958,8 +1961,7 @@ Add subscript bindings to each of the ten digits.
          `(define-conditional-key org-mode-map
               (number-to-string ,n)
               (gm/math-subscript) (gm/in-math-p)))))
-(dotimes (n 10) (gm/bind-subscript n))
-(gm/bind-subscript 9)
+(dotimes (n 10) (progn (gm/bind-subscript n) (gm/bind-subscript 9)))
 #+END_SRC
 **** Simplify Super/Subscripts
 #+BEGIN_SRC emacs-lisp
