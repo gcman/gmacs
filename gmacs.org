@@ -470,10 +470,9 @@ Set up =flycheck=.
 #+END_SRC
 Relative line numbers, useful for vim-like navigation with God Mode.
 #+BEGIN_SRC emacs-lisp
-(use-package linum-relative
-   :hook
-   (prog-mode . linum-relative-mode)
-   (web-mode . linum-relative-mode))
+(use-package nlinum-relative
+     :hook
+   (prog-mode . nlinum-relative-mode))
 #+END_SRC
 **** Flycheck Hydra
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -851,9 +850,9 @@ best not to enable it globally.
       (> (line-number-at-pos (point-max)) 5000)))
 (add-hook 'prog-mode-hook
           (lambda ()
-            ;; turn off `linum-relative-mode' when there are more than 5000 lines
+            ;; turn off `nlinum-relative-mode' when there are more than 5000 lines
             (when (buffer-too-big-p)
-              (linum-relative-mode -1)
+              (nlinum-relative-mode -1)
               (font-lock-mode -1))))
 #+END_SRC
 * Keybindings
@@ -1068,13 +1067,13 @@ Exterminate better.
   (let ((filename (buffer-file-name))
         (buffer (current-buffer)))
     (if (not (and filename (file-exists-p filename)))
-        (ido-kill-buffer)
+        (kill-buffer buffer)
       (when (yes-or-no-p "Are you sure you want to remove this file? ")
         (delete-file filename)
         (kill-buffer buffer)
         (message "File '%s' successfully removed" filename)))))
 
-(bind-key "C-x C-k" 'delete-current-buffer-file)
+(bind-key "C-x C-k" #'delete-current-buffer-file)
 #+END_SRC
 Rename better.
 #+BEGIN_SRC emacs-lisp
@@ -1095,11 +1094,11 @@ Rename better.
           (message "File '%s' successfully renamed to '%s'"
                    name (file-name-nondirectory new-name)))))))
 
-(bind-key "C-x C-r" 'rename-current-buffer-file)
+(bind-key "C-x C-r" #'rename-current-buffer-file)
 #+END_SRC
 Switch better.
 #+BEGIN_SRC emacs-lisp
-(bind-key [remap switch-buffer] 'ivy-switch-buffer)
+(bind-key [remap switch-buffer] #'ivy-switch-buffer)
 #+END_SRC
 Use ibuffer.
 #+BEGIN_SRC emacs-lisp
@@ -1110,6 +1109,7 @@ Use ibuffer.
 Never lose your cursor again.
 #+BEGIN_SRC emacs-lisp
 (use-package beacon
+  :defer 2
   :diminish (beacon-mode " ☀")
   :config (beacon-mode 1)
   :custom
@@ -1119,6 +1119,7 @@ Never lose your cursor again.
 *** Window Management
 #+BEGIN_SRC emacs-lisp
 (use-package ace-window
+  :commands (ace-window delete-window delete-other-windows split-window-below split-window right)
   :bind (("C-x o" . ace-window)
          ("M-o" . ace-window)
          ("C-x 0" . delete-window)
