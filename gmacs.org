@@ -25,8 +25,8 @@ I was inspired to implement these optimizations in GMACS thanks to
 
 To increase startup speed, we're going to set =gc-cons-threshold= to a very high
 number. This is not ideal when actually using Emacs, so we turn this off when we
-finish starting up. If we were to leave this on, we would experience long GC
-pauses during use.
+finish starting up. If we were to leave this on, we would experience long
+garbage collection pauses during use.
 #+BEGIN_SRC emacs-lisp
 (eval-and-compile
   (setq gc-cons-threshold 402653184
@@ -1227,7 +1227,6 @@ Easily enter god mode.
 #+END_SRC
 ***
 * Org Mode
-** Setup
 We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org
@@ -1235,66 +1234,69 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   (require 'org)
   (require 'ox-latex)
   (require 'org-protocol)
-  (use-package ox-hugo
-    :after ox)
-  :bind (:map org-mode-map
-              ("C-c l" . org-store-link)
-              ("C-c a" . org-agenda)
-              ("C-c c" . org-capture)
-              ("M-h" . org-mark-element)
-              <<org-keys>>)
-  :config
-  (use-package org-wc
-    :bind (:map org-mode-map
-                ("C-c w" . gm/wc-display-current-subtree)))
-  (use-package org-cliplink
-    :bind (:map org-mode-map
-                ("C-c y" . org-cliplink)))
-  (use-package org-bullets
-    :commands org-bullets-mode
-    :hook (org-mode . org-bullets-mode))
-  :custom
-  (org-directory "~/org/")
-  (org-default-notes-file "~/org/inbox.org")
-  (org-agenda-files '("~/org/inbox.org"
-                      "~/org/gtd.org"
-                      "~/org/notes.org"
-                      "~/org/gcal.org"))
-  (org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
-  (org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
-                        ("~/org/someday.org" :level . 1)
-                        ("~/org/tickler.org" :maxlevel . 2)
-                        ("~/org/notes.org" :maxlevel . 2)))
-  (org-capture-templates
-   '(("a" "Appointment" entry
-      (file "~/org/gcal.org")
-      "* %i%? \n%^T\n")
-     ("t" "Todo [inbox]" entry
-      (file "~/org/inbox.org")
-      "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
-     ("j" "Journal" entry
-      (file+olp+datetree "~/org/journal.org")
-      "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
-     ("e" "euler" entry
-      (file+olp "~/website/content-org/blog.org" "Euler")
-      "** Project Euler %^{Problem Number}: %^{Problem Name} %^g\n:PROPERTIES:\n:EXPORT_FILE_NAME: %\\1\n:EXPORT_DATE: %u\n:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.\n:END:\n*** Problem Statement\n%?\n*** My Algorithm")
-     ("b" "Bookmark"  entry
-      (file "~/org/inbox.org")
-      "* [[%:link][%:description]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%:initial\n%?"))
-   (org-src-lang-modes '(("emacs-lisp" 'lispy-mode))))
-  :diminish (org-indent-mode))
+  (use-package ox-hugo :after ox)
+  :bind (:map org-mode-map <<org-keys>>)
+  :config <<org-settings>>)
 #+END_SRC
-Some extra settings that didn't work in the =use-package= block.
-#+BEGIN_SRC emacs-lisp
-(after! org
-  (setq org-hide-emphasis-markers t)
-  (setq org-startup-indented t)
-  (setq org-agenda-start-on-weekday nil)
-  (setcar (nthcdr 4 org-emphasis-regexp-components) 10))
+** Utilities
+*** Locations
+We need a place where Org files go by default. Org Mode uses this to, for
+example, decide where to put the result of an Org Capture.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-directory "~/org/")
+#+END_SRC
+We similarly decide other default locations.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-default-notes-file "~/org/inbox.org"
+      org-agenda-files '("~/org/inbox.org"
+                         "~/org/gtd.org"
+                         "~/org/notes.org"
+                         "~/org/gcal.org"))
+#+END_SRC
+Keeping my refile locations minimal makes refiling faster; besides, my primary
+use case for refiling is to stow something away in its proper place for later
+use. and we just set our "proper places."
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
+                           ("~/org/someday.org" :level . 1)
+                           ("~/org/tickler.org" :maxlevel . 2)
+                           ("~/org/notes.org" :maxlevel . 2)))
+#+END_SRC
+*** Capture
+I use Org Capture to organize my todo list, keep notes of ideas I think of, and
+kickstart blog posts.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-keys
+("C-c c" . org-capture)
+#+END_SRC
+Here are my capture templates.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(org-capture-templates
+ '(("a" "Appointment" entry
+    (file "~/org/gcal.org")
+    "* %i%? \n%^T\n")
+   ("t" "Todo [inbox]" entry
+    (file "~/org/inbox.org")
+    "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
+   ("j" "Journal" entry
+    (file+olp+datetree "~/org/journal.org")
+    "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
+   ("e" "euler" entry
+    (file+olp "~/website/content-org/blog.org" "Euler")
+    "** Project Euler %^{Problem Number}: %^{Problem Name} %^g\n:PROPERTIES:\n:EXPORT_FILE_NAME: %\\1\n:EXPORT_DATE: %u\n:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.\n:END:\n*** Problem Statement\n%?\n*** My Algorithm")
+   ("b" "Bookmark"  entry
+    (file "~/org/inbox.org")
+    "* [[%:link][%:description]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%:initial\n%?")))
+#+END_SRC
+*** Todo Lists
+I like the following set of =TODO= words. This is what appears
+before an Org headline when a todo state is activated.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
 updated when I archive a subtree.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (defun myorg-update-parent-cookie ()
   (when (equal major-mode 'org-mode)
     (save-excursion
@@ -1306,44 +1308,98 @@ updated when I archive a subtree.
   (myorg-update-parent-cookie))
 #+END_SRC
 *** Google Calendar
-#+BEGIN_SRC emacs-lisp
-(setq package-check-signature nil)
+I manage deadlines with Org Agenda.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-keys
+("C-c a" . org-agenda)
+#+END_SRC
+However, that's not quite enough, because when I'm out and about, I want whatever
+I have in my Org Agenda to be able to alert me on my phone. I also want to be
+able to enter new events on the go. The best solution I've found for this is to
+integrate Org Mode with Google Calendar. The setup is contained in the file for
+my personal settings, =private.el=.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (use-package org-gcal
   :commands org-gcal-sync
+  :init (package-check-signature nil)
   :custom (org-gcal-dir gmacs-cache-dir)
   :hook (org-agenda-mode . org-gcal-sync))
 #+END_SRC
-*** Org Babel
-#+BEGIN_SRC emacs-lisp
-(after! org
-  (org-babel-do-load-languages
-   'org-babel-load-languages '((python . t)
-                               (latex . t)))
-  (setq org-babel-python-command "python3.6")
-  (setq org-babel-latex-command "pdflatex"))
+*** Miscellaneous
+It's very useful to be able to see the word count of a subtree when I am writing
+a paper for school.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(use-package org-wc
+  :commands org-wc-display
+  :bind (:map org-mode-map ("C-c w" . gm/wc-display-current-subtree)))
+#+END_SRC
+I often use links to easily navigate to a relevant file in cases where I would
+rather not use =org-attach=.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-keys
+("C-c l" . org-store-link)
+#+END_SRC
+I can use =org-cliplink= to paste in a website's URL with the link's description
+being the title of that website.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(use-package org-cliplink
+  :commands org-cliplink
+  :bind (:map org-mode-map ("C-c y" . org-cliplink)))
 #+END_SRC
 ** Prettifying
-Have lists begun by, for example, ~-~ look like a bullet-pointed list.
-#+BEGIN_SRC emacs-lisp
+*** Headlines
+Let's make our headings look a bit nicer. The package =org-bullet-mode= replaces the
+asterisks that define an Org heading with pretty symbols, like stylized bullet
+points.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(use-package org-bullets
+    :commands org-bullets-mode
+    :hook (org-mode . org-bullets-mode))
+#+END_SRC
+In a similar vein, it helps the visual hierarchy to have text indented in
+accordance with the level of the heading, so I always use =org-indent-mode=.
+Because it's always active, it's best to diminish it.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-startup-indented t)
+(diminish org-indent-mode)
+#+END_SRC
+*** Emphasis Markers
+It looks much cleaner if we omit emphasis markers such as the =*= asterisks that
+make something bold. It is enough to just display the argument as bold.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-hide-emphasis-markers t)
+#+END_SRC
+This snippet from [[https://fuco1.github.io/2018-12-23-Multiline-fontification-with-org-emphasis-alist.html][Multiline fontification with org-emphasis-alist]] lets bolded or
+italic blocks stretch across multiple lines. This is useful when I want to
+format an entire sentence or paragraph, because I hard-wrap just about
+everything I write.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setcar (nthcdr 4 org-emphasis-regexp-components) 10)
+#+END_SRC
+*** Lists
+Have lists begun by, for example, =-= look like a bullet list.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (font-lock-add-keywords 'org-mode
                         '(("^ *\\([-]\\) "
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 #+END_SRC
+** Programming
+Set up languages loaded for use in Org source blocks and their respective
+execution commands.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-babel-do-load-languages
+      'org-babel-load-languages '((python . t)
+                                  (latex . t))
+      org-babel-python-command "python3.6"
+      org-babel-latex-command "pdflatex")
+#+END_SRC
 ** LaTeX
-*** Keychord for Math Mode
+*** Math Mode
+Define a keychord to enter inline math mode. This allows me to get around
+messing with making =$= an electrically paired delimieter.
 #+BEGIN_SRC emacs-lisp
 (key-chord-define org-mode-map "r4" #'gm/enter-math-mode)
 #+END_SRC
-*** Autocomplete ~$$~
-#+BEGIN_SRC emacs-lisp
-(defvar org-electric-pairs '((?$ . ?$) ))
-(defun dollar-add-electric-pairs ()
-  (setq-local electric-pair-pairs (append electric-pair-pairs org-electric-pairs))
-  (setq-local electric-pair-text-pairs electric-pair-pairs))
-(add-hook 'org-mode-hook 'dollar-add-electric-pairs)
-#+END_SRC
 *** Don't Break Paragraph on Comments
-Remove comments from org document when exporting to LaTeX.
+Remove comments from Org document when exporting to LaTeX.
 #+BEGIN_SRC emacs-lisp
 (defun delete-org-comments (backend)
   (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
@@ -1366,10 +1422,9 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
 (defvar cw/org-last-fragment nil
-  "Holds the type and position of last valid fragment we were on. Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)"
-  )
+  "Holds the type and position of last valid fragment we were on. Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
 
-(setq cw/org-valid-fragment-type
+(defvar cw/org-valid-fragment-type
       '(latex-fragment
         latex-environment
         link))
@@ -1380,8 +1435,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
          (fr-type (car fr)))
     (when (memq fr-type cw/org-valid-fragment-type)
       (list fr-type
-            (org-element-property :begin fr))))
-  )
+            (org-element-property :begin fr)))))
 
 (defun cw/org-remove-fragment-overlay (fr)
   "Remove fragment overlay at fr"
@@ -1400,8 +1454,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
                (delete-overlay ov))))
           ((eq 'link fr-type)
            nil;; delete image overlay here?
-           ))
-    ))
+           ))))
 
 (defun cw/org-preview-fragment (fr)
   "Preview org fragment at fr"
@@ -1413,8 +1466,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
            (when (cw/org-curr-fragment) (org-toggle-latex-fragment))) ;; only toggle preview when we're in a valid region (for inserting in the front of a fragment)
           ((eq 'link fr-type) ;; for images
            (let ((fr-end (org-element-property :end (org-element-context))))
-             (org-display-inline-images nil t fr-begin fr-end))))
-    ))
+             (org-display-inline-images nil t fr-begin fr-end))))))
 
 (defun cw/org-auto-toggle-fragment-display ()
   "Automatically toggle a displayable org mode fragment"
@@ -1464,20 +1516,21 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
            (save-excursion
              (cw/org-remove-fragment-overlay curr)
              )
-           (setq cw/org-last-fragment curr))
-          ))))
+           (setq cw/org-last-fragment curr))))))
 
-(setq gm/eq-preview nil)
+(defvar gm/eq-preview nil)
+;; this is buffer local
 (defun gm/toggle-equation-preview ()
   (interactive)
   (if gm/eq-preview
       (progn
-        (remove-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display)
+        (remove-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display t)
         (message "Equation preview disabled."))
     (progn
-      (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display)
+      (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)
       (message "Equation preview enabled.")))
     (setq gm/eq-preview (not gm/eq-preview)))
+
 (bind-key "C-c p" 'gm/toggle-equation-preview)
 #+END_SRC
 *** Export
@@ -1993,7 +2046,7 @@ to make LaTeX happy.
 (define-conditional-key org-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
 *** Math Symbols
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb-ref hydra
 (defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
   (";" hydra-semicolon-b/body "Level 2")
   ("SPC" (insert "; ") ";")
