@@ -407,7 +407,7 @@ Load them.
 #+END_SRC
 Always use this wonderful tool.
 #+BEGIN_SRC emacs-lisp
-(abbrev-mode 1)
+(setq-default abbrev-mode t)
 #+END_SRC
 Because it's always on, we don't need to know about it.
 #+BEGIN_SRC emacs-lisp
@@ -435,7 +435,6 @@ Set up =flycheck=.
 (use-package flycheck
   :diminish (flycheck-mode " Ψ")
   :config (global-flycheck-mode)
-    <<proselint>>
   :custom (flycheck-display-errors-delay .3)
   :hook (prog-mode . flycheck-mode))
 #+END_SRC
@@ -500,19 +499,7 @@ summary= at the top of an Emacs Lisp file.
 #+BEGIN_SRC emacs-lisp
 (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
 #+END_SRC
-*** Proselinting
-Check prose style.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref proselint
-(flycheck-define-checker proselint
-  "A linter for prose."
-  :command ("proselint" source-inplace)
-  :error-patterns
-  ((warning line-start (file-name) ":" line ":" column ": "
-	    (id (one-or-more (not (any " "))))
-	    (message) line-end))
-  :modes (text-mode org-mode markdown-mode gfm-mode))
-;; (add-to-list 'flycheck-checkers 'proselint)
-#+END_SRC
+*** Spellcheck
 *** Company
 #+BEGIN_SRC emacs-lisp
 (use-package company)
@@ -1404,6 +1391,10 @@ default execution commands.
       org-babel-latex-command "pdflatex")
 #+END_SRC
 ** LaTeX
+Highlight LateX inline math in org mode.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-highlight-latex-and-related '(latex))
+#+END_SRC
 *** Math Mode
 Define a keychord to enter inline math mode. This allows me to get around
 messing with making =$= an electrically paired delimieter.
@@ -1557,6 +1548,10 @@ Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c b" . gm/org-latex-export)
 #+END_SRC
+Don't use straight quotes when exporting.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-export-with-smart-quotes t)
+#+END_SRC
 **** Use Math Macros
 I have a file with macros for math. I want this to be automatically included in
 every LaTeX file exported from Org Mode. The optional third argument makes sure
@@ -1582,40 +1577,8 @@ graphics correctly; =latexmk= handles all of that.
 
 (add-hook 'org-export-latex-after-initial-vars-hook 'gm/auto-tex-cmd)
 #+END_SRC
-We change the default packages used to reflect the necessities of running
-=xelatex=. We also use the =memoir= class instead of the =article= class.
-#+BEGIN_SRC emacs-lisp
-(defun gm/auto-tex-parameters ()
-  (when (string-match "LATEX_CMD: xelatex" (buffer-string))
-    (prog1 ()
-      (setq org-latex-default-packages-alist
-            '(("" "fontspec" t)
-              ("" "xunicode" t)
-              ("" "url" t)
-              ("" "rotating" t)
-              ("american" "babel" t)
-              ("babel" "csquotes" t)
-              ("" "soul" t)
-              ("xetex" "hyperref" nil)))
-      (add-to-list org-latex-classes
-                   '("article"
-                     "\\documentclass[11pt,article,oneside]{memoir}"
-                     ("\\section{%s}" . "\\section*{%s}")
-                     ("\\subsection{%s}" . "\\subsection*{%s}")
-                     ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-                     ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                     ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
-                   org-latex-classes)
-      (setq-local org-latex-default class "article"))))
-
-(add-hook 'org-export-latex-after-initial-vars-hook 'gm/auto-tex-parameters)
-#+END_SRC
 **** Export Classes
 ***** Tufte-LaTeX
-#+BEGIN_SRC emacs-lisp
-(require 'ox-tufte-latex)
-(require 'ox-extra)
-#+END_SRC
 ****** Command Links
 ******* No Option
 #+BEGIN_SRC emacs-lisp
@@ -1718,11 +1681,6 @@ from lines like:
 We make this our default class.
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-default-class "gm-notes")
-#+END_SRC
-**** Export Settings
-#+BEGIN_SRC emacs-lisp
-(setq org-highlight-latex-and-related '(latex))
-(setq org-export-with-smart-quotes t)
 #+END_SRC
 * Mail
 Set up the requirements.
