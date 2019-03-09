@@ -19,7 +19,7 @@ Always load up a server when opening Emacs.
   "A list of hooks run after GMACS initialization is complete, and after
 `gmacs-init-hook'.")
 #+END_SRC
-** Init Settings
+** Initialization Settings
 I was inspired to implement these optimizations in GMACS thanks to
 [[https://github.com/nilcons/emacs-use-package-fast][nilcons/emacs-use-package-fast]].
 
@@ -415,11 +415,11 @@ Because it's always on, we don't need to know about it.
 #+END_SRC
 Save them in the ~.emacs.d~ dir.
 #+BEGIN_SRC emacs-lisp
-(setq abbrev-file-name "~/.emacs.d/abbrevs.el")
+(setq abbrev-file-name (expand-file-name "abbrevs.el" gmacs-emacs-dir))
 #+END_SRC
 Save abbreviations upon saving a file.
 #+BEGIN_SRC emacs-lisp
-(setq save-abbrevs 'silent)
+(setq save-abbrevs 'silently)
 #+END_SRC
 *** Key Frequency
 #+BEGIN_SRC emacs-lisp
@@ -433,16 +433,15 @@ Save abbreviations upon saving a file.
 Set up =flycheck=.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package flycheck
+  :commands flycheck-mode
   :diminish (flycheck-mode " Ψ")
-  :config (global-flycheck-mode)
   :custom (flycheck-display-errors-delay .3)
   :hook (prog-mode . flycheck-mode))
 #+END_SRC
 Relative line numbers, useful for Vim-like navigation with God Mode.
 #+BEGIN_SRC emacs-lisp
 (use-package nlinum-relative
-     :hook
-   (prog-mode . nlinum-relative-mode))
+  :hook (prog-mode . nlinum-relative-mode))
 #+END_SRC
 **** Flycheck Hydra
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -500,6 +499,84 @@ summary= at the top of an Emacs Lisp file.
 (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
 #+END_SRC
 *** Spellcheck
+The article [[https://joelkuiper.eu/spellcheck_emacs][Spell checking in Emacs]] helped me out in setting up spellchecking in
+my own Emacs configuration.
+
+Set up spellchecking using =ispell= and the dictionary =hunspell=. We set the
+locally used dictionary to Canadian English, and we set up the list of valid
+dictionaries.
+#+BEGIN_SRC emacs-lisp
+(setq ispell-program-name "hunspell")
+(setq ispell-local-dictionary "en_CA")
+(setq ispell-hunspell-dictionary-alist
+      '(("en_CA" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_CA") nil utf-8)))
+#+END_SRC
+Spellchecking should not occur inside things like proerty drawers and code
+source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?source=rss][Making Ispell work with org-mode in Emacs]].
+#+BEGIN_SRC emacs-lisp
+(defun endless/org-ispell ()
+  "Configure `ispell-skip-region-alist' for `org-mode'."
+  (make-local-variable 'ispell-skip-region-alist)
+  (add-to-list 'ispell-skip-region-alist '(org-property-drawer-re))
+  (add-to-list 'ispell-skip-region-alist '("^#\+.*$"))
+  (add-to-list 'ispell-skip-region-alist '("~" "~"))
+  (add-to-list 'ispell-skip-region-alist '("=" "="))
+  (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC" . "^#\\+END_SRC")))
+
+(add-hook 'org-mode-hook #'endless/org-ispell)
+#+END_SRC
+Automatically spellcheck the buffer using =flyspell=.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook (lambda () (flyspell-mode 1)))
+#+END_SRC
+Advance to the next incorrect word.
+#+BEGIN_SRC emacs-lisp
+(defun flyspell-check-next-highlighted-word ()
+  "Custom function to spell check next highlighted word"
+  (interactive)
+  (flyspell-goto-next-error)
+  (ispell-word))
+#+END_SRC
+Add last misspelled word in buffer to a global abbreviation.
+#+BEGIN_SRC emacs-lisp
+(bind-key "C-i" #'endless/ispell-word-then-abbrev ctl-x-map)
+
+(defun endless/simple-get-word ()
+  (car-safe (save-excursion (ispell-get-word nil))))
+
+(defun endless/ispell-word-then-abbrev (p)
+  "Call `ispell-word', then create an abbrev for it.
+With prefix P, create local abbrev. Otherwise it will
+be global.
+If there's nothing wrong with the word at point, keep
+looking for a typo until the beginning of buffer. You can
+skip typos you don't want to fix with `SPC', and you can
+abort completely with `C-g'."
+  (interactive "P")
+  (let (bef aft)
+    (save-excursion
+      (while (if (setq bef (endless/simple-get-word))
+                 ;; Word was corrected or used quit.
+                 (if (ispell-word nil 'quiet)
+                     nil ; End the loop.
+                   ;; Also end if we reach `bob'.
+                   (not (bobp)))
+               ;; If there's no word at point, keep looking
+               ;; until `bob'.
+               (not (bobp)))
+        (backward-word)
+        (backward-char))
+      (setq aft (endless/simple-get-word)))
+    (if (and aft bef (not (equal aft bef)))
+        (let ((aft (downcase aft))
+              (bef (downcase bef)))
+          (define-abbrev
+            (if p local-abbrev-table global-abbrev-table)
+            bef aft)
+          (message "\"%s\" now expands to \"%s\" %sally"
+                   bef aft (if p "loc" "glob")))
+      (user-error "No typo at or before point"))))
+#+END_SRC
 *** Company
 #+BEGIN_SRC emacs-lisp
 (use-package company)
@@ -524,7 +601,7 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
 (bind-key "C-c h" 'ov-highlight/body)
 (bind-key "C-c C-h" 'ov-highlight/body)
 #+END_SRC
-*** Async Without Window
+*** Async Without Results Window
 #+BEGIN_SRC emacs-lisp
 (defun async-shell-command-no-window (command)
   (interactive)
@@ -965,9 +1042,9 @@ This allows me to combine text over multiple lines into one line.
 (bind-key "C-z" 'undo)
 (bind-key "C-x C-u" 'undo)
 #+END_SRC
-*** Paragraph Naviagation
+*** Paragraph Navigation
 Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
-Binds Part 2: A peeve with paragraphs · Endless Parentheses]].
+Binds Part 2: A peeve with paragraphs]].
 #+BEGIN_SRC emacs-lisp
 (bind-key "M-p" 'endless/backward-paragraph)
 (bind-key "M-n" 'endless/forward-paragraph)
@@ -1004,7 +1081,7 @@ But Org Mode messes this up. So we setup a binding using the =:bind= keyword fro
 ("M-p" . backward-paragraph)
 #+END_SRC
 *** Better Narrowing
-From [[http://endlessparentheses.com/emacs-narrow-or-widen-dwim.html][Emacs narrow-or-widen-dwim · Endless Parentheses]].
+From [[http://endlessparentheses.com/emacs-narrow-or-widen-dwim.html][Emacs narrow-or-widen-dwim]].
 #+BEGIN_SRC emacs-lisp
 (defun narrow-or-widen-dwim (p)
   "Widen if buffer is narrowed, narrow-dwim otherwise.
@@ -1027,13 +1104,12 @@ is already narrowed."
                (t (org-narrow-to-subtree))))
         (t (narrow-to-defun))))
 
-(define-key ctl-x-map "n" #'narrow-or-widen-dwim)
+(bind-key "n" #'narrow-or-widen-dwim ctl-x-map)
 #+END_SRC
 Then we can use =narrow-or-widen-dwim= to easily edit org =src= blocks.
 #+BEGIN_SRC emacs-lisp
 (after! org-src
-  (define-key org-src-mode-map
-     "\C-x\C-s" #'org-edit-src-exit))
+  (bind-key "C-x C-s" #'org-edit-src-exit org-src-mode-map))
 #+END_SRC
 *** Delete Better
 When using =C-d= or =Backspace=, delete all white space in a certain direction, and
@@ -2132,7 +2208,7 @@ to make LaTeX happy.
 
 (define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (gm/in-math-p))
 #+END_SRC
-* Post Init
+* Post Initialization
 #+BEGIN_SRC emacs-lisp
 (run-hooks 'gmacs-post-init-hook)
 #+END_SRC
