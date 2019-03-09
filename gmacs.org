@@ -202,7 +202,7 @@ Turn off reverting buffer messages.
 **** Modeline
 #+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
-  :defer 2
+  :defer 1
   :config (sml/setup))
 #+END_SRC
 ***** Time
@@ -439,7 +439,7 @@ Set up =flycheck=.
   :custom (flycheck-display-errors-delay .3)
   :hook (prog-mode . flycheck-mode))
 #+END_SRC
-Relative line numbers, useful for vim-like navigation with God Mode.
+Relative line numbers, useful for Vim-like navigation with God Mode.
 #+BEGIN_SRC emacs-lisp
 (use-package nlinum-relative
      :hook
@@ -489,17 +489,16 @@ Turn Emacs into basically a Python IDE.
   (elpy-mode . flycheck-mode))
 #+END_SRC
 **** Lisp
-We don't want annoying comments about having, for example, =;;; package ---
-summary= at the top of an Emacs Lisp file.
-#+BEGIN_SRC emacs-lisp
-(defun disable-fylcheck-in-org-src-block ()
-  (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
-
-(add-hook 'org-src-mode-hook 'disable-fylcheck-in-org-src-block)
-#+END_SRC
+Because =use-package= is never actually evaluated/loaded if we byte-compile
+=gmacs.el=, it is not automatically syntax-highlighted as a macro.
 #+BEGIN_SRC emacs-lisp
 (font-lock-add-keywords 'emacs-lisp-mode
   '(("use-package" . font-lock-keyword-face)))
+#+END_SRC
+We don't want annoying comments about having, for example, =;;; package ---
+summary= at the top of an Emacs Lisp file.
+#+BEGIN_SRC emacs-lisp
+(setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
 #+END_SRC
 *** Proselinting
 Check prose style.
@@ -1394,32 +1393,13 @@ Have lists begun by, for example, =-= look like a bullet list.
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 #+END_SRC
 ** Programming
-Set up languages loaded for use in Org source blocks. I avoid using
-=org-babel-do-load-languages= because that requires loading the entire file =org.el=
-on startup, which is quite slow.
+Set up languages loaded for use in Org source blocks and their respective
+default execution commands.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
-(use-package ob-python
-  :ensure org-plus-contrib
-  :commands (org-babel-execute:python))
+(org-babel-do-load-languages
+      'org-babel-load-languages '((python . t)
+                                  (latex . t)))
 
-(use-package ob-elisp
-  :ensure org-plus-contrib
-  :commands (org-babel-execute:elisp))
-
-(use-package ob-shell
-  :ensure org-plus-contrib
-  :commands
-  (org-babel-execute:sh
-   org-babel-expand-body:sh
-   org-babel-execute:bash
-   org-babel-expand-body:bash))
-
-(use-package ob-latex
-  :ensure org-plus-contrib
-  :commands (org-babel-execute:latex))
-#+END_SRC
-I then set up the default execution commands for my languages.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (setq org-babel-python-command "python3.6"
       org-babel-latex-command "pdflatex")
 #+END_SRC
@@ -1443,11 +1423,11 @@ Remove comments from Org document when exporting to LaTeX.
 #+END_SRC
 *** Equation Auto Preview
 Not too small.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
 #+END_SRC
 Where should it be?
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (setq org-preview-latex-image-directory "cache/ltximg/")
 #+END_SRC
 Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]].
@@ -1572,8 +1552,63 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
   (save-excursion
     (search-backward "EXPORT_FILE_NAME")
     (org-latex-export-to-pdf t t)))
+#+END_SRC
+Bind this in Org mode.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
+("C-c b" . gm/org-latex-export)
+#+END_SRC
+**** Use Math Macros
+I have a file with macros for math. I want this to be automatically included in
+every LaTeX file exported from Org Mode. The optional third argument makes sure
+this package is also loaded when compiling LaTeX image previews, such as
+equation previews.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-latex-packages-alist
+      '(("" "gm-math" t)))
+#+END_SRC
+**** Use Latexmk
+The command =gm/auto-tex-cmd= looks at your Org file. If it finds that =xelatex= has
+been specified as the desired compilation command, then it uses that. Otherwise,
+it runs =latexmk= with normal =pdflatex=. We don't need to worry about compiling the
+correct number of times to include bibliography information, or to render
+graphics correctly; =latexmk= handles all of that.
+#+BEGIN_SRC emacs-lisp
+(defun gm/auto-tex-cmd ()
+  (let ((texcmd)))
+  (setq texcmd "latexmk -pdf -quiet %f")
+  (if (string-match "LATEX_CMD: xelatex" (buffer-string))
+      (setq texcmd "latexmk -pdflatex=xelatex -pdf -quiet %f"))
+  (setq org-latex-to-pdf-process (list texcmd)))
 
-(bind-key "C-c b" #'gm/org-latex-export org-mode-map)
+(add-hook 'org-export-latex-after-initial-vars-hook 'gm/auto-tex-cmd)
+#+END_SRC
+We change the default packages used to reflect the necessities of running
+=xelatex=. We also use the =memoir= class instead of the =article= class.
+#+BEGIN_SRC emacs-lisp
+(defun gm/auto-tex-parameters ()
+  (when (string-match "LATEX_CMD: xelatex" (buffer-string))
+    (prog1 ()
+      (setq org-latex-default-packages-alist
+            '(("" "fontspec" t)
+              ("" "xunicode" t)
+              ("" "url" t)
+              ("" "rotating" t)
+              ("american" "babel" t)
+              ("babel" "csquotes" t)
+              ("" "soul" t)
+              ("xetex" "hyperref" nil)))
+      (add-to-list org-latex-classes
+                   '("article"
+                     "\\documentclass[11pt,article,oneside]{memoir}"
+                     ("\\section{%s}" . "\\section*{%s}")
+                     ("\\subsection{%s}" . "\\subsection*{%s}")
+                     ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                     ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                     ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))
+                   org-latex-classes)
+      (setq-local org-latex-default class "article"))))
+
+(add-hook 'org-export-latex-after-initial-vars-hook 'gm/auto-tex-parameters)
 #+END_SRC
 **** Export Classes
 ***** Tufte-LaTeX
@@ -1670,7 +1705,7 @@ from lines like:
                  ("\\subsection{%s}" . "\\subsection*{%s}")
                  ("\\subsubsection{%s}" . "\\subsubection*{%s}"))))
 #+END_SRC
-***** Math Notes
+***** Notes
 #+BEGIN_SRC emacs-lisp
 (after! ox-latex (add-to-list 'org-latex-classes
                '("gm-notes"
@@ -1679,6 +1714,10 @@ from lines like:
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}")
                  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+#+END_SRC
+We make this our default class.
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-default-class "gm-notes")
 #+END_SRC
 **** Export Settings
 #+BEGIN_SRC emacs-lisp
@@ -1755,7 +1794,7 @@ though that is the default, because otherwise binding =TAB= to =nil= in
 #+BEGIN_SRC emacs-lisp
 (setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet
-  :defer 3
+  :defer 1
   :diminish (yas-minor-mode)
   :config
   (yas-global-mode 1)
