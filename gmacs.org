@@ -1208,12 +1208,12 @@ especially useful when typing LaTeX.
 (key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
 #+END_SRC
+*
 *** God Mode
 Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
 (key-chord-define-global "jk" 'god-mode-all)
 #+END_SRC
-***
 * Org Mode
 We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
@@ -1869,7 +1869,7 @@ We make a completion function.
 And a function to get the possible completion candidates from the buffer.
 #+BEGIN_SRC emacs-lisp
 (defun gm/buff-cand (n key)
-  (loop for i from 1 to n
+  (loop for i from 0 to n
         collect (concat (gm/last-n-chars i) key)))
 #+END_SRC
 Then, we set up the creation of an actual snippet (note that its length is
@@ -1971,7 +1971,8 @@ brackets are added to ensure proper LaTeX rendering.
   (memq (get-char-code-property char 'general-category)
         '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
 
-(defun gm/math-subscript (&rest)
+(defun gm/math-number-subscript ()
+  (interactive)
   (cond ((gm/char-is-letter (char-before)) (insert "_"))
         ((string-match "\_[0-9]" (gm/last-n-chars 2))
          (save-excursion
@@ -1982,22 +1983,12 @@ brackets are added to ensure proper LaTeX rendering.
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp
-(defun gm/bind-subscript (n)
+(defun gm/bind-number-subscript (n)
   (eval (macroexpand
          `(define-conditional-key org-mode-map
               (number-to-string ,n)
-              (gm/math-subscript) (gm/in-math-p)))))
-(dotimes (n 10) (progn (gm/bind-subscript n) (gm/bind-subscript 9)))
-#+END_SRC
-**** Simplify Super/Subscripts
-#+BEGIN_SRC emacs-lisp
-(defun gm/simplify-math-script (&rest)
-  (when (string-match "[_^]{.}" (gm/last-n-chars 4))
-    (save-excursion
-      (delete-char -1)
-      (backward-char)
-      (delete-char 1))))
-(add-hook 'yas-exit-snippet-hook #'gm/simplify-math-script)
+              (gm/math-number-subscript) (gm/in-math-p)))))
+(dotimes (n 10) (progn (gm/bind-number-subscript n) (gm/bind-number-subscript 9)))
 #+END_SRC
 **** Fraction
 Typing "/" after an appropriate block (a number or a balanced set of
@@ -2006,9 +1997,7 @@ in the denominator. The outside parentheses will be removed; for example, =(\sin
 x)= and then =/= will result in =\frac{\sin x}{|}=.
 #+BEGIN_SRC emacs-lisp
 (defun gm/line-to-point ()
-  (let (start)
-    (setq start (line-beginning-position) )
-    (buffer-substring-no-properties start (point))))
+  (buffer-substring-no-properties (line-beginning-position) (point)))
 
 (defun gm/math-insert-frac-match (match)
   (when match
