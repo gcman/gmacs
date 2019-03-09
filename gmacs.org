@@ -1,9 +1,6 @@
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
-:PROPERTIES:
-:EXPORT_FILE_NAME: Starting_Up
-:END:
 ** Lexical Scoping
 #+BEGIN_SRC emacs-lisp
 ;; -*- lexical-binding: t; -*-
@@ -12,12 +9,6 @@
 Always load up a server when opening Emacs.
 #+BEGIN_SRC emacs-lisp
 (server-start)
-#+END_SRC
-** Hooks
-#+BEGIN_SRC emacs-lisp
-(defvar gmacs-post-init-hook nil
-  "A list of hooks run after GMACS initialization is complete, and after
-`gmacs-init-hook'.")
 #+END_SRC
 ** Initialization Settings
 I was inspired to implement these optimizations in GMACS thanks to
@@ -32,7 +23,7 @@ garbage collection pauses during use.
   (setq gc-cons-threshold 402653184
         gc-cons-percentage 0.6))
 
-(add-hook 'gmacs-post-init-hook (lambda () (setq gc-cons-threshold 16777216
+(add-hook 'after-init-hook (lambda () (setq gc-cons-threshold 16777216
                                                  gc-cons-percentage 0.1)))
 #+END_SRC
 We increase these so that we don't exceed recursion limits unless there is some
@@ -51,7 +42,7 @@ Silence some common warnings from the byte-compiler.
 #+END_SRC
 Let the user know how quickly GMACS started.
 #+BEGIN_SRC emacs-lisp
-(add-hook 'gmacs-post-init-hook
+(add-hook 'after-init-hook
           (lambda ()
             (message "GMACS ready in %s with %d garbage collections."
                      (format "%.2f seconds"
@@ -135,8 +126,6 @@ byte-compiled, Emacs will initialize packages on startup as usual.
     (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
   (unless (assoc-default "gnu" package-archives)
     (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t))
-  (unless (assoc-default "melpa-stable" package-archives)
-    (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t))
 
   (package-initialize)
   (unless (package-installed-p 'use-package)
@@ -232,12 +221,13 @@ Show the column number in the modeline. I don't find that this is too slow.
 This way, indented lines that are wrapped with ~visual-line-mode~ do not begin at
 character 0, but from where they are indented.
 #+BEGIN_SRC emacs-lisp
-(use-package adaptive-wrap)
-(when (fboundp 'adaptive-wrap-prefix-mode)
+(use-package adaptive-wrap
+  :commands adaptive-wrap-prefix-mode
+  :config
   (defun my-activate-adaptive-wrap-prefix-mode ()
     "Toggle `visual-line-mode' and `adaptive-wrap-prefix-mode' simultaneously."
     (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
-  (add-hook 'visual-line-mode-hook 'my-activate-adaptive-wrap-prefix-mode))
+  :hook (visual-line-mode-hook . my-activate-adaptive-wrap-prefix-mode))
 #+END_SRC
 *** Mouse Scrolling
 #+BEGIN_SRC emacs-lisp
@@ -923,8 +913,7 @@ best not to enable it globally.
 ** Conditional Keybindings
 Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
 #+BEGIN_SRC emacs-lisp
-(defmacro define-conditional-key (keymap key def
-                                                 &rest body)
+(defmacro define-conditional-key (keymap key def &rest body)
   "In KEYMAP, define key sequence KEY as DEF conditionally.
 This is like `define-key', except the definition
 \"disappears\" whenever BODY evaluates to nil."
@@ -2207,8 +2196,4 @@ to make LaTeX happy.
   ("-" (gm/snippet "" "conjugate") "-"))
 
 (define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (gm/in-math-p))
-#+END_SRC
-* Post Initialization
-#+BEGIN_SRC emacs-lisp
-(run-hooks 'gmacs-post-init-hook)
 #+END_SRC
