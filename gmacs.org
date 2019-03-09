@@ -210,13 +210,6 @@ Show the column number in the modeline. I don't find that this is too slow.
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
 #+END_SRC
 *** Indentation
-**** Keep Things Indented
-#+BEGIN_SRC emacs-lisp
-(use-package aggressive-indent
-  :diminish aggressive-indent-mode
-  :hook (prog-mode . aggressive-indent-mode)
-  :config (add-to-list 'aggressive-indent-excluded-modes 'python-mode))
-#+END_SRC
 **** Wrap Indented Lines Sensibly
 This way, indented lines that are wrapped with ~visual-line-mode~ do not begin at
 character 0, but from where they are indented.
@@ -856,6 +849,11 @@ Nicely wrap lines for text mode.
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
 (diminish 'auto-fill-function)
 #+END_SRC
+Fill paragraph every time a space is inserted.
+#+BEGIN_SRC emacs-lisp
+(use-package aggressive-fill-paragraph
+  :hook (org-mode . aggressive-fill-paragraph-mode))
+#+END_SRC
 **** 80 Columns
 #+BEGIN_SRC emacs-lisp
 (setq-default fill-column 80)
@@ -1284,6 +1282,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org
   :init
+  (require 'org)
   (require 'ox-latex)
   (require 'org-protocol)
   (use-package ox-hugo :after ox)
@@ -1755,8 +1754,8 @@ Set up the requirements.
   :custom
   (nms-settings-file (expand-file-name "network-security.data" gmacs-cache-dir))
   :config
-  (require 'smtpmail)
-  (require 'smtpmail-async)
+  (autoload 'notmuch "smtpmail")
+  (autoload 'notmuch "smtpmail-async")
   (run-with-timer 0 (* 15 60)
                 (lambda () (progn (shell-command "~/checkmail.sh")
                                   (notmuch-refresh-all-buffers)))))

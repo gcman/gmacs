@@ -139,7 +139,6 @@
 
 (define-abbrev-table 'org-mode-abbrev-table
   '(
-    ("bg" "background" nil :count 0)
     ("bij" "bijective" nil :count 0)
     ("diffeq" "differential equation" nil :count 0)
     ("fd" "finite dimensional" nil :count 0)
@@ -151,8 +150,9 @@
     ("st" "such that" nil :count 0)
     ("sur" "surjective" nil :count 0)
     ("vs" "vector space" nil :count 0)
+    ("vss" "vector spaces" nil :count 0)
     ("wlog" "without loss of generality" nil :count 1)
-   ))
+    ))
 
 (define-abbrev-table 'outline-mode-abbrev-table '())
 
@@ -213,4 +213,3 @@
 (define-abbrev-table 'web-mode-abbrev-table '())
 
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
-
