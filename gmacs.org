@@ -158,7 +158,7 @@ deferral we set earlier.
 (use-package dash :demand t)
 (use-package f :demand t)
 (use-package s :demand t)
-(use-package cl-lib :ensure t :demand t)
+(eval-when-compile (require 'cl))
 #+END_SRC
 * General Configuration
 ** Graphics
@@ -211,16 +211,13 @@ Show the column number in the modeline. I don't find that this is too slow.
 #+END_SRC
 *** Indentation
 **** Wrap Indented Lines Sensibly
-This way, indented lines that are wrapped with ~visual-line-mode~ do not begin at
-character 0, but from where they are indented.
+This way, indented lines (such as those visually indented by =org-indent-mode=)
+that are wrapped with ~visual-line-mode~ do not begin at character 0, but from
+where they are indented.
 #+BEGIN_SRC emacs-lisp
 (use-package adaptive-wrap
   :commands adaptive-wrap-prefix-mode
-  :config
-  (defun my-activate-adaptive-wrap-prefix-mode ()
-    "Toggle `visual-line-mode' and `adaptive-wrap-prefix-mode' simultaneously."
-    (adaptive-wrap-prefix-mode (if visual-line-mode 1 -1)))
-  :hook (visual-line-mode-hook . my-activate-adaptive-wrap-prefix-mode))
+  :hook (visual-line-mode . adaptive-wrap-prefix-mode))
 #+END_SRC
 *** Mouse Scrolling
 #+BEGIN_SRC emacs-lisp
@@ -255,9 +252,9 @@ compilation."
        #'with-no-warnings)
     (with-eval-after-load ',feature ,@forms)))
 #+END_SRC
-**** λ!
+**** lambda!
 #+BEGIN_SRC emacs-lisp
-(defmacro λ! (&rest body)
+(defmacro lambda! (&rest body)
   "A shortcut for inline interactive lambdas."
   (declare (doc-string 1))
   `(lambda () (interactive) ,@body))
@@ -849,11 +846,6 @@ Nicely wrap lines for text mode.
 (add-hook 'change-log-mode-hook 'turn-on-auto-fill)
 (diminish 'auto-fill-function)
 #+END_SRC
-Fill paragraph every time a space is inserted.
-#+BEGIN_SRC emacs-lisp
-(use-package aggressive-fill-paragraph
-  :hook (org-mode . aggressive-fill-paragraph-mode))
-#+END_SRC
 **** 80 Columns
 #+BEGIN_SRC emacs-lisp
 (setq-default fill-column 80)
@@ -1022,7 +1014,7 @@ here.
 *** Join Line
 This allows me to combine text over multiple lines into one line.
 #+BEGIN_SRC emacs-lisp
-(bind-key "M-j" (λ! (join-line -1)))
+(bind-key "M-j" (lambda! (join-line -1)))
 #+END_SRC
 *** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
@@ -1224,7 +1216,7 @@ Count org-wc.
 #+END_SRC
 ** Find Inbox
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-c o" (λ! (find-file "~/org/inbox.org")))
+(bind-key "C-c o" (lambda! (find-file "~/org/inbox.org")))
 #+END_SRC
 ** Complete Reload
 #+BEGIN_SRC emacs-lisp
@@ -1464,6 +1456,12 @@ Define a keychord to enter inline math mode. This allows me to get around
 messing with making =$= an electrically paired delimieter.
 #+BEGIN_SRC emacs-lisp
 (key-chord-define org-mode-map "r4" #'gm/enter-math-mode)
+#+END_SRC
+**** Pretty Math Symbols
+I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-symbols.el][mortiferus]]. The file I use is not the one from
+their Bitbucket repo; I have, for example, removed subscripts and superscripts.
+#+BEGIN_SRC emacs-lisp
+(autoload 'latex-unicode-simplified "latex-pretty-symbols")
 #+END_SRC
 *** Don't Break Paragraph on Comments
 Remove comments from Org document when exporting to LaTeX.
@@ -1755,10 +1753,7 @@ Set up the requirements.
   (nms-settings-file (expand-file-name "network-security.data" gmacs-cache-dir))
   :config
   (autoload 'notmuch "smtpmail")
-  (autoload 'notmuch "smtpmail-async")
-  (run-with-timer 0 (* 15 60)
-                (lambda () (progn (shell-command "~/checkmail.sh")
-                                  (notmuch-refresh-all-buffers)))))
+  (autoload 'notmuch "smtpmail-async"))
 #+END_SRC
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp
@@ -1916,7 +1911,7 @@ snippets. First, we create a suffix tree of all the math snippets.
    (loop for x in (delete-dups (mapcar (lambda (x) (substring (car x) (1- (length (car x))) (length (car x)))) gm/math-snippets))
          collect (eval (macroexpand
                         `(define-conditional-key org-mode-map
-                             ,x (λ! (gm/math-snippet ,x)) (gm/in-math-p)))))
+                             ,x (lambda! (gm/math-snippet ,x)) (gm/in-math-p)))))
 
    (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
    (message nil))
