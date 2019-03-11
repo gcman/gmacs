@@ -732,7 +732,6 @@ extension. Use ~S~ to use in a Dired buffer.
   (ivy-initial-inputs-alist nil)
   (smex-save-file (expand-file-name "smex" gmacs-cache-dir)))
 #+END_SRC
-
 *** God Mode
 Enable god-mode.
 #+BEGIN_SRC emacs-lisp
@@ -979,8 +978,13 @@ Need a replacement because we rebound ~C-SPC~ above.
 (bind-key "C-t" 'set-mark-command)
 #+END_SRC
 *** Shell Kill Word
+Use the standard Unix shell binding for deleting the previous word. As a result,
+it's fine to remove the default Emacs bindings for this. In fact,
+=C-<backspace>= in particular can get in the way.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-w" 'backward-kill-word)
+(unbind-key "C-<backspace>")
+(unbind-key "M-DEL")
 #+END_SRC
 *** Browse Kill Ring
 This used to be a feature of Emacs.
@@ -1057,6 +1061,7 @@ here.
                (line-beginning-position)
                (line-end-position)))))
     (if (> length-of-line 81) (fill-paragraph) (unfill-paragraph))))
+
 (bind-key "M-q" #'gm/fill-or-unfill)
 #+END_SRC
 *** Join Line
@@ -1237,6 +1242,27 @@ Add aliases to do this easily.
 I never use this command but keep accidentally hitting it instead of =C-x C-f=.
 #+BEGIN_SRC emacs-lisp
 (unbind-key "C-x f")
+#+END_SRC
+** Open Shell
+I have started to use =eshell= as my primary shell. However, I sometimes want to
+use my default =zsh= shell, which I access with =deepin-terminal= as a frontend.
+This command ensures that =eshell= is opened next to, not instead of, my current
+buffer.
+#+BEGIN_SRC emacs-lisp
+(defun eshell-other-window ()
+  "Open a `eshell' in a new window."
+  (interactive)
+  (let ((buf (eshell)))
+    (switch-to-buffer (other-buffer buf))
+    (switch-to-buffer-other-window buf)))
+#+END_SRC
+I rebind the redundant help binding (there is already a more convenient prefix
+map at =C-h=). I would use =C-M-t= to open a normal terminal, rebinding the Ubuntu
+default, but I'm not sure how to make this Emacs command override the system
+default.
+#+BEGIN_SRC emacs-lisp
+(bind-key "<f1>" #'eshell-other-window)
+(bind-key "C-M-s" (lambda! (shell-command "deepin-terminal")))
 #+END_SRC
 ** Word Count
 Display the word count. I chose to narrow to subtree by default because
