@@ -341,12 +341,13 @@ Make two buffers with the same file name distinguishable.
 (require 'uniquify)
 #+END_SRC
 *** Backups
-Keep backups in a dedicated spot and not in the current directory: this saves so much clutter
+Keep backups in a dedicated spot and not in the current directory: this saves a
+lot clutter.
 #+BEGIN_SRC emacs-lisp
 (setq backup-directory-alist `(("." . ,(expand-file-name (concat gmacs-cache-dir "backups")))))
 #+END_SRC
-Also, I have lots of disk space, and not so much patience when I lose an
-important file. So I save lots.
+I have lots of disk space, and not so much patience when I lose an important
+file. So I save lots.
 #+BEGIN_SRC emacs-lisp
 (setq delete-old-versions -1)
 (setq version-control t)
@@ -357,7 +358,7 @@ important file. So I save lots.
 #+END_SRC
 Store more undo information in memory.
 #+BEGIN_SRC emacs-lisp
-(setq undo-limit 250000)
+(setq-default undo-limit 250000)
 #+END_SRC
 **** History
 It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
@@ -1196,7 +1197,9 @@ I sometimes activate this when exiting God Mode.
 (unbind-key "C-j")
 #+END_SRC
 ** Word Count
-Count org-wc.
+Display the word count. I chose to narrow to subtree by default because
+displaying the count for every subtree in the file is not only (usually)
+unnecessary but (always) too slow.
 #+BEGIN_SRC emacs-lisp
 (defun gm/wc-display-current-subtree (arg)
   (interactive "P")
@@ -1270,7 +1273,7 @@ Easily enter god mode.
 (key-chord-define-global "jk" 'god-mode-all)
 #+END_SRC
 * Org Mode
-We have to use ~require~ to get ~ox-hugo~ to work properly.
+We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org
   :init
@@ -1284,7 +1287,7 @@ We have to use ~require~ to get ~ox-hugo~ to work properly.
   <<org-settings>>)
 #+END_SRC
 ** Utilities
-*** Locations
+*** File Locations
 We need a place where Org files go by default. Org Mode uses this to, for
 example, decide where to put the result of an Org Capture.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
@@ -1308,7 +1311,7 @@ use. and we just set our "proper places."
                            ("~/org/notes.org" :maxlevel . 2)))
 #+END_SRC
 *** Capture
-I use Org Capture to organize my todo list, keep notes of ideas I think of, and
+I use Org Capture to organize my todo list, take note of ideas I think of, and
 kickstart blog posts.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c c" . org-capture)
@@ -1379,7 +1382,7 @@ rather not use =org-attach=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c l" . org-store-link)
 #+END_SRC
-Follow links using return rather than =C-c C-o.
+Follow links using return rather than =C-c C-o=.
 #+BEGIN_SRC emacs-lisp :noweb-ref org-settings
 (setq org-return-follows-link t)
 #+END_SRC
