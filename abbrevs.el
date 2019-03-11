@@ -61,7 +61,11 @@
 
 (define-abbrev-table 'global-abbrev-table
   '(
+    ("admittely" "admittedly" nil :count 0)
+    ("delimieter" "delimiter" nil :count 0)
+    ("eveyr" "every" nil :count 0)
     ("inadvertantly" "inadvertently" nil :count 0)
+    ("proerty" "property" nil :count 0)
     ("sherrif" "sheriff" nil :count 0)
    ))
 
@@ -152,7 +156,7 @@
     ("vs" "vector space" nil :count 0)
     ("vss" "vector spaces" nil :count 0)
     ("wlog" "without loss of generality" nil :count 1)
-    ))
+   ))
 
 (define-abbrev-table 'outline-mode-abbrev-table '())
 
@@ -168,9 +172,7 @@
 
 (define-abbrev-table 'python-mode-abbrev-table '())
 
-(define-abbrev-table 'python-mode-skeleton-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'python-mode-skeleton-abbrev-table '())
 
 (define-abbrev-table 'sdcv-mode-abbrev-table '())
 
@@ -185,6 +187,8 @@
 (define-abbrev-table 'snippet-mode-abbrev-table '())
 
 (define-abbrev-table 'special-mode-abbrev-table '())
+
+(define-abbrev-table 'speedbar-mode-abbrev-table '())
 
 (define-abbrev-table 'tablist-mode-abbrev-table '())
 
@@ -213,3 +217,4 @@
 (define-abbrev-table 'web-mode-abbrev-table '())
 
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
+

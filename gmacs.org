@@ -98,7 +98,7 @@ that loads =use-package= is evaluated upon byte-compilation.
 #+END_SRC
 We set the =load-path= ourselves. This will be faster than letting
 =package-intialize= handle it, because we only add directories we know are from
-packages. This way, we don't need to search all third party paths eveyr time we
+packages. This way, we don't need to search all third party paths every time we
 require a file. We'll also store custom or third-party Emacs Lisp files in
 =gmacs-custom-dir=, so we add that to the =load-path=.
 #+BEGIN_SRC emacs-lisp
@@ -164,7 +164,7 @@ deferral we set earlier.
 ** Graphics
 *** Decluttering
 **** Fullscreen
-Start emacs in glorious fullscreen.
+Start GMACS in glorious fullscreen.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 (setq frame-title-format "GMACS")
@@ -307,7 +307,7 @@ Kill the current buffer.
 (global-auto-revert-mode 1)
 #+END_SRC
 **** Complete Reload
-Completely reload emacs, by reloading the init file.
+Completely reload Emacs, by reloading the init file.
 #+BEGIN_SRC emacs-lisp
 (defun gm/reload ()
   (interactive)
@@ -361,7 +361,7 @@ Store more undo information in memory.
 (setq-default undo-limit 250000)
 #+END_SRC
 **** History
-It's nice to have a history of commands so that when you open a new emacs instance, you can get right to work.
+It's nice to have a history of commands so that when you open a new Emacs instance, you can get right to work.
 #+BEGIN_SRC emacs-lisp
 (setq-default savehist-file (expand-file-name "savehist" gmacs-cache-dir)
       save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
@@ -492,7 +492,7 @@ dictionaries.
 (setq ispell-hunspell-dictionary-alist
       '(("en_CA" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_CA") nil utf-8)))
 #+END_SRC
-Spellchecking should not occur inside things like proerty drawers and code
+Spellchecking should not occur inside things like property drawers and code
 source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?source=rss][Making Ispell work with org-mode in Emacs]].
 #+BEGIN_SRC emacs-lisp
 (defun endless/org-ispell ()
@@ -506,9 +506,17 @@ source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?sou
 
 (add-hook 'org-mode-hook #'endless/org-ispell)
 #+END_SRC
-Automatically spellcheck the buffer using =flyspell=.
+Automatically spellcheck text buffers using =flyspell=. The only mode I write
+prose in is Org Mode. Because I always have it active, I don't need to know it's
+there.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'org-mode-hook (lambda () (flyspell-mode 1)))
+(diminish 'flyspell-mode)
+#+END_SRC
+As suggested by the Emacs wiki, I suppress messages, which slows down
+performance when checking the entire buffer.
+#+BEGIN_SRC emacs-lisp
+(setq-default flyspell-issue-message-flag nil)
 #+END_SRC
 Advance to the next incorrect word.
 #+BEGIN_SRC emacs-lisp
@@ -517,6 +525,9 @@ Advance to the next incorrect word.
   (interactive)
   (flyspell-goto-next-error)
   (ispell-word))
+
+(bind-key [remap flyspell-goto-next-error]
+          #'flyspell-check-next-highlighted-word flyspell-mode-map)
 #+END_SRC
 Add last misspelled word in buffer to a global abbreviation.
 #+BEGIN_SRC emacs-lisp
@@ -635,8 +646,8 @@ Magit, the magical Git client, is an amazing porcelain for Git inside of Emacs.
 Seriously, I've forgotten how tedious using Git on the command line is, and
 every time I have to is a pain. Emacs is worth using for this package alone. We
 only load it from the entry points given in =:commands=. We also define a
-quick-bind to quit the current magit session and return to the previous window
-configuration. This way, we can let magit take up the full real estate on the
+quick-bind to quit the current Magit session and return to the previous window
+configuration. This way, we can let Magit take up the full real estate on the
 screen, and once we're done, we can get right back to where we left off.
 #+BEGIN_SRC emacs-lisp
 (use-package magit
@@ -662,7 +673,7 @@ screen, and once we're done, we can get right back to where we left off.
 (dired-async-mode 1)
 #+END_SRC
 **** Revert Buffer
-Have the most up-to-date version of the buffer when using dired.
+Have the most up-to-date version of the buffer when using Dired.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 #+END_SRC
@@ -674,7 +685,7 @@ Have the most up-to-date version of the buffer when using dired.
 (add-hook 'dired-mode-hook #'xah-dired-mode-setup)
 #+END_SRC
 **** Copy and Delete
-Allow dired to recursively copy and delete directories. ~always~ ensures that no
+Allow Dired to recursively copy and delete directories. ~always~ ensures that no
 confirmation dialog comes up, and ~top~ does it only once.
 #+BEGIN_SRC emacs-lisp
 (setq dired-recursive-copies (quote always))
@@ -682,7 +693,7 @@ confirmation dialog comes up, and ~top~ does it only once.
 #+END_SRC
 **** Speed Sorting
 Easily sort based on a lot of options such as name, time, size, and
-extension. Use ~S~ to use in a dired buffer.
+extension. Use ~S~ to use in a Dired buffer.
 #+BEGIN_SRC emacs-lisp
 (use-package dired-quick-sort
   :config (dired-quick-sort-setup))
@@ -709,7 +720,7 @@ extension. Use ~S~ to use in a dired buffer.
     ([remap swiper] . counsel-grep-or-swiper)
     :config
     (setq counsel-grep-base-command
- "rg -i -M 120 --no-heading --line-number --color never '%s' %s"))
+          "rg -i -M 120 --color auto --line-number %s %s")
   (use-package smex)
   :custom
   (ivy-re-builders-alist
@@ -728,7 +739,10 @@ Enable god-mode.
 (use-package god-mode
  :commands (god-local-mode god-mode-all))
 #+END_SRC
-Indicate mode with modeline.
+Indicate whether we're in God mode with the cursor colour. I've seen other
+people do this by having a bar cursor in "insert mode" (to borrow some
+terminology from Vim) and a block cursor in "command mode" (in our case, God
+Mode).
 #+BEGIN_SRC emacs-lisp
 (defun gm/god-mode-indicator ()
   (cond (god-local-mode
@@ -822,14 +836,42 @@ default; set PAGE-P to non-nil to rotate only the current page.
   :config <<hydra>>)
 #+END_SRC
 ** Theme
-*** Solarized
+I use the popular Solarized Light/Dark themes.
 #+BEGIN_SRC emacs-lisp
 (use-package solarized-theme
   :demand t
   :config (load-theme 'solarized-dark))
 #+END_SRC
+I switch between the light and dark theme depending on my surroundings. If I am
+in a brightly lit room, I prefer to use the light theme, because the dark theme
+allows too much screen glare. At night (really, at most times, but in particular
+at night) I prefer the dark theme, which, unsurprisingly, spits less light into
+my eyes.
+
+The way I switch themes is, admittedly, somewhat hacky. I set a boolean (by
+default true) that is true if the active theme is dark, false if light. What can
+I say? I prefer the dark side. Then my switch function toggles that value and
+changes the theme and the corresponding colours for =pdf-view-mode=. I like to
+view my PDFs not in black and white, but in my theme's colours. To make sure
+everything looks right, including the colours in PDFs and the asterisks
+for headlines in Org Mode (I hide them with =org-bullets-mode= but one of them
+comes back when I switch themes, for some reason), I refresh all open buffers.
+#+BEGIN_SRC emacs-lisp
+(setq gm/dark t)
+(defun gm/switch-theme ()
+  (interactive)
+  (setq gm/dark (not gm/dark))
+  (if gm/dark
+      (progn (load-theme 'solarized-light)
+             (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
+    (progn (load-theme 'solarized-dark)
+           (setq pdf-view-midnight-colors '("#839496" . "#002b36"))))
+  (modi/revert-all-file-buffers))
+
+(bind-key "C-c t" #'gm/switch-theme)
+#+END_SRC
 *** Font Face
-Normally use Hack.
+I normally use Hack, a monospace font.
 #+BEGIN_SRC emacs-lisp
 (set-face-font 'default "Hack")
 (set-frame-font "Hack" nil t)
@@ -853,10 +895,27 @@ Nicely wrap lines for text mode.
 #+END_SRC
 *** Highlighting
 **** Syntax
+I want syntax highlighting everywhere...
 #+BEGIN_SRC emacs-lisp
 (global-font-lock-mode 1)
 #+END_SRC
+except in massive buffers, where it probably wouldn't be that useful (syntax
+highlighting doesn't help you read a CSV file with thousands of lines) and would
+definitely slow things down. In such buffers I also remove line numbers.
+#+BEGIN_SRC emacs-lisp
+(defun buffer-too-big-p ()
+  (or (> (buffer-size) (* 5000 80))
+      (> (line-number-at-pos (point-max)) 5000)))
+(add-hook 'prog-mode-hook
+          (lambda ()
+            ;; turn off `nlinum-relative-mode' when there are more than 5000 lines
+            (when (buffer-too-big-p)
+              (nlinum-relative-mode -1)
+              (font-lock-mode -1))))
+#+END_SRC
 **** Rainbow Mode
+This is a handy little package that highlights hex-color strings with their
+colour.
 #+BEGIN_SRC emacs-lisp
 (use-package rainbow-mode
   :defer 2
@@ -887,18 +946,6 @@ best not to enable it globally.
 #+BEGIN_SRC emacs-lisp
 (use-package rainbow-delimiters
   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
-#+END_SRC
-**** Except in Large Buffers
-#+BEGIN_SRC emacs-lisp
-(defun buffer-too-big-p ()
-  (or (> (buffer-size) (* 5000 80))
-      (> (line-number-at-pos (point-max)) 5000)))
-(add-hook 'prog-mode-hook
-          (lambda ()
-            ;; turn off `nlinum-relative-mode' when there are more than 5000 lines
-            (when (buffer-too-big-p)
-              (nlinum-relative-mode -1)
-              (font-lock-mode -1))))
 #+END_SRC
 * Keybindings
 ** Conditional Keybindings
@@ -1191,11 +1238,6 @@ I never use this command but keep accidentally hitting it instead of =C-x C-f=.
 #+BEGIN_SRC emacs-lisp
 (unbind-key "C-x f")
 #+END_SRC
-*** Unbind Return
-I sometimes activate this when exiting God Mode.
-#+BEGIN_SRC emacs-lisp
-(unbind-key "C-j")
-#+END_SRC
 ** Word Count
 Display the word count. I chose to narrow to subtree by default because
 displaying the count for every subtree in the file is not only (usually)
@@ -1225,25 +1267,6 @@ unnecessary but (always) too slow.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c r" 'gm/reload)
 #+END_SRC
-** Switch Theme
-I only use Solarized Light and Dark, and I switch between them depending on my
-surroundings. If I am in a brightly lit room, I prefer to use the light theme
-because the dark theme allows too much glare. If it is late at night, I prefer
-the dark theme, because there is less bright light going into my eyes.
-#+BEGIN_SRC emacs-lisp
-(setq gm/theme nil)
-(defun gm/switch-theme ()
-  (interactive)
-  (setq gm/theme (not gm/theme))
-  (if (equal gm/theme nil)
-      (progn (load-theme 'solarized-light)
-             (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
-    (progn (load-theme 'solarized-dark)
-           (setq pdf-view-midnight-colors '("#839496" . "#002b36"))))
-  (modi/revert-all-file-buffers))
-
-(bind-key "C-c t" #'gm/switch-theme)
-#+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
 (require 'key-chord)
@@ -1266,7 +1289,7 @@ especially useful when typing LaTeX.
 (key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
 #+END_SRC
-*
+=*=
 *** God Mode
 Easily enter god mode.
 #+BEGIN_SRC emacs-lisp
@@ -1290,11 +1313,11 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 *** File Locations
 We need a place where Org files go by default. Org Mode uses this to, for
 example, decide where to put the result of an Org Capture.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-directory "~/org/")
 #+END_SRC
 We similarly decide other default locations.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-default-notes-file "~/org/inbox.org"
       org-agenda-files '("~/org/inbox.org"
                          "~/org/gtd.org"
@@ -1304,7 +1327,7 @@ We similarly decide other default locations.
 Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
                            ("~/org/someday.org" :level . 1)
                            ("~/org/tickler.org" :maxlevel . 2)
@@ -1317,20 +1340,26 @@ kickstart blog posts.
 ("C-c c" . org-capture)
 #+END_SRC
 Here are my capture templates.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-capture-templates
  '(("a" "Appointment" entry
     (file "~/org/gcal.org")
     "* %i%? \n%^T\n")
    ("t" "Todo [inbox]" entry
     (file "~/org/inbox.org")
-    "* TODO %i%? \n:PROPERTIES:\n:CREATED: %U\n:END:")
+    "* TODO %i%?
+:PROPERTIES:\n:CREATED: %U\n:END:")
    ("j" "Journal" entry
     (file+olp+datetree "~/org/journal.org")
     "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
    ("e" "euler" entry
     (file+olp "~/website/content-org/blog.org" "Euler")
-    "** Project Euler %^{Problem Number}: %^{Problem Name} %^g\n:PROPERTIES:\n:EXPORT_FILE_NAME: %\\1\n:EXPORT_DATE: %u\n:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.\n:END:\n*** Problem Statement\n%?\n*** My Algorithm")
+    "** Project Euler %^{Problem Number}: %^{Problem Name} %^g
+:PROPERTIES:
+:EXPORT_FILE_NAME: %\\1
+:EXPORT_DATE: %u
+:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.
+:END:\n*** Problem Statement\n%?\n*** My Algorithm")
    ("b" "Bookmark"  entry
     (file "~/org/inbox.org")
     "* [[%:link][%:description]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%:initial\n%?")))
@@ -1338,17 +1367,17 @@ Here are my capture templates.
 *** Todo Lists
 I like the following set of =TODO= words. This is what appears
 before an Org headline when a todo state is activated.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-todo-keywords
       '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
 Automatically archive cancelled tasks.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-todo-state-tags-triggers '(("CANCELLED" ("ARCHIVE" . t))))
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
 updated when I archive a subtree.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (defun myorg-update-parent-cookie ()
   (when (equal major-mode 'org-mode)
     (save-excursion
@@ -1369,7 +1398,7 @@ I have in my Org Agenda to be able to alert me on my phone. I also want to be
 able to enter new events on the go. The best solution I've found for this is to
 integrate Org Mode with Google Calendar. The setup is contained in the file for
 my personal settings, =private.el=.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (use-package org-gcal
   :commands org-gcal-sync
   :init (setq package-check-signature nil)
@@ -1383,12 +1412,12 @@ rather not use =org-attach=.
 ("C-c l" . org-store-link)
 #+END_SRC
 Follow links using return rather than =C-c C-o=.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-return-follows-link t)
 #+END_SRC
 I can use =org-cliplink= to paste in a website's URL with the link's description
 being the title of that website.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (use-package org-cliplink
   :commands org-cliplink
   :bind (:map org-mode-map ("C-c y" . org-cliplink)))
@@ -1396,17 +1425,28 @@ being the title of that website.
 *** Word Count
 It's very useful to be able to see the word count of a subtree when I am writing
 a paper for school.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (use-package org-wc
   :commands org-wc-display
   :bind (:map org-mode-map ("C-c w" . gm/wc-display-current-subtree)))
+#+END_SRC
+I narrow to subtree by default because displaying the count for every subtree in
+the file is (usually) unnecessary and (always) too slow.
+#+BEGIN_SRC emacs-lisp
+(defun gm/wc-display-current-subtree (arg)
+  (interactive "P")
+  (if arg
+      (org-wc-display nil)
+    (save-restriction
+      (org-narrow-to-subtree)
+      (org-wc-display nil))))
 #+END_SRC
 ** Prettifying
 *** Headlines
 Let's make our headings look a bit nicer. The package =org-bullet-mode= replaces the
 asterisks that define an Org heading with pretty symbols, like stylized bullet
 points.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (use-package org-bullets
     :commands org-bullets-mode
     :hook (org-mode . org-bullets-mode))
@@ -1414,26 +1454,26 @@ points.
 In a similar vein, it helps the visual hierarchy to have text indented in
 accordance with the level of the heading, so I always use =org-indent-mode=.
 Because it's always active, it's best to diminish it.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-startup-indented t)
 (diminish 'org-indent-mode)
 #+END_SRC
 *** Emphasis Markers
 It looks much cleaner if we omit emphasis markers such as the =*= asterisks that
 make something bold. It is enough to just display the argument as bold.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-hide-emphasis-markers t)
 #+END_SRC
 This snippet from [[https://fuco1.github.io/2018-12-23-Multiline-fontification-with-org-emphasis-alist.html][Multiline fontification with org-emphasis-alist]] lets bolded or
 italic blocks stretch across multiple lines. This is useful when I want to
 format an entire sentence or paragraph, because I hard-wrap just about
 everything I write.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setcar (nthcdr 4 org-emphasis-regexp-components) 10)
 #+END_SRC
 *** Lists
 Have lists begun by, for example, =-= look like a bullet list.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (font-lock-add-keywords 'org-mode
                         '(("^ *\\([-]\\) "
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
@@ -1441,7 +1481,7 @@ Have lists begun by, for example, =-= look like a bullet list.
 ** Programming
 Set up languages loaded for use in Org source blocks and their respective
 default execution commands.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (org-babel-do-load-languages
       'org-babel-load-languages '((python . t)
                                   (latex . t)))
@@ -1451,12 +1491,12 @@ default execution commands.
 #+END_SRC
 ** LaTeX
 Highlight LateX inline math in org mode.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-highlight-latex-and-related '(latex))
 #+END_SRC
 *** Math Mode
 Define a keychord to enter inline math mode. This allows me to get around
-messing with making =$= an electrically paired delimieter.
+messing with making =$= an electrically paired delimiter.
 #+BEGIN_SRC emacs-lisp
 (key-chord-define org-mode-map "r4" #'gm/enter-math-mode)
 #+END_SRC
@@ -1479,11 +1519,11 @@ Remove comments from Org document when exporting to LaTeX.
 #+END_SRC
 *** Equation Auto Preview
 Not too small.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
 #+END_SRC
 Where should it be?
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-preview-latex-image-directory "cache/ltximg/")
 #+END_SRC
 Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]].
@@ -1614,19 +1654,19 @@ Bind this in Org mode.
 ("C-c b" . gm/org-latex-export)
 #+END_SRC
 Don't use straight quotes when exporting.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-export-with-smart-quotes t)
 #+END_SRC
-**** Use Math Macros
-I have a file with macros for math. I want this to be automatically included in
-every LaTeX file exported from Org Mode. The optional third argument makes sure
-this package is also loaded when compiling LaTeX image previews, such as
-equation previews.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+**** Math Macros
+I have a LaTeX =.sty= file with macros for math. I want this to be automatically
+included in every LaTeX file exported from Org Mode. The optional third argument
+makes sure this package is also loaded when compiling LaTeX image previews, such
+as equation previews.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-latex-packages-alist
       '(("" "gm-math" t)))
 #+END_SRC
-**** Use Latexmk
+**** Latexmk
 The command =gm/auto-tex-cmd= looks at your Org file. If it finds that =xelatex= has
 been specified as the desired compilation command, then it uses that. Otherwise,
 it runs =latexmk= with normal =pdflatex=. We don't need to worry about compiling the
@@ -1642,10 +1682,8 @@ graphics correctly; =latexmk= handles all of that.
 
 (add-hook 'org-export-latex-after-initial-vars-hook 'gm/auto-tex-cmd)
 #+END_SRC
-**** Export Classes
-***** Tufte-LaTeX
-****** Command Links
-******* No Option
+**** Command Links
+***** No Option
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters
  "latex"
@@ -1654,7 +1692,7 @@ graphics correctly; =latexmk= handles all of that.
            (when (eq format 'latex)
              (format "\\%s{%s}" path desc))))
 #+END_SRC
-******* One Option
+***** One Option
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters
  "latex-opt"
@@ -1668,7 +1706,7 @@ graphics correctly; =latexmk= handles all of that.
                        (if (equal "" opt) opt (format "[%s]" opt))
                        arg)))))
 #+END_SRC
-******* One Option (After Main)
+***** One Option (After Main)
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters
  "latex-opt-after"
@@ -1681,6 +1719,8 @@ graphics correctly; =latexmk= handles all of that.
                (format "\\%s{%s}%s" path arg
                        (if (equal "" opt) opt (format "[%s]" opt)))))))
 #+END_SRC
+**** Export Classes
+***** Tufte-LaTeX
 ****** Class Options
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-latex-classes
@@ -1689,20 +1729,6 @@ graphics correctly; =latexmk= handles all of that.
    [NO-DEFAULT-PACKAGES]"
                ("\\section{%s}" . "\\section*{%s}")
                ("\\subsection{%s}" . "\\subsection*{%s}")))
-#+END_SRC
-****** Keyword Search
-#+BEGIN_SRC emacs-lisp
-(defun jk-org-kwds ()
-  "parse the buffer and return a cons list of (property . value)
-from lines like:
-,#+PROPERTY: value"
-  (org-element-map (org-element-parse-buffer 'element) 'keyword
-    (lambda (keyword) (cons (org-element-property :key keyword)
-                            (org-element-property :value keyword)))))
-
-(defun jk-org-kwd (KEYWORD)
-  "get the value of a KEYWORD in the form of #+KEYWORD: value"
-  (cdr (assoc KEYWORD (jk-org-kwds))))
 #+END_SRC
 ***** Assignment
 #+BEGIN_SRC emacs-lisp
@@ -1842,7 +1868,7 @@ that our function will look for.
 #+BEGIN_SRC emacs-lisp
 (setq gm/math-environments '("equation" "align"))
 #+END_SRC
-The idea is that we search the regin from the beginning of the paragraph to the
+The idea is that we search the region from the beginning of the paragraph to the
 point for delimiters for inline math (=\(= and =\)=) and display math (=\begin{ENV}=
 and =\end{ENV}=, where =ENV= is an element of =gm/math-environments=). The one
 subtlety is that we also look at the starred versions of =ENV=. If there are more
@@ -2125,7 +2151,7 @@ to make LaTeX happy.
 (define-conditional-key org-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
 *** Math Symbols
-#+BEGIN_SRC emacs-lisp :noweb-ref hydra
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
   (";" hydra-semicolon-b/body "Level 2")
   ("SPC" (insert "; ") ";")
