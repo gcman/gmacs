@@ -59,7 +59,6 @@
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
  '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
- '(org-latex-compiler "xetex")
  '(org-refile-targets
    '(("~/org/gtd.org" :maxlevel . 3)
      ("~/org/someday.org" :level . 1)

@@ -490,7 +490,7 @@ dictionaries.
 (setq ispell-program-name "hunspell")
 (setq ispell-local-dictionary "en_CA")
 (setq ispell-hunspell-dictionary-alist
-      '(("en_CA" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_CA") nil utf-8)))
+      '(("en_CA" "[[:alpha:]]" "[^[:alpha:]]" "['’]" nil ("-d" "en_CA") nil utf-8)))
 #+END_SRC
 Spellchecking should not occur inside things like property drawers and code
 source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?source=rss][Making Ispell work with org-mode in Emacs]].
@@ -526,8 +526,9 @@ Advance to the next incorrect word.
   (flyspell-goto-next-error)
   (ispell-word))
 
+(after! flyspell
 (bind-key [remap flyspell-goto-next-error]
-          #'flyspell-check-next-highlighted-word flyspell-mode-map)
+          #'flyspell-check-next-highlighted-word flyspell-mode-map))
 #+END_SRC
 Add last misspelled word in buffer to a global abbreviation.
 #+BEGIN_SRC emacs-lisp
@@ -688,8 +689,8 @@ Have the most up-to-date version of the buffer when using Dired.
 Allow Dired to recursively copy and delete directories. ~always~ ensures that no
 confirmation dialog comes up, and ~top~ does it only once.
 #+BEGIN_SRC emacs-lisp
-(setq dired-recursive-copies (quote always))
-(setq dired-recursive-deletes (quote top))
+(setq dired-recursive-copies 'always)
+(setq dired-recursive-deletes 'top)
 #+END_SRC
 **** Speed Sorting
 Easily sort based on a lot of options such as name, time, size, and
@@ -711,6 +712,8 @@ extension. Use ~S~ to use in a Dired buffer.
   :config
   (ivy-mode 1)
   (use-package flx)
+  (use-package smex
+    :commands (counsel-M-x))
   (use-package swiper
     :commands (swiper swiper-all))
   (use-package counsel
@@ -720,8 +723,7 @@ extension. Use ~S~ to use in a Dired buffer.
     ([remap swiper] . counsel-grep-or-swiper)
     :config
     (setq counsel-grep-base-command
-          "rg -i -M 120 --color auto --line-number %s %s")
-  (use-package smex)
+          "rg -i -M 120 --color auto --line-number %s %s"))
   :custom
   (ivy-re-builders-alist
    '((swiper . ivy--regex-plus)
@@ -1148,6 +1150,7 @@ When using =C-d= or =Backspace=, delete all white space in a certain direction, 
 not just one.
 #+BEGIN_SRC emacs-lisp
 (use-package hungry-delete
+  :commands (hungry-delete-mode global-hungry-delete-mode)
   :config (global-hungry-delete-mode))
 #+END_SRC
 *** Better Buffers
@@ -1524,7 +1527,7 @@ Highlight LateX inline math in org mode.
 Define a keychord to enter inline math mode. This allows me to get around
 messing with making =$= an electrically paired delimiter.
 #+BEGIN_SRC emacs-lisp
-(key-chord-define org-mode-map "r4" #'gm/enter-math-mode)
+(key-chord-define org-mode-map "r4" #'gm/create-math-fragment)
 #+END_SRC
 **** Pretty Math Symbols
 I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-symbols.el][mortiferus]]. The file I use is not the one from
@@ -1543,6 +1546,27 @@ Remove comments from Org document when exporting to LaTeX.
               "")))
 (add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
+*** Reformat Math Fragment
+For my primary use case of typing math in LaTeX, I don't care about how the
+source looks when I'm typing it; I'm often typing it live, so the main concern
+is speed. But later, I want it to look nice and readable, with spacing and so
+on.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-reformat (fr)
+  (save-excursion
+    (goto-char (nth 1 fr))
+    (let ((fr-begin (nth 1 fr))
+          (fr-end (org-element-property :end (org-element-context)))
+          (base))
+      (setq base (buffer-substring-no-properties fr-begin fr-end))
+      (defun gm/rf-helper (reg to)
+        (setq base (replace-regexp-in-string reg to base)))
+      (gm/rf-helper "\\s-\\s-*" " ")
+      (gm/rf-helper "\\([^ ]?\\)\\+\\([^ ]?\\)" "\\1 + \\2")
+      (delete-region fr-begin fr-end)
+      (insert base)))
+  (goto-char (1- (org-element-property :end (org-element-context)))))
+#+END_SRC
 *** Equation Auto Preview
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -1552,56 +1576,54 @@ Where should it be?
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-preview-latex-image-directory "cache/ltximg/")
 #+END_SRC
-Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]].
+Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]]. I've modified it to be toggleable and to run a hook
+on leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
 (defvar cw/org-last-fragment nil
   "Holds the type and position of last valid fragment we were on. Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
 
 (defvar cw/org-valid-fragment-type
-      '(latex-fragment
-        latex-environment
-        link))
+  "List of types of fragments that will be previewed by `cw/org-preview-fragment'"
+  '(latex-fragment
+    latex-environment))
 
 (defun cw/org-curr-fragment ()
   "Returns the type and position of the current fragment available for preview inside org-mode. Returns nil at non-displayable fragments"
   (let* ((fr (org-element-context))
          (fr-type (car fr)))
     (when (memq fr-type cw/org-valid-fragment-type)
-      (list fr-type
-            (org-element-property :begin fr)))))
+      ;; \(...\)| cursor there should not result in active fragment
+      (unless (eq (1+ (point)) (org-element-property :end fr))
+        (list fr-type
+              (org-element-property :begin fr))))))
 
 (defun cw/org-remove-fragment-overlay (fr)
   "Remove fragment overlay at fr"
   (let ((fr-type (nth 0 fr))
         (fr-begin (nth 1 fr)))
     (goto-char fr-begin)
-    (cond ((or (eq 'latex-fragment fr-type)
-               (eq 'latex-environment fr-type))
-           (let ((ov (loop for ov in (org--list-latex-overlays)
-                           if
-                           (and
-                            (<= (overlay-start ov) (point))
-                            (>= (overlay-end ov) (point)))
-                           return ov)))
-             (when ov
-               (delete-overlay ov))))
-          ((eq 'link fr-type)
-           nil;; delete image overlay here?
-           ))))
+    (when (memq fr-type cw/org-valid-fragment-type)
+      (let ((ov (loop for ov in (org--list-latex-overlays)
+                      if
+                      (and
+                       (<= (overlay-start ov) (point))
+                       (>= (overlay-end ov) (point)))
+                      return ov)))
+        (when ov
+          (delete-overlay ov))))))
 
 (defun cw/org-preview-fragment (fr)
   "Preview org fragment at fr"
   (let ((fr-type (nth 0 fr))
         (fr-begin (nth 1 fr)))
     (goto-char fr-begin)
-    (cond ((or (eq 'latex-fragment fr-type) ;; latex stuffs
-               (eq 'latex-environment fr-type))
-           (when (cw/org-curr-fragment) (org-toggle-latex-fragment))) ;; only toggle preview when we're in a valid region (for inserting in the front of a fragment)
-          ((eq 'link fr-type) ;; for images
-           (let ((fr-end (org-element-property :end (org-element-context))))
-             (org-display-inline-images nil t fr-begin fr-end))))))
+    (when (and (memq fr-type cw/org-valid-fragment-type)
+               (cw/org-curr-fragment))
+      (org-toggle-latex-fragment))))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 (defun cw/org-auto-toggle-fragment-display ()
   "Automatically toggle a displayable org mode fragment"
   (and (eq 'org-mode major-mode)
@@ -1618,13 +1640,16 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
             ;; property which is less likely to change for the comparison.
             (not (equal curr cw/org-last-fragment)))
 
+           ;; reformat old fragment
+           (gm/math-reformat cw/org-last-fragment)
+
            ;; go back to last one and put image back, provided there is still a fragment there
            (save-excursion
              (cw/org-preview-fragment cw/org-last-fragment)
              ;; now remove current image
-             (cw/org-remove-fragment-overlay curr)
-             ;; and save new fragment
-             )
+             (cw/org-remove-fragment-overlay curr))
+
+           ;; and save new fragment
            (setq cw/org-last-fragment curr))
 
           ;; were on a fragment and now are not on a fragment
@@ -1633,10 +1658,12 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
             (not curr)
             ;; but we were on one
             cw/org-last-fragment)
+
+           ;; reformat old fragment
+           (gm/math-reformat cw/org-last-fragment)
            ;; put image back on, provided that there is still a fragment here.
            (save-excursion
              (cw/org-preview-fragment cw/org-last-fragment))
-
            ;; unset last fragment
            (setq cw/org-last-fragment nil))
 
@@ -1649,8 +1676,15 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
            ;; remove image
            (save-excursion
              (cw/org-remove-fragment-overlay curr)
-             )
-           (setq cw/org-last-fragment curr))))))
+             (setq cw/org-last-fragment curr))
+           ;; there is no point being in on the \( or \) part of the math fragment
+           ;; this code jumps the point into the actual math part of the fragment
+           (cond
+            ((equal (gm/last-n-chars -2) "\\(")
+             (forward-char 2))
+            ((and (eq (char-before) 92)
+                  (eq (char-after) 41))
+             (backward-char 1))))))))
 
 (defvar gm/eq-preview nil)
 ;; this is buffer local
@@ -1663,7 +1697,7 @@ Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979]
     (progn
       (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)
       (message "Equation preview enabled.")))
-    (setq gm/eq-preview (not gm/eq-preview)))
+  (setq gm/eq-preview (not gm/eq-preview)))
 
 (bind-key "C-c p" 'gm/toggle-equation-preview)
 #+END_SRC
@@ -1867,7 +1901,7 @@ though that is the default, because otherwise binding =TAB= to =nil= in
 (setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet
   :defer 1
-  :diminish (yas-minor-mode)
+  :diminish (yas-minor-mode " ✂")
   :config
   (yas-global-mode 1)
   (bind-key "<tab>" nil yas-minor-mode-map)
@@ -1918,7 +1952,7 @@ block, and so we return true.
 **** Enter Math Mode
 This command will enter inline math mode if not in math mode, and exit otherwise.
 #+BEGIN_SRC emacs-lisp
-(defun gm/enter-math-mode ()
+(defun gm/create-math-fragment ()
   (interactive)
   (if (gm/in-math-p)
       (progn
@@ -2243,6 +2277,8 @@ to make LaTeX happy.
   ("x" (insert " \\times ") "×")
   ("." (insert " \\cdots ") "···")
   ("-" (gm/snippet "" "conjugate") "-"))
-
+#+END_SRC
+Then we bind this to semicolon.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (define-conditional-key org-mode-map ";" #'hydra-semicolon-a/body (gm/in-math-p))
 #+END_SRC

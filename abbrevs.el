@@ -5,6 +5,8 @@
 
 (define-abbrev-table 'Info-edit-mode-abbrev-table '())
 
+(define-abbrev-table 'backtrace-mode-abbrev-table '())
+
 (define-abbrev-table 'bibtex-mode-abbrev-table '())
 
 (define-abbrev-table 'bookmark-bmenu-mode-abbrev-table '())
@@ -22,6 +24,8 @@
 (define-abbrev-table 'comint-mode-abbrev-table '())
 
 (define-abbrev-table 'completion-list-mode-abbrev-table '())
+
+(define-abbrev-table 'debugger-mode-abbrev-table '())
 
 (define-abbrev-table 'diary-fancy-display-mode-abbrev-table '())
 
@@ -61,7 +65,9 @@
 
 (define-abbrev-table 'global-abbrev-table
   '(
+    ("abbreiation" "abbreviation" nil :count 0)
     ("admittely" "admittedly" nil :count 0)
+    ("becuase" "because" nil :count 0)
     ("delimieter" "delimiter" nil :count 0)
     ("eveyr" "every" nil :count 0)
     ("inadvertantly" "inadvertently" nil :count 0)
@@ -197,6 +203,8 @@
 (define-abbrev-table 'tags-table-mode-abbrev-table '())
 
 (define-abbrev-table 'tar-mode-abbrev-table '())
+
+(define-abbrev-table 'term-mode-abbrev-table '())
 
 (define-abbrev-table 'tex-mode-abbrev-table '())
 

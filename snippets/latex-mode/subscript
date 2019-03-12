@@ -2,4 +2,4 @@
 # name: subscript
 # key: math-subscript
 # --
-_{$1}
+_{$0}

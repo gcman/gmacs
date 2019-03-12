@@ -1,5 +1,6 @@
 # name: equation
 # key: eq
+# condition: (not (eq (car (org-element-context)) 'src-block))
 # --
 \begin{equation}
 $0
