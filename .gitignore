@@ -7,6 +7,5 @@
 !math-snippets.el
 !abbrevs.el
 !custom.el
-!early-init.el
 !init.el
 !gmacs.org

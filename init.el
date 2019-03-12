@@ -1,9 +1,6 @@
-;;; Commentary:
 ;; The main entry point into GMACS. It either loads the byte-compiled
 ;; GMACS configuration file or tangles and loades the GMACS literate
 ;; config file written in Org Mode.
-
-;;; Code:
 
 (advice-add #'display-startup-echo-area-message :override #'ignore)
 (setq inhibit-startup-message t
@@ -17,6 +14,3 @@
       (load-file (expand-file-name "gmacs.elc" user-emacs-directory))
     (require 'org)
     (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory))))
-
-;;; init.el ends here
-(put 'list-timers 'disabled nil)

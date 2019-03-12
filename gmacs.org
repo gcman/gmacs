@@ -1,9 +1,54 @@
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
-** Lexical Scoping
-#+BEGIN_SRC emacs-lisp
-;; -*- lexical-binding: t; -*-
+** Early Init
+Here's some cutting edge technology. Emacs 27+ introduces
+early-init.el, which is run before init.el, before most of its
+package and UI initialization happens. We use this to cut out
+unnecessary parts of the initialization process as an early
+optimization. It's not super necessary, but it helps.
+
+Package initialize occurs automatically, before =user-init-file= is loaded, but
+after =early-init-file=. As we'll see later, I handle package initialization, so
+there's no need for Emacs to do it first.
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+(setq package-enable-at-startup nil)
+#+END_SRC
+** Fixing the UI
+Emacs ships with a set of pretty strange defaults. The UI is the first thing we
+see when we open Emacs, so it better not look ugly. In particular, we do part of
+the configuration outside Emacs entirely, by editing the =~/.Xresources=. This has
+the advantage of killing the ugly parts of the UI before they are born. This is
+slightly faster than doing it within Emacs, but it comes at the cost of less
+flexibility.
+*** Bars
+I never use menu bars, tool bars, or scroll bars in Emacs.
+#+BEGIN_SRC sh :tangle no
+Emacs.menuBar: off
+Emacs.toolBar: off
+Emacs.verticalScrollBars: off
+#+END_SRC
+*** Cursor Blinking
+In earlier versions of Emacs, the cursor would blink ten or so times, then
+suddenly stop. This got annoying quickly.
+#+BEGIN_SRC sh :tangle no
+Emacs.cursorBlink: off
+#+END_SRC
+*** Background Change
+Before a theme is initialized, the default background colour that Emacs displays
+is white. However, my default theme is a dark theme (Solarized Dark). If I were
+to change the background colour after Emacs starts, the screen would flash as it
+changes colour. And so I set the default background colour to be that of
+Solarized Dark.
+#+BEGIN_SRC sh :tangle no
+Emacs.background: #002b36
+#+END_SRC
+The last thing left that is visible throughout startup is the modeline. It
+took a bit of Internet sleuthing to figure out how to set this, but here it is.
+#+BEGIN_SRC sh :tangle no
+Emacs.mode-line.attributeForeground: #93a1a1
+Emacs.mode-line.attributeBackground: #002b36
+Emacs.mode-line.attributeBox: (:line-width 1 :color "#073642")
 #+END_SRC
 ** Start Server
 Always load up a server when opening Emacs.
@@ -144,21 +189,12 @@ We also require =diminish= and =bind= because I often use these keywords within
 I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
 (setq custom-file (expand-file-name "custom.el" gmacs-emacs-dir))
-(load custom-file)
+(when (file-exists-p custom-file) (load custom-file))
 #+END_SRC
 I put my personal information in =private.el=.
 #+BEGIN_SRC emacs-lisp
-(load (expand-file-name "private" gmacs-emacs-dir))
-#+END_SRC
-** Libraries
-We load in some common libraries. The =:demand= keyword overrides the global
-deferral we set earlier.
-#+BEGIN_SRC emacs-lisp
-(use-package async :demand t)
-(use-package dash :demand t)
-(use-package f :demand t)
-(use-package s :demand t)
-(eval-when-compile (require 'cl))
+(setq private-file (expand-file-name "private.el" gmacs-emacs-dir))
+(when (file-exists-p private-file) (load private-file))
 #+END_SRC
 * General Configuration
 ** Graphics
@@ -169,10 +205,9 @@ Start GMACS in glorious fullscreen.
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 (setq frame-title-format "GMACS")
 #+END_SRC
-**** Cursor Blinking
-I find cursor blinking distracting.
+**** Cursor
+I prefer a box cursor to a bar cursor.
 #+BEGIN_SRC emacs-lisp
-(blink-cursor-mode 0)
 (when (display-graphic-p)
   (setq-default cursor-type 'box))
 (setq x-stretch-cursor 1)
@@ -189,10 +224,16 @@ Turn off reverting buffer messages.
 (setq auto-revert-verbose nil)
 #+END_SRC
 **** Modeline
+This package comes with some useful items on the modeline, as well as colour
+coding. Some interesting features (which I set in =sml/replacer-regexp-list=) is
+shortening features. Another useful thing is that minor modes are displayed.
 #+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
   :defer 1
-  :config (sml/setup))
+  :config
+  (sml/setup)
+  (sml/replacer-regexp-list
+      '(("^~/org/" ":O:"))))
 #+END_SRC
 ***** Time
 What time is it, Mr. Emacs?
@@ -234,10 +275,10 @@ where they are indented.
 (setq indent-line-function #'insert-tab)
 #+END_SRC
 ** Ease of Use
-*** DOOM! Macros
-Some great macros from the popular DOOM! Emacs configuration. The documentation
-on these will be sparse, because the docstrings do an excellent job of
-explaining what's going on.
+*** Macros
+Some great macros. =after!= and =lambda!= are from the popular DOOM! Emacs
+configuration. The documentation on these will be sparse, because the docstrings
+do an excellent job of explaining what's going on.
 **** after!
 #+BEGIN_SRC emacs-lisp
 (defmacro after! (feature &rest forms)
@@ -258,6 +299,15 @@ compilation."
   "A shortcut for inline interactive lambdas."
   (declare (doc-string 1))
   `(lambda () (interactive) ,@body))
+#+END_SRC
+**** togglef
+Simple macro to avoid having to write a variable name twice.
+#+BEGIN_SRC emacs-lisp
+(defmacro togglef (place)
+  "Toggle PLACE.  non-nil becomes nil, nil becomes t.
+PLACE may be a symbol, or any generalized variable allowed by ‘setf’.
+The return value is the new value of PLACE."
+  `(setf ,place (not ,place)))
 #+END_SRC
 *** Better Defaults
 All the things (perhaps they seem little) that just make sense to have.
@@ -284,16 +334,38 @@ prompt and then back, or pressing =C-g= and starting over.
  'minibuffer-prompt-properties
  (quote (read-only t cursor-intangible t face minibuffer-prompt)))
 #+END_SRC
+**** Keystroke Echo Timeout
+This is one of those things that I didn't think would be useful until I tried
+it. When you type a keybinding, the key sequence shows up in the echo area. But
+the default timeout, one second, is a bit too long for me.
+#+BEGIN_SRC emacs-lisp
+(setq echo-keystrokes 0.5)
+#+END_SRC
 **** Delete The Selection
 #+BEGIN_SRC emacs-lisp
 (delete-selection-mode 1)
 #+END_SRC
+**** Fix =line-number-mode=
+This mode displays the current line number in the modeline. Except when there is
+a line Emacs decides is too long. In that case, all you see in the modeline is
+=??=. See [[https://emacs.stackexchange.com/questions/3824/what-piece-of-code-in-emacs-makes-line-number-mode-print-as-line-number-i][this question]] on Emacs SE for a workaround.
+#+BEGIN_SRC emacs-lisp
+(setq line-number-display-limit-width 10000)
+#+END_SRC
+**** Don't Adjust Point When Pasting by Mouse
+Pasting into Emacs by middle-clicking can be nice, but I don't want the click to
+change the location of the point and then paste there instead of where the point
+originally was.
+#+BEGIN_SRC emacs-lisp
+(setq mouse-yank-at-point t)
+#+END_SRC
 **** Split Vertically by Default
 Gotta maximize that vertical screen space. Besides, I always have 80 character
-limits on my lines.
+limits on my lines. To be honest, I have no idea how it works, but it seems to
+make Emacs prefer splitting vertically.
 #+BEGIN_SRC emacs-lisp
-(setq split-height-threshold nil)
-(setq split-width-threshold 0)
+(setq split-height-threshold nil
+      split-width-threshold 0)
 #+END_SRC
 **** Kill Current Buffer
 Kill the current buffer.
@@ -336,9 +408,44 @@ Completely reload Emacs, by reloading the init file.
         (?\{ . ?\})))
 #+END_SRC
 **** Uniquify
-Make two buffers with the same file name distinguishable.
+Make two buffers with the same file name distinguishable. This isn't strictly
+necessary because I use =smart-mode-line=, but the default style puts brackets
+around the non-unique buffer names, and I prefer a less confusing style.
 #+BEGIN_SRC emacs-lisp
-(require 'uniquify)
+(setq uniquify-buffer-name-style 'forward)
+#+END_SRC
+**** Navigation
+[[https://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/][This article]] argues that it's usually more useful for =C-a= to take you to the
+beginning of the indentation of the line (that is, the logical/contextual
+beginning of the line) as opposed to the literal beginning of the line. I tend
+to agree.
+#+BEGIN_SRC emacs-lisp
+(defun smarter-move-beginning-of-line (arg)
+  "Move point back to indentation of beginning of line.
+
+Move point to the first non-whitespace character on this line.
+If point is already there, move to the beginning of the line.
+Effectively toggle between the first non-whitespace character and
+the beginning of the line.
+
+If ARG is not nil or 1, move forward ARG - 1 lines first.  If
+point reaches the beginning or end of the buffer, stop there."
+  (interactive "^p")
+  (setq arg (or arg 1))
+
+  ;; Move lines first
+  (when (/= arg 1)
+    (let ((line-move-visual nil))
+      (forward-line (1- arg))))
+
+  (let ((orig-point (point)))
+    (back-to-indentation)
+    (when (= orig-point (point))
+      (move-beginning-of-line 1))))
+
+;; remap C-a to `smarter-move-beginning-of-line'
+(global-set-key [remap move-beginning-of-line] 'smarter-move-beginning-of-line)
+(global-set-key [remap org-beginning-of-line]  'smarter-move-beginning-of-line)
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -361,7 +468,11 @@ Store more undo information in memory.
 (setq-default undo-limit 250000)
 #+END_SRC
 **** History
-It's nice to have a history of commands so that when you open a new Emacs instance, you can get right to work.
+It's nice to have a history of commands and other things so that you can get
+right to work when you open a new Emacs instance, you can get right to work.
+Without this, =*table--cell-backward-kill-paragraph= is the default command,
+because they are sorted alphabetically. If this has ever been the first command
+you wanted to execute after opening Emacs, please let me know.
 #+BEGIN_SRC emacs-lisp
 (setq-default savehist-file (expand-file-name "savehist" gmacs-cache-dir)
       save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
@@ -380,6 +491,10 @@ It's nice to have a history of commands so that when you open a new Emacs instan
 Open files to the same place in which they were last closed.
 #+BEGIN_SRC emacs-lisp
 (save-place-mode 1)
+#+END_SRC
+I like having lots of =recentf= files.
+#+BEGIN_SRC emacs-lisp
+(setq recentf-auto-cleanup 'never)
 #+END_SRC
 *** Abbreviations
 Load them.
@@ -518,17 +633,59 @@ performance when checking the entire buffer.
 #+BEGIN_SRC emacs-lisp
 (setq-default flyspell-issue-message-flag nil)
 #+END_SRC
-Advance to the next incorrect word.
+[[http://pragmaticemacs.com/emacs/jump-back-to-previous-typo/][This article]] thinks that going to the previous error is more useful than going
+to the next one. This is usually true, and combines well with the abbreviation
+feature below.
+#+BEGIN_SRC emacs-lisp
+(defun flyspell-goto-previous-error (arg)
+  "Go to arg previous spelling error."
+  (interactive "p")
+  (while (not (= 0 arg))
+    (let ((pos (point))
+          (min (point-min)))
+      (if (and (eq (current-buffer) flyspell-old-buffer-error)
+               (eq pos flyspell-old-pos-error))
+          (progn
+            (if (= flyspell-old-pos-error min)
+                ;; goto beginning of buffer
+                (progn
+                  (message "Restarting from end of buffer")
+                  (goto-char (point-max)))
+              (backward-word 1))
+            (setq pos (point))))
+      ;; seek the next error
+      (while (and (> pos min)
+                  (let ((ovs (overlays-at pos))
+                        (r '()))
+                    (while (and (not r) (consp ovs))
+                      (if (flyspell-overlay-p (car ovs))
+                          (setq r t)
+                        (setq ovs (cdr ovs))))
+                    (not r)))
+        (backward-word 1)
+        (setq pos (point)))
+      ;; save the current location for next invocation
+      (setq arg (1- arg))
+      (setq flyspell-old-pos-error pos)
+      (setq flyspell-old-buffer-error (current-buffer))
+      (goto-char pos)
+      (if (= pos min)
+          (progn
+            (message "No more miss-spelled word!")
+            (setq arg 0))
+        (forward-word)))))
+#+END_SRC
+We replace =flyspell='s next error command with the above previous error command.
+#+BEGIN_SRC emacs-lisp
+(bind-key [remap flyspell-goto-next-error] #'flyspell-goto-previous-error flyspell-mode-map)
+#+END_SRC
+Advance to the next incorrect word. This is used as a helper function.
 #+BEGIN_SRC emacs-lisp
 (defun flyspell-check-next-highlighted-word ()
   "Custom function to spell check next highlighted word"
   (interactive)
   (flyspell-goto-next-error)
   (ispell-word))
-
-(after! flyspell
-(bind-key [remap flyspell-goto-next-error]
-          #'flyspell-check-next-highlighted-word flyspell-mode-map))
 #+END_SRC
 Add last misspelled word in buffer to a global abbreviation.
 #+BEGIN_SRC emacs-lisp
@@ -578,7 +735,7 @@ abort completely with `C-g'."
 Helpful when you want to see completion for a certain sequence of prefix keys.
 #+BEGIN_SRC emacs-lisp
 (use-package which-key
-  :defer 2
+  :defer 10
   :diminish
   :config (which-key-mode))
 #+END_SRC
@@ -630,6 +787,25 @@ will be killed."
             (message "Killed non-existing/unreadable file buffer: %s" filename))))))
   (message "Finished reverting buffers."))
 #+END_SRC
+*** Insert Key Sequence
+This command takes a key sequence and inserts it into the buffer. This is
+surprisingly much easier than typing it in manually. I got it from [[http://endlessparentheses.com/inserting-the-kbd-tag-in-org-mode.html][this article]].
+#+BEGIN_SRC emacs-lisp
+(defun endless/insert-key (key)
+  "Ask for a key then insert its description.
+Will work on both org-mode and any mode that accepts plain html."
+  (interactive "kType key sequence: ")
+  (let* ((orgp (derived-mode-p 'org-mode))
+         (tag (if orgp "=%s=" "<kbd>%s</kbd>")))
+    (if (null (equal key "\C-m"))
+        (insert
+         (format tag (help-key-description key nil)))
+      (insert (format tag ""))
+      (forward-char (if orgp -1 -6)))))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :noweb-ref org-keys
+("C-c k" endless/insert-key)
+#+END_SRC
 ** Packages
 *** Async
 Authorize actions.
@@ -638,9 +814,15 @@ Authorize actions.
 (auth-source-pass-enable)
 (setq auth-sources '("~/.authinfo.gpg"))
 #+END_SRC
+*** Tramp
+Make sure to keep backups locally and not remotely.
+#+BEGIN_SRC emacs-lisp
+(setq tramp-backup-directory-alist backup-directory-alist)
+#+END_SRC
 Set tramp connection history location.
 #+BEGIN_SRC emacs-lisp
-(setq tramp-persistency-file (expand-file-name "tramp" gmacs-cache-dir))
+(after! tramp-cache
+  (setq tramp-persistency-file (expand-file-name "tramp" gmacs-cache-dir)))
 #+END_SRC
 *** Magit
 Magit, the magical Git client, is an amazing porcelain for Git inside of Emacs.
@@ -713,7 +895,10 @@ extension. Use ~S~ to use in a Dired buffer.
   (ivy-mode 1)
   (use-package flx)
   (use-package smex
-    :commands (counsel-M-x))
+    :commands (counsel-M-x)
+    :config
+    (smex-save-file (expand-file-name "smex" gmacs-cache-dir))
+    (smex-history-length 50))
   (use-package swiper
     :commands (swiper swiper-all))
   (use-package counsel
@@ -731,8 +916,7 @@ extension. Use ~S~ to use in a Dired buffer.
      (t      . ivy--regex-fuzzy)))
   (ivy-use-virtual-buffers t)
   (ivy-display-style 'fancy)
-  (ivy-initial-inputs-alist nil)
-  (smex-save-file (expand-file-name "smex" gmacs-cache-dir)))
+  (ivy-initial-inputs-alist nil))
 #+END_SRC
 *** God Mode
 Enable god-mode.
@@ -834,7 +1018,19 @@ default; set PAGE-P to non-nil to rotate only the current page.
 *** Hydra
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package hydra
-  :config <<hydra>>)
+  :defer 3
+  :config
+  <<hydra>>)
+#+END_SRC
+*** Libraries
+We load in some common libraries. The =:demand= keyword overrides the global
+deferral we set earlier.
+#+BEGIN_SRC emacs-lisp
+(use-package async :demand t)
+(use-package dash :demand t :config (dash-enable-font-lock))
+(use-package f :demand t)
+(use-package s :demand t)
+(eval-when-compile (require 'cl))
 #+END_SRC
 ** Theme
 I use the popular Solarized Light/Dark themes.
@@ -843,11 +1039,15 @@ I use the popular Solarized Light/Dark themes.
   :demand t
   :config (load-theme 'solarized-dark))
 #+END_SRC
-I switch between the light and dark theme depending on my surroundings. If I am
-in a brightly lit room, I prefer to use the light theme, because the dark theme
-allows too much screen glare. At night (really, at most times, but in particular
-at night) I prefer the dark theme, which, unsurprisingly, spits less light into
-my eyes.
+Also, it turns out we can style tooltips as well.
+#+BEGIN_SRC emacs-lisp
+(setq x-gtk-use-system-tooltips nil)
+#+END_SRC
+I switch between the light and dark variants depending on my surroundings. If I
+am in a brightly lit room, I prefer to use the light theme, because the dark
+theme allows too much screen glare. At night (really, at most times, but in
+particular at night) I prefer the dark theme, which, unsurprisingly, spits less
+light into my eyes.
 
 The way I switch themes is, admittedly, somewhat hacky. I set a boolean (by
 default true) that is true if the active theme is dark, false if light. What can
@@ -861,7 +1061,7 @@ comes back when I switch themes, for some reason), I refresh all open buffers.
 (setq gm/dark t)
 (defun gm/switch-theme ()
   (interactive)
-  (setq gm/dark (not gm/dark))
+  (togglef gm/dark)
   (if gm/dark
       (progn (load-theme 'solarized-light)
              (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
@@ -923,14 +1123,6 @@ colour.
   :diminish
   :config (rainbow-mode 1))
 #+END_SRC
-**** Source Code Blocks
-Native syntax highlighting for source blocks in org mode.
-#+BEGIN_SRC emacs-lisp
-(setq org-src-fontify-natively t
-      org-src-tab-acts-natively t
-      org-confirm-babel-evaluate nil
-      org-edit-src-content-indentation 0)
-#+END_SRC
 **** Parentheses
 Normally, I want the opening and closing parentheses highlighted. I used to set
 =show-paren-style= to =expression=, all that highlighting was not really necessary.
@@ -987,6 +1179,11 @@ it's fine to remove the default Emacs bindings for this. In fact,
 (bind-key "C-w" 'backward-kill-word)
 (unbind-key "C-<backspace>")
 (unbind-key "M-DEL")
+#+END_SRC
+*** Kill Paragraph
+This binding takes after the default =M-k= binding for =kill-sentence=.
+#+BEGIN_SRC emacs-lisp
+(bind-key "M-K" #'kill-paragraph)
 #+END_SRC
 *** Browse Kill Ring
 This used to be a feature of Emacs.
@@ -1062,7 +1259,7 @@ here.
          (length (buffer-substring-no-properties
                (line-beginning-position)
                (line-end-position)))))
-    (if (> length-of-line 81) (fill-paragraph) (unfill-paragraph))))
+    (if (> length-of-line (1+ fill-column)) (fill-paragraph) (unfill-paragraph))))
 
 (bind-key "M-q" #'gm/fill-or-unfill)
 #+END_SRC
@@ -1326,7 +1523,7 @@ Easily enter god mode.
 #+END_SRC
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :tangle yes :noweb yes
 (use-package org
   :init
   (require 'org)
@@ -1337,6 +1534,55 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
               <<org-keys>>)
   :config
   <<org-settings>>)
+#+END_SRC
+** Configuration
+*** Better Return
+[[http://kitchingroup.cheme.cmu.edu/blog/2017/04/09/A-better-return-in-org-mode/][John Kitchin]] explains how to have Org Mode act more like other word processors,
+in that =RET= while in a list adds an item. The default in Org is that =M-RET=
+serves this purpose.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(defun ha/org-return (&optional ignore)
+  "Add new list item, heading or table row with RET.
+A double return on an empty element deletes it.
+Use a prefix arg to get regular RET. "
+  (interactive "P")
+  (if ignore
+      (org-return)
+    (cond
+     ((eq 'link (car (org-element-context)))
+      (org-return))
+     ((and (org-in-item-p) (not (bolp)))
+      (if (org-element-property :contents-begin (org-element-context))
+          (org-insert-heading)
+        (beginning-of-line)
+        (setf (buffer-substring
+               (line-beginning-position) (line-end-position)) "")
+        (org-return)))
+     ((org-at-heading-p)
+      (if (not (string= "" (org-element-property :title (org-element-context))))
+          (progn (org-end-of-meta-data)
+                 (org-insert-heading))
+        (beginning-of-line)
+        (setf (buffer-substring
+               (line-beginning-position) (line-end-position)) "")))
+     ((org-at-table-p)
+      (if (-any?
+           (lambda (x) (not (string= "" x)))
+           (nth
+            (- (org-table-current-dline) 1)
+            (org-table-to-lisp)))
+          (org-return)
+        ;; empty row
+        (beginning-of-line)
+        (setf (buffer-substring
+               (line-beginning-position) (line-end-position)) "")
+        (org-return)))
+     (t
+      (org-return)))))
+#+END_SRC
+We replace the normal return.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
+("RET" .  #'gm/org-return)
 #+END_SRC
 ** Utilities
 *** File Locations
@@ -1518,6 +1764,17 @@ default execution commands.
 (setq org-babel-python-command "python3.6"
       org-babel-latex-command "pdflatex")
 #+END_SRC
+Make Org Mode source blocks act normally with respect to indentation and syntax
+highlighting.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(setq org-src-fontify-natively t
+      org-src-tab-acts-natively t
+      org-edit-src-content-indentation 0)
+#+END_SRC
+I'm generally fine with just evaluating a code block.
+#+BEGIN_SRC emacs-lisp
+(setq org-confirm-babel-evaluate nil)
+#+END_SRC
 ** LaTeX
 Highlight LateX inline math in org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -1561,8 +1818,12 @@ on.
       (setq base (buffer-substring-no-properties fr-begin fr-end))
       (defun gm/rf-helper (reg to)
         (setq base (replace-regexp-in-string reg to base)))
-      (gm/rf-helper "\\s-\\s-*" " ")
+      ;; spaces around +
       (gm/rf-helper "\\([^ ]?\\)\\+\\([^ ]?\\)" "\\1 + \\2")
+      ;; remove space before superscripts like in sin ^2
+      (gm/rf-helper "[ ]\\(\\^[^\\]\\)" "\\1 ")
+      ;; never more than 1 space in a row
+      (gm/rf-helper "\\s-\\s-*" " ")
       (delete-region fr-begin fr-end)
       (insert base)))
   (goto-char (1- (org-element-property :end (org-element-context)))))
@@ -1685,7 +1946,9 @@ on leaving a math fragment.
             ((and (eq (char-before) 92)
                   (eq (char-after) 41))
              (backward-char 1))))))))
-
+#+END_SRC
+Toggle the "mode" to preview equations.
+#+BEGIN_SRC emacs-lisp
 (defvar gm/eq-preview nil)
 ;; this is buffer local
 (defun gm/toggle-equation-preview ()
@@ -1697,7 +1960,7 @@ on leaving a math fragment.
     (progn
       (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)
       (message "Equation preview enabled.")))
-  (setq gm/eq-preview (not gm/eq-preview)))
+  (togglef gm/eq-preview))
 
 (bind-key "C-c p" 'gm/toggle-equation-preview)
 #+END_SRC
@@ -1898,12 +2161,12 @@ Use SPC instead of TAB to expand snippets. We need to bind =TAB= to =org-cycle= 
 though that is the default, because otherwise binding =TAB= to =nil= in
 =yas-minor-mode= overrides the default behaviour.
 #+BEGIN_SRC emacs-lisp
-(setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet
   :defer 1
   :diminish (yas-minor-mode " ✂")
   :config
   (yas-global-mode 1)
+  (yas-snippet-dirs '("~/.emacs.d/snippets"))
   (bind-key "<tab>" nil yas-minor-mode-map)
   (bind-key "TAB" nil yas-minor-mode-map)
   (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand) yas-minor-mode-map))
@@ -1920,13 +2183,13 @@ I use a data structure called a radix tree.
 **** Simpler =texmathp=
 The default =texmathp= function assumes that you are writing valid LaTeX code.
 This is all well and good when you are actually writing LaTeX, where things like
-the dollar sign have only one meaning, but I write documents almost
-entirely in Org Mode (I export them to LaTeX). Here the function easily gets
-confused. So I make my own for checking if you are in math mode, which just
-looks at the surrounding paragraph. We first make a list of math environments
-that our function will look for.
+the dollar sign have only one meaning, but I write documents almost entirely in
+Org Mode (I export them to LaTeX). Here the function easily gets confused. So I
+make my own for checking if you are in math mode, which just looks at the
+surrounding paragraph. We first make a list of math environments that our
+function will look for.
 #+BEGIN_SRC emacs-lisp
-(setq gm/math-environments '("equation" "align"))
+(defvar gm/math-environments '("equation" "align"))
 #+END_SRC
 The idea is that we search the region from the beginning of the paragraph to the
 point for delimiters for inline math (=\(= and =\)=) and display math (=\begin{ENV}=
@@ -1938,8 +2201,8 @@ block, and so we return true.
 (defun gm/in-math-p ()
   (let ((end (point))
         (start (save-excursion (org-backward-paragraph) (point))))
-    (defun gm/in-math-p-helper (s-begin)
-      (concat s-begin (mapconcat 'identity
+    (defun gm/in-math-p-helper (begin-delim)
+      (concat begin-delim (mapconcat 'identity
                                  (mapcar (lambda (s) (concat "\\(" s "\\)"))
                                          gm/math-environments) "\\|") "[\\*]?}"))
     (let ((inline-open (how-many "\\\\(" start end))
@@ -1947,7 +2210,7 @@ block, and so we return true.
           (env-open (how-many (gm/in-math-p-helper "\\\\begin{") start end))
           (env-close (how-many (gm/in-math-p-helper "\\\\end{") start end)))
       (or (> (- inline-open inline-close) 0)
-              (> (- env-open env-close) 0)))))
+          (> (- env-open env-close) 0)))))
 #+END_SRC
 **** Enter Math Mode
 This command will enter inline math mode if not in math mode, and exit otherwise.
@@ -2139,14 +2402,11 @@ Add subscript bindings to each of the ten digits.
 (dotimes (n 10) (progn (gm/bind-number-subscript n) (gm/bind-number-subscript 9)))
 #+END_SRC
 **** Fraction
-Typing "/" after an appropriate block (a number or a balanced set of
-parentheses) creates a fraction with this block in the numerator and the point
-in the denominator. The outside parentheses will be removed; for example, =(\sin
-x)= and then =/= will result in =\frac{\sin x}{|}=.
+Typing =/= after an appropriate block (a number or a balanced set of parentheses)
+creates a fraction with this block in the numerator and the point in the
+denominator. The outside parentheses will be removed; for example, =(\sin x)= and
+then =/= will result in =\frac{\sin x}{|}=.
 #+BEGIN_SRC emacs-lisp
-(defun gm/line-to-point ()
-  (buffer-substring-no-properties (line-beginning-position) (point)))
-
 (defun gm/math-insert-frac-match (match)
   (when match
     (progn (yas-expand-snippet (yas-lookup-snippet "frac"))
@@ -2154,33 +2414,30 @@ x)= and then =/= will result in =\frac{\sin x}{|}=.
            (yas-next-field))))
 
 (defun gm/math-frac-helper (regexp)
-  (let (my-line start end match)
-    (setq my-line (gm/line-to-point))
+  (let (start end match)
     (when (looking-back regexp (line-beginning-position) t)
       (setq start (match-beginning 0))
       (setq end (match-end 0))
-      (setq match (substring my-line
-                             (- start (line-beginning-position))
-                             (- end (line-beginning-position))))
+      (setq match (buffer-substring-no-properties start end))
       (delete-region start end))
     (gm/math-insert-frac-match match)))
 
 (defun gm/math-frac ()
   (interactive)
-  (cond ((string-match "[\])]" (char-to-string (char-before)))
-         (let (match)
-           (progn
-             (set-mark-command nil)
-             (backward-sexp)
-             (setq match (buffer-substring-no-properties
-                          (region-beginning) (region-end)))
-             (delete-region (region-beginning) (region-end))
-             (gm/math-insert-frac-match (substring match 1 -1)))))
-        ((string-match "}" (char-to-string (char-before)))
-         (gm/math-frac-helper "[\\][A-Za-z]*[\[{].*[\]}]"))
-        ((string-match "[0-9a-z]" (char-to-string (char-before)))
-         (gm/math-frac-helper "[\\]?[0-9A-Za-z_^]*"))
-        (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
+  (cond
+   ((string-match "[\])]" (char-to-string (char-before)))
+    (let (match end)
+      (progn
+        (setq end (point))
+        (backward-sexp)
+        (setq match (buffer-substring-no-properties (point) end))
+        (delete-region (point) end)
+        (gm/math-insert-frac-match (substring match 1 -1)))))
+   ((string-match "}" (char-to-string (char-before)))
+    (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]"))
+   ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
+    (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*"))
+   (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
 
 (define-conditional-key org-mode-map "/" #'gm/math-frac (gm/in-math-p))
 #+END_SRC
