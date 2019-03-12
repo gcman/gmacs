@@ -231,9 +231,7 @@ shortening features. Another useful thing is that minor modes are displayed.
 (use-package smart-mode-line
   :defer 1
   :config
-  (sml/setup)
-  (sml/replacer-regexp-list
-      '(("^~/org/" ":O:"))))
+  (sml/setup))
 #+END_SRC
 ***** Time
 What time is it, Mr. Emacs?
@@ -677,7 +675,7 @@ feature below.
 #+END_SRC
 We replace =flyspell='s next error command with the above previous error command.
 #+BEGIN_SRC emacs-lisp
-(bind-key [remap flyspell-goto-next-error] #'flyspell-goto-previous-error flyspell-mode-map)
+(bind-key [remap flyspell-goto-next-error] #'flyspell-goto-previous-error)
 #+END_SRC
 Advance to the next incorrect word. This is used as a helper function.
 #+BEGIN_SRC emacs-lisp
@@ -686,6 +684,10 @@ Advance to the next incorrect word. This is used as a helper function.
   (interactive)
   (flyspell-goto-next-error)
   (ispell-word))
+
+(after! flyspell
+(bind-key [remap flyspell-goto-next-error]
+          #'flyspell-check-next-highlighted-word flyspell-mode-map))
 #+END_SRC
 Add last misspelled word in buffer to a global abbreviation.
 #+BEGIN_SRC emacs-lisp
@@ -803,8 +805,8 @@ Will work on both org-mode and any mode that accepts plain html."
       (insert (format tag ""))
       (forward-char (if orgp -1 -6)))))
 #+END_SRC
-#+BEGIN_SRC emacs-lisp :noweb-ref org-keys
-("C-c k" endless/insert-key)
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
+("C-c k" . endless/insert-key)
 #+END_SRC
 ** Packages
 *** Async
@@ -896,7 +898,7 @@ extension. Use ~S~ to use in a Dired buffer.
   (use-package flx)
   (use-package smex
     :commands (counsel-M-x)
-    :config
+    :custom
     (smex-save-file (expand-file-name "smex" gmacs-cache-dir))
     (smex-history-length 50))
   (use-package swiper
@@ -1018,19 +1020,7 @@ default; set PAGE-P to non-nil to rotate only the current page.
 *** Hydra
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package hydra
-  :defer 3
-  :config
-  <<hydra>>)
-#+END_SRC
-*** Libraries
-We load in some common libraries. The =:demand= keyword overrides the global
-deferral we set earlier.
-#+BEGIN_SRC emacs-lisp
-(use-package async :demand t)
-(use-package dash :demand t :config (dash-enable-font-lock))
-(use-package f :demand t)
-(use-package s :demand t)
-(eval-when-compile (require 'cl))
+  :config <<hydra>>)
 #+END_SRC
 ** Theme
 I use the popular Solarized Light/Dark themes.
@@ -1523,7 +1513,7 @@ Easily enter god mode.
 #+END_SRC
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
-#+BEGIN_SRC emacs-lisp :tangle yes :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org
   :init
   (require 'org)
@@ -2161,12 +2151,12 @@ Use SPC instead of TAB to expand snippets. We need to bind =TAB= to =org-cycle= 
 though that is the default, because otherwise binding =TAB= to =nil= in
 =yas-minor-mode= overrides the default behaviour.
 #+BEGIN_SRC emacs-lisp
+(setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet
   :defer 1
   :diminish (yas-minor-mode " ✂")
   :config
   (yas-global-mode 1)
-  (yas-snippet-dirs '("~/.emacs.d/snippets"))
   (bind-key "<tab>" nil yas-minor-mode-map)
   (bind-key "TAB" nil yas-minor-mode-map)
   (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand) yas-minor-mode-map))
