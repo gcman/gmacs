@@ -2,25 +2,25 @@
 #+PROPERTY: header-args :results silent
 * Starting Up
 ** Early Init
-Here's some cutting edge technology. Emacs 27+ introduces
-early-init.el, which is run before init.el, before most of its
-package and UI initialization happens. We use this to cut out
-unnecessary parts of the initialization process as an early
-optimization. It's not super necessary, but it helps.
+Here's some cutting edge technology. Emacs 27+ introduces =early-init.el=, which
+is run before =init.el=, before package initialization.
 
-Package initialize occurs automatically, before =user-init-file= is loaded, but
-after =early-init-file=. As we'll see later, I handle package initialization, so
-there's no need for Emacs to do it first.
+Package initialization occurs automatically, before =user-init-file= is loaded,
+but after =early-init-file=. As we'll see later, we can handle package
+initialization ourselves, so there's no need for Emacs to do it first.
 #+BEGIN_SRC emacs-lisp :tangle early-init.el
 (setq package-enable-at-startup nil)
 #+END_SRC
 ** Fixing the UI
 Emacs ships with a set of pretty strange defaults. The UI is the first thing we
-see when we open Emacs, so it better not look ugly. In particular, we do part of
-the configuration outside Emacs entirely, by editing the =~/.Xresources=. This has
+see when we open Emacs, so it better not look ugly. We're going to configure
+part of the UI outside Emacs entirely, by editing the =~/.Xresources=. This has
 the advantage of killing the ugly parts of the UI before they are born. This is
 slightly faster than doing it within Emacs, but it comes at the cost of less
-flexibility.
+flexibility. For example, if Emacs fails to start up properly, you are possibly
+left staring at a chimera of an editor, with default font colours but themed
+background colours---because the font is about the same shade as the background,
+this makes for some very fun times debugging.
 *** Bars
 I never use menu bars, tool bars, or scroll bars in Emacs.
 #+BEGIN_SRC sh :tangle no
@@ -176,8 +176,7 @@ byte-compiled, Emacs will initialize packages on startup as usual.
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
-  (require 'use-package)
-  (setq use-package-always-ensure t))
+  (require 'use-package))
 #+END_SRC
 We also require =diminish= and =bind= because I often use these keywords within
 =use-package= declarations.
@@ -197,59 +196,74 @@ I put my personal information in =private.el=.
 (when (file-exists-p private-file) (load private-file))
 #+END_SRC
 * General Configuration
-** Graphics
-*** Decluttering
-**** Fullscreen
+** User Interface
+*** Fullscreen
 Start GMACS in glorious fullscreen.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 (setq frame-title-format "GMACS")
 #+END_SRC
-**** Cursor
+*** Cursor
 I prefer a box cursor to a bar cursor.
 #+BEGIN_SRC emacs-lisp
 (when (display-graphic-p)
   (setq-default cursor-type 'box))
 (setq x-stretch-cursor 1)
 #+END_SRC
-**** Bells
+**** Beacon Mode
+Never lose your cursor again. This package lights up your cursor when the
+screen/cursor position is refactored. It's much more useful than it sounds.
+#+BEGIN_SRC emacs-lisp
+(use-package beacon
+  :defer 2
+  :diminish (beacon-mode " ☀")
+  :config (beacon-mode 1)
+  :custom
+  (beacon-push-mark 35)
+  (beacon-color "#b58900"))
+#+END_SRC
+*** Bells
 Visual, not audible bells.
 #+BEGIN_SRC emacs-lisp
 (setq ring-bell-function 'ignore)
 (setq visible-bell t)
 #+END_SRC
-**** Auto-revert
-Turn off reverting buffer messages.
-#+BEGIN_SRC emacs-lisp
-(setq auto-revert-verbose nil)
-#+END_SRC
-**** Modeline
-This package comes with some useful items on the modeline, as well as colour
-coding. Some interesting features (which I set in =sml/replacer-regexp-list=) is
-shortening features. Another useful thing is that minor modes are displayed.
+*** Modeline
+The =smart-mode-line= package comes with some useful items on the modeline, as
+well as colour coding. Some interesting features (which I set in
+=sml/replacer-regexp-list=) is shortening features. Another useful thing is that
+minor modes are displayed.
 #+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
   :defer 1
   :config
   (sml/setup))
 #+END_SRC
-***** Time
 What time is it, Mr. Emacs?
 #+BEGIN_SRC emacs-lisp
 (display-time-mode 1)
 (setq display-time-format "%l:%M%p")
 #+END_SRC
-***** Column
-Show the column number in the modeline. I don't find that this is too slow.
+=line-number-mode= mode displays the current line number in the modeline. Except
+when there is a line Emacs decides is too long. In that case, all you see in the
+modeline is =??=. See [[https://emacs.stackexchange.com/questions/3824/what-piece-of-code-in-emacs-makes-line-number-mode-print-as-line-number-i][this question]] on Emacs SE for a workaround.
+#+BEGIN_SRC emacs-lisp
+(setq line-number-display-limit-width 10000)
+#+END_SRC
+Given that we're showing the line number in the modeline, it's often nice to
+also have the column number.
 #+BEGIN_SRC emacs-lisp
 (column-number-mode 1)
 #+END_SRC
-*** Ban Whitespace
+*** Scrolling
 #+BEGIN_SRC emacs-lisp
-(add-hook 'before-save-hook #'delete-trailing-whitespace)
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+(setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
+(setq mouse-wheel-follow-mouse t) ;; scroll window under mouse
+(setq scroll-step 1) ;; keyboard scroll one line at a time
+(setq scroll-margin 3) ;; give the cursor some buffer room before scrolling window
 #+END_SRC
-*** Indentation
-**** Wrap Indented Lines Sensibly
+*** Wrap Indented Lines Sensibly
 This way, indented lines (such as those visually indented by =org-indent-mode=)
 that are wrapped with ~visual-line-mode~ do not begin at character 0, but from
 where they are indented.
@@ -258,21 +272,7 @@ where they are indented.
   :commands adaptive-wrap-prefix-mode
   :hook (visual-line-mode . adaptive-wrap-prefix-mode))
 #+END_SRC
-*** Mouse Scrolling
-#+BEGIN_SRC emacs-lisp
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
-(setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
-(setq mouse-wheel-follow-mouse t) ;; scroll window under mouse
-(setq scroll-step 1) ;; keyboard scroll one line at a time
-(setq scroll-margin 3) ;; give the cursor some buffer room before scrolling window
-#+END_SRC
-*** Indentation
-#+BEGIN_SRC emacs-lisp
-(setq-default indent-tabs-mode nil
-              tab-width 2)
-(setq indent-line-function #'insert-tab)
-#+END_SRC
-** Ease of Use
+** Quality of Life
 *** Macros
 Some great macros. =after!= and =lambda!= are from the popular DOOM! Emacs
 configuration. The documentation on these will be sparse, because the docstrings
@@ -307,6 +307,23 @@ PLACE may be a symbol, or any generalized variable allowed by ‘setf’.
 The return value is the new value of PLACE."
   `(setf ,place (not ,place)))
 #+END_SRC
+**** Conditional Keybindings
+Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
+#+BEGIN_SRC emacs-lisp
+(defmacro define-conditional-key (keymap key def &rest body)
+  "In KEYMAP, define key sequence KEY as DEF conditionally.
+This is like `define-key', except the definition
+\"disappears\" whenever BODY evaluates to nil."
+  (declare (indent 3)
+           (debug (form form form &rest sexp)))
+  `(define-key ,keymap ,key
+     '(menu-item
+       ,(format "maybe-%s" (or (car (cdr-safe def)) def))
+       nil
+       :filter (lambda (&optional _)
+                 (when ,(macroexp-progn body)
+                   ,def)))))
+#+END_SRC
 *** Better Defaults
 All the things (perhaps they seem little) that just make sense to have.
 **** From Yes/No to y/n
@@ -314,12 +331,6 @@ This makes things so much simpler. There's not any ambiguity to begin with. And
 it's two less characters to type.
 #+BEGIN_SRC emacs-lisp
 (fset 'yes-or-no-p 'y-or-n-p)
-#+END_SRC
-**** Sentences End With a Single Space
-This is necessary to make sentence navigation commands work for me. I also don't
-live in the typewriter days where the
-#+BEGIN_SRC emacs-lisp
-(setq sentence-end-double-space nil)
 #+END_SRC
 **** Stop Cursor Going into Minibuffer Prompt
 Sometimes when going back in the minibuffer by using backspace or the left arrow
@@ -339,24 +350,6 @@ the default timeout, one second, is a bit too long for me.
 #+BEGIN_SRC emacs-lisp
 (setq echo-keystrokes 0.5)
 #+END_SRC
-**** Delete The Selection
-#+BEGIN_SRC emacs-lisp
-(delete-selection-mode 1)
-#+END_SRC
-**** Fix =line-number-mode=
-This mode displays the current line number in the modeline. Except when there is
-a line Emacs decides is too long. In that case, all you see in the modeline is
-=??=. See [[https://emacs.stackexchange.com/questions/3824/what-piece-of-code-in-emacs-makes-line-number-mode-print-as-line-number-i][this question]] on Emacs SE for a workaround.
-#+BEGIN_SRC emacs-lisp
-(setq line-number-display-limit-width 10000)
-#+END_SRC
-**** Don't Adjust Point When Pasting by Mouse
-Pasting into Emacs by middle-clicking can be nice, but I don't want the click to
-change the location of the point and then paste there instead of where the point
-originally was.
-#+BEGIN_SRC emacs-lisp
-(setq mouse-yank-at-point t)
-#+END_SRC
 **** Split Vertically by Default
 Gotta maximize that vertical screen space. Besides, I always have 80 character
 limits on my lines. To be honest, I have no idea how it works, but it seems to
@@ -371,27 +364,6 @@ Kill the current buffer.
 (defun bjm/kill-this-buffer ()
   (interactive)
   (kill-buffer (current-buffer)))
-#+END_SRC
-**** Reload Files On Update
-#+BEGIN_SRC emacs-lisp
-(global-auto-revert-mode 1)
-#+END_SRC
-**** Complete Reload
-Completely reload Emacs, by reloading the init file.
-#+BEGIN_SRC emacs-lisp
-(defun gm/reload ()
-  (interactive)
-  (if current-prefix-arg
-      (progn
-        (org-babel-tangle-file (expand-file-name "gmacs.org" gmacs-emacs-dir)
-                               (expand-file-name "gmacs.el" gmacs-emacs-dir))
-        (byte-compile-file (expand-file-name "gmacs.el" gmacs-emacs-dir))
-        (load-file (expand-file-name "init.el" gmacs-emacs-dir)))
-    (org-babel-load-file (expand-file-name "gmacs.org" gmacs-emacs-dir))))
-#+END_SRC
-**** Dictionary
-#+BEGIN_SRC emacs-lisp
-(autoload 'sdcv-search "sdcv-mode")
 #+END_SRC
 **** Transient Mark Mode
 #+BEGIN_SRC emacs-lisp
@@ -445,6 +417,70 @@ point reaches the beginning or end of the buffer, stop there."
 (global-set-key [remap move-beginning-of-line] 'smarter-move-beginning-of-line)
 (global-set-key [remap org-beginning-of-line]  'smarter-move-beginning-of-line)
 #+END_SRC
+*** Reloading
+As an avid Emacs hacker, it became clear to me very quickly that reloading Emacs
+is very useful when testing something out. There are three fronts on which
+reloading is useful.
+
+When a file is changed on the disk, I want the content in my Emacs buffer to
+reflect that. The only problem with this is that you could lose data if you're
+not careful but I autosave almost too often, so this is not a concern for me.
+And so I enable =auto-revert-mode= globally. Given this, I silence the messages
+that a buffer has been reverted.
+#+BEGIN_SRC emacs-lisp
+(setq-default auto-revert-mode t)
+(setq auto-revert-verbose nil)
+(diminish 'auto-revert-mode)
+#+END_SRC
+Sometimes, however, there are other cases in which we want to reload a buffer.
+The change have been not in the file's contents, but in an Emacs setting, such
+as the colours of the theme. Or the buffer might not have been representing a
+file at all. In these cases, it's usually easiest to revert every open buffer.
+This might be a problem for you if you're one of those people who keeps hundreds
+of buffers open at a time, but I like to close my buffers liberally with the
+knowledge that =recentf= will remember where I've been for me. I obtained the
+following function from [[https://emacs.stackexchange.com/questions/24459/revert-all-open-buffers-and-ignore-errors][Emacs Stack Exchange]].
+#+BEGIN_SRC emacs-lisp
+(defun modi/revert-all-file-buffers ()
+  "Refresh all open file buffers without confirmation.
+Buffers in modified (not yet saved) state in emacs will not be reverted. They
+will be reverted though if they were modified outside emacs.
+Buffers visiting files which do not exist any more or are no longer readable
+will be killed."
+  (interactive)
+  (dolist (buf (buffer-list))
+    (let ((filename (buffer-file-name buf)))
+      ;; Revert only buffers containing files, which are not modified;
+      ;; do not try to revert non-file buffers like *Messages*.
+      (when (and filename
+                 (not (buffer-modified-p buf)))
+        (if (file-readable-p filename)
+            ;; If the file exists and is readable, revert the buffer.
+            (with-current-buffer buf
+              (revert-buffer t t))
+          ;; Otherwise, kill the buffer.
+          (let (kill-buffer-query-functions) ; No query done when killing buffer
+            (kill-buffer buf)
+            (message "Killed non-existing/unreadable file buffer: %s" filename))))))
+  (message "Finished reverting buffers."))
+#+END_SRC
+Finally, we sometimes need the biggest of guns. To completely reload Emacs, we
+just run the procedure of =init.el= again. Usually, we want to load the
+byte-compiled version, but for those cases where we just want to load the
+uncompiled =.el= file, a prefix argument does the job.
+#+BEGIN_SRC emacs-lisp
+(defun gm/reload (p)
+  (interactive "P")
+  (if p
+      (org-babel-load-file (expand-file-name "gmacs.org" gmacs-emacs-dir))
+    (progn
+      (org-babel-tangle-file (expand-file-name "gmacs.org" gmacs-emacs-dir)
+                             (expand-file-name "gmacs.el" gmacs-emacs-dir))
+      (byte-compile-file (expand-file-name "gmacs.el" gmacs-emacs-dir))
+      (load-file (expand-file-name "init.el" gmacs-emacs-dir)))))
+
+(bind-key "C-c r" 'gm/reload)
+#+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
 lot clutter.
@@ -495,25 +531,14 @@ I like having lots of =recentf= files.
 (setq recentf-auto-cleanup 'never)
 #+END_SRC
 *** Abbreviations
-Load them.
-#+BEGIN_SRC emacs-lisp
-(load "~/.emacs.d/abbrevs.el")
-#+END_SRC
-Always use this wonderful tool.
+Abbrevs are a pretty common and useful feature in editors. You can define
+abbrevs, which are strings. When you type space after an abbrev, it is expanded
+to whatever you want. Saves a lot of keystrokes.
 #+BEGIN_SRC emacs-lisp
 (setq-default abbrev-mode t)
-#+END_SRC
-Because it's always on, we don't need to know about it.
-#+BEGIN_SRC emacs-lisp
-(diminish 'abbrev-mode)
-#+END_SRC
-Save them in the ~.emacs.d~ dir.
-#+BEGIN_SRC emacs-lisp
-(setq abbrev-file-name (expand-file-name "abbrevs.el" gmacs-emacs-dir))
-#+END_SRC
-Save abbreviations upon saving a file.
-#+BEGIN_SRC emacs-lisp
-(setq save-abbrevs 'silently)
+(setq abbrev-file-name (expand-file-name "abbrevs.el" gmacs-emacs-dir)
+        save-abbrevs 'silently)
+(bind-key "C-c M a" #'abbrev-mode)
 #+END_SRC
 *** Key Frequency
 #+BEGIN_SRC emacs-lisp
@@ -524,6 +549,15 @@ Save abbreviations upon saving a file.
   (keyfreq-autosave-mode 1))
 #+END_SRC
 *** Programming
+The age old debate: tabs or spaces? I say spaces.
+#+BEGIN_SRC emacs-lisp
+(setq-default indent-tabs-mode nil
+              tab-width 2)
+#+END_SRC
+Make =TAB= indent first then perform completion, if any.
+#+BEGIN_SRC emacs-lisp
+(setq-default tab-always-indent 'complete)
+#+END_SRC
 Set up =flycheck=.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package flycheck
@@ -592,21 +626,142 @@ summary= at the top of an Emacs Lisp file.
 #+BEGIN_SRC emacs-lisp
 (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
 #+END_SRC
-*** Spellcheck
+*** Company
+#+BEGIN_SRC emacs-lisp
+(use-package company)
+#+END_SRC
+*** Which Key Mode
+Helpful when you want to see completion for a certain sequence of prefix keys.
+#+BEGIN_SRC emacs-lisp
+(use-package which-key
+  :defer 10
+  :diminish
+  :config (which-key-mode))
+#+END_SRC
+*** Expand Region
+#+BEGIN_SRC emacs-lisp
+(use-package expand-region
+  :commands er/expand-region
+  :bind (("C-=" . er/expand-region)))
+#+END_SRC
+*** Async Without Results Window
+#+BEGIN_SRC emacs-lisp
+(defun async-shell-command-no-window (command)
+  (interactive)
+  (let ((display-buffer-alist
+        (list (cons "\\*Async Shell Command\\*.*"
+          (cons #'display-buffer-no-window nil)))))
+    (async-shell-command
+     command)))
+#+END_SRC
+*** Insert Key Sequence
+This command takes a key sequence and inserts it into the buffer. This is
+surprisingly much easier than typing it in manually. I got it from [[http://endlessparentheses.com/inserting-the-kbd-tag-in-org-mode.html][this article]].
+#+BEGIN_SRC emacs-lisp
+(defun endless/insert-key (key)
+  "Ask for a key then insert its description.
+Will work on both org-mode and any mode that accepts plain html."
+  (interactive "kType key sequence: ")
+  (let* ((orgp (derived-mode-p 'org-mode))
+         (tag (if orgp "=%s=" "<kbd>%s</kbd>")))
+    (if (null (equal key "\C-m"))
+        (insert
+         (format tag (help-key-description key nil)))
+      (insert (format tag ""))
+      (forward-char (if orgp -1 -6)))))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
+("C-c k" . endless/insert-key)
+#+END_SRC
+** Wordsmithing
+*** Basic Configuration
+**** Sentences End With a Single Space
+This is necessary to make sentence navigation commands work for me. I also don't
+live in the typewriter days where the
+#+BEGIN_SRC emacs-lisp
+(setq sentence-end-double-space nil)
+#+END_SRC
+
+**** Delete Selection
+#+BEGIN_SRC emacs-lisp
+(delete-selection-mode 1)
+#+END_SRC
+
+**** Don't Adjust Point When Pasting by Mouse
+Pasting into Emacs by middle-clicking can be nice, but I don't want the click to
+change the location of the point and then paste there instead of where the point
+originally was.
+#+BEGIN_SRC emacs-lisp
+(setq mouse-yank-at-point t)
+#+END_SRC
+**** Ban Whitespace
+#+BEGIN_SRC emacs-lisp
+(add-hook 'before-save-hook #'delete-trailing-whitespace)
+#+END_SRC
+**** Autofill
+#+BEGIN_SRC emacs-lisp
+(global-visual-line-mode 1)
+(diminish 'visual-line-mode)
+#+END_SRC
+Nicely wrap lines for text mode.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'text-mode-hook 'auto-fill-mode)
+(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
+(diminish 'auto-fill-function)
+#+END_SRC
+Default wrap at 80 characters.
+#+BEGIN_SRC emacs-lisp
+(setq-default fill-column 80)
+#+END_SRC
+*** Utilities
+**** Dictionary
+#+BEGIN_SRC emacs-lisp
+(autoload 'sdcv-search "sdcv-mode")
+(bind-key "C-c d" 'sdcv-search)
+#+END_SRC
+**** Highlighting/Comments
+#+BEGIN_SRC emacs-lisp
+(autoload 'ov-highlight/body "ov-highlight")
+(bind-key "C-c h" 'ov-highlight/body)
+(bind-key "C-c C-h" 'ov-highlight/body)
+#+END_SRC
+*** Spell Checking
 The article [[https://joelkuiper.eu/spellcheck_emacs][Spell checking in Emacs]] helped me out in setting up spellchecking in
 my own Emacs configuration.
 
+We automatically spellcheck text buffers using =flyspell=. The only mode I write
+prose in is Org Mode.
+#+BEGIN_SRC emacs-lisp :noweb yes
+(use-package flyspell
+  :diminish
+  :init
+  (dolist (hook '(text-mode-hook org-mode-hook))
+    (add-hook hook (lambda () (flyspell-mode 1))))
+  (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
+    (add-hook hook (lambda () (flyspell-mode -1))))
+  :commands (flyspell-mode)
+  :bind (:map flyspell-mode-map
+              <<flyspell-keys>>)
+  :config
+  <<flyspell-settings>>)
+#+END_SRC
 Set up spellchecking using =ispell= and the dictionary =hunspell=. We set the
 locally used dictionary to Canadian English, and we set up the list of valid
 dictionaries.
-#+BEGIN_SRC emacs-lisp
-(setq ispell-program-name "hunspell")
-(setq ispell-local-dictionary "en_CA")
-(setq ispell-hunspell-dictionary-alist
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
+(setq ispell-program-name "hunspell"
+      ispell-local-dictionary "en_CA"
+      ispell-hunspell-dictionary-alist
       '(("en_CA" "[[:alpha:]]" "[^[:alpha:]]" "['’]" nil ("-d" "en_CA") nil utf-8)))
 #+END_SRC
-Spellchecking should not occur inside things like property drawers and code
-source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?source=rss][Making Ispell work with org-mode in Emacs]].
+As suggested by the Emacs wiki, I suppress messages, which slows down
+performance when checking the entire buffer.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
+(setq-default flyspell-issue-message-flag nil)
+#+END_SRC
+Spellchecking should not occur inside certain parts of Org Mode buffers like
+property drawers and code source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?source=rss][Making Ispell work with org-mode
+in Emacs]].
 #+BEGIN_SRC emacs-lisp
 (defun endless/org-ispell ()
   "Configure `ispell-skip-region-alist' for `org-mode'."
@@ -618,18 +773,6 @@ source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?sou
   (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC" . "^#\\+END_SRC")))
 
 (add-hook 'org-mode-hook #'endless/org-ispell)
-#+END_SRC
-Automatically spellcheck text buffers using =flyspell=. The only mode I write
-prose in is Org Mode. Because I always have it active, I don't need to know it's
-there.
-#+BEGIN_SRC emacs-lisp
-(add-hook 'org-mode-hook (lambda () (flyspell-mode 1)))
-(diminish 'flyspell-mode)
-#+END_SRC
-As suggested by the Emacs wiki, I suppress messages, which slows down
-performance when checking the entire buffer.
-#+BEGIN_SRC emacs-lisp
-(setq-default flyspell-issue-message-flag nil)
 #+END_SRC
 [[http://pragmaticemacs.com/emacs/jump-back-to-previous-typo/][This article]] thinks that going to the previous error is more useful than going
 to the next one. This is usually true, and combines well with the abbreviation
@@ -674,139 +817,139 @@ feature below.
         (forward-word)))))
 #+END_SRC
 We replace =flyspell='s next error command with the above previous error command.
-#+BEGIN_SRC emacs-lisp
-(bind-key [remap flyspell-goto-next-error] #'flyspell-goto-previous-error)
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
+([remap flyspell-goto-next-error] . flyspell-goto-previous-error)
 #+END_SRC
-Advance to the next incorrect word. This is used as a helper function.
+Inspired by [[http://endlessparentheses.com/ispell-and-abbrev-the-perfect-auto-correct.html][Artur Malabarba]] and Howard Abrams. With this function, we can go to
+the previous error and correct it, then add it to our global abbreviation list.
+As long as we spell the word incorrectly the same way, we'll never make that
+typo again.
 #+BEGIN_SRC emacs-lisp
-(defun flyspell-check-next-highlighted-word ()
-  "Custom function to spell check next highlighted word"
-  (interactive)
-  (flyspell-goto-next-error)
-  (ispell-word))
-
-(after! flyspell
-(bind-key [remap flyspell-goto-next-error]
-          #'flyspell-check-next-highlighted-word flyspell-mode-map))
-#+END_SRC
-Add last misspelled word in buffer to a global abbreviation.
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-i" #'endless/ispell-word-then-abbrev ctl-x-map)
-
-(defun endless/simple-get-word ()
-  (car-safe (save-excursion (ispell-get-word nil))))
-
-(defun endless/ispell-word-then-abbrev (p)
-  "Call `ispell-word', then create an abbrev for it.
-With prefix P, create local abbrev. Otherwise it will
-be global.
-If there's nothing wrong with the word at point, keep
-looking for a typo until the beginning of buffer. You can
-skip typos you don't want to fix with `SPC', and you can
-abort completely with `C-g'."
+(defun gm/ispell-word-then-abbrev (p)
+  "Call `ispell-word'.  After create an abbrev for the correction made.
+With prefix P, create local abbrev.  Otherwise it will be
+global."
   (interactive "P")
-  (let (bef aft)
-    (save-excursion
-      (while (if (setq bef (endless/simple-get-word))
-                 ;; Word was corrected or used quit.
-                 (if (ispell-word nil 'quiet)
-                     nil ; End the loop.
-                   ;; Also end if we reach `bob'.
-                   (not (bobp)))
-               ;; If there's no word at point, keep looking
-               ;; until `bob'.
-               (not (bobp)))
-        (backward-word)
-        (backward-char))
-      (setq aft (endless/simple-get-word)))
-    (if (and aft bef (not (equal aft bef)))
-        (let ((aft (downcase aft))
-              (bef (downcase bef)))
-          (define-abbrev
-            (if p local-abbrev-table global-abbrev-table)
-            bef aft)
-          (message "\"%s\" now expands to \"%s\" %sally"
-                   bef aft (if p "loc" "glob")))
-      (user-error "No typo at or before point"))))
+  (flyspell-goto-previous-error 1)
+  (let ((bef (downcase (or (thing-at-point 'word) ""))) aft)
+    (call-interactively 'ispell-word)
+    (setq aft (downcase (or (thing-at-point 'word) "")))
+    (unless (string= aft bef)
+      (define-abbrev
+        (if p global-abbrev-table local-abbrev-table)
+        bef aft)
+      (abbrev-edit-save-to-file abbrev-file-name)
+      (message "\"%s\" now expands to \"%s\" %s"
+               bef aft (if p "locally" "globally")))))
 #+END_SRC
-*** Company
-#+BEGIN_SRC emacs-lisp
-(use-package company)
+The default binding on =C-;= is =flyspell='s built-in auto-correct function.
+However, it doesn't always give perfect matches, and its use case is usurped by
+the above function.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
+([remap flyspell-auto-correct-previous-word] . gm/ispell-word-then-abbrev)
 #+END_SRC
-*** Which Key Mode
-Helpful when you want to see completion for a certain sequence of prefix keys.
+*** Text Manipulation
+**** Cut/Paste
+From the infamous Xah Lee.
 #+BEGIN_SRC emacs-lisp
-(use-package which-key
-  :defer 10
-  :diminish
-  :config (which-key-mode))
-#+END_SRC
-*** Expand Region
-#+BEGIN_SRC emacs-lisp
-(use-package expand-region
-  :commands er/expand-region
-  :bind (("C-=" . er/expand-region)))
-#+END_SRC
-*** Highlighting/Comments
-#+BEGIN_SRC emacs-lisp
-(autoload 'ov-highlight/body "ov-highlight")
-(bind-key "C-c h" 'ov-highlight/body)
-(bind-key "C-c C-h" 'ov-highlight/body)
-#+END_SRC
-*** Async Without Results Window
-#+BEGIN_SRC emacs-lisp
-(defun async-shell-command-no-window (command)
+(defun xah-cut-line-or-region ()
+  "Cut current line, or text selection.
+When `universal-argument' is called first, cut whole buffer (respects `narrow-to-region').
+URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
+Version 2015-06-10"
   (interactive)
-  (let ((display-buffer-alist
-        (list (cons "\\*Async Shell Command\\*.*"
-          (cons #'display-buffer-no-window nil)))))
-    (async-shell-command
-     command)))
-#+END_SRC
-*** Revert All Buffers
-From [[https://emacs.stackexchange.com/questions/24459/revert-all-open-buffers-and-ignore-errors][Emacs Stack Exchange]].
-#+BEGIN_SRC emacs-lisp
-(defun modi/revert-all-file-buffers ()
-  "Refresh all open file buffers without confirmation.
-Buffers in modified (not yet saved) state in emacs will not be reverted. They
-will be reverted though if they were modified outside emacs.
-Buffers visiting files which do not exist any more or are no longer readable
-will be killed."
+    (progn (if (use-region-p)
+               (kill-region (region-beginning) (region-end) t)
+             (kill-region (line-beginning-position) (line-beginning-position 2)))))
+
+(defun xah-copy-line-or-region ()
+  "Copy current line, or text selection.
+When called repeatedly, append copy subsequent lines.
+When `universal-argument' is called first, copy whole buffer (respects `narrow-to-region').
+
+URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
+Version 2018-09-10"
   (interactive)
-  (dolist (buf (buffer-list))
-    (let ((filename (buffer-file-name buf)))
-      ;; Revert only buffers containing files, which are not modified;
-      ;; do not try to revert non-file buffers like *Messages*.
-      (when (and filename
-                 (not (buffer-modified-p buf)))
-        (if (file-readable-p filename)
-            ;; If the file exists and is readable, revert the buffer.
-            (with-current-buffer buf
-              (revert-buffer t t))
-          ;; Otherwise, kill the buffer.
-          (let (kill-buffer-query-functions) ; No query done when killing buffer
-            (kill-buffer buf)
-            (message "Killed non-existing/unreadable file buffer: %s" filename))))))
-  (message "Finished reverting buffers."))
+  (if current-prefix-arg
+      (progn
+        (copy-region-as-kill (point-min) (point-max)))
+    (if (use-region-p)
+        (progn
+          (copy-region-as-kill (region-beginning) (region-end)))
+      (if (eq last-command this-command)
+          (if (eobp)
+              (progn )
+            (progn
+              (kill-append "\n" nil)
+              (kill-append
+               (buffer-substring-no-properties (line-beginning-position) (line-end-position))
+               nil)
+              (progn
+                (end-of-line)
+                (forward-char))))
+        (if (eobp)
+            (if (eq (char-before) 10 )
+                (progn )
+              (progn
+                (copy-region-as-kill (line-beginning-position) (line-end-position))
+                (end-of-line)))
+          (progn
+            (copy-region-as-kill (line-beginning-position) (line-end-position))
+            (end-of-line)
+            (forward-char)))))))
+
+(bind-key "C-k" 'xah-cut-line-or-region)
+(bind-key "M-w" 'xah-copy-line-or-region)
 #+END_SRC
-*** Insert Key Sequence
-This command takes a key sequence and inserts it into the buffer. This is
-surprisingly much easier than typing it in manually. I got it from [[http://endlessparentheses.com/inserting-the-kbd-tag-in-org-mode.html][this article]].
-#+BEGIN_SRC emacs-lisp
-(defun endless/insert-key (key)
-  "Ask for a key then insert its description.
-Will work on both org-mode and any mode that accepts plain html."
-  (interactive "kType key sequence: ")
-  (let* ((orgp (derived-mode-p 'org-mode))
-         (tag (if orgp "=%s=" "<kbd>%s</kbd>")))
-    (if (null (equal key "\C-m"))
-        (insert
-         (format tag (help-key-description key nil)))
-      (insert (format tag ""))
-      (forward-char (if orgp -1 -6)))))
-#+END_SRC
+Org Mode rebinds =C-k= to its own kill line function, so we set up another binding
+here.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("C-c k" . endless/insert-key)
+("C-k" . xah-cut-line-or-region)
+#+END_SRC
+**** Paragraph Navigation
+Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
+Binds Part 2: A peeve with paragraphs]].
+#+BEGIN_SRC emacs-lisp
+(bind-key "M-p" 'endless/backward-paragraph)
+(bind-key "M-n" 'endless/forward-paragraph)
+
+(defun endless/forward-paragraph (&optional n)
+  "Advance just past next blank line."
+  (interactive "p")
+  (let ((para-commands
+         '(endless/forward-paragraph endless/backward-paragraph)))
+    ;; Only push mark if it's not active and we're not repeating.
+    (or (use-region-p)
+        (not (member this-command para-commands))
+        (member last-command para-commands)
+        (push-mark))
+    ;; The actual movement.
+    (dotimes (_ (abs n))
+      (if (> n 0)
+          (skip-chars-forward "\n[:blank:]")
+        (skip-chars-backward "\n[:blank:]"))
+      (if (search-forward-regexp
+           "\n[[:blank:]]*\n[[:blank:]]*" nil t (cl-signum n))
+          (goto-char (match-end 0))
+        (goto-char (if (> n 0) (point-max) (point-min)))))))
+
+(defun endless/backward-paragraph (&optional n)
+  "Go back up to previous blank line."
+  (interactive "p")
+  (endless/forward-paragraph (- n)))
+#+END_SRC
+But Org Mode messes this up. So we setup a binding using the =:bind= keyword from
+=use-package=.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
+("M-n" . forward-paragraph)
+("M-p" . backward-paragraph)
+#+END_SRC
+**** Transpose Elements
+Add aliases to do this easily.
+#+BEGIN_SRC emacs-lisp
+(defalias 'ts 'transpose-sentences)
+(defalias 'tp 'transpose-paragraphs)
+(bind-key "C-r" 'transpose-chars)
 #+END_SRC
 ** Packages
 *** Async
@@ -848,7 +991,8 @@ screen, and once we're done, we can get right back to where we left off.
     (window-configuration-to-register :magit-fullscreen)
     ad-do-it
     (delete-other-windows))
-  :bind (:map magit-status-mode-map
+  :bind (("C-x g" . magit-status)
+         :map magit-status-mode-map
               ("q" . magit-quit-session)))
 #+END_SRC
 *** Dired
@@ -907,7 +1051,7 @@ extension. Use ~S~ to use in a Dired buffer.
     :demand t
     :bind ([remap execute-extended-command] . counsel-M-x)
     ([remap org-goto] . counsel-org-goto)
-    ([remap swiper] . counsel-grep-or-swiper)
+    ("C-s" . counsel-grep-or-swiper)
     :config
     (setq counsel-grep-base-command
           "rg -i -M 120 --color auto --line-number %s %s"))
@@ -921,10 +1065,16 @@ extension. Use ~S~ to use in a Dired buffer.
   (ivy-initial-inputs-alist nil))
 #+END_SRC
 *** God Mode
-Enable god-mode.
+When =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
+"Control"). For example, the sequence =2 n x s= goes down two lines then saves the
+buffer.
 #+BEGIN_SRC emacs-lisp
 (use-package god-mode
  :commands (god-local-mode god-mode-all))
+#+END_SRC
+Easily enter God Mode.
+#+BEGIN_SRC emacs-lisp
+(key-chord-define-global "jk" 'god-mode-all)
 #+END_SRC
 Indicate whether we're in God mode with the cursor colour. I've seen other
 people do this by having a bar cursor in "insert mode" (to borrow some
@@ -1022,6 +1172,18 @@ default; set PAGE-P to non-nil to rotate only the current page.
 (use-package hydra
   :config <<hydra>>)
 #+END_SRC
+*** Window Management
+#+BEGIN_SRC emacs-lisp
+(use-package ace-window
+  :commands (ace-window delete-window delete-other-windows split-window-below split-window right)
+  :bind (("C-x o" . ace-window)
+         ("M-o" . ace-window)
+         ("C-x 0" . delete-window)
+         ("C-x 1" . delete-other-windows)
+         ("C-x 2" . split-window-below)
+         ("C-x 3" . split-window-right)))
+#+END_SRC
+
 ** Theme
 I use the popular Solarized Light/Dark themes.
 #+BEGIN_SRC emacs-lisp
@@ -1068,21 +1230,6 @@ I normally use Hack, a monospace font.
 (set-frame-font "Hack" nil t)
 (custom-set-faces
  '(variable-pitch ((t (:family "Palatino Linotype")))))
-#+END_SRC
-*** Autofill
-#+BEGIN_SRC emacs-lisp
-(global-visual-line-mode 1)
-(diminish 'visual-line-mode)
-#+END_SRC
-Nicely wrap lines for text mode.
-#+BEGIN_SRC emacs-lisp
-(add-hook 'text-mode-hook 'auto-fill-mode)
-(add-hook 'change-log-mode-hook 'turn-on-auto-fill)
-(diminish 'auto-fill-function)
-#+END_SRC
-**** 80 Columns
-#+BEGIN_SRC emacs-lisp
-(setq-default fill-column 80)
 #+END_SRC
 *** Highlighting
 **** Syntax
@@ -1131,33 +1278,17 @@ best not to enable it globally.
   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
 #+END_SRC
 * Keybindings
-** Conditional Keybindings
-Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
-#+BEGIN_SRC emacs-lisp
-(defmacro define-conditional-key (keymap key def &rest body)
-  "In KEYMAP, define key sequence KEY as DEF conditionally.
-This is like `define-key', except the definition
-\"disappears\" whenever BODY evaluates to nil."
-  (declare (indent 3)
-           (debug (form form form &rest sexp)))
-  `(define-key ,keymap ,key
-     '(menu-item
-       ,(format "maybe-%s" (or (car (cdr-safe def)) def))
-       nil
-       :filter (lambda (&optional _)
-                 (when ,(macroexp-progn body)
-                   ,def)))))
-#+END_SRC
 ** Better Defaults
 These are what I think are better bindings for or better versions of the default
- commands.
+commands.
 *** Easy M-x
 Alt is simply too hard to hit for such a commonly used command.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-SPC" #'execute-extended-command)
 #+END_SRC
 *** Set Mark
-Need a replacement because we rebound ~C-SPC~ above.
+Need a replacement because we rebound ~C-SPC~ above. And I know, I know, everyone
+loves =transpose-chars=, but I don't see myself using it that much.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-t" 'set-mark-command)
 #+END_SRC
@@ -1183,66 +1314,11 @@ This used to be a feature of Emacs.
   :bind ("M-y" . browse-kill-ring)
   :config (browse-kill-ring-default-keybindings))
 #+END_SRC
-*** Cut/Paste
-#+BEGIN_SRC emacs-lisp
-(defun xah-cut-line-or-region ()
-  "Cut current line, or text selection.
-When `universal-argument' is called first, cut whole buffer (respects `narrow-to-region').
-URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
-Version 2015-06-10"
-  (interactive)
-    (progn (if (use-region-p)
-               (kill-region (region-beginning) (region-end) t)
-             (kill-region (line-beginning-position) (line-beginning-position 2)))))
-
-(defun xah-copy-line-or-region ()
-  "Copy current line, or text selection.
-When called repeatedly, append copy subsequent lines.
-When `universal-argument' is called first, copy whole buffer (respects `narrow-to-region').
-
-URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
-Version 2018-09-10"
-  (interactive)
-  (if current-prefix-arg
-      (progn
-        (copy-region-as-kill (point-min) (point-max)))
-    (if (use-region-p)
-        (progn
-          (copy-region-as-kill (region-beginning) (region-end)))
-      (if (eq last-command this-command)
-          (if (eobp)
-              (progn )
-            (progn
-              (kill-append "\n" nil)
-              (kill-append
-               (buffer-substring-no-properties (line-beginning-position) (line-end-position))
-               nil)
-              (progn
-                (end-of-line)
-                (forward-char))))
-        (if (eobp)
-            (if (eq (char-before) 10 )
-                (progn )
-              (progn
-                (copy-region-as-kill (line-beginning-position) (line-end-position))
-                (end-of-line)))
-          (progn
-            (copy-region-as-kill (line-beginning-position) (line-end-position))
-            (end-of-line)
-            (forward-char)))))))
-
-(bind-key "C-k" 'xah-cut-line-or-region)
-(bind-key "M-w" 'xah-copy-line-or-region)
-#+END_SRC
-Org Mode rebinds =C-k= to its own kill line function, so we set up another binding
-here.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("C-k" . xah-cut-line-or-region)
-#+END_SRC
 *** Fill/Unfill
 #+BEGIN_SRC emacs-lisp
 (use-package unfill
   :commands unfill-paragraph)
+
 (defun gm/fill-or-unfill ()
   (interactive)
   (let ((length-of-line
@@ -1262,44 +1338,6 @@ This allows me to combine text over multiple lines into one line.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-z" 'undo)
 (bind-key "C-x C-u" 'undo)
-#+END_SRC
-*** Paragraph Navigation
-Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
-Binds Part 2: A peeve with paragraphs]].
-#+BEGIN_SRC emacs-lisp
-(bind-key "M-p" 'endless/backward-paragraph)
-(bind-key "M-n" 'endless/forward-paragraph)
-
-(defun endless/forward-paragraph (&optional n)
-  "Advance just past next blank line."
-  (interactive "p")
-  (let ((para-commands
-         '(endless/forward-paragraph endless/backward-paragraph)))
-    ;; Only push mark if it's not active and we're not repeating.
-    (or (use-region-p)
-        (not (member this-command para-commands))
-        (member last-command para-commands)
-        (push-mark))
-    ;; The actual movement.
-    (dotimes (_ (abs n))
-      (if (> n 0)
-          (skip-chars-forward "\n[:blank:]")
-        (skip-chars-backward "\n[:blank:]"))
-      (if (search-forward-regexp
-           "\n[[:blank:]]*\n[[:blank:]]*" nil t (cl-signum n))
-          (goto-char (match-end 0))
-        (goto-char (if (> n 0) (point-max) (point-min)))))))
-
-(defun endless/backward-paragraph (&optional n)
-  "Go back up to previous blank line."
-  (interactive "p")
-  (endless/forward-paragraph (- n)))
-#+END_SRC
-But Org Mode messes this up. So we setup a binding using the =:bind= keyword from
-=use-package=.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("M-n" . forward-paragraph)
-("M-p" . backward-paragraph)
 #+END_SRC
 *** Better Narrowing
 From [[http://endlessparentheses.com/emacs-narrow-or-widen-dwim.html][Emacs narrow-or-widen-dwim]].
@@ -1338,7 +1376,7 @@ not just one.
 #+BEGIN_SRC emacs-lisp
 (use-package hungry-delete
   :commands (hungry-delete-mode global-hungry-delete-mode)
-  :config (global-hungry-delete-mode))
+  :config (setq-default hungry-delete-mode t))
 #+END_SRC
 *** Better Buffers
 Kill better.
@@ -1386,47 +1424,10 @@ Switch better.
 #+BEGIN_SRC emacs-lisp
 (bind-key [remap switch-buffer] #'ivy-switch-buffer)
 #+END_SRC
-Use ibuffer.
+Use =ibuffer=.
 #+BEGIN_SRC emacs-lisp
 (autoload 'ibuffer "ibuffer" "List buffers." t)
 (bind-key "C-x C-b" 'ibuffer)
-#+END_SRC
-*** Beacon Mode
-Never lose your cursor again.
-#+BEGIN_SRC emacs-lisp
-(use-package beacon
-  :defer 2
-  :diminish (beacon-mode " ☀")
-  :config (beacon-mode 1)
-  :custom
-  (beacon-push-mark 35)
-  (beacon-color "#b58900"))
-#+END_SRC
-*** Window Management
-#+BEGIN_SRC emacs-lisp
-(use-package ace-window
-  :commands (ace-window delete-window delete-other-windows split-window-below split-window right)
-  :bind (("C-x o" . ace-window)
-         ("M-o" . ace-window)
-         ("C-x 0" . delete-window)
-         ("C-x 1" . delete-other-windows)
-         ("C-x 2" . split-window-below)
-         ("C-x 3" . split-window-right)))
-#+END_SRC
-*** Transpose
-**** Sentences and Paragraphs
-Add aliases to do this easily.
-#+BEGIN_SRC emacs-lisp
-(defalias 'ts 'transpose-sentences)
-(defalias 'tp 'transpose-paragraphs)
-#+END_SRC
-**** Characters
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-r" 'transpose-chars)
-#+END_SRC
-*** Search
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-s" 'swiper)
 #+END_SRC
 *** Unbind Fill Column
 I never use this command but keep accidentally hitting it instead of =C-x C-f=.
@@ -1454,34 +1455,9 @@ default.
 (bind-key "<f1>" #'eshell-other-window)
 (bind-key "C-M-s" (lambda! (shell-command "deepin-terminal")))
 #+END_SRC
-** Word Count
-Display the word count. I chose to narrow to subtree by default because
-displaying the count for every subtree in the file is not only (usually)
-unnecessary but (always) too slow.
-#+BEGIN_SRC emacs-lisp
-(defun gm/wc-display-current-subtree (arg)
-  (interactive "P")
-  (if arg
-      (org-wc-display nil)
-    (save-restriction
-      (org-narrow-to-subtree)
-      (org-wc-display nil))))
-#+END_SRC
-** Magit
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-x g" 'magit-status)
-#+END_SRC
-** Dictionary
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-c d" 'sdcv-search)
-#+END_SRC
 ** Find Inbox
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c o" (lambda! (find-file "~/org/inbox.org")))
-#+END_SRC
-** Complete Reload
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-c r" 'gm/reload)
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
@@ -1505,12 +1481,7 @@ especially useful when typing LaTeX.
 (key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
 #+END_SRC
-=*=
-*** God Mode
-Easily enter god mode.
-#+BEGIN_SRC emacs-lisp
-(key-chord-define-global "jk" 'god-mode-all)
-#+END_SRC
+
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
@@ -1743,6 +1714,7 @@ Have lists begun by, for example, =-= look like a bullet list.
                         '(("^ *\\([-]\\) "
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 #+END_SRC
+This doesn't change anything in the buffer, which is nice.
 ** Programming
 Set up languages loaded for use in Org source blocks and their respective
 default execution commands.
@@ -2161,7 +2133,7 @@ though that is the default, because otherwise binding =TAB= to =nil= in
   (bind-key "TAB" nil yas-minor-mode-map)
   (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand) yas-minor-mode-map))
 #+END_SRC
-** Fast Latex Snippets
+** QuickMath
 *** Requirements
 I use a hydra for snippets that just insert/replace text in math mode and thus
 don't require the use of =yasnippets=. To maintain and generate my main snippets,
