@@ -308,7 +308,7 @@ The return value is the new value of PLACE."
   `(setf ,place (not ,place)))
 #+END_SRC
 **** Conditional Keybindings
-Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Define context-aware keys in Emacs · Endless Parentheses]].
+Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Endless Parentheses]].
 #+BEGIN_SRC emacs-lisp
 (defmacro define-conditional-key (keymap key def &rest body)
   "In KEYMAP, define key sequence KEY as DEF conditionally.
@@ -384,11 +384,12 @@ around the non-unique buffer names, and I prefer a less confusing style.
 #+BEGIN_SRC emacs-lisp
 (setq uniquify-buffer-name-style 'forward)
 #+END_SRC
-**** Navigation
+**** Beginning of Line
 [[https://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/][This article]] argues that it's usually more useful for =C-a= to take you to the
 beginning of the indentation of the line (that is, the logical/contextual
 beginning of the line) as opposed to the literal beginning of the line. I tend
-to agree.
+to agree. If you do want to go to the actual beginning of the line, then just
+press =C-a= again.
 #+BEGIN_SRC emacs-lisp
 (defun smarter-move-beginning-of-line (arg)
   "Move point back to indentation of beginning of line.
@@ -417,9 +418,24 @@ point reaches the beginning or end of the buffer, stop there."
 (global-set-key [remap move-beginning-of-line] 'smarter-move-beginning-of-line)
 (global-set-key [remap org-beginning-of-line]  'smarter-move-beginning-of-line)
 #+END_SRC
+**** Faster Pop-to-mark
+[[http://endlessparentheses.com/faster-pop-to-mark-command.html][Endless Parentheses]] shows us this modification to =pop-to-mark= (bound to =C-u
+C-t=). Now we can pop the mark multiple times by pressing =C-t= again, rather than
+having to type both keystrokes again.
+#+BEGIN_SRC emacs-lisp
+(defun modi/multi-pop-to-mark (orig-fun &rest args)
+  "Call ORIG-FUN until the cursor moves.
+Try the repeated popping up to 10 times."
+  (let ((p (point)))
+    (dotimes (i 10)
+      (when (= p (point))
+        (apply orig-fun args)))))
+
+(advice-add 'pop-to-mark-command :around #'modi/multi-pop-to-mark)
+#+END_SRC
 *** Reloading
-As an avid Emacs hacker, it became clear to me very quickly that reloading Emacs
-is very useful when testing something out. There are three fronts on which
+As I am an avid Emacs hacker, it became clear to me very quickly that reloading
+Emacs is very useful when testing something out. There are three fronts on which
 reloading is useful.
 
 When a file is changed on the disk, I want the content in my Emacs buffer to
@@ -477,7 +493,8 @@ uncompiled =.el= file, a prefix argument does the job.
       (org-babel-tangle-file (expand-file-name "gmacs.org" gmacs-emacs-dir)
                              (expand-file-name "gmacs.el" gmacs-emacs-dir))
       (byte-compile-file (expand-file-name "gmacs.el" gmacs-emacs-dir))
-      (load-file (expand-file-name "init.el" gmacs-emacs-dir)))))
+      (load-file (expand-file-name "init.el" gmacs-emacs-dir))
+      (run-hooks 'after-init-hook))))
 
 (bind-key "C-c r" 'gm/reload)
 #+END_SRC
@@ -535,9 +552,9 @@ Abbrevs are a pretty common and useful feature in editors. You can define
 abbrevs, which are strings. When you type space after an abbrev, it is expanded
 to whatever you want. Saves a lot of keystrokes.
 #+BEGIN_SRC emacs-lisp
+(setq save-abbrevs 'silently)
 (setq-default abbrev-mode t)
-(setq abbrev-file-name (expand-file-name "abbrevs.el" gmacs-emacs-dir)
-        save-abbrevs 'silently)
+(diminish 'abbrev-mode)
 (bind-key "C-c M a" #'abbrev-mode)
 #+END_SRC
 *** Key Frequency
@@ -681,12 +698,10 @@ live in the typewriter days where the
 #+BEGIN_SRC emacs-lisp
 (setq sentence-end-double-space nil)
 #+END_SRC
-
 **** Delete Selection
 #+BEGIN_SRC emacs-lisp
 (delete-selection-mode 1)
 #+END_SRC
-
 **** Don't Adjust Point When Pasting by Mouse
 Pasting into Emacs by middle-clicking can be nice, but I don't want the click to
 change the location of the point and then paste there instead of where the point
@@ -820,10 +835,11 @@ We replace =flyspell='s next error command with the above previous error command
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
 ([remap flyspell-goto-next-error] . flyspell-goto-previous-error)
 #+END_SRC
-Inspired by [[http://endlessparentheses.com/ispell-and-abbrev-the-perfect-auto-correct.html][Artur Malabarba]] and Howard Abrams. With this function, we can go to
-the previous error and correct it, then add it to our global abbreviation list.
-As long as we spell the word incorrectly the same way, we'll never make that
-typo again.
+Inspired by [[http://endlessparentheses.com/ispell-and-abbrev-the-perfect-auto-correct.html][Artur Malabarba]] and Howard Abrams (I had to modify it because Howard
+Abrams' version did not seem to work) With this function, we can go to the
+previous error and correct it, then add it to our global abbreviation list. As
+long as we spell the word incorrectly the same way, we'll never make that typo
+again.
 #+BEGIN_SRC emacs-lisp
 (defun gm/ispell-word-then-abbrev (p)
   "Call `ispell-word'.  After create an abbrev for the correction made.
@@ -831,16 +847,18 @@ With prefix P, create local abbrev.  Otherwise it will be
 global."
   (interactive "P")
   (flyspell-goto-previous-error 1)
-  (let ((bef (downcase (or (thing-at-point 'word) ""))) aft)
+  (let ((bef (downcase (or (thing-at-point 'word t) ""))) aft)
     (call-interactively 'ispell-word)
-    (setq aft (downcase (or (thing-at-point 'word) "")))
+    (setq aft (downcase (or (thing-at-point 'word t) "")))
+    (message "%s %s" aft bef)
     (unless (string= aft bef)
       (define-abbrev
-        (if p global-abbrev-table local-abbrev-table)
+        (if p local-abbrev-table global-abbrev-table)
         bef aft)
-      (abbrev-edit-save-to-file abbrev-file-name)
+      ;; (abbrev-edit-save-to-file abbrev-file-name)
       (message "\"%s\" now expands to \"%s\" %s"
-               bef aft (if p "locally" "globally")))))
+               bef aft (if p "locally" "globally"))
+      )))
 #+END_SRC
 The default binding on =C-;= is =flyspell='s built-in auto-correct function.
 However, it doesn't always give perfect matches, and its use case is usurped by
@@ -903,8 +921,8 @@ Version 2018-09-10"
 #+END_SRC
 Org Mode rebinds =C-k= to its own kill line function, so we set up another binding
 here.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("C-k" . xah-cut-line-or-region)
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(bind-key "C-k" #'xah-cut-line-or-region org-mode-map)
 #+END_SRC
 **** Paragraph Navigation
 Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
@@ -1074,7 +1092,7 @@ buffer.
 #+END_SRC
 Easily enter God Mode.
 #+BEGIN_SRC emacs-lisp
-(key-chord-define-global "jk" 'god-mode-all)
+(after! keychord (key-chord-define-global "jk" 'god-mode-all))
 #+END_SRC
 Indicate whether we're in God mode with the cursor colour. I've seen other
 people do this by having a bar cursor in "insert mode" (to borrow some
@@ -1183,7 +1201,12 @@ default; set PAGE-P to non-nil to rotate only the current page.
          ("C-x 2" . split-window-below)
          ("C-x 3" . split-window-right)))
 #+END_SRC
-
+*** Avy
+#+BEGIN_SRC emacs-lisp
+(use-package avy
+  :ensure t
+  :bind (("M-g" . avy-goto-word-1)))
+#+END_SRC
 ** Theme
 I use the popular Solarized Light/Dark themes.
 #+BEGIN_SRC emacs-lisp
@@ -1583,8 +1606,7 @@ Here are my capture templates.
     "* %i%? \n%^T\n")
    ("t" "Todo [inbox]" entry
     (file "~/org/inbox.org")
-    "* TODO %i%?
-:PROPERTIES:\n:CREATED: %U\n:END:")
+    "* TODO %i%?\n:PROPERTIES:\n:CREATED: %U\n:END:")
    ("j" "Journal" entry
     (file+olp+datetree "~/org/journal.org")
     "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
@@ -1790,6 +1812,7 @@ on.
       (insert base)))
   (goto-char (1- (org-element-property :end (org-element-context)))))
 #+END_SRC
+
 *** Equation Auto Preview
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -2118,23 +2141,26 @@ Accessing mail, including checking for new mail.
 (bind-key "C-c m" #'gm/open-mail)
 #+END_SRC
 * Snippets
-** Load Snippets
-Use SPC instead of TAB to expand snippets. We need to bind =TAB= to =org-cycle= even
-though that is the default, because otherwise binding =TAB= to =nil= in
+** Setup
+I use =SPC= instead of the default =TAB= to expand snippets. I find this more
+convenient, because it makes typing a snippet more like typing a word. This
+works fine apart from one hiccup. We need to bind =TAB= to =org-cycle= (even though
+that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 =yas-minor-mode= overrides the default behaviour.
 #+BEGIN_SRC emacs-lisp
-(setq yas-snippet-dirs '("~/.emacs.d/snippets"))
 (use-package yasnippet
-  :defer 1
-  :diminish (yas-minor-mode " ✂")
+  :commands (yas-minor-mode yas-global-mode)
+  :init
+  (dolist (hook '(python-mode-hook org-mode-hook))
+    (add-hook hook (lambda () (yas-minor-mode))))
   :config
-  (yas-global-mode 1)
   (bind-key "<tab>" nil yas-minor-mode-map)
   (bind-key "TAB" nil yas-minor-mode-map)
-  (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand) yas-minor-mode-map))
+  (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand) yas-minor-mode-map)
+  (setq yas-snippet-dirs '("~/.emacs.d/snippets")))
+(diminish 'yas-minor-mode " ✂")
 #+END_SRC
 ** QuickMath
-*** Requirements
 I use a hydra for snippets that just insert/replace text in math mode and thus
 don't require the use of =yasnippets=. To maintain and generate my main snippets,
 I use a data structure called a radix tree.
