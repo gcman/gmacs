@@ -1822,7 +1822,8 @@ introducing too many spaces in the earlier regexps.
     ("[ ]\\(\\^[^\\]\\)" "\\1 " "remove space before e.g ^ in sin ^2")
     ("\\s-\\s-*" " " "no more than 1 space in a row"))
   "Alist of (REGEXP TO DOCSTRING) parsed by `gm/reformat-fragment'.
-Upon reformatting, each REGEXP is replaced with TO. DOCSTRING simply explains what the regexp does.")
+Upon reformatting, each REGEXP is replaced with TO. DOCSTRING
+simply explains what the regexp does.")
 
 (defun gm/reformat-fragment (&optional fr)
   (unless fr (setq fr (cw/org-curr-fragment)))
@@ -1852,13 +1853,15 @@ on leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
 (defvar cw/org-last-fragment nil
-  "Holds the type and position of last valid fragment we were on. Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
+  "Holds the type and position of last valid fragment we were on.
+  Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
 
 (defvar cw/org-valid-fragment-type '(latex-fragment latex-environment)
   "List of types of fragments that will be previewed by `cw/org-preview-fragment'")
 
 (defun cw/org-curr-fragment ()
-  "Returns the type and position of the current fragment available for preview inside org-mode. Returns nil at non-displayable fragments"
+  "Returns the type and position of the current fragment available
+for preview inside org-mode. Returns nil at-displayable fragments."
   (let* ((fr (org-element-context))
          (fr-type (car fr)))
     (when (memq fr-type cw/org-valid-fragment-type)
@@ -1893,7 +1896,7 @@ on leaving a math fragment.
 
 #+BEGIN_SRC emacs-lisp
 (defun cw/org-auto-toggle-fragment-display ()
-  "Automatically toggle a displayable org mode fragment"
+  "Automatically toggle a displayable org mode fragment."
   (and (eq 'org-mode major-mode)
        (let ((curr (cw/org-curr-fragment)))
          (cond
@@ -2003,11 +2006,11 @@ correct number of times to include bibliography information, or to render
 graphics correctly; =latexmk= handles all of that.
 #+BEGIN_SRC emacs-lisp
 (defun gm/auto-tex-cmd ()
-  (let ((texcmd)))
-  (setq texcmd "latexmk -pdf -quiet %f")
-  (if (string-match "LATEX_CMD: xelatex" (buffer-string))
-      (setq texcmd "latexmk -pdflatex=xelatex -pdf -quiet %f"))
-  (setq org-latex-to-pdf-process (list texcmd)))
+  (let ((texcmd))
+    (setq texcmd "latexmk -pdf -quiet %f")
+    (if (string-match "LATEX_CMD: xelatex" (buffer-string))
+        (setq texcmd "latexmk -pdflatex=xelatex -pdf -quiet %f"))
+    (setq org-latex-to-pdf-process (list texcmd))))
 
 (add-hook 'org-export-latex-after-initial-vars-hook 'gm/auto-tex-cmd)
 #+END_SRC
@@ -2242,7 +2245,8 @@ Return the last n characters before the point, or =loc= if provided.
 #+BEGIN_SRC emacs-lisp
 (defun gm/last-n-chars (n &optional loc)
   (unless loc (setq loc (point)))
-  (buffer-substring-no-properties (- loc n) loc))
+  (when (< n loc)
+    (buffer-substring-no-properties (- loc n) loc)))
 #+END_SRC
 **** Math Mode Snippet
 #+BEGIN_SRC emacs-lisp
@@ -2286,7 +2290,7 @@ snippets. First, we create a suffix tree of all the math snippets.
 We make a completion function.
 #+BEGIN_SRC emacs-lisp
 (defun radix-tree-keys (subtree prefix)
-  (let (keys '())
+  (let ((keys nil))
     (radix-tree-iter-mappings (radix-tree-subtree subtree prefix)
 			                  (lambda (key val)
 				                (!cons (cons (concat prefix key) val) keys)))
@@ -2303,13 +2307,14 @@ capped at 5 characters). The longest snippet is currently =binom=, for the
 binomial coefficient (choose function).
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
-  (setq buff-cand (gm/buff-cand gm/buff-cand-max key))
-  (setq completions (--filter
-                     (member (reverse (car it)) buff-cand)
-                     (radix-tree-keys gm/math-suffix-tree key)))
-  (setq snippet (--max-by (> (length (car it)) (length (car other))) completions))
-  (if snippet
-      (gm/snippet (car snippet) (cdr snippet)) (insert key)))
+  (-if-let* ((buff-cand (gm/buff-cand gm/buff-cand-max key))
+             (completions (--filter
+                           (member (reverse (car it)) buff-cand)
+                           (radix-tree-keys gm/math-suffix-tree key)))
+             (snippet (--max-by (> (length (car it)) (length (car other)))
+                                completions)))
+      (gm/snippet (car snippet) (cdr snippet))
+    (insert key)))
 #+END_SRC
 And finally some utility functions. First we get a way to dump our snippet data
 to a file.
@@ -2330,7 +2335,7 @@ should expand."
   (interactive "sSnippet key: \nSnippet name: ")
   (unless (or (s-blank-str? key)
               (s-blank-str? name))
-    (add-to-list 'gm/math-snippets (cons key name))
+    (push (cons key name) gm/math-snippets)
     (setq file-cand (expand-file-name
                      (concat (concat (car (yas-snippet-dirs)) "/latex-mode/")
                              name)))
