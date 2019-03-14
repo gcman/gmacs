@@ -109,8 +109,8 @@ should be named and to speed up the package initialization process by doing it
 ourselves, rather than relying on =package-initialize=. Note that the whole thing
 is wrapped in a byte-compile block.
 
-We make the directories if they don't exist. This is done by iterating over a
-list to make it easy for to extend to more directories if needed.
+We make the directories if they don't exist by iterating over a list. This
+method makes it easy for to extend to more directories if needed.
 #+BEGIN_SRC emacs-lisp
 (eval-and-compile
   (defvar gmacs-emacs-dir (expand-file-name user-emacs-directory)
@@ -123,9 +123,12 @@ list to make it easy for to extend to more directories if needed.
     "Where custom lisp files are stored")
 
   (defvar gmacs-cache-dir (concat gmacs-emacs-dir "cache/")
-    "Where temporary files that could be deleted without anything terrible happening are stored.")
+    "Where temporary files that could be deleted without anything
+    terrible happening are stored.")
 
-  (dolist (dir (list gmacs-packages-dir))
+  (dolist (dir (list gmacs-packages-dir
+                     gmacs-custom-dir
+                     gmacs-cache-dir))
     (unless (file-directory-p dir)
       (make-directory dir t))))
 #+END_SRC
@@ -674,7 +677,8 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
 #+BEGIN_SRC emacs-lisp
 (use-package expand-region
   :commands er/expand-region
-  :bind (("C-=" . er/expand-region)))
+  :bind (("C-=" . er/expand-region)
+         ("M-2" . er/expand-region)))
 #+END_SRC
 *** Async Without Results Window
 #+BEGIN_SRC emacs-lisp
@@ -1107,9 +1111,11 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
     "synctex.gz" "fdb_latexmk"
     "elc"
     "pyc"))
+
 (defconst gm/find-file-ignore-dirs
   '("cache/" "auto/" "ltximg/"
     "\\.git/"))
+
 (setq counsel-find-file-ignore-regexp
       (concat
        (s-join "\\|"
@@ -1229,13 +1235,13 @@ default; set PAGE-P to non-nil to rotate only the current page.
 *** Window Management
 #+BEGIN_SRC emacs-lisp
 (use-package ace-window
-  :commands (ace-window delete-window delete-other-windows split-window-below split-window right)
+  :commands (ace-window)
   :bind (("C-x o" . ace-window)
          ("M-o" . ace-window)
          ("C-x 0" . delete-window)
-         ("C-x 1" . delete-other-windows)
-         ("C-x 2" . split-window-below)
-         ("C-x 3" . split-window-right)))
+         ("M-1" . delete-other-windows)
+         ("M-3" . split-window-right)
+         ("M-4" . split-window-below)))
 #+END_SRC
 *** Avy
 #+BEGIN_SRC emacs-lisp
@@ -1379,20 +1385,16 @@ This used to be a feature of Emacs.
   :bind ("M-y" . browse-kill-ring)
   :config (browse-kill-ring-default-keybindings))
 #+END_SRC
-*** Fill/Unfill
+*** Unfill Paragraph
+I used to =[remap fill-paragraph]= to =gm/fill-unfill=, a function that used the
+=unfill= package to toggle the paragraph from filled to unfilled with a single
+key. It turned out this was not best for my use case, as I usually double-tapped
+=M-q= because I just wanted to refill the paragraph. However, unfilling is
+sometimes useful, so I kept the package around.
 #+BEGIN_SRC emacs-lisp
 (use-package unfill
-  :commands unfill-paragraph)
-
-(defun gm/fill-or-unfill ()
-  (interactive)
-  (let ((length-of-line
-         (length (buffer-substring-no-properties
-               (line-beginning-position)
-               (line-end-position)))))
-    (if (> length-of-line (1+ fill-column)) (fill-paragraph) (unfill-paragraph))))
-
-(bind-key "M-q" #'gm/fill-or-unfill)
+  :commands unfill-paragraph
+  :bind ("M-Q" . unfill-paragraph))
 #+END_SRC
 *** Join Line
 This allows me to combine text over multiple lines into one line.
@@ -1757,8 +1759,8 @@ In a similar vein, it helps the visual hierarchy to have text indented in
 accordance with the level of the heading, so I always use =org-indent-mode=.
 Because it's always active, it's best to diminish it.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-startup-indented t)
 (diminish 'org-indent-mode)
+(setq org-startup-indented t)
 #+END_SRC
 *** Emphasis Markers
 It looks much cleaner if we omit emphasis markers such as the =*= asterisks that
@@ -1781,7 +1783,63 @@ Have lists begun by, for example, =-= look like a bullet list.
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 #+END_SRC
 This doesn't change anything in the buffer, which is nice.
-** Programming
+
+*** Pretty Symbols in Source Blocks
+I do a lot of programming in Org Mode source blocks, and I want to have features
+like =prettify-symbols-mode= for =lambda= functions in Elisp. However, this mode is
+buffer local, so if I were to turn it on, I would have to display the string
+"lambda" as "λ" throughout the buffer, even in paragraphs and the source blocks
+of other languages. This is obviously undesirable.
+
+We add hooks to particular languages to activate pretty symbols. In this case I
+don't add the lambda fontification, just activate =pretty-symbols-mode=, because
+the default variable =lisp-prettify-symbols-mode= already has this pair.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'lisp-mode-hook
+          (lambda () (prettify-symbols-mode)))
+#+END_SRC
+Then, we modify =org-src-font-lock-fontify-block= (the function that fontifies Org
+source blocks) as per [[https://emacs.stackexchange.com/questions/17283/is-it-possible-to-get-prettified-symbols-in-org-mode-source-blocks/17847][this SE post]].
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(defun org-src-font-lock-fontify-block (lang start end)
+  "Fontify code block.
+This function is called by emacs automatic fontification, as long
+as `org-src-fontify-natively' is non-nil."
+  (let ((lang-mode (org-src--get-lang-mode lang)))
+    (when (fboundp lang-mode)
+      (let ((string (buffer-substring-no-properties start end))
+        (modified (buffer-modified-p)) (org-buffer (current-buffer)) pos next)
+    (remove-text-properties start end '(face nil))
+    (with-current-buffer
+        (get-buffer-create
+         (concat " org-src-fontification:" (symbol-name lang-mode)))
+      (delete-region (point-min) (point-max))
+      (insert string " ") ;; so there's a final property change
+      (unless (eq major-mode lang-mode) (funcall lang-mode))
+      ;; Avoid `font-lock-ensure', which does not display fonts in
+      ;; source block.
+      (font-lock-fontify-buffer)
+      (setq pos (point-min))
+      (while (setq next (next-single-property-change pos 'face))
+        (put-text-property
+         (+ start (1- pos)) (1- (+ start next)) 'face
+         (get-text-property pos 'face) org-buffer)
+        (setq pos next))
+      ;; Addition: also copy 'composition info for prettified symbols
+      (setq pos (point-min))
+      (while (setq next (next-single-property-change pos 'composition))
+        (put-text-property
+         (+ start (1- pos)) (1- (+ start next)) 'composition
+         (get-text-property pos 'composition) org-buffer)
+        (setq pos next))
+      ;; End addition
+      )
+    (add-text-properties
+     start end
+     '(font-lock-fontified t fontified t font-lock-multiline t))
+    (set-buffer-modified-p modified)))))
+#+END_SRC
+** Babel
 Set up languages loaded for use in Org source blocks and their respective
 default execution commands.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -2201,8 +2259,8 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 #+BEGIN_SRC emacs-lisp
 (use-package yasnippet
   :commands (yas-minor-mode yas-global-mode)
-  :hook (org-mode-hook . yas-minor-mode)
   :config
+  (yas-global-mode)
   (bind-key "<tab>" nil yas-minor-mode-map)
   (bind-key "TAB" nil yas-minor-mode-map)
   (define-key yas-minor-mode-map (kbd "SPC")
@@ -2296,13 +2354,13 @@ Put file contents into string. Not recommended for large files.
 I wrote this to reduce the amount of redundant code needed to set up the
 snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-snippet-file (expand-file-name "math-snippets.el" user-emacs-directory)
-  "Location of snippets ")
-(defvar gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
-(defvar gm/buff-cand-max (-max (--map (length (car it)) gm/math-snippets)))
+(defvar gm/longest-snippet)
+(defvar gm/math-suffix-tree)
 
 (defun gm/math-setup ()
-  (setq gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
+  (setq gm/longest-snippet
+        (cons (-max (--map (length (car it)) gm/math-snippets))
+              (-max (--map (length (cdr it)) gm/math-snippets))))
   (setq gm/math-suffix-tree
         (--reduce-from (radix-tree-insert acc (car it) (cdr it))
                        radix-tree-empty (--map (cons (nreverse (car it)) (cdr it))
@@ -2311,7 +2369,6 @@ snippets. First, we create a suffix tree of all the math snippets.
                 `(define-conditional-key org-mode-map
                      ,it (lambda! (gm/math-snippet ,it)) (gm/in-math-p))))
          (delete-dups (--map (s-right 1 (car it)) gm/math-snippets)))
-  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
   (message nil))
 #+END_SRC
 We make a completion function.
@@ -2334,7 +2391,7 @@ capped at 5 characters). The longest snippet is currently =binom=, for the
 binomial coefficient (choose function).
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
-  (-if-let* ((buff-cand (gm/buff-cand gm/buff-cand-max key))
+  (-if-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet) key))
              (completions (--filter
                            (member (reverse (car it)) buff-cand)
                            (radix-tree-keys gm/math-suffix-tree key)))
@@ -2342,14 +2399,6 @@ binomial coefficient (choose function).
                                 completions)))
       (gm/snippet (car snippet) (cdr snippet))
     (insert key)))
-#+END_SRC
-And finally some utility functions. First we get a way to dump our snippet data
-to a file.
-#+BEGIN_SRC emacs-lisp
-(defun gm/print-sorted-math-snippets-to-file (filename data)
-  (setq data (sort data (lambda (a b) (string< (car a) (car b)))))
-  (with-temp-file filename
-    (insert (pp data))))
 #+END_SRC
 Now we give the user a way to easily add snippets.
 #+BEGIN_SRC emacs-lisp
@@ -2369,8 +2418,26 @@ should expand."
     (unless (file-exists-p file-cand)
       (find-file file-cand)
       (yas-expand-snippet (yas-lookup-snippet "new-math-snippet")))
-    (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
     (gm/math-setup)))
+#+END_SRC
+A very rudimentary command to see all current snippet keys and expansions.
+#+BEGIN_SRC emacs-lisp
+(defun gm/view-snippets ()
+  (interactive)
+  (with-output-to-temp-buffer "*QuickMath Expansions*"
+    (let ((key-len (+ 4 (car gm/longest-snippet)))
+          (snip-len (cdr gm/longest-snippet)))
+      (princ (format "Key%s  Snippet%s\n%s%s\n"
+                     (make-string (- key-len 4) ? )
+                     (make-string (- snip-len 8) ? )
+                     (make-string key-len ?-)
+                     (make-string (1+ snip-len) ?-)))
+      (dolist (snippet gm/math-snippets)
+        (princ (format "%s %s\n"
+                       (concat
+                        (car snippet)
+                        (make-string (- key-len (length (car snippet))) ? ))
+                       (cdr snippet)))))))
 #+END_SRC
 **** Tab Jump to Next LaTeX Position
 Modified from the =cdlatex-tab= function in =cdlatex.el=.
@@ -2522,6 +2589,113 @@ to make LaTeX happy.
 (define-conditional-key org-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
 *** Math Symbols
+**** Main Math Snippets
+#+BEGIN_SRC emacs-lisp
+(defvar gm/math-snippets
+  '(("==" . "split-equals")
+    ("=>" . "implies")
+    ("CC" . "complex")
+    ("LL" . "cal-L")
+    ("MM" . "cal-M")
+    ("NN" . "natural")
+    ("QQ" . "rational")
+    ("RR" . "real")
+    ("ZZ" . "integers")
+    ("[" . "square-brackets")
+    ("^" . "superscript")
+    ("_" . "subscript")
+    ("abs" . "abs")
+    ("acos" . "acos")
+    ("ale" . "ale")
+    ("aleph" . "aleph")
+    ("asin" . "asin")
+    ("atan" . "atan")
+    ("bigop" . "big-operator")
+    ("binom" . "choose")
+    ("bol" . "bol")
+    ("cb" . "cubed")
+    ("cc" . "subset")
+    ("ceil" . "ceiling")
+    ("cong" . "congruent")
+    ("cos" . "cos")
+    ("cot" . "cot")
+    ("cot" . "acot")
+    ("cu" . "curl")
+    ("dd" . "derivative-one-term")
+    ("del" . "partial")
+    ("det" . "determinant")
+    ("dim" . "dim")
+    ("dint" . "dintegral")
+    ("div" . "divergence")
+    ("dv" . "derivative")
+    ("eq" . "equal-sign")
+    ("exp" . "exponential")
+    ("fa" . "for-all")
+    ("fl" . "floor")
+    ("fr" . "frac")
+    ("fun" . "function")
+    ("ge" . "greater-than")
+    ("gr" . "gradient")
+    ("iint" . "iintegral")
+    ("im" . "image")
+    ("inf" . "infimum")
+    ("inn" . "in")
+    ("int" . "integral")
+    ("inv" . "inverse")
+    ("iso" . "isomorphic")
+    ("ker" . "kernel")
+    ("lap" . "laplacian")
+    ("le" . "less-than")
+    ("lim" . "limit")
+    ("list" . "list")
+    ("ln" . "nat-logarithm")
+    ("log" . "log")
+    ("lr9" . "parentheses")
+    ("lr[" . "brackets")
+    ("lr{" . "set")
+    ("mp" . "minus-plus")
+    ("nabl" . "nabla")
+    ("ndd" . "nth-derivative")
+    ("ndv" . "nth-differential")
+    ("neq" . "neq")
+    ("norm" . "norm")
+    ("npd" . "nth-pderivative")
+    ("npv" . "nth-pdifferential")
+    ("nsq" . "nsqrt")
+    ("o+" . "oplus")
+    ("oint" . "ointegral")
+    ("oo" . "infinity")
+    ("opl" . "oplus")
+    ("ox" . "otimes")
+    ("part" . "partial")
+    ("pd" . "partial")
+    ("pm" . "plus-minus")
+    ("prod" . "product")
+    ("prop" . "proportional-to")
+    ("ps" . "pairsum")
+    ("psum" . "pairsum")
+    ("pv" . "partial-derivative")
+    ("sec" . "sec")
+    ("seq" . "sequence")
+    ("set" . "set")
+    ("sim" . "sim")
+    ("sin" . "sin")
+    ("span" . "span")
+    ("sq" . "sqrt")
+    ("sr" . "squared")
+    ("st" . "such-that")
+    ("star" . "star")
+    ("sum" . "sum")
+    ("sup" . "supremum")
+    ("tan" . "tan")
+    ("then" . "implies")
+    ("to" . "to")
+    ("tr" . "trace")
+    ("vv" . "vec")
+    ("xii" . "x-sub-i")
+    ("xx" . "times")))
+#+END_SRC
+**** Hydras
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
   (";" hydra-semicolon-b/body "Level 2")
