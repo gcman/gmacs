@@ -45,7 +45,11 @@
 
 (define-abbrev-table 'elpy-refactor-mode-abbrev-table '())
 
-(define-abbrev-table 'emacs-lisp-mode-abbrev-table '())
+(define-abbrev-table 'emacs-lisp-mode-abbrev-table
+  '(
+    ("bsnp" "buffer-substring-no-properties" nil :count 0)
+    ("se" "save-excursion" nil :count 0)
+   ))
 
 (define-abbrev-table 'epa-info-mode-abbrev-table '())
 

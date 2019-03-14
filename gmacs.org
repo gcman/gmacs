@@ -12,6 +12,9 @@ initialization ourselves, so there's no need for Emacs to do it first.
 (setq package-enable-at-startup nil)
 #+END_SRC
 ** Fixing the UI
+:PROPERTIES:
+:header-args: :tangle no
+:END:
 Emacs ships with a set of pretty strange defaults. The UI is the first thing we
 see when we open Emacs, so it better not look ugly. We're going to configure
 part of the UI outside Emacs entirely, by editing the =~/.Xresources=. This has
@@ -23,7 +26,7 @@ background colours---because the font is about the same shade as the background,
 this makes for some very fun times debugging.
 *** Bars
 I never use menu bars, tool bars, or scroll bars in Emacs.
-#+BEGIN_SRC sh :tangle no
+#+BEGIN_SRC sh
 Emacs.menuBar: off
 Emacs.toolBar: off
 Emacs.verticalScrollBars: off
@@ -31,7 +34,7 @@ Emacs.verticalScrollBars: off
 *** Cursor Blinking
 In earlier versions of Emacs, the cursor would blink ten or so times, then
 suddenly stop. This got annoying quickly.
-#+BEGIN_SRC sh :tangle no
+#+BEGIN_SRC sh
 Emacs.cursorBlink: off
 #+END_SRC
 *** Background Change
@@ -40,12 +43,12 @@ is white. However, my default theme is a dark theme (Solarized Dark). If I were
 to change the background colour after Emacs starts, the screen would flash as it
 changes colour. And so I set the default background colour to be that of
 Solarized Dark.
-#+BEGIN_SRC sh :tangle no
+#+BEGIN_SRC sh
 Emacs.background: #002b36
 #+END_SRC
 The last thing left that is visible throughout startup is the modeline. It
 took a bit of Internet sleuthing to figure out how to set this, but here it is.
-#+BEGIN_SRC sh :tangle no
+#+BEGIN_SRC sh
 Emacs.mode-line.attributeForeground: #93a1a1
 Emacs.mode-line.attributeBackground: #002b36
 Emacs.mode-line.attributeBox: (:line-width 1 :color "#073642")
@@ -489,12 +492,11 @@ uncompiled =.el= file, a prefix argument does the job.
   (interactive "P")
   (if p
       (org-babel-load-file (expand-file-name "gmacs.org" gmacs-emacs-dir))
-    (progn
-      (org-babel-tangle-file (expand-file-name "gmacs.org" gmacs-emacs-dir)
-                             (expand-file-name "gmacs.el" gmacs-emacs-dir))
-      (byte-compile-file (expand-file-name "gmacs.el" gmacs-emacs-dir))
-      (load-file (expand-file-name "init.el" gmacs-emacs-dir))
-      (run-hooks 'after-init-hook))))
+    (org-babel-tangle-file (expand-file-name "gmacs.org" gmacs-emacs-dir)
+                           (expand-file-name "gmacs.el" gmacs-emacs-dir))
+    (byte-compile-file (expand-file-name "gmacs.el" gmacs-emacs-dir))
+    (load-file (expand-file-name "init.el" gmacs-emacs-dir))
+    (run-hooks 'after-init-hook)))
 
 (bind-key "C-c r" 'gm/reload)
 #+END_SRC
@@ -1077,7 +1079,7 @@ extension. Use ~S~ to use in a Dired buffer.
   (ivy-re-builders-alist
    '((swiper . ivy--regex-plus)
      (ivy-switch-buffer . ivy--regex-plus)
-     (t      . ivy--regex-fuzzy)))
+     (t . ivy--regex-fuzzy)))
   (ivy-use-virtual-buffers t)
   (ivy-display-style 'fancy)
   (ivy-initial-inputs-alist nil))
@@ -1092,7 +1094,7 @@ buffer.
 #+END_SRC
 Easily enter God Mode.
 #+BEGIN_SRC emacs-lisp
-(after! keychord (key-chord-define-global "jk" 'god-mode-all))
+;; (after! keychord (key-chord-define-global "jk" 'god-mode-all))
 #+END_SRC
 Indicate whether we're in God mode with the cursor colour. I've seen other
 people do this by having a bar cursor in "insert mode" (to borrow some
@@ -1101,8 +1103,8 @@ Mode).
 #+BEGIN_SRC emacs-lisp
 (defun gm/god-mode-indicator ()
   (cond (god-local-mode
-         (progn (set-cursor-color "#dc322f")))
-        (t (progn (set-cursor-color "#657b83")))))
+         (set-cursor-color "#dc322f"))
+        (t (set-cursor-color "#657b83"))))
 
 (add-hook 'god-mode-enabled-hook #'gm/god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'gm/god-mode-indicator)
@@ -1240,8 +1242,8 @@ comes back when I switch themes, for some reason), I refresh all open buffers.
   (if gm/dark
       (progn (load-theme 'solarized-light)
              (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
-    (progn (load-theme 'solarized-dark)
-           (setq pdf-view-midnight-colors '("#839496" . "#002b36"))))
+    (load-theme 'solarized-dark)
+    (setq pdf-view-midnight-colors '("#839496" . "#002b36")))
   (modi/revert-all-file-buffers))
 
 (bind-key "C-c t" #'gm/switch-theme)
@@ -1525,7 +1527,7 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 in that =RET= while in a list adds an item. The default in Org is that =M-RET=
 serves this purpose.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(defun ha/org-return (&optional ignore)
+(defun gm/org-return (&optional ignore)
   "Add new list item, heading or table row with RET.
 A double return on an empty element deletes it.
 Use a prefix arg to get regular RET. "
@@ -1593,6 +1595,8 @@ use. and we just set our "proper places."
                            ("~/org/notes.org" :maxlevel . 2)))
 #+END_SRC
 *** Capture
+:PROPERTIES:
+:END:
 I use Org Capture to organize my todo list, take note of ideas I think of, and
 kickstart blog posts.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
@@ -1743,7 +1747,8 @@ default execution commands.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (org-babel-do-load-languages
       'org-babel-load-languages '((python . t)
-                                  (latex . t)))
+                                  (latex . t)
+                                  (shell . t)))
 
 (setq org-babel-python-command "python3.6"
       org-babel-latex-command "pdflatex")
@@ -1792,27 +1797,34 @@ For my primary use case of typing math in LaTeX, I don't care about how the
 source looks when I'm typing it; I'm often typing it live, so the main concern
 is speed. But later, I want it to look nice and readable, with spacing and so
 on.
+
+The idea is pretty simple. We just maintain a list of regexps in
+=gm/reformat-fragment-alist= and run them all on a given LaTeX fragment with
+=gm/reformat-fragment=. The main thing to notice is that the regexp that takes
+care of too many spaces goes last. This way, we don't have to worry about
+introducing too many spaces in the earlier regexps.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-reformat (fr)
-  (save-excursion
-    (goto-char (nth 1 fr))
-    (let ((fr-begin (nth 1 fr))
-          (fr-end (org-element-property :end (org-element-context)))
-          (base))
+(defvar gm/reformat-fragment-alist
+  '(("\\([^ ]?\\)\\+\\([^ ]?\\)" "\\1 + \\2" "spaces around t")
+    ("[ ]\\(\\^[^\\]\\)" "\\1 " "remove space before e.g ^ in sin ^2")
+    ("\\s-\\s-*" " " "no more than 1 space in a row"))
+  "Alist of (REGEXP TO DOCSTRING) parsed by `gm/reformat-fragment'.
+Upon reformatting, each REGEXP is replaced with TO. DOCSTRING simply explains what the regexp does.")
+
+(defun gm/reformat-fragment (&optional fr)
+  (unless fr (setq fr (cw/org-curr-fragment)))
+  (let ((fr-begin (nth 1 fr))
+        (fr-end (org-element-property :end (org-element-context)))
+        base)
+    (save-excursion
+      (goto-char fr-begin)
       (setq base (buffer-substring-no-properties fr-begin fr-end))
-      (defun gm/rf-helper (reg to)
-        (setq base (replace-regexp-in-string reg to base)))
-      ;; spaces around +
-      (gm/rf-helper "\\([^ ]?\\)\\+\\([^ ]?\\)" "\\1 + \\2")
-      ;; remove space before superscripts like in sin ^2
-      (gm/rf-helper "[ ]\\(\\^[^\\]\\)" "\\1 ")
-      ;; never more than 1 space in a row
-      (gm/rf-helper "\\s-\\s-*" " ")
+      (dolist (reg gm/reformat-fragment-alist)
+        (setq base (replace-regexp-in-string (car reg) (nth 1 reg) base)))
       (delete-region fr-begin fr-end)
       (insert base)))
-  (goto-char (1- (org-element-property :end (org-element-context)))))
+  (goto-char (org-element-property :end (org-element-context))))
 #+END_SRC
-
 *** Equation Auto Preview
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -1829,10 +1841,8 @@ on leaving a math fragment.
 (defvar cw/org-last-fragment nil
   "Holds the type and position of last valid fragment we were on. Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
 
-(defvar cw/org-valid-fragment-type
-  "List of types of fragments that will be previewed by `cw/org-preview-fragment'"
-  '(latex-fragment
-    latex-environment))
+(defvar cw/org-valid-fragment-type '(latex-fragment latex-environment)
+  "List of types of fragments that will be previewed by `cw/org-preview-fragment'")
 
 (defun cw/org-curr-fragment ()
   "Returns the type and position of the current fragment available for preview inside org-mode. Returns nil at non-displayable fragments"
@@ -1850,12 +1860,11 @@ on leaving a math fragment.
         (fr-begin (nth 1 fr)))
     (goto-char fr-begin)
     (when (memq fr-type cw/org-valid-fragment-type)
-      (let ((ov (loop for ov in (org--list-latex-overlays)
-                      if
+      (let ((ov (car (--filter
                       (and
-                       (<= (overlay-start ov) (point))
-                       (>= (overlay-end ov) (point)))
-                      return ov)))
+                       (<= (overlay-start it) (point))
+                       (>= (overlay-end it) (point)))
+                      (org--list-latex-overlays)))))
         (when ov
           (delete-overlay ov))))))
 
@@ -1887,7 +1896,7 @@ on leaving a math fragment.
             (not (equal curr cw/org-last-fragment)))
 
            ;; reformat old fragment
-           (gm/math-reformat cw/org-last-fragment)
+           (gm/reformat-fragment cw/org-last-fragment)
 
            ;; go back to last one and put image back, provided there is still a fragment there
            (save-excursion
@@ -1906,7 +1915,7 @@ on leaving a math fragment.
             cw/org-last-fragment)
 
            ;; reformat old fragment
-           (gm/math-reformat cw/org-last-fragment)
+           (gm/reformat-fragment cw/org-last-fragment)
            ;; put image back on, provided that there is still a fragment here.
            (save-excursion
              (cw/org-preview-fragment cw/org-last-fragment))
@@ -1942,9 +1951,8 @@ Toggle the "mode" to preview equations.
       (progn
         (remove-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display t)
         (message "Equation preview disabled."))
-    (progn
-      (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)
-      (message "Equation preview enabled.")))
+    (add-hook 'post-command-hook 'cw/org-auto-toggle-fragment-display nil t)
+    (message "Equation preview enabled."))
   (togglef gm/eq-preview))
 
 (bind-key "C-c p" 'gm/toggle-equation-preview)
@@ -2149,16 +2157,14 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 =yas-minor-mode= overrides the default behaviour.
 #+BEGIN_SRC emacs-lisp
 (use-package yasnippet
+  :diminish
   :commands (yas-minor-mode yas-global-mode)
-  :init
-  (dolist (hook '(python-mode-hook org-mode-hook))
-    (add-hook hook (lambda () (yas-minor-mode))))
   :config
+  (yas-global-mode 1)
   (bind-key "<tab>" nil yas-minor-mode-map)
   (bind-key "TAB" nil yas-minor-mode-map)
   (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand) yas-minor-mode-map)
   (setq yas-snippet-dirs '("~/.emacs.d/snippets")))
-(diminish 'yas-minor-mode " ✂")
 #+END_SRC
 ** QuickMath
 I use a hydra for snippets that just insert/replace text in math mode and thus
@@ -2177,7 +2183,8 @@ make my own for checking if you are in math mode, which just looks at the
 surrounding paragraph. We first make a list of math environments that our
 function will look for.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-environments '("equation" "align"))
+(defvar gm/math-environments '("equation" "align")
+  "The environments `gm/in-math-p' assumes as valid math environments.")
 #+END_SRC
 The idea is that we search the region from the beginning of the paragraph to the
 point for delimiters for inline math (=\(= and =\)=) and display math (=\begin{ENV}=
@@ -2185,20 +2192,26 @@ and =\end{ENV}=, where =ENV= is an element of =gm/math-environments=). The one
 subtlety is that we also look at the starred versions of =ENV=. If there are more
 open delimiters than closed delimiters, then the point must be inside a math
 block, and so we return true.
-#+begin_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp
 (defun gm/in-math-p ()
-  (let ((end (point))
-        (start (save-excursion (org-backward-paragraph) (point))))
-    (defun gm/in-math-p-helper (begin-delim)
-      (concat begin-delim (mapconcat 'identity
-                                 (mapcar (lambda (s) (concat "\\(" s "\\)"))
-                                         gm/math-environments) "\\|") "[\\*]?}"))
-    (let ((inline-open (how-many "\\\\(" start end))
-          (inline-close (how-many "\\\\)" start end))
-          (env-open (how-many (gm/in-math-p-helper "\\\\begin{") start end))
-          (env-close (how-many (gm/in-math-p-helper "\\\\end{") start end)))
-      (or (> (- inline-open inline-close) 0)
-          (> (- env-open env-close) 0)))))
+  (let ((begin (save-excursion
+                 (if (eq major-mode 'org-mode)
+                     (org-backward-paragraph)
+                   (backward-paragraph))
+                 (point)))
+        (end (point))
+        inline-open inline-close env-open env-close)
+    (defun gm/--in-math-p (begin-delim)
+      (concat
+       begin-delim
+       (s-join "\\|" (--map (concat "\\(" it "\\)") gm/math-environments))
+       "[\\*]?}"))
+    (setq inline-open (how-many "\\\\(" begin end)
+          inline-close (how-many "\\\\)" begin end)
+          env-open (how-many (gm/--in-math-p "\\\\begin{") begin end)
+          env-close (how-many (gm/--in-math-p "\\\\end{") begin end))
+    (or (> (- inline-open inline-close) 0)
+        (> (- env-open env-close) 0))))
 #+END_SRC
 **** Enter Math Mode
 This command will enter inline math mode if not in math mode, and exit otherwise.
@@ -2206,27 +2219,25 @@ This command will enter inline math mode if not in math mode, and exit otherwise
 (defun gm/create-math-fragment ()
   (interactive)
   (if (gm/in-math-p)
-      (progn
-        (goto-char (org-element-property :begin (org-element-context)))
-        (forward-char)
-        (forward-sexp))
-    (insert "\\(\\)")
-    (backward-char 2)))
+      (goto-char (org-element-property :end (org-element-context)))
+    (insert "\\(")
+    (save-excursion (insert "\\)"))))
 #+END_SRC
 **** Last n Characters Before Point
-Return the last n characters before the point.
+Return the last n characters before the point, or =loc= if provided.
 #+BEGIN_SRC emacs-lisp
-(defun gm/last-n-chars (n)
-  (buffer-substring-no-properties (- (point) n) (point)))
+(defun gm/last-n-chars (n &optional loc)
+  (unless loc (setq loc (point)))
+  (buffer-substring-no-properties (- loc n) loc))
 #+END_SRC
 **** Math Mode Snippet
 #+BEGIN_SRC emacs-lisp
 (defun gm/snippet (key snippet)
   (let ((len (length key)))
-        (progn
-          (delete-char (- 1 len)) ;; this has to be negative
-          (when (= (char-before) ?\\) (delete-char -1))
-          (yas-expand-snippet (yas-lookup-snippet snippet)))))
+    (delete-char (- 1 len)) ;; this has to be negative, we're deleting back
+    ;; this is so we don't have two backslashes after something like \sim
+    (when (= (char-before) ?\\) (delete-char -1))
+    (yas-expand-snippet (yas-lookup-snippet snippet))))
 #+END_SRC
 **** Get String from File
 Put file contents into string. Not recommended for large files.
@@ -2240,21 +2251,23 @@ Put file contents into string. Not recommended for large files.
 I wrote this to reduce the amount of redundant code needed to set up the
 snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-snippet-file (expand-file-name "math-snippets.el" gmacs-emacs-dir))
+(defvar gm/math-snippet-file (expand-file-name "math-snippets.el" user-emacs-directory)
+  "Location of snippets ")
+(defvar gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
+(defvar gm/buff-cand-max (-max (--map (length (car it)) gm/math-snippets)))
 
 (defun gm/math-setup ()
-   (setq gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
-   (setq gm/math-suffix
-         (--reduce-from (radix-tree-insert acc (car it) (cdr it))
-                        radix-tree-empty (mapcar (lambda (x) (cons (reverse (car x)) (cdr x)))
-                                                 gm/math-snippets)))
-   (loop for x in (delete-dups (mapcar (lambda (x) (substring (car x) (1- (length (car x))) (length (car x)))) gm/math-snippets))
-         collect (eval (macroexpand
-                        `(define-conditional-key org-mode-map
-                             ,x (lambda! (gm/math-snippet ,x)) (gm/in-math-p)))))
-
-   (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
-   (message nil))
+  (setq gm/math-snippets (car (read-from-string (get-string-from-file gm/math-snippet-file))))
+  (setq gm/math-suffix-tree
+        (--reduce-from (radix-tree-insert acc (car it) (cdr it))
+                       radix-tree-empty (--map (cons (nreverse (car it)) (cdr it))
+                                               gm/math-snippets)))
+  (--map (eval (macroexpand
+                `(define-conditional-key org-mode-map
+                     ,it (lambda! (gm/math-snippet ,it)) (gm/in-math-p))))
+         (delete-dups (--map (s-right 1 (car it)) gm/math-snippets)))
+  (gm/print-sorted-math-snippets-to-file gm/math-snippet-file gm/math-snippets)
+  (message nil))
 #+END_SRC
 We make a completion function.
 #+BEGIN_SRC emacs-lisp
@@ -2276,11 +2289,11 @@ capped at 5 characters). The longest snippet is currently =binom=, for the
 binomial coefficient (choose function).
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet (key)
-  (setq buff-cand (gm/buff-cand 5 key))
-  (setq completions
-        (loop for x in (radix-tree-keys gm/math-suffix key) if (member (reverse (car x)) buff-cand)
-              collect x))
-  (setq snippet (car (sort completions (lambda (a b) (> (length (car a)) (length (car b)))))))
+  (setq buff-cand (gm/buff-cand gm/buff-cand-max key))
+  (setq completions (--filter
+                     (member (reverse (car it)) buff-cand)
+                     (radix-tree-keys gm/math-suffix-tree key)))
+  (setq snippet (--max-by (> (length (car it)) (length (car other))) completions))
   (if snippet
       (gm/snippet (car snippet) (cdr snippet)) (insert key)))
 #+END_SRC
@@ -2387,7 +2400,9 @@ Add subscript bindings to each of the ten digits.
          `(define-conditional-key org-mode-map
               (number-to-string ,n)
               (gm/math-number-subscript) (gm/in-math-p)))))
-(dotimes (n 10) (progn (gm/bind-number-subscript n) (gm/bind-number-subscript 9)))
+(dotimes (n 10)
+  (gm/bind-number-subscript n)
+  (gm/bind-number-subscript 9))
 #+END_SRC
 **** Fraction
 Typing =/= after an appropriate block (a number or a balanced set of parentheses)
@@ -2397,17 +2412,17 @@ then =/= will result in =\frac{\sin x}{|}=.
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-insert-frac-match (match)
   (when match
-    (progn (yas-expand-snippet (yas-lookup-snippet "frac"))
-           (insert match)
-           (yas-next-field))))
+    (yas-expand-snippet (yas-lookup-snippet "frac"))
+    (insert match)
+    (yas-next-field)))
 
 (defun gm/math-frac-helper (regexp)
-  (let (start end match)
+  (let (begin end match)
     (when (looking-back regexp (line-beginning-position) t)
-      (setq start (match-beginning 0))
+      (setq begin (match-beginning 0))
       (setq end (match-end 0))
-      (setq match (buffer-substring-no-properties start end))
-      (delete-region start end))
+      (setq match (buffer-substring-no-properties begin end))
+      (delete-region begin end))
     (gm/math-insert-frac-match match)))
 
 (defun gm/math-frac ()
@@ -2415,12 +2430,11 @@ then =/= will result in =\frac{\sin x}{|}=.
   (cond
    ((string-match "[\])]" (char-to-string (char-before)))
     (let (match end)
-      (progn
-        (setq end (point))
-        (backward-sexp)
-        (setq match (buffer-substring-no-properties (point) end))
-        (delete-region (point) end)
-        (gm/math-insert-frac-match (substring match 1 -1)))))
+      (setq end (point))
+      (backward-sexp)
+      (setq match (buffer-substring-no-properties (point) end))
+      (delete-region (point) end)
+      (gm/math-insert-frac-match (substring match 1 -1))))
    ((string-match "}" (char-to-string (char-before)))
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]"))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
@@ -2437,21 +2451,27 @@ to make LaTeX happy.
 (defun gm/math-split-p ()
   (when (gm/in-math-p)
     (save-excursion
-      (org-backward-paragraph)
+      (if (eq major-mode 'org-mode)
+          (org-backward-paragraph)
+        (backward-paragraph))
       (forward-line)
-      (equal (buffer-substring-no-properties (line-beginning-position) (line-end-position))
-                   "\\begin{split}"))))
+      (equal (buffer-substring-no-properties
+              (line-beginning-position)
+              (line-end-position))
+             "\\begin{split}"))))
 
 (defun gm/tex-newline ()
   (interactive)
-  (if (equal (buffer-substring-no-properties (line-beginning-position) (line-end-position))
+  (if (equal (buffer-substring-no-properties
+              (line-beginning-position)
+              (line-end-position))
              "\\begin{split}")
       (newline)
-    (progn (end-of-line)
-           (if (equal (gm/last-n-chars 2) "\\\\")
-               (forward-line)
-             (insert " \\\\")
-             (newline)))))
+    (end-of-line)
+    (if (equal (gm/last-n-chars 2) "\\\\")
+        (forward-line)
+      (insert " \\\\")
+      (newline))))
 
 (define-conditional-key org-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
