@@ -1082,11 +1082,13 @@ extension. Use ~S~ to use in a Dired buffer.
     :commands (swiper swiper-all))
   (use-package counsel
     :demand t
-    :bind ([remap execute-extended-command] . counsel-M-x)
+    :bind
+    ([remap execute-extended-command] . counsel-M-x)
     ([remap org-goto] . counsel-org-goto)
+    ([remap find-file] . counsel-find-file)
     ("C-s" . counsel-grep-or-swiper)
-    :config
-    (setq counsel-grep-base-command
+    :custom
+    (counsel-grep-base-command
           "rg -i -M 120 --color auto --line-number %s %s"))
   :custom
   (ivy-re-builders-alist
@@ -1097,8 +1099,27 @@ extension. Use ~S~ to use in a Dired buffer.
   (ivy-display-style 'fancy)
   (ivy-initial-inputs-alist nil))
 #+END_SRC
+I want to ignore certain file extensions when searching for a file, so I add
+them to the regexp in =counsel-find-file-ignore-regexp=.
+#+BEGIN_SRC emacs-lisp
+(defconst gm/find-file-ignore-extensions
+  '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc"
+    "synctex.gz" "fdb_latexmk"
+    "elc"
+    "pyc"))
+(defconst gm/find-file-ignore-dirs
+  '("cache/" "auto/" "ltximg/"
+    "\\.git/"))
+(setq counsel-find-file-ignore-regexp
+      (concat
+       (s-join "\\|"
+               (-flatten
+                (list
+                 (--map (concat "\\." it "\\'") gm/find-file-ignore-extensions)
+                 gm/find-file-ignore-dirs)))))
+#+END_SRC
 *** God Mode
-When =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
+In =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
 "Control"). For example, the sequence =2 n x s= goes down two lines then saves the
 buffer.
 #+BEGIN_SRC emacs-lisp
@@ -1268,6 +1289,12 @@ I normally use Hack, a monospace font.
 (set-frame-font "Hack" nil t)
 (custom-set-faces
  '(variable-pitch ((t (:family "Palatino Linotype")))))
+#+END_SRC
+Emacs 25.1 introduced the feature that the quotes used in help buffers to link
+to other objects =`these'= display as round quotes =‘these’=. We love some good
+typography, so let's enable this feature.
+#+BEGIN_SRC emacs-lisp
+(setq text-quoting-style t)
 #+END_SRC
 *** Highlighting
 **** Syntax
