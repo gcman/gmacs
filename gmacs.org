@@ -53,6 +53,11 @@ Emacs.mode-line.attributeForeground: #93a1a1
 Emacs.mode-line.attributeBackground: #002b36
 Emacs.mode-line.attributeBox: (:line-width 1 :color "#073642")
 #+END_SRC
+** Lexical Binding
+Enable lexical binding.
+#+BEGIN_SRC emacs-lisp
+;; -*- lexical-binding: t -*-
+#+END_SRC
 ** Start Server
 Always load up a server when opening Emacs.
 #+BEGIN_SRC emacs-lisp
@@ -187,7 +192,7 @@ We also require =diminish= and =bind= because I often use these keywords within
 (require 'bind-key)
 (require 'diminish)
 #+END_SRC
-** Add Elisp Directory and Custom Directory
+** Other Elisp Files
 I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
 (setq custom-file (expand-file-name "custom.el" gmacs-emacs-dir))
@@ -197,6 +202,14 @@ I put my personal information in =private.el=.
 #+BEGIN_SRC emacs-lisp
 (setq private-file (expand-file-name "private.el" gmacs-emacs-dir))
 (when (file-exists-p private-file) (load private-file))
+#+END_SRC
+** Common Libraries
+#+BEGIN_SRC emacs-lisp
+(use-package f :demand t)
+(use-package s :demand t)
+(use-package dash :demand t :config (dash-enable-font-lock))
+(eval-when-compile
+  (require 'cl))
 #+END_SRC
 * General Configuration
 ** User Interface
@@ -2157,14 +2170,16 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 =yas-minor-mode= overrides the default behaviour.
 #+BEGIN_SRC emacs-lisp
 (use-package yasnippet
-  :diminish
   :commands (yas-minor-mode yas-global-mode)
+  :hook (org-mode-hook . yas-minor-mode)
   :config
-  (yas-global-mode 1)
   (bind-key "<tab>" nil yas-minor-mode-map)
   (bind-key "TAB" nil yas-minor-mode-map)
-  (bind-key "SPC" (or (bound-and-true-p yas-maybe-expand) #'yas-expand) yas-minor-mode-map)
-  (setq yas-snippet-dirs '("~/.emacs.d/snippets")))
+  (define-key yas-minor-mode-map (kbd "SPC")
+    (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
+  :custom
+  (yas-snippet-dirs '("~/.emacs.d/snippets")))
+(diminish 'yas-minor-mode " ✂")
 #+END_SRC
 ** QuickMath
 I use a hydra for snippets that just insert/replace text in math mode and thus
@@ -2194,22 +2209,21 @@ open delimiters than closed delimiters, then the point must be inside a math
 block, and so we return true.
 #+BEGIN_SRC emacs-lisp
 (defun gm/in-math-p ()
-  (let ((begin (save-excursion
-                 (if (eq major-mode 'org-mode)
-                     (org-backward-paragraph)
-                   (backward-paragraph))
-                 (point)))
-        (end (point))
-        inline-open inline-close env-open env-close)
-    (defun gm/--in-math-p (begin-delim)
-      (concat
-       begin-delim
-       (s-join "\\|" (--map (concat "\\(" it "\\)") gm/math-environments))
-       "[\\*]?}"))
-    (setq inline-open (how-many "\\\\(" begin end)
-          inline-close (how-many "\\\\)" begin end)
-          env-open (how-many (gm/--in-math-p "\\\\begin{") begin end)
-          env-close (how-many (gm/--in-math-p "\\\\end{") begin end))
+  (defun gm/--in-math-p (begin-delim)
+    (concat
+     begin-delim
+     (s-join "\\|" (--map (concat "\\(" it "\\)") gm/math-environments))
+     "[\\*]?}"))
+  (let* ((begin (save-excursion
+                  (if (eq major-mode 'org-mode)
+                      (org-backward-paragraph)
+                    (backward-paragraph))
+                  (point)))
+         (end (point))
+         (inline-open (how-many "\\\\(" begin end))
+         (inline-close (how-many "\\\\)" begin end))
+         (env-open (how-many (gm/--in-math-p "\\\\begin{") begin end))
+         (env-close (how-many (gm/--in-math-p "\\\\end{") begin end)))
     (or (> (- inline-open inline-close) 0)
         (> (- env-open env-close) 0))))
 #+END_SRC
@@ -2307,18 +2321,19 @@ to a file.
 #+END_SRC
 Now we give the user a way to easily add snippets.
 #+BEGIN_SRC emacs-lisp
-(defun gm/new-math-snippet (snippet-key snippet-name)
-  """Creates a new math snippet. If the given 'snippet-name' does not already exist, the given snippet-key is added as another expansion for that snippet name. Otherwise, the user is prompted with a yasnippet file in which they may write the code into which the snippet should expand."""
-  (interactive
-   (list
-    (read-string "Snippet key: ")
-    (read-string "Snippet name: ")))
-  (unless (or (string= "" snippet-key)
-              (string= "" snippet-name))
-    (add-to-list 'gm/math-snippets (cons snippet-key snippet-name))
+(defun gm/new-math-snippet (key name)
+  "Creates a new math snippet. Adds the cons (KEY . NAME) to
+`gm/math-snippets'. If no snippet with the name NAME exists in
+the yasnippet directory for latex-mode, then the such a file is
+created. The user can then write the code into which te snippet
+should expand."
+  (interactive "sSnippet key: \nSnippet name: ")
+  (unless (or (s-blank-str? key)
+              (s-blank-str? name))
+    (add-to-list 'gm/math-snippets (cons key name))
     (setq file-cand (expand-file-name
                      (concat (concat (car (yas-snippet-dirs)) "/latex-mode/")
-                             snippet-name)))
+                             name)))
     (unless (file-exists-p file-cand)
       (find-file file-cand)
       (yas-expand-snippet (yas-lookup-snippet "new-math-snippet")))
@@ -2417,20 +2432,19 @@ then =/= will result in =\frac{\sin x}{|}=.
     (yas-next-field)))
 
 (defun gm/math-frac-helper (regexp)
-  (let (begin end match)
-    (when (looking-back regexp (line-beginning-position) t)
-      (setq begin (match-beginning 0))
-      (setq end (match-end 0))
-      (setq match (buffer-substring-no-properties begin end))
-      (delete-region begin end))
-    (gm/math-insert-frac-match match)))
+  (when (looking-back regexp (line-beginning-position) t)
+    (let* ((begin (match-beginning 0))
+           (end (match-end 0))
+           (match (buffer-substring-no-properties begin end)))
+      (delete-region begin end)
+      (gm/math-insert-frac-match match))))
 
 (defun gm/math-frac ()
   (interactive)
   (cond
    ((string-match "[\])]" (char-to-string (char-before)))
-    (let (match end)
-      (setq end (point))
+    (let ((end (point))
+          match)
       (backward-sexp)
       (setq match (buffer-substring-no-properties (point) end))
       (delete-region (point) end)
