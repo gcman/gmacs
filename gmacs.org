@@ -185,8 +185,8 @@ byte-compiled, Emacs will initialize packages on startup as usual.
 
   (package-initialize)
   (unless (package-installed-p 'use-package)
-    (package-refresh-contents)
-    (package-install 'use-package))
+    (package-install 'use-package)
+    (package-refresh-contents))
   (require 'use-package)
   (setq use-package-always-ensure t))
 #+END_SRC
@@ -224,11 +224,13 @@ Start GMACS in glorious fullscreen.
 (setq frame-title-format "GMACS")
 #+END_SRC
 *** Cursor
-I prefer a box cursor to a bar cursor.
+I prefer a box cursor to a bar cursor. Setting =x-stretch-cursor= means that this
+bar will stretch to the full width of the character it is on. For example, on a
+tab (evil tabs!), the cursor will look as wide as a tab.
 #+BEGIN_SRC emacs-lisp
 (when (display-graphic-p)
   (setq-default cursor-type 'box))
-(setq x-stretch-cursor 1)
+(setq x-stretch-cursor t)
 #+END_SRC
 **** Beacon Mode
 Never lose your cursor again. This package lights up your cursor when the
@@ -276,6 +278,17 @@ also have the column number.
 (column-number-mode 1)
 #+END_SRC
 *** Scrolling
+There are two types of scrolling in Emacs: keyboard scrolling and mouse
+scrolling. Both of them are quite jarring out of the box and make the screen
+lurch around. Let's fix keyboard scrolling.
+#+BEGIN_SRC emacs-lisp
+(setq redisplay-dont-pause t
+      scroll-margin 1
+      scroll-step 1
+      scroll-conservatively 10000
+      scroll-preserve-screen-position 1)
+#+END_SRC
+And make mouse scrolling smoother.
 #+BEGIN_SRC emacs-lisp
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
 (setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
@@ -453,6 +466,16 @@ Try the repeated popping up to 10 times."
 
 (advice-add 'pop-to-mark-command :around #'modi/multi-pop-to-mark)
 #+END_SRC
+**** Integrate Clipboard and Kill Ring
+If you copy something into your clipboard from, say, Firefox, then you can paste
+it into Emacs. That's all well and good. But if you kill something in Emacs
+after copying something to the clipboard, what you had in the clipboard is lost.
+That is, the clipboard cannot make use of the power that comes with the multiple
+entries in the kill ring. Let's fix that by adding the system clipboard's
+contents to the kill ring.
+#+BEGIN_SRC emacs-lisp
+(setq save-interprogram-paste-before-kill t)
+#+END_SRC
 *** Reloading
 As I am an avid Emacs hacker, it became clear to me very quickly that reloading
 Emacs is very useful when testing something out. There are three fronts on which
@@ -533,6 +556,28 @@ file. So I save lots.
 (setq auto-save-file-name-transforms `((".*" ,(expand-file-name (concat gmacs-cache-dir "auto-save")) t)))
 (setq auto-save-list-file-name (expand-file-name (concat gmacs-cache-dir "auto-save/.saves~")))
 #+END_SRC
+However, Emacs prints a lot of messages to the echo area telling you that a file
+has been autosaved. This is unnecessary, so I use [[pragmaticemacs.com/emacs/make-emacs-a-bit-quieter/][this hack]] from Pragmatic Emacs
+to quiet down the autosave. Essentially, we replace the default autosave
+function with our own silent version.
+#+BEGIN_SRC emacs-lisp
+(setq auto-save-timeout 99999)
+
+(defvar bjm/auto-save-timer nil
+  "Timer to run `bjm/auto-save-silent'")
+
+(defvar bjm/auto-save-interval 5
+  "How often in seconds of idle time to auto-save with
+`bjm/auto-save-silent'")
+
+(defun bjm/auto-save-silent ()
+  "Auto-save all buffers silently"
+  (interactive)
+  (do-auto-save t))
+
+(setq bjm/auto-save-timer
+      (run-with-idle-timer 0 bjm/auto-save-interval 'bjm/auto-save-silent))
+#+END_SRC
 Store more undo information in memory.
 #+BEGIN_SRC emacs-lisp
 (setq-default undo-limit 250000)
@@ -575,111 +620,6 @@ to whatever you want. Saves a lot of keystrokes.
 (setq-default abbrev-mode t)
 (diminish 'abbrev-mode)
 (bind-key "C-c M a" #'abbrev-mode)
-#+END_SRC
-*** Key Frequency
-#+BEGIN_SRC emacs-lisp
-(use-package keyfreq
-  :defer 2
-  :config
-  (keyfreq-mode 1)
-  (keyfreq-autosave-mode 1))
-#+END_SRC
-*** Programming
-The age old debate: tabs or spaces? I say spaces.
-#+BEGIN_SRC emacs-lisp
-(setq-default indent-tabs-mode nil
-              tab-width 2)
-#+END_SRC
-Make =TAB= indent first then perform completion, if any.
-#+BEGIN_SRC emacs-lisp
-(setq-default tab-always-indent 'complete)
-#+END_SRC
-Set up =flycheck=.
-#+BEGIN_SRC emacs-lisp :noweb yes
-(use-package flycheck
-  :commands flycheck-mode
-  :diminish (flycheck-mode " Ψ")
-  :custom (flycheck-display-errors-delay .3)
-  :hook (prog-mode . flycheck-mode))
-#+END_SRC
-Relative line numbers, useful for Vim-like navigation with God Mode.
-#+BEGIN_SRC emacs-lisp
-(use-package nlinum-relative
-  :hook (prog-mode . nlinum-relative-mode))
-#+END_SRC
-**** Flycheck Hydra
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
-(defhydra hydra-flycheck (:color blue)
-  "
-  ^
-  ^Flycheck^          ^Errors^            ^Checker^
-  ^────────^──────────^──────^────────────^───────^─────
-  _q_ quit            _<_ previous        _?_ describe
-  _M_ manual          _>_ next            _d_ disable
-  _v_ verify setup    _f_ check           _m_ mode
-  ^^                  _l_ list            _s_ select
-  ^^                  ^^                  ^^
-  "
-  ("q" nil)
-  ("<" flycheck-previous-error :color pink)
-  (">" flycheck-next-error :color pink)
-  ("?" flycheck-describe-checker)
-  ("M" flycheck-manual)
-  ("d" flycheck-disable-checker)
-  ("f" flycheck-buffer)
-  ("l" flycheck-list-errors)
-  ("m" flycheck-mode)
-  ("s" flycheck-select-checker)
-  ("v" flycheck-verify-setup))
-(bind-key "C-c f" #'hydra-flycheck/body)
-#+END_SRC
-**** Python
-Indent with 4 spaces.
-#+BEGIN_SRC emacs-lisp
-(setq-default python-indent-offset 4)
-#+END_SRC
-Turn Emacs into basically a Python IDE.
-#+BEGIN_SRC emacs-lisp
-(use-package elpy
-  :config
-  (use-package py-autopep8
-    :hook (elpy-mode . py-autopep8-enable-on-save))
-  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-  :hook
-  (python-mode . elpy-enable)
-  (python-mode . elpy-mode)
-  (elpy-mode . flycheck-mode))
-#+END_SRC
-**** Lisp
-Because =use-package= is never actually evaluated/loaded if we byte-compile
-=gmacs.el=, it is not automatically syntax-highlighted as a macro.
-#+BEGIN_SRC emacs-lisp
-(font-lock-add-keywords 'emacs-lisp-mode
-  '(("use-package " . font-lock-keyword-face)))
-#+END_SRC
-We don't want annoying comments about having, for example, =;;; package ---
-summary= at the top of an Emacs Lisp file.
-#+BEGIN_SRC emacs-lisp
-(setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
-#+END_SRC
-*** Company
-#+BEGIN_SRC emacs-lisp
-(use-package company)
-#+END_SRC
-*** Which Key Mode
-Helpful when you want to see completion for a certain sequence of prefix keys.
-#+BEGIN_SRC emacs-lisp
-(use-package which-key
-  :defer 10
-  :diminish
-  :config (which-key-mode))
-#+END_SRC
-*** Expand Region
-#+BEGIN_SRC emacs-lisp
-(use-package expand-region
-  :commands er/expand-region
-  :bind (("C-=" . er/expand-region)
-         ("M-2" . er/expand-region)))
 #+END_SRC
 *** Async Without Results Window
 #+BEGIN_SRC emacs-lisp
@@ -1019,6 +959,85 @@ Add aliases to do this easily.
 (defalias 'tp 'transpose-paragraphs)
 (bind-key "C-r" 'transpose-chars)
 #+END_SRC
+** Programming
+The age old debate: tabs or spaces? I say spaces.
+#+BEGIN_SRC emacs-lisp
+(setq-default indent-tabs-mode nil
+              tab-width 2)
+#+END_SRC
+Make =TAB= indent first then perform completion, if any.
+#+BEGIN_SRC emacs-lisp
+(setq-default tab-always-indent 'complete)
+#+END_SRC
+Set up =flycheck=.
+#+BEGIN_SRC emacs-lisp :noweb yes
+(use-package flycheck
+  :commands flycheck-mode
+  :diminish (flycheck-mode " Ψ")
+  :custom (flycheck-display-errors-delay .3)
+  :hook (prog-mode . flycheck-mode))
+#+END_SRC
+Relative line numbers, useful for Vim-like navigation with God Mode.
+#+BEGIN_SRC emacs-lisp
+(use-package nlinum-relative
+  :hook (prog-mode . nlinum-relative-mode))
+#+END_SRC
+*** Flycheck Hydra
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
+(defhydra hydra-flycheck (:color blue)
+  "
+  ^
+  ^Flycheck^          ^Errors^            ^Checker^
+  ^────────^──────────^──────^────────────^───────^─────
+  _q_ quit            _<_ previous        _?_ describe
+  _M_ manual          _>_ next            _d_ disable
+  _v_ verify setup    _f_ check           _m_ mode
+  ^^                  _l_ list            _s_ select
+  ^^                  ^^                  ^^
+  "
+  ("q" nil)
+  ("<" flycheck-previous-error :color pink)
+  (">" flycheck-next-error :color pink)
+  ("?" flycheck-describe-checker)
+  ("M" flycheck-manual)
+  ("d" flycheck-disable-checker)
+  ("f" flycheck-buffer)
+  ("l" flycheck-list-errors)
+  ("m" flycheck-mode)
+  ("s" flycheck-select-checker)
+  ("v" flycheck-verify-setup))
+(bind-key "C-c f" #'hydra-flycheck/body)
+#+END_SRC
+*** Python
+Indent with 4 spaces.
+#+BEGIN_SRC emacs-lisp
+(setq-default python-indent-offset 4)
+#+END_SRC
+Turn Emacs into basically a Python IDE.
+#+BEGIN_SRC emacs-lisp
+(use-package elpy
+  :config
+  (use-package py-autopep8
+    :hook (elpy-mode . py-autopep8-enable-on-save))
+  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+  :hook
+  (python-mode . elpy-enable)
+  (python-mode . elpy-mode)
+  (elpy-mode . flycheck-mode))
+#+END_SRC
+*** Lisp
+Because =use-package= is never actually evaluated/loaded if we byte-compile
+=gmacs.el=, it is not automatically syntax-highlighted as a macro.
+#+BEGIN_SRC emacs-lisp
+(font-lock-add-keywords 'emacs-lisp-mode
+  '(("use-package " . font-lock-keyword-face)))
+#+END_SRC
+We don't want annoying comments about having, for example, =;;; package ---
+summary= at the top of an Emacs Lisp file.
+#+BEGIN_SRC emacs-lisp
+(setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
+#+END_SRC
+
 ** Packages
 *** Async
 Authorize actions.
@@ -1026,6 +1045,33 @@ Authorize actions.
 (require 'auth-source-pass)
 (auth-source-pass-enable)
 (setq auth-sources '("~/.authinfo.gpg"))
+#+END_SRC
+*** Helpful
+This package is a more informative alternative to the default Emacs
+documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
+could.
+#+BEGIN_SRC emacs-lisp
+(use-package helpful
+  :bind
+  (("C-h f" . helpful-callable)
+   ("C-h v" . helpful-variable)
+   ("C-h k" . helpful-key)
+   ("C-h F" . helpful-function)       ; no macros
+   ("C-h C" . helpful-command)        ; only interactive functions
+  )
+  :commands (helpful-callable
+             helpful-variable
+             helpful-key
+             helpful-function
+             helpful-command))
+#+END_SRC
+*** Key Frequency
+#+BEGIN_SRC emacs-lisp
+(use-package keyfreq
+  :defer 2
+  :config
+  (keyfreq-mode 1)
+  (keyfreq-autosave-mode 1))
 #+END_SRC
 *** Tramp
 Make sure to keep backups locally and not remotely.
@@ -1163,7 +1209,8 @@ buffer.
 #+END_SRC
 Easily enter God Mode.
 #+BEGIN_SRC emacs-lisp
-;; (after! keychord (key-chord-define-global "jk" 'god-mode-all))
+(after! key-chord
+  (key-chord-define-global "jk" 'god-mode-all))
 #+END_SRC
 Indicate whether we're in God mode with the cursor colour. I've seen other
 people do this by having a bar cursor in "insert mode" (to borrow some
@@ -1250,18 +1297,28 @@ default; set PAGE-P to non-nil to rotate only the current page.
 #+END_SRC
 *** Screencast
 #+BEGIN_SRC emacs-lisp
-(autoload 'gif-screencast-toggle-pause "gif-screencast" "Start GIF Screencast" t)
-(autoload 'gif-screencast-toggle-pause "keycase" "Start GIF Screencast" t)
-(after! gif-screencast
-  (bind-key "<f8>" 'gif-screencast-toggle-pause gif-screencast-mode-map)
-  (bind-key "<f9>" 'gif-screencast-stop) gif-screencast-mode-map)
+(autoload 'gif-screencast "gif-screencast" "Start GIF Screencast" t)
+(autoload 'keycast-mode "keycast" "Start `keycast-mode'" t)
+
+(defun gm/begin-screencast ()
+  (interactive)
+  (gif-screencast)
+  (unless (bound-and-true-p keycast-mode) (keycast-mode)))
+
+(defun gm/end-screencast ()
+  (interactive)
+  (gif-screencast-stop)
+  (when (bound-and-true-p keycast-mode) (keycast-mode)))
+
+(bind-key "<f8>" #'gm/begin-screencast)
+(bind-key "<f9>" #'gm/end-screencast)
 #+END_SRC
 *** Hydra
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package hydra
   :config <<hydra>>)
 #+END_SRC
-*** Window Management
+*** Ace Window
 #+BEGIN_SRC emacs-lisp
 (use-package ace-window
   :commands (ace-window)
@@ -1278,24 +1335,24 @@ default; set PAGE-P to non-nil to rotate only the current page.
   :ensure t
   :bind (("M-g" . avy-goto-word-1)))
 #+END_SRC
-*** Helpful
-This package is a more informative alternative to the default Emacs
-documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
-could.
+*** Company
 #+BEGIN_SRC emacs-lisp
-(use-package helpful
-  :bind
-  (("C-h f" . helpful-callable)
-   ("C-h v" . helpful-variable)
-   ("C-h k" . helpful-key)
-   ("C-h F" . helpful-function)       ; no macros
-   ("C-h C" . helpful-command)        ; only interactive functions
-  )
-  :commands (helpful-callable
-             helpful-variable
-             helpful-key
-             helpful-function
-             helpful-command))
+(use-package company)
+#+END_SRC
+*** Which Key Mode
+Helpful when you want to see completion for a certain sequence of prefix keys.
+#+BEGIN_SRC emacs-lisp
+(use-package which-key
+  :defer 10
+  :diminish
+  :config (which-key-mode))
+#+END_SRC
+*** Expand Region
+#+BEGIN_SRC emacs-lisp
+(use-package expand-region
+  :commands er/expand-region
+  :bind (("C-=" . er/expand-region)
+         ("M-2" . er/expand-region)))
 #+END_SRC
 ** Theme
 I use the popular Solarized Light/Dark themes.
@@ -1921,8 +1978,9 @@ their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 #+BEGIN_SRC emacs-lisp
 (autoload 'latex-unicode-simplified "latex-pretty-symbols")
 #+END_SRC
-*** Don't Break Paragraph on Comments
-Remove comments from Org document when exporting to LaTeX.
+*** Don't Break Paragraph on Comments'
+[[https://emacs.stackexchange.com/questions/22574/orgmode-export-how-to-prevent-a-new-line-for-comment-lines][John Kitchin]] tells us how to remove comments from an Org document when exporting
+to LaTeX.
 #+BEGIN_SRC emacs-lisp
 (defun delete-org-comments (backend)
   (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
@@ -2289,6 +2347,7 @@ sending mail, I still want the buffer to look as if it was hard-wrapped. Enter
 paragraph not at the window edge but at =fill-column=.
 #+BEGIN_SRC emacs-lisp
 (use-package visual-full-column
+  :ensure nil
   :commands visual-fill-column-mode
   :hook (notmuch-message-mode . visual-fill-column-mode)
   :config (advice-add 'text-scale-adjust :after
