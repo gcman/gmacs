@@ -1204,6 +1204,30 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
                 (--map (concat "\\." it "\\'") gm/find-file-ignore-extensions)
                 gm/find-file-ignore-dirs))))
 #+END_SRC
+[[http://pragmaticemacs.com/page/6/][This post]] explains the pitfalls of the default behaviour of =ivy-yank-word= and
+how to fix them. Now we can easily search for the word at point using =swiper=.
+#+BEGIN_SRC emacs-lisp
+;; version of ivy-yank-word to yank from start of word
+(defun bjm/ivy-yank-whole-word ()
+  "Pull next word from buffer into search string."
+  (interactive)
+  (let (amend)
+    (with-ivy-window
+      ;;move to last word boundary
+      (re-search-backward "\\b")
+      (let ((pt (point))
+            (le (line-end-position)))
+        (forward-word 1)
+        (if (> (point) le)
+            (goto-char pt)
+          (setq amend (buffer-substring-no-properties pt (point))))))
+    (when amend
+      (insert (replace-regexp-in-string "  +" " " amend)))))
+
+;; bind it to M-j
+(define-key ivy-minibuffer-map (kbd "M-j") 'bjm/ivy-yank-whole-word)
+
+#+END_SRC
 *** God Mode
 In =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
 "Control"). For example, the sequence =2 n x s= goes down two lines then saves the
