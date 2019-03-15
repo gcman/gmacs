@@ -3,6 +3,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(avy-background t t)
  '(beacon-color "#b58900")
  '(beacon-push-mark 35)
  '(counsel-grep-base-command "rg -i -M 120 --color auto --line-number %s %s")
@@ -59,7 +60,7 @@
 %?")) t)
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
- '(org-gcal-dir "/home/gautam/.emacs.d/cache/")
+ '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
  '(org-refile-targets
    '(("~/org/gtd.org" :maxlevel . 3)
      ("~/org/someday.org" :level . 1)
@@ -89,9 +90,9 @@
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-strip-common-suffix t)
- '(web-mode-code-indent-offset 2)
- '(web-mode-css-indent-offset 2)
- '(web-mode-markup-indent-offset 2)
+ '(web-mode-code-indent-offset 2 t)
+ '(web-mode-css-indent-offset 2 t)
+ '(web-mode-markup-indent-offset 2 t)
  '(yas-snippet-dirs '("~/.emacs.d/snippets")))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -99,4 +100,5 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(avy-lead-face ((t (:inherit isearch-fail))))
+ '(avy-lead-face-0 ((t (:inherit org-todo :background "#002b36"))))
  '(variable-pitch ((t (:family "Palatino Linotype")))))

@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
 # name: iintegral
 # --
-\iint_{${1:T}} $2 \d{${3:x}}\d{${4:y}}$0
+\iint_{${1:T}} $2 \dd{${3:x}}\dd{${4:y}}$0

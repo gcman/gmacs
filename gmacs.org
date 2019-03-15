@@ -698,7 +698,8 @@ Default wrap at 80 characters.
 (bind-key "C-c h" 'ov-highlight/body)
 (bind-key "C-c C-h" 'ov-highlight/body)
 #+END_SRC
-*** Spell Checking
+*** Spelling
+**** Setup
 The article [[https://joelkuiper.eu/spellcheck_emacs][Spell checking in Emacs]] helped me out in setting up spellchecking in
 my own Emacs configuration.
 
@@ -747,6 +748,7 @@ in Emacs]].
 
 (add-hook 'org-mode-hook #'endless/org-ispell)
 #+END_SRC
+**** Previous Error
 [[http://pragmaticemacs.com/emacs/jump-back-to-previous-typo/][This article]] thinks that going to the previous error is more useful than going
 to the next one. This is usually true, and combines well with the abbreviation
 feature below.
@@ -793,6 +795,7 @@ We replace =flyspell='s next error command with the above previous error command
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
 ([remap flyspell-goto-next-error] . flyspell-goto-previous-error)
 #+END_SRC
+**** Abbrevs and Autocorrect
 Inspired by [[http://endlessparentheses.com/ispell-and-abbrev-the-perfect-auto-correct.html][Artur Malabarba]] and Howard Abrams (I had to modify it because Howard
 Abrams' version did not seem to work) With this function, we can go to the
 previous error and correct it, then add it to our global abbreviation list. As
@@ -800,8 +803,8 @@ long as we spell the word incorrectly the same way, we'll never make that typo
 again.
 #+BEGIN_SRC emacs-lisp
 (defun gm/ispell-word-then-abbrev (p)
-  "Call `ispell-word'.  After create an abbrev for the correction made.
-With prefix P, create local abbrev.  Otherwise it will be
+  "Call `ispell-word'.  After create an abbrev for the correction
+made. With prefix P, create local abbrev. Otherwise it will be
 global."
   (interactive "P")
   (flyspell-goto-previous-error 1)
@@ -813,10 +816,8 @@ global."
       (define-abbrev
         (if p local-abbrev-table global-abbrev-table)
         bef aft)
-      ;; (abbrev-edit-save-to-file abbrev-file-name)
-      (message "\"%s\" now expands to \"%s\" %s"
-               bef aft (if p "locally" "globally"))
-      )))
+      (message "\"%s\" now expands to \"%s\" %sally"
+               bef aft (if p "loc" "glob")))))
 #+END_SRC
 The default binding on =C-;= is =flyspell='s built-in auto-correct function.
 However, it doesn't always give perfect matches, and its use case is usurped by
@@ -824,7 +825,7 @@ the above function.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
 ([remap flyspell-auto-correct-previous-word] . gm/ispell-word-then-abbrev)
 #+END_SRC
-*** Dubcaps Mode
+**** Correct Double Capitals
 Taken from [[https://emacs.stackexchange.com/questions/13970/fixing-double-capitals-as-i-type/13975#13975][Stack Exchange]]. It's a piece of code with a great impact to
 complexity ratio. Whenever you're a bit slow in releasing the Shift key and type
 something like "THis," =dubcaps-mode= converts it to "This" for you automatically.
@@ -1320,7 +1321,9 @@ default; set PAGE-P to non-nil to rotate only the current page.
 *** Hydra
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package hydra
-  :config <<hydra>>)
+  :defer 3
+  :config
+  <<hydra>>)
 #+END_SRC
 *** Ace Window
 #+BEGIN_SRC emacs-lisp
@@ -1337,7 +1340,8 @@ default; set PAGE-P to non-nil to rotate only the current page.
 #+BEGIN_SRC emacs-lisp
 (use-package avy
   :ensure t
-  :bind (("M-g" . avy-goto-word-1)))
+  :bind (("M-g" . avy-goto-word-1))
+  :custom (avy-background t))
 #+END_SRC
 *** Company
 #+BEGIN_SRC emacs-lisp
@@ -1603,6 +1607,11 @@ Use =ibuffer=.
 I never use this command but keep accidentally hitting it instead of =C-x C-f=.
 #+BEGIN_SRC emacs-lisp
 (unbind-key "C-x f")
+#+END_SRC
+*** Delete Frame
+The default =C-x 5 0= is too clunky for this.
+#+BEGIN_SRC emacs-lisp
+(bind-key "C-x w" #'delete-frame)
 #+END_SRC
 ** Open Shell
 I have started to use =eshell= as my primary shell. However, I sometimes want to
@@ -2037,8 +2046,8 @@ Where should it be?
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-preview-latex-image-directory "cache/ltximg/")
 #+END_SRC
-Obtained from [[https://gist.github.com/cvcore/760008a4dfb2eadf42afdc9cf01ef979][Charles Wang]]. I've modified it to be toggleable and to run a hook
-on leaving a math fragment.
+Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
+leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
 (defvar cw/org-last-fragment nil
@@ -2055,7 +2064,7 @@ for preview inside org-mode. Returns nil at-displayable fragments."
          (fr-type (car fr)))
     (when (memq fr-type cw/org-valid-fragment-type)
       ;; \(...\)| cursor there should not result in active fragment
-      (unless (eq (1+ (point)) (org-element-property :end fr))
+      (unless (eq (point) (org-element-property :end fr))
         (list fr-type
               (org-element-property :begin fr))))))
 
@@ -2120,7 +2129,7 @@ for preview inside org-mode. Returns nil at-displayable fragments."
             cw/org-last-fragment)
 
            ;; reformat old fragment
-           (gm/reformat-fragment cw/org-last-fragment)
+           ;; (gm/reformat-fragment cw/org-last-fragment)
            ;; put image back on, provided that there is still a fragment here.
            (save-excursion
              (cw/org-preview-fragment cw/org-last-fragment))

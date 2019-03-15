@@ -77,6 +77,7 @@
     ("inadvertantly" "inadvertently" nil :count 0)
     ("proerty" "property" nil :count 0)
     ("sherrif" "sheriff" nil :count 0)
+    ("incorectly" "incorrectly" nil :count 0)
    ))
 
 (define-abbrev-table 'gnus-group-mode-abbrev-table '())

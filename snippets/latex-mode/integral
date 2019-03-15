@@ -2,4 +2,4 @@
 # name: integral
 # key: math-integral
 # --
-\int $1 \d{${2:x}}$0
+\int $1 \dd{${2:x}}$0
