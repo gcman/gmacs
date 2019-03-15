@@ -187,7 +187,8 @@ byte-compiled, Emacs will initialize packages on startup as usual.
   (unless (package-installed-p 'use-package)
     (package-refresh-contents)
     (package-install 'use-package))
-  (require 'use-package))
+  (require 'use-package)
+  (setq use-package-always-ensure t))
 #+END_SRC
 We also require =diminish= and =bind= because I often use these keywords within
 =use-package= declarations.
@@ -654,7 +655,7 @@ Because =use-package= is never actually evaluated/loaded if we byte-compile
 =gmacs.el=, it is not automatically syntax-highlighted as a macro.
 #+BEGIN_SRC emacs-lisp
 (font-lock-add-keywords 'emacs-lisp-mode
-  '(("use-package" . font-lock-keyword-face)))
+  '(("use-package " . font-lock-keyword-face)))
 #+END_SRC
 We don't want annoying comments about having, for example, =;;; package ---
 summary= at the top of an Emacs Lisp file.
@@ -885,6 +886,36 @@ the above function.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
 ([remap flyspell-auto-correct-previous-word] . gm/ispell-word-then-abbrev)
 #+END_SRC
+*** Dubcaps Mode
+Taken from [[https://emacs.stackexchange.com/questions/13970/fixing-double-capitals-as-i-type/13975#13975][Stack Exchange]]. It's a piece of code with a great impact to
+complexity ratio. Whenever you're a bit slow in releasing the Shift key and type
+something like "THis," =dubcaps-mode= converts it to "This" for you automatically.
+This isn't really a hindrance, because if I actually want two capital letters in
+a row, I almost never want a lowercase letter to follow.
+#+BEGIN_SRC emacs-lisp
+(defun dcaps-to-scaps ()
+  "Convert word in DOuble CApitals to Single Capitals."
+  (interactive)
+  (and (= ?w (char-syntax (char-before)))
+       (save-excursion
+         (and (if (called-interactively-p)
+                  (skip-syntax-backward "w")
+                (= -3 (skip-syntax-backward "w")))
+              (let (case-fold-search)
+                (looking-at "\\b[[:upper:]]\\{2\\}[[:lower:]]"))
+              (capitalize-word 1)))))
+
+(define-minor-mode dubcaps-mode
+  "Toggle `dubcaps-mode'.  Converts words in DOuble CApitals to
+Single Capitals as you type."
+  :init-value nil
+  :lighter (" DC")
+  (if dubcaps-mode
+      (add-hook 'post-self-insert-hook #'dcaps-to-scaps nil 'local)
+    (remove-hook 'post-self-insert-hook #'dcaps-to-scaps 'local)))
+
+(add-hook 'text-mode-hook #'dubcaps-mode)
+#+END_SRC
 *** Text Manipulation
 **** Cut/Paste
 From the infamous Xah Lee.
@@ -1045,10 +1076,9 @@ Have the most up-to-date version of the buffer when using Dired.
 #+END_SRC
 **** Declutter
 #+BEGIN_SRC emacs-lisp
-(defun xah-dired-mode-setup ()
-  "to be run as hook for `dired-mode'."
+(defun gm/dired-mode-setup ()
   (dired-hide-details-mode 1))
-(add-hook 'dired-mode-hook #'xah-dired-mode-setup)
+(add-hook 'dired-mode-hook #'gm/dired-mode-setup)
 #+END_SRC
 **** Copy and Delete
 Allow Dired to recursively copy and delete directories. ~always~ ensures that no
@@ -1119,10 +1149,9 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
 (setq counsel-find-file-ignore-regexp
       (concat
        (s-join "\\|"
-               (-flatten
-                (list
-                 (--map (concat "\\." it "\\'") gm/find-file-ignore-extensions)
-                 gm/find-file-ignore-dirs)))))
+               (append
+                (--map (concat "\\." it "\\'") gm/find-file-ignore-extensions)
+                gm/find-file-ignore-dirs))))
 #+END_SRC
 *** God Mode
 In =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
@@ -1249,6 +1278,25 @@ default; set PAGE-P to non-nil to rotate only the current page.
   :ensure t
   :bind (("M-g" . avy-goto-word-1)))
 #+END_SRC
+*** Helpful
+This package is a more informative alternative to the default Emacs
+documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
+could.
+#+BEGIN_SRC emacs-lisp
+(use-package helpful
+  :bind
+  (("C-h f" . helpful-callable)
+   ("C-h v" . helpful-variable)
+   ("C-h k" . helpful-key)
+   ("C-h F" . helpful-function)       ; no macros
+   ("C-h C" . helpful-command)        ; only interactive functions
+  )
+  :commands (helpful-callable
+             helpful-variable
+             helpful-key
+             helpful-function
+             helpful-command))
+#+END_SRC
 ** Theme
 I use the popular Solarized Light/Dark themes.
 #+BEGIN_SRC emacs-lisp
@@ -1295,12 +1343,6 @@ I normally use Hack, a monospace font.
 (set-frame-font "Hack" nil t)
 (custom-set-faces
  '(variable-pitch ((t (:family "Palatino Linotype")))))
-#+END_SRC
-Emacs 25.1 introduced the feature that the quotes used in help buffers to link
-to other objects =`these'= display as round quotes =‘these’=. We love some good
-typography, so let's enable this feature.
-#+BEGIN_SRC emacs-lisp
-(setq text-quoting-style t)
 #+END_SRC
 *** Highlighting
 **** Syntax
@@ -1758,9 +1800,9 @@ points.
 In a similar vein, it helps the visual hierarchy to have text indented in
 accordance with the level of the heading, so I always use =org-indent-mode=.
 Because it's always active, it's best to diminish it.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(diminish 'org-indent-mode)
+#+BEGIN_SRC emacs-lisp
 (setq org-startup-indented t)
+(diminish 'org-indent-mode)
 #+END_SRC
 *** Emphasis Markers
 It looks much cleaner if we omit emphasis markers such as the =*= asterisks that
@@ -1795,7 +1837,7 @@ We add hooks to particular languages to activate pretty symbols. In this case I
 don't add the lambda fontification, just activate =pretty-symbols-mode=, because
 the default variable =lisp-prettify-symbols-mode= already has this pair.
 #+BEGIN_SRC emacs-lisp
-(add-hook 'lisp-mode-hook
+(add-hook 'emacs-lisp-mode-hook
           (lambda () (prettify-symbols-mode)))
 #+END_SRC
 Then, we modify =org-src-font-lock-fontify-block= (the function that fontifies Org
@@ -2225,11 +2267,6 @@ more rigorous system of encryption.
       smtpmail-smtp-server gm/send-mail-server
       smtpmail-smtp-service 587)
 #+END_SRC
-Nice stuff to have for sending mail.
-#+BEGIN_SRC emacs-lisp
-(setq message-kill-buffer-on-exit t
-      notmuch-address-command 'internal)
-#+END_SRC
 Some commonly used searches.
 #+BEGIN_SRC emacs-lisp
 (setq notmuch-saved-searches
@@ -2239,7 +2276,26 @@ Some commonly used searches.
         (:name "drafts" :query "tag:draft" :key "d")
         (:name "all mail" :query "*" :key "a" :sort-order newest-first)))
 #+END_SRC
-Accessing mail, including checking for new mail.
+Nice stuff to have for sending mail.
+#+BEGIN_SRC emacs-lisp
+(setq message-kill-buffer-on-exit t
+      notmuch-address-command 'internal)
+#+END_SRC
+Most modern mail clients expect mail to be soft-wrapped. That is, the paragraph
+conforms to the width of the viewer the person reading the mail is using, not to
+the sender's preference of 80 characters or whatever it may be. However, when
+sending mail, I still want the buffer to look as if it was hard-wrapped. Enter
+=visual-fill-column-mode=. This mode works with =visual-line-mode= to wrap the
+paragraph not at the window edge but at =fill-column=.
+#+BEGIN_SRC emacs-lisp
+(use-package visual-full-column
+  :commands visual-fill-column-mode
+  :hook (notmuch-message-mode . visual-fill-column-mode)
+  :config (advice-add 'text-scale-adjust :after
+                      #'visual-fill-column-adjust))
+#+END_SRC
+Accessing mail. When we first open up =notmuch=, I want to start a system script
+that checks for new mail periodically.
 #+BEGIN_SRC emacs-lisp
 (defun gm/open-mail ()
   (interactive)
@@ -2260,13 +2316,13 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 (use-package yasnippet
   :commands (yas-minor-mode yas-global-mode)
   :config
-  (yas-global-mode)
   (bind-key "<tab>" nil yas-minor-mode-map)
   (bind-key "TAB" nil yas-minor-mode-map)
   (define-key yas-minor-mode-map (kbd "SPC")
     (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
   :custom
   (yas-snippet-dirs '("~/.emacs.d/snippets")))
+(yas-global-mode 1)
 (diminish 'yas-minor-mode " ✂")
 #+END_SRC
 ** QuickMath
