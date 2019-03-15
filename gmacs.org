@@ -177,12 +177,10 @@ byte-compiled, Emacs will initialize packages on startup as usual.
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile
   (require 'package)
-
-  (unless (assoc-default "melpa" package-archives)
-    (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
-  (unless (assoc-default "gnu" package-archives)
-    (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t))
-
+  (setq package-archives
+        '(("melpa" . "https://melpa.org/packages/")
+          ("gnu" . "https://elpa.gnu.org/packages/")
+          ("org" . "http://orgmode.org/elpa/")))
   (package-initialize)
   (unless (package-installed-p 'use-package)
     (package-install 'use-package)
@@ -1064,6 +1062,12 @@ could.
              helpful-key
              helpful-function
              helpful-command))
+#+END_SRC
+*** Paradox
+#+BEGIN_SRC emacs-lisp
+(use-package paradox
+  :commands (package-initialize)
+  :config (paradox-enable))
 #+END_SRC
 *** Key Frequency
 #+BEGIN_SRC emacs-lisp
