@@ -1377,14 +1377,13 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
 
 (defconst gm/find-file-ignore-dirs
   '("cache/" "auto/" "ltximg/"
-    "\\.git/"))
+    ".git/"))
 
 (setq counsel-find-file-ignore-regexp
-      (concat
-       (s-join "\\|"
+       (regexp-opt
                (append
-                (--map (concat "\\." it "\\'") gm/find-file-ignore-extensions)
-                gm/find-file-ignore-dirs))))
+                (--map (concat "." it) gm/find-file-ignore-extensions)
+                gm/find-file-ignore-dirs)))
 #+END_SRC
 [[http://pragmaticemacs.com/page/6/][This post]] explains the pitfalls of the default behaviour of =ivy-yank-word= and
 how to fix them. Now we can easily search for the word at point using =swiper=.
@@ -2560,10 +2559,7 @@ block, and so we return true.
 #+BEGIN_SRC emacs-lisp
 (defun gm/in-math-p ()
   (defun gm/--in-math-p (begin-delim)
-    (concat
-     begin-delim
-     (s-join "\\|" (--map (concat "\\(" it "\\)") gm/math-environments))
-     "[\\*]?}"))
+    (concat begin-delim (regexp-opt gm/math-environments) "[\\*]?}"))
   (let* ((begin (save-excursion
                   (if (eq major-mode 'org-mode)
                       (org-backward-paragraph)
