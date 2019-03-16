@@ -1380,10 +1380,11 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
     ".git/"))
 
 (setq counsel-find-file-ignore-regexp
-       (regexp-opt
-               (append
-                (--map (concat "." it) gm/find-file-ignore-extensions)
-                gm/find-file-ignore-dirs)))
+      (concat (concat (regexp-opt
+                       (--map (concat "." it) gm/find-file-ignore-extensions))
+                      "\\'")            ; make sure we only match end of filename
+              (regexp-opt
+               gm/find-file-ignore-dirs)))
 #+END_SRC
 [[http://pragmaticemacs.com/page/6/][This post]] explains the pitfalls of the default behaviour of =ivy-yank-word= and
 how to fix them. Now we can easily search for the word at point using =swiper=.
