@@ -3,7 +3,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(avy-background t t)
+ '(avy-background t)
  '(beacon-color "#b58900")
  '(beacon-push-mark 35)
  '(counsel-grep-base-command "rg -i -M 120 --color auto --line-number %s %s")
@@ -60,6 +60,7 @@
 %?")) t)
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
+ '(org-ellipsis "⬎")
  '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
  '(org-refile-targets
    '(("~/org/gtd.org" :maxlevel . 3)
@@ -69,7 +70,7 @@
  '(org-todo-keywords
    '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
  '(package-selected-packages
-   '(persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap))
+   '(restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap))
  '(paradox-github-token t)
  '(pdf-misc-print-programm "/usr/bin/gtklp")
  '(safe-local-variable-values
@@ -85,8 +86,8 @@
      (org-hugo-auto-export-on-save . t)))
  '(setq "/home/gautam/.emacs.d/abbrevs.el" t)
  '(setq-default t t)
- '(smex-history-length 50 t)
- '(smex-save-file "/home/gautam/.emacs.d/cache/smex" t)
+ '(smex-history-length 50)
+ '(smex-save-file "/home/gautam/.emacs.d/cache/smex")
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-strip-common-suffix t)

@@ -628,24 +628,37 @@ will be killed."
             (message "Killed non-existing/unreadable file buffer: %s" filename))))))
   (message "Finished reverting buffers."))
 #+END_SRC
-Finally, we sometimes need the biggest of guns. To completely reload Emacs, we
-just run the procedure of =init.el= again. Usually, we want to load the
-byte-compiled version, but for those cases where we just want to load the
-uncompiled =.el= file, a prefix argument does the job. I disable =after-save-hook=
-because I set up asynchronous tangling and byte-compilation [[#tangle-async][here]].
+Other times, we need to reload Emacs fully. To completely reload Emacs, we just
+run the procedure of =init.el= again. Usually, we want to load the byte-compiled
+version, but for those cases where we just want to load the uncompiled =.el= file,
+a prefix argument does the job. I disable =after-save-hook= because I set up
+asynchronous tangling and byte-compilation [[#tangle-async][here]].
 #+BEGIN_SRC emacs-lisp
 (defun gm/reload (p)
   (interactive "P")
-  (let ((after-save-hook nil))
+  (let ((after-save-hook nil)
+        (org (expand-file-name "gmacs.org" gmacs-emacs-dir))
+        (el (expand-file-name "gmacs.el" gmacs-emacs-dir))
+        (elc (expand-file-name "gmacs.elc" gmacs-emacs-dir))
+        (init (expand-file-name "init.el" gmacs-emacs-dir)))
     (if p
-        (org-babel-load-file (expand-file-name "gmacs.org" gmacs-emacs-dir))
-      (org-babel-tangle-file (expand-file-name "gmacs.org" gmacs-emacs-dir)
-                             (expand-file-name "gmacs.el" gmacs-emacs-dir))
-      (byte-compile-file (expand-file-name "gmacs.el" gmacs-emacs-dir))
-      (load-file (expand-file-name "init.el" gmacs-emacs-dir))
+        (org-babel-load-file org)
+      (when (file-newer-than-file-p org elc)
+        (org-babel-tangle-file org el)
+        (byte-recompile-file el))
+      (load-file init)
       (run-hooks 'after-init-hook))))
 
 (bind-key "C-c r" 'gm/reload)
+#+END_SRC
+Finally, I hope it doesn't come to this too often, but sometimes we must close
+Emacs entirely and start a new session. I know, I can feel the agony. =C-x C-c=,
+then move your mouse to click Emacs again! Luckily, there's a package for that.
+This kills Emacs and starts a new session.
+#+BEGIN_SRC emacs-lisp
+(use-package restart-emacs
+  :commands restart-emacs
+  :bind (("C-c R" . restart-emacs)))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -1518,7 +1531,24 @@ default; set PAGE-P to non-nil to rotate only the current page.
   :config
   <<hydra>>)
 #+END_SRC
-*** Ace Window
+*** Window Management
+I don't like the default Emacs functionality of splitting windows but not
+switching to the new window. I find myself pressing =M-3 C-x 0= pretty much every
+time I split the window.
+#+BEGIN_SRC emacs-lisp
+(defun gm/split-window-below-and-switch ()
+  (interactive)
+  (split-window-below)
+  (other-window 1))
+
+(defun gm/split-window-right-and-switch ()
+  (interactive)
+  (split-window-right)
+  (other-window 1))
+#+END_SRC
+To manage my windows. I use =ace-window=. The nice thing about this is that when
+you use the equivalent of =other-window=, you don't have to remember which window
+the "other one" is. Instead, you select the window with a number.
 #+BEGIN_SRC emacs-lisp
 (use-package ace-window
   :commands (ace-window)
@@ -1526,9 +1556,9 @@ default; set PAGE-P to non-nil to rotate only the current page.
          ("M-o" . ace-window)
          ("C-x 0" . delete-window)
          ("M-1" . delete-other-windows)
-         ("M-3" . split-window-right)
-         ("M-4" . split-window-below)))
-#+END_SRC
+         ("M-3" . gm/split-window-right-and-switch)
+         ("M-4" . gm/split-window-below-and-switch)))
+#+END_SRC1
 *** Avy
 #+BEGIN_SRC emacs-lisp
 (use-package avy
