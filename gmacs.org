@@ -2553,8 +2553,7 @@ sending mail, I still want the buffer to look as if it was hard-wrapped. Enter
 =visual-fill-column-mode=. This mode works with =visual-line-mode= to wrap the
 paragraph not at the window edge but at =fill-column=.
 #+BEGIN_SRC emacs-lisp
-(use-package visual-full-column
-  :ensure nil
+(use-package visual-fill-column
   :commands visual-fill-column-mode
   :hook (notmuch-message-mode . visual-fill-column-mode)
   :config (advice-add 'text-scale-adjust :after
@@ -2563,7 +2562,7 @@ paragraph not at the window edge but at =fill-column=.
 #+END_SRC
 Accessing mail. When we first open up =notmuch=, I want to start a system script
 that checks for new mail periodically.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
+#+BEGIN_SRC emacs-lisp
 (defun gm/open-mail ()
   (interactive)
   (shell-command "systemctl --user start checkmail.timer")
@@ -2596,13 +2595,28 @@ Then we get a function to actually send the mail.
 (defun gm/org-htmlize-and-send ()
   "When composing an Org HTML message, htmlize and send it."
   (interactive)
-  (when *compose-html-org*
+  (when (bound-and-true-p *compose-html-org*)
     (setq *compose-html-org* nil)
     (notmuch-message-mode)
     (org-mime-htmlize)
     (notmuch-mua-send-and-exit)))
 
 (add-hook 'org-ctrl-c-ctrl-c-hook 'gm/org-htmlize-and-send t)
+#+END_SRC
+Now for some customization. If we're sending HTML, we might as well make it
+pretty. Let's nicely offset block quotes.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mime-html-hook
+          (lambda ()
+            (org-mime-change-element-style
+             "blockquote" "border-left: 2px solid gray; padding-left: 4px;")))
+#+END_SRC
+We definitely don't want to export the table of contents or section numbers.
+It's an email, not an essay.
+#+BEGIN_SRC emacs-lisp
+(setq org-mime-export-options '(:section-numbers nil
+                                :with-author nil
+                                :with-toc nil))
 #+END_SRC
 * Snippets
 ** Setup
