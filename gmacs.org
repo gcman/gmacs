@@ -207,7 +207,7 @@ I put my personal information in =private.el=.
 #+END_SRC
 ** Common Libraries
 #+BEGIN_SRC emacs-lisp
-(use-package f :demand t)
+(use-package async :commands (async-start))
 (use-package s :demand t)
 (use-package dash :demand t :config (dash-enable-font-lock))
 (eval-when-compile
@@ -300,8 +300,98 @@ that are wrapped with ~visual-line-mode~ do not begin at character 0, but from
 where they are indented.
 #+BEGIN_SRC emacs-lisp
 (use-package adaptive-wrap
-  :commands adaptive-wrap-prefix-mode
+  :commands (adaptive-wrap-prefix-mode)
   :hook (visual-line-mode . adaptive-wrap-prefix-mode))
+#+END_SRC
+*** Theme
+I use the popular Solarized Light/Dark themes.
+#+BEGIN_SRC emacs-lisp
+(use-package solarized-theme
+  :demand t
+  :config (load-theme 'solarized-dark))
+#+END_SRC
+Also, it turns out we can style tooltips as well.
+#+BEGIN_SRC emacs-lisp
+(setq x-gtk-use-system-tooltips nil)
+#+END_SRC
+I switch between the light and dark variants depending on my surroundings. If I
+am in a brightly lit room, I prefer to use the light theme, because the dark
+theme allows too much screen glare. At night (really, at most times, but in
+particular at night) I prefer the dark theme, which, unsurprisingly, spits less
+light into my eyes.
+
+The way I switch themes is, admittedly, somewhat hacky. I set a boolean (by
+default true) that is true if the active theme is dark, false if light. What can
+I say? I prefer the dark side. Then my switch function toggles that value and
+changes the theme and the corresponding colours for =pdf-view-mode=. I like to
+view my PDFs not in black and white, but in my theme's colours. To make sure
+everything looks right, including the colours in PDFs and the asterisks
+for headlines in Org Mode (I hide them with =org-bullets-mode= but one of them
+comes back when I switch themes, for some reason), I refresh all open buffers.
+#+BEGIN_SRC emacs-lisp
+(setq gm/dark t)
+(defun gm/switch-theme ()
+  (interactive)
+  (togglef gm/dark)
+  (if gm/dark
+      (progn (load-theme 'solarized-light)
+             (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
+    (load-theme 'solarized-dark)
+    (setq pdf-view-midnight-colors '("#839496" . "#002b36")))
+  (modi/revert-all-file-buffers))
+
+(bind-key "C-c t" #'gm/switch-theme)
+#+END_SRC
+**** Font Face
+I normally use Hack, a monospace font.
+#+BEGIN_SRC emacs-lisp
+(set-face-font 'default "Hack")
+(set-frame-font "Hack" nil t)
+(custom-set-faces
+ '(variable-pitch ((t (:family "Palatino Linotype")))))
+#+END_SRC
+**** Syntax Highlighting
+I want syntax highlighting everywhere...
+#+BEGIN_SRC emacs-lisp
+(global-font-lock-mode 1)
+#+END_SRC
+except in massive buffers, where it probably wouldn't be that useful (syntax
+highlighting doesn't help you read a CSV file with thousands of lines) and would
+definitely slow things down. In such buffers I also remove line numbers.
+#+BEGIN_SRC emacs-lisp
+(defun buffer-too-big-p ()
+  (or (> (buffer-size) (* 5000 80))
+      (> (line-number-at-pos (point-max)) 5000)))
+(add-hook 'prog-mode-hook
+          (lambda ()
+            ;; turn off `nlinum-relative-mode' when there are more than 5000 lines
+            (when (buffer-too-big-p)
+              (nlinum-relative-mode -1)
+              (font-lock-mode -1))))
+#+END_SRC
+Normally, I want the opening and closing parentheses highlighted. I used to set
+=show-paren-style= to =expression=, all that highlighting was not really necessary.
+#+BEGIN_SRC emacs-lisp
+(setq blink-matching-paren nil)
+(show-paren-mode t)
+(setq show-paren-delay 0)
+(setq show-paren-style 'parenthesis)
+#+END_SRC
+When I'm doing dedicated editing, it's sometimes nice to have more colours,
+especially for Lisps such as Emacs Lisp. However, it's too distracting in org
+mode source blocks, and it also slows down the point's movement, so I find it
+best not to enable it globally.
+#+BEGIN_SRC emacs-lisp
+(use-package rainbow-delimiters
+  :hook (emacs-lisp-mode . rainbow-delimiters-mode))
+#+END_SRC
+Finally, =rainbow-mode= highlights hex-color strings with their colour. Very handy
+for choosing colours, especially when editing CSS files.
+#+BEGIN_SRC emacs-lisp
+(use-package rainbow-mode
+  :defer 2
+  :diminish
+  :config (rainbow-mode 1))
 #+END_SRC
 ** Quality of Life
 *** Macros
@@ -474,6 +564,23 @@ contents to the kill ring.
 #+BEGIN_SRC emacs-lisp
 (setq save-interprogram-paste-before-kill t)
 #+END_SRC
+*** Work with Protected Files
+Authorize actions.
+#+BEGIN_SRC emacs-lisp
+(require 'auth-source-pass)
+(auth-source-pass-enable)
+(setq auth-sources '("~/.authinfo.gpg"))
+#+END_SRC
+
+*** Persistent Scratch Buffer
+The =*scratch*= buffer has come in handy for me many times when I want to quickly
+test out some Elisp. It would be nice to have it saved; I could clear it easily if
+I wanted to. Luckily, there's a package that does just that.
+#+BEGIN_SRC emacs-lisp
+(use-package persistent-scratch
+  :config
+  (persistent-scratch-setup-default))
+#+END_SRC
 *** Reloading
 As I am an avid Emacs hacker, it became clear to me very quickly that reloading
 Emacs is very useful when testing something out. There are three fronts on which
@@ -524,17 +631,19 @@ will be killed."
 Finally, we sometimes need the biggest of guns. To completely reload Emacs, we
 just run the procedure of =init.el= again. Usually, we want to load the
 byte-compiled version, but for those cases where we just want to load the
-uncompiled =.el= file, a prefix argument does the job.
+uncompiled =.el= file, a prefix argument does the job. I disable =after-save-hook=
+because I set up asynchronous tangling and byte-compilation [[#tangle-async][here]].
 #+BEGIN_SRC emacs-lisp
 (defun gm/reload (p)
   (interactive "P")
-  (if p
-      (org-babel-load-file (expand-file-name "gmacs.org" gmacs-emacs-dir))
-    (org-babel-tangle-file (expand-file-name "gmacs.org" gmacs-emacs-dir)
-                           (expand-file-name "gmacs.el" gmacs-emacs-dir))
-    (byte-compile-file (expand-file-name "gmacs.el" gmacs-emacs-dir))
-    (load-file (expand-file-name "init.el" gmacs-emacs-dir))
-    (run-hooks 'after-init-hook)))
+  (let ((after-save-hook nil))
+    (if p
+        (org-babel-load-file (expand-file-name "gmacs.org" gmacs-emacs-dir))
+      (org-babel-tangle-file (expand-file-name "gmacs.org" gmacs-emacs-dir)
+                             (expand-file-name "gmacs.el" gmacs-emacs-dir))
+      (byte-compile-file (expand-file-name "gmacs.el" gmacs-emacs-dir))
+      (load-file (expand-file-name "init.el" gmacs-emacs-dir))
+      (run-hooks 'after-init-hook))))
 
 (bind-key "C-c r" 'gm/reload)
 #+END_SRC
@@ -607,7 +716,8 @@ Open files to the same place in which they were last closed.
 #+END_SRC
 I like having lots of =recentf= files.
 #+BEGIN_SRC emacs-lisp
-(setq recentf-auto-cleanup 'never)
+(setq recentf-max-saved-items 1000
+      recentf-auto-cleanup 'never)
 #+END_SRC
 *** Abbreviations
 Abbrevs are a pretty common and useful feature in editors. You can define
@@ -647,6 +757,72 @@ Will work on both org-mode and any mode that accepts plain html."
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c k" . endless/insert-key)
+#+END_SRC
+*** Transpose Windows
+Every now and then, you'll want to switch the order of the buffers in Emacs.
+This usually happens to me if I have something I'm reading in one buffer (code
+reference, PDF) and something I'm writing in the other. I got this from
+[[https://github.com/bbatsov/crux][bbatsov/crux]].
+#+BEGIN_SRC emacs-lisp
+(defun gm/transpose-windows (arg)
+  "Transpose the buffers shown in two windows.
+Prefix ARG determines if the current windows buffer is swapped
+with the next or previous window, and the number of
+transpositions to execute in sequence."
+  (interactive "p")
+  (let ((selector (if (>= arg 0) 'next-window 'previous-window)))
+    (while (/= arg 0)
+      (let ((this-win (window-buffer))
+            (next-win (window-buffer (funcall selector))))
+        (set-window-buffer (selected-window) next-win)
+        (set-window-buffer (funcall selector) this-win)
+        (select-window (funcall selector)))
+      (setq arg (if (> arg 0) (1- arg) (1+ arg))))))
+
+(bind-key "C-x 4 t" #'gm/transpose-windows)
+#+END_SRC
+*** Tangle Config File
+:PROPERTIES:
+:CUSTOM_ID: tangle-async
+:END:
+I used to have my =init.el= set up so that, if =gmacs.elc= did not exist, it would
+tangle =gmacs.org=. This unfortunately means that when I clear out the
+byte-compiled file, Emacs takes a long time to start up (about 6 seconds). To
+solve this, I tangle this very file on save.
+
+First, we set up a function to do the tangling. We have to, for example, refer
+to =user-emacs-directory= and not =gmacs-emacs-directory=, and run =(require
+'ob-tangle)= because the function is run in its own subprocess (this is what
+allows it to be asynchronous).
+#+BEGIN_SRC emacs-lisp
+(defun gm/tangle-gmacs-helper ()
+  (let ((src (expand-file-name "gmacs.org" user-emacs-directory))
+        (dst (expand-file-name "gmacs.el" user-emacs-directory)))
+    (require 'ob-tangle)
+    (org-babel-tangle-file src dst)
+    (byte-recompile-file dst)
+    (with-current-buffer byte-compile-log-buffer
+      (buffer-string))))
+#+END_SRC
+Then, we wrap this in an asynchronous process. I only really want to know about
+this process if it failed.
+#+BEGIN_SRC emacs-lisp
+(defun gm/tangle-gmacs ()
+  (interactive)
+  (async-start (symbol-function #'gm/tangle-gmacs-helper)
+               (lambda (result)
+                 (unless result
+                   (message "GMACS unsuccessfully tangled: %s" result)))))
+#+END_SRC
+Finally. we wrap this in a function that checks whether we're in the right file.
+It would be inefficient to tangle the configuration file a different file was
+edited and saved.
+#+BEGIN_SRC emacs-lisp
+(defun gm/tangle-if-config ()
+    (when (string-suffix-p "gmacs.org" (buffer-file-name))
+      (gm/tangle-gmacs)))
+
+(add-hook 'after-save-hook #'gm/tangle-if-config)
 #+END_SRC
 ** Wordsmithing
 *** Basic Configuration
@@ -837,7 +1013,7 @@ a row, I almost never want a lowercase letter to follow.
   (interactive)
   (and (= ?w (char-syntax (char-before)))
        (save-excursion
-         (and (if (called-interactively-p)
+         (and (if (called-interactively-p 'interactive)
                   (skip-syntax-backward "w")
                 (= -3 (skip-syntax-backward "w")))
               (let (case-fold-search)
@@ -1038,13 +1214,6 @@ summary= at the top of an Emacs Lisp file.
 #+END_SRC
 
 ** Packages
-*** Async
-Authorize actions.
-#+BEGIN_SRC emacs-lisp
-(require 'auth-source-pass)
-(auth-source-pass-enable)
-(setq auth-sources '("~/.authinfo.gpg"))
-#+END_SRC
 *** Helpful
 This package is a more informative alternative to the default Emacs
 documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
@@ -1385,99 +1554,6 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
   :commands er/expand-region
   :bind (("C-=" . er/expand-region)
          ("M-2" . er/expand-region)))
-#+END_SRC
-** Theme
-I use the popular Solarized Light/Dark themes.
-#+BEGIN_SRC emacs-lisp
-(use-package solarized-theme
-  :demand t
-  :config (load-theme 'solarized-dark))
-#+END_SRC
-Also, it turns out we can style tooltips as well.
-#+BEGIN_SRC emacs-lisp
-(setq x-gtk-use-system-tooltips nil)
-#+END_SRC
-I switch between the light and dark variants depending on my surroundings. If I
-am in a brightly lit room, I prefer to use the light theme, because the dark
-theme allows too much screen glare. At night (really, at most times, but in
-particular at night) I prefer the dark theme, which, unsurprisingly, spits less
-light into my eyes.
-
-The way I switch themes is, admittedly, somewhat hacky. I set a boolean (by
-default true) that is true if the active theme is dark, false if light. What can
-I say? I prefer the dark side. Then my switch function toggles that value and
-changes the theme and the corresponding colours for =pdf-view-mode=. I like to
-view my PDFs not in black and white, but in my theme's colours. To make sure
-everything looks right, including the colours in PDFs and the asterisks
-for headlines in Org Mode (I hide them with =org-bullets-mode= but one of them
-comes back when I switch themes, for some reason), I refresh all open buffers.
-#+BEGIN_SRC emacs-lisp
-(setq gm/dark t)
-(defun gm/switch-theme ()
-  (interactive)
-  (togglef gm/dark)
-  (if gm/dark
-      (progn (load-theme 'solarized-light)
-             (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
-    (load-theme 'solarized-dark)
-    (setq pdf-view-midnight-colors '("#839496" . "#002b36")))
-  (modi/revert-all-file-buffers))
-
-(bind-key "C-c t" #'gm/switch-theme)
-#+END_SRC
-*** Font Face
-I normally use Hack, a monospace font.
-#+BEGIN_SRC emacs-lisp
-(set-face-font 'default "Hack")
-(set-frame-font "Hack" nil t)
-(custom-set-faces
- '(variable-pitch ((t (:family "Palatino Linotype")))))
-#+END_SRC
-*** Highlighting
-**** Syntax
-I want syntax highlighting everywhere...
-#+BEGIN_SRC emacs-lisp
-(global-font-lock-mode 1)
-#+END_SRC
-except in massive buffers, where it probably wouldn't be that useful (syntax
-highlighting doesn't help you read a CSV file with thousands of lines) and would
-definitely slow things down. In such buffers I also remove line numbers.
-#+BEGIN_SRC emacs-lisp
-(defun buffer-too-big-p ()
-  (or (> (buffer-size) (* 5000 80))
-      (> (line-number-at-pos (point-max)) 5000)))
-(add-hook 'prog-mode-hook
-          (lambda ()
-            ;; turn off `nlinum-relative-mode' when there are more than 5000 lines
-            (when (buffer-too-big-p)
-              (nlinum-relative-mode -1)
-              (font-lock-mode -1))))
-#+END_SRC
-**** Rainbow Mode
-This is a handy little package that highlights hex-color strings with their
-colour.
-#+BEGIN_SRC emacs-lisp
-(use-package rainbow-mode
-  :defer 2
-  :diminish
-  :config (rainbow-mode 1))
-#+END_SRC
-**** Parentheses
-Normally, I want the opening and closing parentheses highlighted. I used to set
-=show-paren-style= to =expression=, all that highlighting was not really necessary.
-#+BEGIN_SRC emacs-lisp
-(setq blink-matching-paren nil)
-(show-paren-mode t)
-(setq show-paren-delay 0)
-(setq show-paren-style 'parenthesis)
-#+END_SRC
-When I'm doing dedicated editing, it's sometimes nice to have more colours,
-especially for Lisps such as Emacs Lisp. However, it's too distracting in org
-mode source blocks, and it also slows down the point's movement, so I find it
-best not to enable it globally.
-#+BEGIN_SRC emacs-lisp
-(use-package rainbow-delimiters
-  :hook (emacs-lisp-mode . rainbow-delimiters-mode))
 #+END_SRC
 * Keybindings
 ** Better Defaults
@@ -1932,7 +2008,11 @@ don't add the lambda fontification, just activate =pretty-symbols-mode=, because
 the default variable =lisp-prettify-symbols-mode= already has this pair.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-lisp-mode-hook
-          (lambda () (prettify-symbols-mode)))
+          (lambda ()
+            (setq prettify-symbols-alist
+                  '(("lambda" . ?λ)
+                    ("lambda!" . (?λ (Br . Bl) ?!))))
+            (prettify-symbols-mode)))
 #+END_SRC
 Then, we modify =org-src-font-lock-fontify-block= (the function that fontifies Org
 source blocks) as per [[https://emacs.stackexchange.com/questions/17283/is-it-possible-to-get-prettified-symbols-in-org-mode-source-blocks/17847][this SE post]].
@@ -2482,8 +2562,10 @@ Return the last n characters before the point, or =loc= if provided.
 #+BEGIN_SRC emacs-lisp
 (defun gm/last-n-chars (n &optional loc)
   (unless loc (setq loc (point)))
-  (when (< n loc)
-    (buffer-substring-no-properties (- loc n) loc)))
+  (let ((start (- loc n)))
+    (when (and (>= start (point-min))
+               (<= start (point-max)))
+      (buffer-substring-no-properties (- loc n) loc))))
 #+END_SRC
 **** Math Mode Snippet
 #+BEGIN_SRC emacs-lisp
