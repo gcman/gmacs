@@ -154,6 +154,7 @@
 
 (define-abbrev-table 'org-mode-abbrev-table
   '(
+    ("ip" "in particular" nil :count 1)
     ("bij" "bijective" nil :count 0)
     ("diffeq" "differential equation" nil :count 0)
     ("fd" "finite dimensional" nil :count 0)
