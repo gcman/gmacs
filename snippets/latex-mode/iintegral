@@ -1,4 +1,6 @@
 # -*- mode: snippet -*-
 # name: iintegral
+# type: command
 # --
-\iint_{${1:T}} $2 \dd{${3:x}}\dd{${4:y}}$0
+(yas-expand-snippet
+  (concat "\\int_{${1:T}} $2" (gm/increment-snippet-fields (yas--template-content (yas-lookup-snippet "derivative-one-term")) 2)))

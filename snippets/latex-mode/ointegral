@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: ointegral
 # --
-\oint_{${1:C}} $2 \dd{${3:z}}$0
+(yas-expand-snippet
+  (concat "\\oint_{${1:C}} $2" (gm/increment-snippet-fields (yas--template-content (yas-lookup-snippet "derivative-one-term")) 2)))

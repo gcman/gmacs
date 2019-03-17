@@ -1,5 +1,7 @@
 # -*- mode: snippet -*-
 # name: integral
 # key: math-integral
+# type: command
 # --
-\int $1 \dd{${2:x}}$0
+(yas-expand-snippet
+  (concat "\\int $1 " (gm/increment-snippet-fields (yas--template-content (yas-lookup-snippet "derivative-one-term")))))
