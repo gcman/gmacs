@@ -1,7 +1,21 @@
 # -*- mode: snippet -*-
-# name: matrix
+# name: n-by-m-matrix
 # key: mat
+# type: command
 # --
-\begin{bmatrix}
-$1
-\end{bmatrix}$0
+(insert "\\begin{bmatrix}\n")
+(let ((width (read-number "Matrix width?" 3))
+      (height (read-number "Matrix height?" 3))
+      (snippet-text ""))
+  (dotimes (i height)
+    (dotimes (j width)
+      (setq snippet-text (format "%s ${%d:m%d%d} %s"
+                                 snippet-text
+                                 (1+ (+ (* height i) j))
+                                 i
+                                 j
+                                 (if (= j (1- width))
+                                     (if (= i (1- height)) "" "\\\\\\")
+                                   "&"))))
+    (setq snippet-text (format "%s\n" snippet-text)))
+  (yas/expand-snippet (format "%s\\end{bmatrix}$0" snippet-text)))
