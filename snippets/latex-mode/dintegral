@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
 # name: dintegral
 # --
-\int_{${1:-\infty}}^{${2:\infty}} $3 \dd{${4:x}}$0
+\int_{${1:-\infty}}^{${2:\infty}} ${3:$$(when (and (gm/math-expression-p (yas-field-value 1)) (gm/math-expression-p (yas-field-value 2))) (dotimes (i 2) (backward-char) (delete-char -1) (backward-char (length (yas-field-value (- 2 i)))) (delete-char -1)))} \dd{${4:x}}

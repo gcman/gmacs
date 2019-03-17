@@ -2050,7 +2050,7 @@ the default variable =lisp-prettify-symbols-mode= already has this pair.
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
             (setq prettify-symbols-alist
-                  '(("lambda" . ?λ)
+                  '(("lambda" . λ)
                     ("lambda!" . (?λ (Br . Bl) ?!))))
             (prettify-symbols-mode)))
 #+END_SRC
@@ -2204,10 +2204,11 @@ leaving a math fragment.
 (defun gm/org-curr-fragment ()
   "Returns the type and position of the current fragment available
 for preview inside org-mode. Returns nil at non-displayable fragments."
-  (let* ((fr (org-element-context)))
+  (let* ((fr (org-element-context))
+         (fr-type (car fr)))
     (when (memq fr-type gm/org-valid-fragment-type)
       ;; \(...\)| cursor there should not result in active fragment
-      (let ((fr-type (car fr)) ; we only define these things now to optimize
+      (let ( ; we only define these things now to optimize
             (fr-begin (org-element-property :begin fr))
             (fr-end (org-element-property :end fr))
             ;; add one for the space after in \end{equation}
@@ -2245,7 +2246,7 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
     (goto-char fr-begin)
     (when (and (memq fr-type gm/org-valid-fragment-type)
                (gm/org-curr-fragment))
-      (org-toggle-latex-fragment))))
+      (async-start (symbol-function #'org-toggle-latex-fragment) 'ignore))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -2345,7 +2346,7 @@ line are justified."
                    beg (+ beg 6))))
     (let* ((img (create-image image 'png t))
            (width (car (image-size img)))
-           (offset (floor (- (/ fill-column 2) (/ width 2)))))
+           (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 2) (/ width 2)))))
       (overlay-put (ov-at) 'before-string (make-string offset ? )))))
 
 (defun org-latex-fragment-tooltip (beg end image imagetype)
@@ -2704,6 +2705,16 @@ Return the last n characters before the point, or =loc= if provided.
                (<= start (point-max)))
       (buffer-substring-no-properties (- loc n) loc))))
 #+END_SRC
+**** Test if LaTeX Needs to Be Wrapped in Brackets
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-expression-p (math)
+  (when math
+    (or (eq (length math) 1)
+        ;; match one single latex command, with opt-args and args
+        ;; such as \command[1][2]{3}{4}
+        ;; only validate if this is the entire string
+        (string-match "\\`\\\\[[:alpha:]]+\\(\\[[^\\]]*]\\)*\\({[^}]*}\\)*\\'" math))))
+#+END_SRC
 **** Math Mode Snippet
 #+BEGIN_SRC emacs-lisp
 (defun gm/snippet (key snippet)
@@ -2712,14 +2723,6 @@ Return the last n characters before the point, or =loc= if provided.
     ;; this is so we don't have two backslashes after something like \sim
     (when (= (char-before) ?\\) (delete-char -1))
     (yas-expand-snippet (yas-lookup-snippet snippet))))
-#+END_SRC
-**** Get String from File
-Put file contents into string. Not recommended for large files.
-#+BEGIN_SRC emacs-lisp
-(defun get-string-from-file (path)
-  (with-temp-buffer
-    (insert-file-contents path)
-    (buffer-string)))
 #+END_SRC
 **** Generate Snippets
 I wrote this to reduce the amount of redundant code needed to set up the
