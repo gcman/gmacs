@@ -2,4 +2,4 @@
 # name: subscript
 # key: math-subscript
 # --
-_{$0}
+_${1:$(when (and (not (string-match-p "\\`[0-9]*\\'" yas-text)) (> (length yas-text) 1)) "{")}${1:n}${1:$(when (and (not (string-match-p "\\`[0-9]*\\'" yas-text)) (> (length yas-text) 1)) "}")}
