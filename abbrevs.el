@@ -5,6 +5,12 @@
 
 (define-abbrev-table 'Info-edit-mode-abbrev-table '())
 
+(define-abbrev-table 'TeX-error-overview-mode-abbrev-table '())
+
+(define-abbrev-table 'TeX-output-mode-abbrev-table '())
+
+(define-abbrev-table 'TeX-special-mode-abbrev-table '())
+
 (define-abbrev-table 'backtrace-mode-abbrev-table '())
 
 (define-abbrev-table 'bibtex-mode-abbrev-table '())
@@ -39,9 +45,13 @@
 
 (define-abbrev-table 'doctex-mode-abbrev-table '())
 
+(define-abbrev-table 'edebug-eval-mode-abbrev-table '())
+
 (define-abbrev-table 'edit-abbrevs-mode-abbrev-table '())
 
 (define-abbrev-table 'elisp-byte-code-mode-abbrev-table '())
+
+(define-abbrev-table 'elisp-refs-mode-abbrev-table '())
 
 (define-abbrev-table 'elpy-refactor-mode-abbrev-table '())
 
@@ -63,6 +73,8 @@
 
 (define-abbrev-table 'flycheck-error-list-mode-abbrev-table '())
 
+(define-abbrev-table 'flymake-diagnostics-buffer-mode-abbrev-table '())
+
 (define-abbrev-table 'fundamental-mode-abbrev-table '())
 
 (define-abbrev-table 'git-commit-elisp-text-mode-abbrev-table '())
@@ -75,9 +87,10 @@
     ("delimieter" "delimiter" nil :count 0)
     ("eveyr" "every" nil :count 0)
     ("inadvertantly" "inadvertently" nil :count 0)
+    ("incorectly" "incorrectly" nil :count 0)
     ("proerty" "property" nil :count 0)
     ("sherrif" "sheriff" nil :count 0)
-    ("incorectly" "incorrectly" nil :count 0)
+    ("teh" "the" nil :count 0)
    ))
 
 (define-abbrev-table 'gnus-group-mode-abbrev-table '())
@@ -85,6 +98,8 @@
 (define-abbrev-table 'grep-mode-abbrev-table '())
 
 (define-abbrev-table 'help-mode-abbrev-table '())
+
+(define-abbrev-table 'helpful-mode-abbrev-table '())
 
 (define-abbrev-table 'ibuffer-mode-abbrev-table '())
 
@@ -154,20 +169,18 @@
 
 (define-abbrev-table 'org-mode-abbrev-table
   '(
-    ("ip" "in particular" nil :count 1)
-    ("bij" "bijective" nil :count 0)
-    ("diffeq" "differential equation" nil :count 0)
-    ("fd" "finite dimensional" nil :count 0)
-    ("fdvs" "finite-dimensional vector space" nil :count 0)
-    ("iff" "if and only if" nil :count 1)
-    ("inj" "injective" nil :count 0)
-    ("lindep" "linearly dependent" nil :count 0)
-    ("linind" "linearly independent" nil :count 0)
-    ("st" "such that" nil :count 0)
-    ("sur" "surjective" nil :count 0)
-    ("vs" "vector space" nil :count 0)
-    ("vss" "vector spaces" nil :count 0)
-    ("wlog" "without loss of generality" nil :count 1)
+    ("abbreiation" "abbreviation" nil :count 0)
+    ("admittely" "admittedly" nil :count 0)
+    ("becuase" "because" nil :count 0)
+    ("delimieter" "delimiter" nil :count 0)
+    ("eveyr" "every" nil :count 0)
+    ("inadvertantly" "inadvertently" nil :count 0)
+    ("incorectly" "incorrectly" nil :count 0)
+    ("intrface" "interface" nil :count 0)
+    ("proerty" "property" nil :count 0)
+    ("sherrif" "sheriff" nil :count 0)
+    ("teh" "the" nil :count 0)
+    ("wrok" #("work" 0 4 (face frog-menu-candidates-face)) nil :count 2)
    ))
 
 (define-abbrev-table 'outline-mode-abbrev-table '())
@@ -185,6 +198,24 @@
 (define-abbrev-table 'python-mode-abbrev-table '())
 
 (define-abbrev-table 'python-mode-skeleton-abbrev-table '())
+
+(define-abbrev-table 'quick-math-mode-abbrev-table
+  '(
+    ("bij" "bijective" nil :count 0)
+    ("diffeq" "differential equation" nil :count 0)
+    ("fd" "finite dimensional" nil :count 0)
+    ("fdvs" "finite-dimensional vector space" nil :count 0)
+    ("iff" "if and only if" nil :count 1)
+    ("inj" "injective" nil :count 0)
+    ("intrface" "interface" nil :count 0)
+    ("ip" "in particular" nil :count 1)
+    ("lindep" "linearly dependent" nil :count 0)
+    ("linind" "linearly independent" nil :count 0)
+    ("st" "such that" nil :count 0)
+    ("sur" "surjective" nil :count 0)
+    ("vs" "vector space" nil :count 0)
+    ("vss" "vector spaces" nil :count 0)
+   ))
 
 (define-abbrev-table 'sdcv-mode-abbrev-table '())
 

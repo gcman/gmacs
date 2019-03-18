@@ -1,4 +1,4 @@
--*-coding: utf-8-*-
+-*- coding: utf-8 -*-
 #+TITLE: Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
@@ -191,7 +191,7 @@ byte-compiled, Emacs will initialize packages on startup as usual.
 #+END_SRC
 We also require =diminish= and =bind= because I often use these keywords within
 =use-package= declarations.
-#+BEGIN_SRC emacs-lisp :tangle no noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (require 'bind-key)
 (require 'diminish)
 #+END_SRC
@@ -207,13 +207,12 @@ I put my personal information in =private.el=.
 (when (file-exists-p private-file) (load private-file))
 #+END_SRC
 ** Common Libraries
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp
 (use-package async :commands (async-start))
 (use-package s :demand t)
 (use-package dash :demand t :config (dash-enable-font-lock))
 (eval-when-compile
   (require 'cl))
-<<deps>>
 #+END_SRC
 * General Configuration
 ** User Interface
@@ -235,7 +234,7 @@ tab (evil tabs!), the cursor will look as wide as a tab.
 **** Beacon Mode
 Never lose your cursor again. This package lights up your cursor when the
 screen/cursor position is refactored. It's much more useful than it sounds.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package beacon
   :defer 2
   :diminish (beacon-mode " ☀")
@@ -255,7 +254,7 @@ The =smart-mode-line= package comes with some useful items on the modeline, as
 well as colour coding. Some interesting features (which I set in
 =sml/replacer-regexp-list=) is shortening features. Another useful thing is that
 minor modes are displayed.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
   :defer 1
   :config
@@ -300,14 +299,14 @@ And make mouse scrolling smoother.
 This way, indented lines (such as those visually indented by =org-indent-mode=)
 that are wrapped with ~visual-line-mode~ do not begin at character 0, but from
 where they are indented.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package adaptive-wrap
   :commands (adaptive-wrap-prefix-mode)
   :hook (visual-line-mode . adaptive-wrap-prefix-mode))
 #+END_SRC
 *** Theme
 I use the popular Solarized Light/Dark themes.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package solarized-theme
   :demand t
   :config (load-theme 'solarized-dark))
@@ -379,13 +378,13 @@ When I'm doing dedicated editing, it's sometimes nice to have more colours,
 especially for Lisps such as Emacs Lisp. However, it's too distracting in org
 mode source blocks, and it also slows down the point's movement, so I find it
 best not to enable it globally.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package rainbow-delimiters
   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
 #+END_SRC
 Finally, =rainbow-mode= highlights hex-color strings with their colour. Very handy
 for choosing colours, especially when editing CSS files.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package rainbow-mode
   :defer 2
   :diminish
@@ -557,11 +556,8 @@ contents to the kill ring.
 #+END_SRC
 *** Work with Protected Files
 Authorize actions.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
-(require 'auth-source-pass)
-#+END_SRC
-
 #+BEGIN_SRC emacs-lisp
+(require 'auth-source-pass)
 (auth-source-pass-enable)
 (setq auth-sources '("~/.authinfo.gpg"))
 #+END_SRC
@@ -570,7 +566,7 @@ Authorize actions.
 The =*scratch*= buffer has come in handy for me many times when I want to quickly
 test out some Elisp. It would be nice to have it saved; I could clear it easily if
 I wanted to. Luckily, there's a package that does just that.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package persistent-scratch
   :config
   (persistent-scratch-setup-default))
@@ -651,7 +647,7 @@ Finally, I hope it doesn't come to this too often, but sometimes we must close
 Emacs entirely and start a new session. I know, I can feel the agony. =C-x C-c=,
 then move your mouse to click Emacs again! Luckily, there's a package for that.
 This kills Emacs and starts a new session.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package restart-emacs
   :commands restart-emacs
   :bind (("C-c R" . restart-emacs)))
@@ -733,8 +729,9 @@ Abbrevs are a pretty common and useful feature in editors. You can define
 abbrevs, which are strings. When you type space after an abbrev, it is expanded
 to whatever you want. Saves a lot of keystrokes.
 #+BEGIN_SRC emacs-lisp
-(setq save-abbrevs 'silently)
+(setq abbrev-file-name (expand-file-name "abbrevs.el" user-emacs-directory))
 (setq-default abbrev-mode t)
+(setq save-abbrevs 'silently)
 (diminish 'abbrev-mode)
 (bind-key "C-c M a" #'abbrev-mode)
 #+END_SRC
@@ -890,33 +887,31 @@ my own Emacs configuration.
 
 We automatically spellcheck text buffers using =flyspell=. The only mode I write
 prose in is Org Mode.
-#+BEGIN_SRC emacs-lisp :noweb yes :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package flyspell
   :diminish
+  :commands flyspell-mode
   :init
   (dolist (hook '(text-mode-hook org-mode-hook))
     (add-hook hook (lambda () (flyspell-mode 1))))
   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
     (add-hook hook (lambda () (flyspell-mode -1))))
-  :commands (flyspell-mode)
-  :bind (:map flyspell-mode-map
-              <<flyspell-keys>>)
+  <<flyspell-init>>
   :config
   <<flyspell-settings>>)
 #+END_SRC
 Set up spellchecking using =ispell= and the dictionary =hunspell=. We set the
 locally used dictionary to Canadian English, and we set up the list of valid
 dictionaries.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
 (setq ispell-program-name "hunspell"
-      ispell-dictionary "en_CA"
+      ispell-local-dictionary "en_CA"
       ispell-hunspell-dictionary-alist
       '(("en_CA" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_CA") nil utf-8)))
 #+END_SRC
-As suggested by the Emacs wiki, I suppress messages, which slows down
-performance when checking the entire buffer. I also don't want Emacs telling me
-that =flyspell= has started a new process every time it does.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
+As suggested by the Emacs wiki, I supress messages, which slows down
+performance when checking the entire buffer.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
 (setq-default flyspell-issue-message-flag nil
               flyspell-issue-welcome-flag nil)
 #+END_SRC
@@ -935,97 +930,31 @@ in Emacs]].
 
 (add-hook 'org-mode-hook #'endless/org-ispell)
 #+END_SRC
-**** Previous Error
-[[http://pragmaticemacs.com/emacs/jump-back-to-previous-typo/][This article]] thinks that going to the previous error is more useful than going
-to the next one. This is usually true, and combines well with the abbreviation
-feature below.
-#+BEGIN_SRC emacs-lisp
-(defun flyspell-goto-previous-error (arg)
-  "Go to arg previous spelling error."
-  (interactive "p")
-  (while (not (= 0 arg))
-    (let ((pos (point))
-          (min (point-min)))
-      (if (and (eq (current-buffer) flyspell-old-buffer-error)
-               (eq pos flyspell-old-pos-error))
-          (progn
-            (if (= flyspell-old-pos-error min)
-                ;; goto beginning of buffer
-                (progn
-                  (message "Restarting from end of buffer")
-                  (goto-char (point-max)))
-              (backward-word 1))
-            (setq pos (point))))
-      ;; seek the next error
-      (while (and (> pos min)
-                  (let ((ovs (overlays-at pos))
-                        (r '()))
-                    (while (and (not r) (consp ovs))
-                      (if (flyspell-overlay-p (car ovs))
-                          (setq r t)
-                        (setq ovs (cdr ovs))))
-                    (not r)))
-        (backward-word 1)
-        (setq pos (point)))
-      ;; save the current location for next invocation
-      (setq arg (1- arg))
-      (setq flyspell-old-pos-error pos)
-      (setq flyspell-old-buffer-error (current-buffer))
-      (goto-char pos)
-      (if (= pos min)
-          (progn
-            (message "No more miss-spelled word!")
-            (setq arg 0))
-        (forward-word)))))
+**** Autocorrect and Abbreviations and Avy Selection
+We want to be able to go to the previous error and correct it, then add it to
+our global abbreviation list. As long as we spell the word incorrectly the same
+way, we'll never make that typo again. I used to use code I took and modified
+from [[http://endlessparentheses.com/ispell-and-abbrev-the-perfect-auto-correct.html][Artur Malabarba]] and Howard Abrams, but now I just set this variable built
+into =flyspell=.
+#+BEGIN_SRC emacs-lisp :tanle no :noweb-ref flyspell-init
+(setq flyspell-abbrev-p t)
 #+END_SRC
-We replace =flyspell='s next error command with the above previous error command.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
-([remap flyspell-goto-next-error] . flyspell-goto-previous-error)
-#+END_SRC
-**** Abbrevs and Autocorrect
-Inspired by [[http://endlessparentheses.com/ispell-and-abbrev-the-perfect-auto-correct.html][Artur Malabarba]] and Howard Abrams (I had to modify it because Howard
-Abrams' version did not seem to work) With this function, we can go to the
-previous error and correct it, then add it to our global abbreviation list. As
-long as we spell the word incorrectly the same way, we'll never make that typo
-again.
-#+BEGIN_SRC emacs-lisp
-(defun gm/ispell-word-then-abbrev (p)
-  "Call `ispell-word'.  After create an abbrev for the correction
-made. With prefix P, create local abbrev. Otherwise it will be
-global."
-  (interactive "P")
-  (flyspell-goto-previous-error 1)
-  (let ((bef (downcase (or (thing-at-point 'word t) ""))) aft)
-    (call-interactively 'flyspell-correct-wrapper)
-    (setq aft (downcase (or (thing-at-point 'word t) "")))
-    (message "%s %s" aft bef)
-    (unless (string= aft bef)
-      (define-abbrev
-        (if p local-abbrev-table global-abbrev-table)
-        bef aft)
-      (message "\"%s\" now expands to \"%s\" %sally"
-               bef aft (if p "loc" "glob")))))
-#+END_SRC
-The default binding on =C-;= is =flyspell='s built-in auto-correct function.
-However, it doesn't always give perfect matches, and its use case is usurped by
-the above function.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
-([remap flyspell-auto-correct-previous-word] . gm/ispell-word-then-abbrev)
-#+END_SRC
-**** Frog Menu for Corrections
-Many forces in Emacs fight for window space, from expanded minibuffers to popup
-windows. Both have their disadvantages. The minibuffer is away from the action
-and requires you to look to a different place on the screen. Popup windows can
-easily cause a jarring change in the way content is displayed on the buffer. The
-solution is a [[https://github.com/alphapapa/frog-menu][frog menu]].
+However, I'm not a fan of the default interface for selecting spelling
+corrections. Many forces in Emacs fight for window space, from expanded
+minibuffers to popup windows. Both have their disadvantages. The minibuffer is
+away from the action and requires you to look to a different place on the
+screen. Popup windows can easily cause a jarring change in the way content is
+displayed on the buffer. The solution is a [[https://github.com/alphapapa/frog-menu][frog menu]].
 
 Its role is not fixed, but ad hoc; it pops up at the right moment in the right
 place, just as the frog's tongue pouncing on the fly.
 
-We use the =flyspell-correct= package to implement such an interface.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings :noweb-ref deps
+We use the =flyspell-correct= package to implement such an interface. It uses =avy=
+for selection.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
 (autoload 'frog-menu-read "frog-menu")
 (use-package flyspell-correct
+  :commands flyspell-correct-wrapper
   :custom
   (flyspell-correct-interface #'frog-menu-flyspell-correct))
 
@@ -1051,6 +980,15 @@ of (command . word) to be used by `flyspell-do-correct'."
     (unless res
       (error "Quit"))
     res))
+#+END_SRC
+[[http://pragmaticemacs.com/emacs/jump-back-to-previous-typo/][This article]] thinks that going to the previous error is more useful than going
+to the next one. This is usually true, and aligns with the default behaviour
+=flyspell-correct-wrapper=. The default binding on =C-;= is =flyspell='s built-in
+autocorrect function. However, its suggestions are often not so useful, and
+we've subsumed its role with =flyspell-correct= anyway.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
+(bind-key [remap flyspell-auto-correct-previous-word]
+          #'flyspell-correct-wrapper flyspell-mode-map)
 #+END_SRC
 **** Correct Double Capitals
 Taken from [[https://emacs.stackexchange.com/questions/13970/fixing-double-capitals-as-i-type/13975#13975][Stack Exchange]]. It's a piece of code with a great impact to
@@ -1209,7 +1147,7 @@ Make =TAB= indent first then perform completion, if any.
 (setq-default tab-always-indent 'complete)
 #+END_SRC
 Set up =flycheck=.
-#+BEGIN_SRC emacs-lisp :noweb yes :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package flycheck
   :commands flycheck-mode
   :diminish (flycheck-mode " Ψ")
@@ -1217,7 +1155,7 @@ Set up =flycheck=.
   :hook (prog-mode . flycheck-mode))
 #+END_SRC
 Relative line numbers, useful for Vim-like navigation with God Mode.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package nlinum-relative
   :hook (prog-mode . nlinum-relative-mode))
 #+END_SRC
@@ -1253,7 +1191,7 @@ Indent with 4 spaces.
 (setq-default python-indent-offset 4)
 #+END_SRC
 Turn Emacs into basically a Python IDE.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package elpy
   :config
   (use-package py-autopep8
@@ -1282,7 +1220,7 @@ summary= at the top of an Emacs Lisp file.
 This package is a more informative alternative to the default Emacs
 documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
 could.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package helpful
   :bind
   (("C-h f" . helpful-callable)
@@ -1298,13 +1236,13 @@ could.
              helpful-command))
 #+END_SRC
 *** Paradox
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package paradox
   :commands (package-initialize)
   :config (paradox-enable))
 #+END_SRC
 *** Key Frequency
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package keyfreq
   :defer 2
   :config
@@ -1329,7 +1267,7 @@ only load it from the entry points given in =:commands=. We also define a
 quick-bind to quit the current Magit session and return to the previous window
 configuration. This way, we can let Magit take up the full real estate on the
 screen, and once we're done, we can get right back to where we left off.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package magit
   :commands (magit-status magit-blame magit-log-buffer-file magit-log-all)
   :init
@@ -1374,18 +1312,18 @@ confirmation dialog comes up, and ~top~ does it only once.
 **** Speed Sorting
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a Dired buffer.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package dired-quick-sort
   :config (dired-quick-sort-setup))
 #+END_SRC
 **** Sudo
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package sudo-edit
   :commands sudo-edit
   :bind (("C-c C-x r" . sudo-edit)))
 #+END_SRC
 *** Ivy
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package ivy
   :diminish
   :demand t
@@ -1466,7 +1404,7 @@ how to fix them. Now we can easily search for the word at point using =swiper=.
 In =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
 "Control"). For example, the sequence =2 n x s= goes down two lines then saves the
 buffer.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package god-mode
  :commands (god-local-mode god-mode-all))
 #+END_SRC
@@ -1490,7 +1428,7 @@ Mode).
 #+END_SRC
 *** PDF Tools
 Basic configuration.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
   :mode (("\\.pdf\\'" . pdf-view-mode))
   :commands pdf-view-mode
@@ -1546,11 +1484,11 @@ default; set PAGE-P to non-nil to rotate only the current page.
           (error "Rotation error!"))))))
 #+END_SRC
 *** TeX
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package auctex)
 #+END_SRC
 *** Webmode
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package web-mode
   :mode ("\\.scss\\'" . web-mode)
   :custom
@@ -1577,7 +1515,7 @@ default; set PAGE-P to non-nil to rotate only the current page.
 (bind-key "<f9>" #'gm/end-screencast)
 #+END_SRC
 *** Hydra
-#+BEGIN_SRC emacs-lisp :noweb yes :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package hydra
   :defer 3
   :config
@@ -1601,7 +1539,7 @@ time I split the window.
 To manage my windows. I use =ace-window=. The nice thing about this is that when
 you use the equivalent of =other-window=, you don't have to remember which window
 the "other one" is. Instead, you select the window with a number.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package ace-window
   :commands (ace-window
              delete-window
@@ -1616,19 +1554,19 @@ the "other one" is. Instead, you select the window with a number.
          ("M-4" . gm/split-window-below-and-switch)))
 #+END_SRC
 *** Avy
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package avy
   :ensure t
   :bind (("M-g" . avy-goto-word-1))
   :custom (avy-background t))
 #+END_SRC
 *** Company
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package company)
 #+END_SRC
 *** Which Key Mode
 Helpful when you want to see completion for a certain sequence of prefix keys.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package which-key
   :defer 10
   :diminish
@@ -1677,7 +1615,7 @@ I used to =[remap fill-paragraph]= to =gm/fill-unfill=, a function that used the
 key. It turned out this was not best for my use case, as I usually double-tapped
 =M-q= because I just wanted to refill the paragraph. However, unfilling is
 sometimes useful, so I kept the package around.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package unfill
   :commands unfill-paragraph
   :bind ("M-Q" . unfill-paragraph))
@@ -1830,7 +1768,7 @@ default.
 (bind-key "C-c o" (lambda! (find-file "~/org/inbox.org")))
 #+END_SRC
 ** Keychord
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (require 'key-chord)
 (key-chord-mode 1)
 #+END_SRC
@@ -1853,7 +1791,7 @@ especially useful when typing LaTeX.
 #+END_SRC
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
-#+BEGIN_SRC emacs-lisp :noweb yes :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org
   :init
   (require 'org)
@@ -2296,11 +2234,8 @@ Where should it be?
 #+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
-(require 'ov)
-#+END_SRC
-
 #+BEGIN_SRC emacs-lisp
+(require 'ov)
 (defvar gm/org-last-fragment nil
   "Holds the type and position of last valid fragment we were on.
   Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
@@ -2607,7 +2542,7 @@ We make this our default class.
 #+END_SRC
 * Mail
 Set up the requirements.
-#+BEGIN_SRC emacs-lisp :noweb yes :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package notmuch
   :commands (notmuch)
   :config
@@ -2687,7 +2622,7 @@ formatted as HTML. This is incredibly powerful, because you can include syntax
 highlighted code, LaTeX math images, and even the image output of Babel blocks,
 all composed in plain text with Org Mode. We first need the library that will
 convert the Org into HTML.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (require 'org-mime)
 #+END_SRC
 Then we give ourselves a way to activate Org Mode mail.
@@ -2734,7 +2669,7 @@ convenient, because it makes typing a snippet more like typing a word. This
 works fine apart from one hiccup. We need to bind =TAB= to =org-cycle= (even though
 that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 =yas-minor-mode= overrides the default behaviour.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (use-package yasnippet
   :commands (yas-minor-mode yas-global-mode)
   :config
@@ -2753,7 +2688,7 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 I use a hydra for snippets that just insert/replace text in math mode and thus
 don't require the use of =yasnippets=. To maintain and generate my main snippets,
 I use a data structure called a radix tree.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref deps
+#+BEGIN_SRC emacs-lisp
 (require 'radix-tree)
 #+END_SRC
 *** Math Symbols
@@ -2944,35 +2879,26 @@ Then we bind this to semicolon.
     map))
 
 <<math-mode>>
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp
 (defvar gm/math-fragment-map
   (let ((map (make-composed-keymap
-              gm/math-mode-map
+              `(,gm/math-mode-map)
+              org-mode-map
               ))) map))
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp
 (--map (eval `(define-key gm/math-mode-map
                 ,it (lambda! (gm/math-snippet ,it)) ))
        (delete-dups (--map (s-right 1 (car it)) gm/math-snippets)))
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp
 (defun quick-math--add-keymap-to-math-fragments (limit)
-  "Add keymaps to src-blocks defined in `scimax-src-block-keymaps'."
   (let ((case-fold-search t))
     (while (re-search-forward (nth 1 (assoc "\\(" org-latex-regexps)) limit t)
       (let ((beg (match-beginning 0))
             (end (match-end 0)))
         (progn
           (add-text-properties
-           beg end `(local-map ,gm/math-fragment-map))
-          )))))
-#+END_SRC
+           beg end `(local-map ,gm/math-fragment-map)))))))
 
-#+BEGIN_SRC emacs-lisp
 (define-minor-mode quick-math-mode
   "Minor mode for math"
   :init-value nil
@@ -3207,13 +3133,9 @@ digit is pressed, if the last character is a letter, then a subscript is
 created. If this subscript is extended to a number with more than 1 digit,
 brackets are added to ensure proper LaTeX rendering.
 #+BEGIN_SRC emacs-lisp
-(defun gm/char-is-letter (char)
-  (memq (get-char-code-property char 'general-category)
-        '(Ll Lu Lo Lt Lm Mn Mc Me Nl)))
-
 (defun gm/math-number-subscript ()
   (interactive)
-  (cond ((gm/char-is-letter (char-before)) (insert "_"))
+  (cond ((string-match "[a-zA-Z]" (gm/last-n-chars 1)) (insert "_"))
         ((string-match "\_[0-9]" (gm/last-n-chars 2))
          (save-excursion
            (backward-char)
@@ -3223,13 +3145,13 @@ brackets are added to ensure proper LaTeX rendering.
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp
-(defun gm/bind-number-subscript (n)
-  (eval `(define-key gm/math-mode-map
-           (number-to-string ,n)
-           (gm/math-number-subscript))))
-(dotimes (n 10)
-  (gm/bind-number-subscript n)
-  (gm/bind-number-subscript 9))
+;; (defun gm/bind-number-subscript (n)
+;;   (eval `(define-key gm/math-mode-map
+;;            (number-to-string ,n)
+;;            (gm/math-number-subscript))))
+;; (dotimes (n 10)
+;;   (gm/bind-number-subscript n)
+;;   (gm/bind-number-subscript 9))
 #+END_SRC
 **** Fraction
 Typing =/= after an appropriate block (a number or a balanced set of parentheses)
@@ -3266,9 +3188,7 @@ then =/= will result in =\frac{\sin x}{|}=.
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
     (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*"))
    (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-key gm/math-mode-map "/" #'gm/math-frac)
 #+END_SRC
 **** Easy Split Environments
@@ -3300,8 +3220,6 @@ to make LaTeX happy.
         (forward-line)
       (insert " \\\\")
       (newline))))
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
