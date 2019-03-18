@@ -989,7 +989,7 @@ global."
   (interactive "P")
   (flyspell-goto-previous-error 1)
   (let ((bef (downcase (or (thing-at-point 'word t) ""))) aft)
-    (call-interactively 'ispell-word)
+    (call-interactively 'flyspell-correct-wrapper)
     (setq aft (downcase (or (thing-at-point 'word t) "")))
     (message "%s %s" aft bef)
     (unless (string= aft bef)
@@ -1004,6 +1004,46 @@ However, it doesn't always give perfect matches, and its use case is usurped by
 the above function.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-keys
 ([remap flyspell-auto-correct-previous-word] . gm/ispell-word-then-abbrev)
+#+END_SRC
+**** Frog Menu for Corrections
+Many forces in Emacs fight for window space, from expanded minibuffers to popup
+windows. Both have their disadvantages. The minibuffer is away from the action
+and requires you to look to a different place on the screen. Popup windows can
+easily cause a jarring change in the way content is displayed on the buffer. The
+solution is a frog menu.
+
+A frog menu is ad hoc; it pops up at the right moment in the right place, like the
+frog's tongue as it pounces on the fly.
+
+We use the =flyspell-correct= package to implement such an interface.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
+(autoload 'frog-menu-read "frog-menu")
+(use-package flyspell-correct
+  :custom
+  (flyspell-correct-interface #'frog-menu-flyspell-correct))
+
+(defun frog-menu-flyspell-correct (candidates word)
+  "Run `frog-menu-read' for the given CANDIDATES.
+
+List of CANDIDATES is given by flyspell for the WORD.
+
+Return selected word to use as a replacement or a tuple
+of (command . word) to be used by `flyspell-do-correct'."
+  (let* ((avy-background nil)
+         (corrects (if flyspell-sort-corrections
+                       (sort candidates 'string<)
+                     candidates))
+         (actions `(("C-s" "Save word"         (save    . ,word))
+                    ("C-a" "Accept (session)"  (session . ,word))
+                    ("C-b" "Accept (buffer)"   (buffer  . ,word))
+                    ("C-c" "Skip"              (skip    . ,word))))
+         (prompt   (format "Dictionary: [%s]"  (or ispell-local-dictionary
+                                                   ispell-dictionary
+                                                   "default")))
+         (res      (frog-menu-read prompt corrects actions)))
+    (unless res
+      (error "Quit"))
+    res))
 #+END_SRC
 **** Correct Double Capitals
 Taken from [[https://emacs.stackexchange.com/questions/13970/fixing-double-capitals-as-i-type/13975#13975][Stack Exchange]]. It's a piece of code with a great impact to
@@ -1876,7 +1916,7 @@ We similarly decide other default locations.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-default-notes-file (expand-file-name "inbox.org" org-directory)
       org-agenda-files '((expand-file-name "inbox.org" org-directory)
-                         (expand-file-name "gtd.org" org-directory)
+                         (expand-file-name "todo.org" org-directory)
                          (expand-file-name "notes.org" org-directory)
                          (expand-file-name "gcal.org" org-directory)))
 #+END_SRC
@@ -1884,9 +1924,7 @@ Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-refile-targets '(((expand-file-name "gtd.org" org-directory) :maxlevel . 3)
-                           ((expand-file-name "someday.org" org-directory) :level . 1)
-                           ((expand-file-name "tickler.org" org-directory) :maxlevel . 2)
+(setq org-refile-targets '(((expand-file-name "todo.org" org-directory) :maxlevel . 3)
                            ((expand-file-name "notes.org" org-directory) :maxlevel . 2)))
 #+END_SRC
 *** Capture
