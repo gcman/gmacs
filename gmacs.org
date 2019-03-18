@@ -951,7 +951,7 @@ place, just as the frog's tongue pouncing on the fly.
 
 We use the =flyspell-correct= package to implement such an interface. It uses =avy=
 for selection.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
 (autoload 'frog-menu-read "frog-menu")
 (use-package flyspell-correct
   :commands flyspell-correct-wrapper
@@ -1214,7 +1214,13 @@ summary= at the top of an Emacs Lisp file.
 #+BEGIN_SRC emacs-lisp
 (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
 #+END_SRC
-
+Sexps are everything in Lisp. The default bindings to traverse them forwards and
+backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
+[[*Window Management][bindings]], I'm willing to do it again.
+#+BEGIN_SRC emacs-lisp
+(bind-key "M-9" #'backward-sexp emacs-lisp-mode-map)
+(bind-key "M-0" #'forward-sexp emacs-lisp-mode-map)
+#+END_SRC
 ** Packages
 *** Helpful
 This package is a more informative alternative to the default Emacs
@@ -1819,18 +1825,11 @@ Use a prefix arg to get regular RET. "
       (org-return))
      ((and (org-in-item-p) (not (bolp)))
       (if (org-element-property :contents-begin (org-element-context))
-          (org-insert-heading)
+          (org-insert-item)
         (beginning-of-line)
         (setf (buffer-substring
                (line-beginning-position) (line-end-position)) "")
         (org-return)))
-     ((org-at-heading-p)
-      (if (not (string= "" (org-element-property :title (org-element-context))))
-          (progn (org-end-of-meta-data)
-                 (org-insert-heading))
-        (beginning-of-line)
-        (setf (buffer-substring
-               (line-beginning-position) (line-end-position)) "")))
      ((org-at-table-p)
       (if (-any?
            (lambda (x) (not (string= "" x)))
@@ -2159,6 +2158,64 @@ highlighting.
 I'm generally fine with just evaluating a code block.
 #+BEGIN_SRC emacs-lisp
 (setq org-confirm-babel-evaluate nil)
+#+END_SRC
+*** Proper Keymaps in Org Source Blocks
+[[http://kitchingroup.cheme.cmu.edu/blog/2017/06/10/Adding-keymaps-to-src-blocks-via-org-font-lock-hook/][John Kitchin]] explains how to get use keybindings from the appropriate language
+major mode inside Org source blocks. This heavily reduces the need to activate
+special edit mode with =C-c '=. The idea is that we set up keymaps and apply them
+with font-lock by hooking into Org Mode's font-lock.
+
+We set up the maps here.
+#+BEGIN_SRC emacs-lisp
+(require 'elpy)
+
+(defvar gm/src-block-keymaps
+      `(("python" . ,(let ((map (make-composed-keymap
+                                 `(,elpy-mode-map ,python-mode-map)
+                                 org-mode-map)))
+                       ;; In org-mode I define RET so we redefine
+                       (define-key map (kbd "<return>") 'newline)
+                       (define-key map (kbd "C-c C-c") 'org-ctrl-c-ctrl-c)
+                       map))
+        ("emacs-lisp" . ,(let ((map (make-composed-keymap
+                                     `(,emacs-lisp-mode-map)
+                                     org-mode-map)))
+                           (define-key map (kbd "C-c C-c") 'org-ctrl-c-ctrl-c)
+                           map))))
+#+END_SRC
+Then we define the function that applies the keymap to each block.
+#+BEGIN_SRC emacs-lisp
+(defun gm/add-keymap-to-src-blocks (limit)
+  "Add keymaps to src-blocks defined in `gm/src-block-keymaps'."
+  (let ((case-fold-search t)
+        lang)
+    (while (re-search-forward org-babel-src-block-regexp limit t)
+      (let ((lang (match-string 2))
+            (beg (match-beginning 0))
+            (end (match-end 0)))
+        (if (assoc (org-no-properties lang) gm/src-block-keymaps)
+            (progn
+              (add-text-properties
+               beg end `(local-map ,(cdr (assoc
+                                          (org-no-properties lang)
+                                          gm/src-block-keymaps))))))))))
+#+END_SRC
+To be able to toggle this, we add a minor mode. This is where we add the
+relevant hook.
+#+BEGIN_SRC emacs-lisp
+(define-minor-mode gm/src-keymap-mode
+  "Minor mode to add mode keymaps to src-blocks."
+  :init-value nil
+  (if gm/src-keymap-mode
+      (progn
+        (add-hook 'org-font-lock-hook #'gm/add-keymap-to-src-blocks t)
+        (add-to-list 'font-lock-extra-managed-props 'local-map))
+    (remove-hook 'org-font-lock-hook #'gm/add-keymap-to-src-blocks)
+    (cursor-sensor-mode -1))
+  (font-lock-fontify-buffer))
+
+(add-hook 'org-mode-hook (lambda ()
+                           (gm/src-keymap-mode +1)))
 #+END_SRC
 ** LaTeX
 Highlight LateX inline math in org mode.
@@ -2886,10 +2943,6 @@ Then we bind this to semicolon.
               org-mode-map
               ))) map))
 
-(--map (eval `(define-key gm/math-mode-map
-                ,it (lambda! (gm/math-snippet ,it)) ))
-       (delete-dups (--map (s-right 1 (car it)) gm/math-snippets)))
-
 (defun quick-math--add-keymap-to-math-fragments (limit)
   (let ((case-fold-search t))
     (while (re-search-forward (nth 1 (assoc "\\(" org-latex-regexps)) limit t)
@@ -3010,7 +3063,10 @@ snippets. First, we create a suffix tree of all the math snippets.
   (setq gm/math-suffix-tree
         (--reduce-from (radix-tree-insert acc (car it) (cdr it))
                        radix-tree-empty (--map (cons (nreverse (car it)) (cdr it))
-                                               gm/math-snippets))))
+                                               gm/math-snippets)))
+  (--map (eval `(define-key gm/math-mode-map
+                  ,it (lambda! (gm/math-snippet ,it)) ))
+         (delete-dups (--map (s-right 1 (car it)) gm/math-snippets))))
 #+END_SRC
 We make a completion function.
 #+BEGIN_SRC emacs-lisp
