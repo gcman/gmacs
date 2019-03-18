@@ -281,8 +281,7 @@ There are two types of scrolling in Emacs: keyboard scrolling and mouse
 scrolling. Both of them are quite jarring out of the box and make the screen
 lurch around. Let's fix keyboard scrolling.
 #+BEGIN_SRC emacs-lisp
-(setq redisplay-dont-pause t
-      scroll-margin 1
+(setq scroll-margin 1
       scroll-step 1
       scroll-conservatively 10000
       scroll-preserve-screen-position 1)
@@ -571,6 +570,73 @@ I wanted to. Luckily, there's a package that does just that.
   :config
   (persistent-scratch-setup-default))
 #+END_SRC
+*** Backups
+Keep backups in a dedicated spot and not in the current directory: this saves a
+lot clutter.
+#+BEGIN_SRC emacs-lisp
+(setq backup-directory-alist `(("." . ,(expand-file-name (concat gmacs-cache-dir "backups")))))
+#+END_SRC
+I have lots of disk space, and not so much patience when I lose an important
+file. So I save lots.
+#+BEGIN_SRC emacs-lisp
+(setq delete-old-versions -1
+      version-control t
+      vc-make-backup-files t
+      create-lockfiles nil)
+#+END_SRC
+**** Autosave
+I want to move the autosaved stuff into the cache dir: let's keep everything
+nice and neat.
+#+BEGIN_SRC emacs-lisp
+(setq auto-save-file-name-transforms `((".*" ,(expand-file-name (concat gmacs-cache-dir "auto-save")) t))
+      auto-save-list-file-name (expand-file-name (concat gmacs-cache-dir "auto-save/.saves~")))
+#+END_SRC
+However, Emacs prints a lot of messages to the echo area telling you that a file
+has been autosaved. This is unnecessary, so I use [[pragmaticemacs.com/emacs/make-emacs-a-bit-quieter/][this hack]] from Pragmatic Emacs
+to quiet down the autosave. Essentially, we replace the default autosave
+function with our own silent version.
+#+BEGIN_SRC emacs-lisp
+(setq auto-save-timeout 99999)
+
+(defvar bjm/auto-save-timer nil
+  "Timer to run `bjm/auto-save-silent'")
+
+(defvar bjm/auto-save-interval 5
+  "How often in seconds of idle time to auto-save with
+`bjm/auto-save-silent'")
+
+(defun bjm/auto-save-silent ()
+  "Auto-save all buffers silently"
+  (interactive)
+  (do-auto-save t))
+
+(setq bjm/auto-save-timer
+      (run-with-idle-timer 0 bjm/auto-save-interval 'bjm/auto-save-silent))
+#+END_SRC
+**** History
+It's nice to have a history of commands and other things so that you can get
+right to work when you open a new Emacs instance, you can get right to work.
+Without this, =*table--cell-backward-kill-paragraph= is the default command,
+because they are sorted alphabetically. If this has ever been the first command
+you wanted to execute after opening Emacs, please let me know.
+#+BEGIN_SRC emacs-lisp
+(setq-default savehist-file (expand-file-name "savehist" gmacs-cache-dir)
+      save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
+      recentf-save-file (expand-file-name "recentf" gmacs-cache-dir)
+      transient-history-file (expand-file-name "transient-history.el" gmacs-cache-dir)
+      bookmark-default-file (expand-file-name "bookmarks" gmacs-cache-dir))
+#+END_SRC
+Now we specify what to save.
+#+BEGIN_SRC emacs-lisp
+(savehist-mode 1)
+(setq history-length t)
+(setq history-delete-duplicates t)
+(setq savehist-save-minibuffer-history 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        search-ring
+        regexp-search-ring))
+#+END_SRC
 *** Reloading
 As I am an avid Emacs hacker, it became clear to me very quickly that reloading
 Emacs is very useful when testing something out. There are three fronts on which
@@ -651,78 +717,6 @@ This kills Emacs and starts a new session.
 (use-package restart-emacs
   :commands restart-emacs
   :bind (("C-c R" . restart-emacs)))
-#+END_SRC
-*** Backups
-Keep backups in a dedicated spot and not in the current directory: this saves a
-lot clutter.
-#+BEGIN_SRC emacs-lisp
-(setq backup-directory-alist `(("." . ,(expand-file-name (concat gmacs-cache-dir "backups")))))
-#+END_SRC
-I have lots of disk space, and not so much patience when I lose an important
-file. So I save lots.
-#+BEGIN_SRC emacs-lisp
-(setq delete-old-versions -1)
-(setq version-control t)
-(setq vc-make-backup-files t)
-(setq create-lockfiles nil)
-(setq auto-save-file-name-transforms `((".*" ,(expand-file-name (concat gmacs-cache-dir "auto-save")) t)))
-(setq auto-save-list-file-name (expand-file-name (concat gmacs-cache-dir "auto-save/.saves~")))
-#+END_SRC
-However, Emacs prints a lot of messages to the echo area telling you that a file
-has been autosaved. This is unnecessary, so I use [[pragmaticemacs.com/emacs/make-emacs-a-bit-quieter/][this hack]] from Pragmatic Emacs
-to quiet down the autosave. Essentially, we replace the default autosave
-function with our own silent version.
-#+BEGIN_SRC emacs-lisp
-(setq auto-save-timeout 99999)
-
-(defvar bjm/auto-save-timer nil
-  "Timer to run `bjm/auto-save-silent'")
-
-(defvar bjm/auto-save-interval 5
-  "How often in seconds of idle time to auto-save with
-`bjm/auto-save-silent'")
-
-(defun bjm/auto-save-silent ()
-  "Auto-save all buffers silently"
-  (interactive)
-  (do-auto-save t))
-
-(setq bjm/auto-save-timer
-      (run-with-idle-timer 0 bjm/auto-save-interval 'bjm/auto-save-silent))
-#+END_SRC
-Store more undo information in memory.
-#+BEGIN_SRC emacs-lisp
-(setq-default undo-limit 250000)
-#+END_SRC
-**** History
-It's nice to have a history of commands and other things so that you can get
-right to work when you open a new Emacs instance, you can get right to work.
-Without this, =*table--cell-backward-kill-paragraph= is the default command,
-because they are sorted alphabetically. If this has ever been the first command
-you wanted to execute after opening Emacs, please let me know.
-#+BEGIN_SRC emacs-lisp
-(setq-default savehist-file (expand-file-name "savehist" gmacs-cache-dir)
-      save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
-      recentf-save-file (expand-file-name "recentf" gmacs-cache-dir)
-      transient-history-file (expand-file-name "transient-history.el" gmacs-cache-dir)
-      bookmark-default-file (expand-file-name "bookmarks" gmacs-cache-dir))
-(savehist-mode 1)
-(setq history-length t)
-(setq history-delete-duplicates t)
-(setq savehist-save-minibuffer-history 1)
-(setq savehist-additional-variables
-      '(kill-ring
-        search-ring
-        regexp-search-ring))
-#+END_SRC
-Open files to the same place in which they were last closed.
-#+BEGIN_SRC emacs-lisp
-(save-place-mode 1)
-#+END_SRC
-I like having lots of =recentf= files.
-#+BEGIN_SRC emacs-lisp
-(setq recentf-max-saved-items 1000
-      recentf-auto-cleanup 'never)
 #+END_SRC
 *** Abbreviations
 Abbrevs are a pretty common and useful feature in editors. You can define
@@ -829,6 +823,12 @@ edited and saved.
       (gm/tangle-gmacs)))
 
 (add-hook 'after-save-hook #'gm/tangle-if-config)
+#+END_SRC
+*** Profile Startup Time
+If I introduce a new feature that increases my startup time, I can test things
+out quantitatively with =esup=, a built-in feature.
+#+BEGIN_SRC emacs-lisp
+(autoload 'esup "esup")
 #+END_SRC
 ** Wordsmithing
 *** Basic Configuration
@@ -1218,8 +1218,8 @@ Sexps are everything in Lisp. The default bindings to traverse them forwards and
 backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 [[*Window Management][bindings]], I'm willing to do it again.
 #+BEGIN_SRC emacs-lisp
-(bind-key "M-9" #'backward-sexp emacs-lisp-mode-map)
-(bind-key "M-0" #'forward-sexp emacs-lisp-mode-map)
+(bind-key "M-9" #'backward-sexp)
+(bind-key "M-0" #'forward-sexp)
 #+END_SRC
 ** Packages
 *** Helpful
@@ -1809,9 +1809,10 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
   <<org-settings>>)
 #+END_SRC
 ** Configuration
-[[http://kitchingroup.cheme.cmu.edu/blog/2017/04/09/A-better-return-in-org-mode/][John Kitchin]] explains how to have Org Mode act more like other word processors,
-in that =RET= while in a list adds an item. The default in Org is that =M-RET=
-serves this purpose.
+A better return for Org mode. If in a list, we want to add a new item.
+If we're in a heading, we want to go the end of the line, then return. This is
+because I never want to split the heading in half. If we're in a table, we add a
+new row. If we are in a source block, we want to indent. Inspired by [[http://kitchingroup.cheme.cmu.edu/blog/2017/04/09/A-better-return-in-org-mode/][John Kitchin]].
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (defun gm/org-return (&optional ignore)
   "Add new list item, heading or table row with RET.
@@ -1830,6 +1831,9 @@ Use a prefix arg to get regular RET. "
         (setf (buffer-substring
                (line-beginning-position) (line-end-position)) "")
         (org-return)))
+     ((org-at-heading-p)
+      (end-of-line)
+      (org-return))
      ((org-at-table-p)
       (if (-any?
            (lambda (x) (not (string= "" x)))
@@ -1842,6 +1846,8 @@ Use a prefix arg to get regular RET. "
         (setf (buffer-substring
                (line-beginning-position) (line-end-position)) "")
         (org-return)))
+     ((org-in-src-block-p)
+      (newline-and-indent))
      (t
       (org-return)))))
 #+END_SRC
@@ -1868,8 +1874,8 @@ Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-refile-targets '(((expand-file-name "todo.org" org-directory) :maxlevel . 3)
-                           ((expand-file-name "notes.org" org-directory) :maxlevel . 2)))
+(setq org-refile-targets `((,(expand-file-name "todo.org" org-directory) :maxlevel . 3)
+                           (,(expand-file-name "notes.org" org-directory) :maxlevel . 2)))
 #+END_SRC
 *** Capture
 :PROPERTIES:
@@ -1914,18 +1920,28 @@ We send the data from =org-protocol= into the following template.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref capture-templates
 ("p" "Org Protocol" entry
  (file org-default-notes-file)
- "* [[%:link][%(square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%:initial")
+ "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")")
 #+END_SRC
 Because Org links are constructed with square brackets, any URL whose title
 contains square brackets (I'm looking at you, arXiv) would break a normal
 implementation of the this template. Thankfully, [[https://github.com/vincent-picaud][Vincent Picaud]] wrote a function
 to fix that up,
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(defun square-to-round-brackets (string-to-transform)
+(defun gm/square-to-round-brackets (string-to-transform)
   "Transforms [ into ( and ] into ), other chars left unchanged."
   (concat
   (--map (if (equal it ?[) ?\( (if (equal it ?]) ?\) it))
    string-to-transform)))
+#+END_SRC
+Also, I want to wrap the excerpt in an Org quote block, but not if there is no
+excerpt.
+#+BEGIN_SRC emacs-lisp
+(defun gm/quote-if-non-empty (str)
+  (unless (or (string-blank-p str)
+              ; dont quote things with headings or org blocks
+              (string-match "^\\(\*+\\)\\|\\(#\+BEGIN\_\\)" str))
+    (setq str (format "#+BEGIN_QUOTE\n%s\n#+END_QUOTE" (s-trim str))))
+  (s-trim str))
 #+END_SRC
 I also bind =c l= to store the URL of the current page as an Org link.
 #+BEGIN_SRC js :tangle no
@@ -2061,13 +2077,6 @@ make something bold. It is enough to just display the argument as bold.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-hide-emphasis-markers t)
 #+END_SRC
-This snippet from [[https://fuco1.github.io/2018-12-23-Multiline-fontification-with-org-emphasis-alist.html][Multiline fontification with org-emphasis-alist]] lets bolded or
-italic blocks stretch across multiple lines. This is useful when I want to
-format an entire sentence or paragraph, because I hard-wrap just about
-everything I write.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setcar (nthcdr 4 org-emphasis-regexp-components) 10)
-#+END_SRC
 *** Lists
 Have lists begun by, for example, =-= look like a bullet list.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -2115,7 +2124,7 @@ as `org-src-fontify-natively' is non-nil."
       (unless (eq major-mode lang-mode) (funcall lang-mode))
       ;; Avoid `font-lock-ensure', which does not display fonts in
       ;; source block.
-      (font-lock-fontify-buffer)
+      (call-interactively #'font-lock-fontify-buffer)
       (setq pos (point-min))
       (while (setq next (next-single-property-change pos 'face))
         (put-text-property
@@ -2163,32 +2172,12 @@ I'm generally fine with just evaluating a code block.
 [[http://kitchingroup.cheme.cmu.edu/blog/2017/06/10/Adding-keymaps-to-src-blocks-via-org-font-lock-hook/][John Kitchin]] explains how to get use keybindings from the appropriate language
 major mode inside Org source blocks. This heavily reduces the need to activate
 special edit mode with =C-c '=. The idea is that we set up keymaps and apply them
-with font-lock by hooking into Org Mode's font-lock.
-
-We set up the maps here.
-#+BEGIN_SRC emacs-lisp
-(require 'elpy)
-
-(defvar gm/src-block-keymaps
-      `(("python" . ,(let ((map (make-composed-keymap
-                                 `(,elpy-mode-map ,python-mode-map)
-                                 org-mode-map)))
-                       ;; In org-mode I define RET so we redefine
-                       (define-key map (kbd "<return>") 'newline)
-                       (define-key map (kbd "C-c C-c") 'org-ctrl-c-ctrl-c)
-                       map))
-        ("emacs-lisp" . ,(let ((map (make-composed-keymap
-                                     `(,emacs-lisp-mode-map)
-                                     org-mode-map)))
-                           (define-key map (kbd "C-c C-c") 'org-ctrl-c-ctrl-c)
-                           map))))
-#+END_SRC
-Then we define the function that applies the keymap to each block.
+with font-lock by hooking into Org Mode's font-lock. We define the function that
+applies the keymap to each block.
 #+BEGIN_SRC emacs-lisp
 (defun gm/add-keymap-to-src-blocks (limit)
   "Add keymaps to src-blocks defined in `gm/src-block-keymaps'."
-  (let ((case-fold-search t)
-        lang)
+  (let ((case-fold-search t))
     (while (re-search-forward org-babel-src-block-regexp limit t)
       (let ((lang (match-string 2))
             (beg (match-beginning 0))
@@ -2208,14 +2197,32 @@ relevant hook.
   :init-value nil
   (if gm/src-keymap-mode
       (progn
+        (require 'elpy)
         (add-hook 'org-font-lock-hook #'gm/add-keymap-to-src-blocks t)
         (add-to-list 'font-lock-extra-managed-props 'local-map))
     (remove-hook 'org-font-lock-hook #'gm/add-keymap-to-src-blocks)
     (cursor-sensor-mode -1))
-  (font-lock-fontify-buffer))
-
-(add-hook 'org-mode-hook (lambda ()
-                           (gm/src-keymap-mode +1)))
+  (call-interactively #'font-lock-fontify-buffer))
+#+END_SRC
+Here are the actual maps.
+#+BEGIN_SRC emacs-lisp
+(defvar gm/src-block-keymaps
+      `(("python" . ,(let ((map (make-composed-keymap
+                                 `(,(when (boundp 'elpy-mode)
+                                      elpy-mode-map)
+                                   ,(when (boundp 'python-mode)
+                                      python-mode-map))
+                                 org-mode-map)))
+                       ;; In org-mode I define RET so we redefine
+                       (define-key map (kbd "RET") 'newline-and-indent)
+                       (define-key map (kbd "C-c C-c") 'org-ctrl-c-ctrl-c)
+                       map))
+        ("emacs-lisp" . ,(let ((map (make-composed-keymap
+                                     `(,emacs-lisp-mode-map)
+                                     org-mode-map)))
+                           (define-key map (kbd "RET") 'newline-and-indent)
+                           (define-key map (kbd "C-c C-c") 'org-ctrl-c-ctrl-c)
+                           map))))
 #+END_SRC
 ** LaTeX
 Highlight LateX inline math in org mode.
@@ -2930,18 +2937,9 @@ Then we bind this to semicolon.
 *** Helper Functions
 **** QuickMath Minor Mode
 #+BEGIN_SRC emacs-lisp :noweb yes
-(defvar gm/math-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "RET") #'butterfly)
-    map))
+(defvar gm/math-mode-map (make-sparse-keymap))
 
 <<math-mode>>
-
-(defvar gm/math-fragment-map
-  (let ((map (make-composed-keymap
-              `(,gm/math-mode-map)
-              org-mode-map
-              ))) map))
 
 (defun quick-math--add-keymap-to-math-fragments (limit)
   (let ((case-fold-search t))
@@ -2950,7 +2948,7 @@ Then we bind this to semicolon.
             (end (match-end 0)))
         (progn
           (add-text-properties
-           beg end `(local-map ,gm/math-fragment-map)))))))
+           beg end `(local-map ,gm/math-mode-map)))))))
 
 (define-minor-mode quick-math-mode
   "Minor mode for math"
@@ -2961,7 +2959,7 @@ Then we bind this to semicolon.
         (add-hook 'org-font-lock-hook #'quick-math--add-keymap-to-math-fragments t)
         (add-to-list 'font-lock-extra-managed-props 'local-map))
     (remove-hook 'org-font-lock-hook #'quick-math--add-keymap-to-math-fragments))
-  (font-lock-fontify-buffer))
+  (call-interactively #'font-lock-fontify-buffer))
 #+END_SRC
 **** Simpler =texmathp=
 The default =texmathp= function assumes that you are writing valid LaTeX code.
