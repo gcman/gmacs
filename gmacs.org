@@ -632,9 +632,11 @@ asynchronous tangling and byte-compilation [[#tangle-async][here]].
         (init (expand-file-name "init.el" gmacs-emacs-dir)))
     (if p
         (org-babel-load-file org)
-      (when (file-newer-than-file-p org elc)
+      (save-buffer)
+      (when (or (not (file-exists-p elc))
+                (file-newer-than-file-p org elc))
         (org-babel-tangle-file org el)
-        (byte-recompile-file el))
+        (byte-compile-file el))
       (load-file init)
       (run-hooks 'after-init-hook))))
 
@@ -802,7 +804,7 @@ allows it to be asynchronous).
         (dst (expand-file-name "gmacs.el" user-emacs-directory)))
     (require 'ob-tangle)
     (org-babel-tangle-file src dst)
-    (byte-recompile-file dst)
+    (byte-compile-file dst)
     (with-current-buffer byte-compile-log-buffer
       (buffer-string))))
 #+END_SRC
@@ -1332,6 +1334,7 @@ extension. Use ~S~ to use in a Dired buffer.
 **** Sudo
 #+BEGIN_SRC emacs-lisp
 (use-package sudo-edit
+  :commands sudo-edit
   :bind (("C-c C-x r" . sudo-edit)))
 #+END_SRC
 *** Ivy
@@ -1374,7 +1377,7 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
 (defconst gm/find-file-ignore-extensions
   '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc"
     "synctex.gz" "fdb_latexmk"
-    "elc"
+    "desktop" "elc"
     "pyc"))
 
 (defconst gm/find-file-ignore-dirs
@@ -1382,11 +1385,11 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
     ".git/"))
 
 (setq counsel-find-file-ignore-regexp
-      (concat (concat (regexp-opt
+      (s-join "\\|" (list (concat (regexp-opt
                        (--map (concat "." it) gm/find-file-ignore-extensions))
                       "\\'")            ; make sure we only match end of filename
               (regexp-opt
-               gm/find-file-ignore-dirs)))
+               gm/find-file-ignore-dirs))))
 #+END_SRC
 [[http://pragmaticemacs.com/page/6/][This post]] explains the pitfalls of the default behaviour of =ivy-yank-word= and
 how to fix them. Now we can easily search for the word at point using =swiper=.
@@ -1808,7 +1811,6 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
   :init
   (require 'org)
   (require 'ox-latex)
-  (require 'org-protocol)
   (use-package ox-hugo :after ox)
   :bind (:map org-mode-map
               <<org-keys>>)
@@ -1816,7 +1818,6 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
   <<org-settings>>)
 #+END_SRC
 ** Configuration
-*** Better Return
 [[http://kitchingroup.cheme.cmu.edu/blog/2017/04/09/A-better-return-in-org-mode/][John Kitchin]] explains how to have Org Mode act more like other word processors,
 in that =RET= while in a list adds an item. The default in Org is that =M-RET=
 serves this purpose.
@@ -1873,52 +1874,110 @@ example, decide where to put the result of an Org Capture.
 #+END_SRC
 We similarly decide other default locations.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-default-notes-file "~/org/inbox.org"
-      org-agenda-files '("~/org/inbox.org"
-                         "~/org/gtd.org"
-                         "~/org/notes.org"
-                         "~/org/gcal.org"))
+(setq org-default-notes-file (expand-file-name "inbox.org" org-directory)
+      org-agenda-files '((expand-file-name "inbox.org" org-directory)
+                         (expand-file-name "gtd.org" org-directory)
+                         (expand-file-name "notes.org" org-directory)
+                         (expand-file-name "gcal.org" org-directory)))
 #+END_SRC
 Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-refile-targets '(("~/org/gtd.org" :maxlevel . 3)
-                           ("~/org/someday.org" :level . 1)
-                           ("~/org/tickler.org" :maxlevel . 2)
-                           ("~/org/notes.org" :maxlevel . 2)))
+(setq org-refile-targets '(((expand-file-name "gtd.org" org-directory) :maxlevel . 3)
+                           ((expand-file-name "someday.org" org-directory) :level . 1)
+                           ((expand-file-name "tickler.org" org-directory) :maxlevel . 2)
+                           ((expand-file-name "notes.org" org-directory) :maxlevel . 2)))
 #+END_SRC
 *** Capture
 :PROPERTIES:
 :END:
-I use Org Capture to organize my todo list, take note of ideas I think of, and
-kickstart blog posts.
+Org Capture is one of the best features of Org Mode. I use it to organize my
+todo list, take note of ideas I think of, and kickstart blog posts.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c c" . org-capture)
 #+END_SRC
-Here are my capture templates.
+The two applications I spend the most time in are Emacs and Firefox. It would be
+very nice if I could use Org Capture from within the web browser. In particular,
+I want to be able to rely on the functionality of Org Mode to manage my
+bookmarks (see [[https://karl-voit.at/2014/08/10/bookmarks-with-orgmode/][Karl Volt's method]]), rather than rely on Firefox for that. Also,
+I often come across quotes or excerpts that I'd love to file away for later. The
+built-in =org-protocol= lets us intercept calls to =emacsclient= from a web browser
+and apply functions to it, like =org-capture=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(require 'org-protocol)
+#+END_SRC
+However, this only lets us manipulate the selection in the browser as plain
+text. Pretty much every browser has the ability to copy text as HTML. So we
+leverage the power of =pandoc= to convert this HTML to Org Mode syntax using some
+code by [[https://github.com/alphapapa/org-protocol-capture-html][alphapapa]].
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(require 'org-protocol-capture-html)
+#+END_SRC
+So how do we actually get data from Firefox to Emacs? You can read the [[https://orgmode.org/worg/org-contrib/org-protocol.html][Org Mode
+wiki]] for the basics. The meat of the following snippet is in the function that
+turns the browser selection into HTML (after =&body==). It was sourced from
+[[https://stackoverflow.com/questions/5643635/how-to-get-selected-html-text-with-javascript/6668159#6668159][StackOverflow]].
+#+BEGIN_SRC js :tangle no
+javascript:location.href = 'org-protocol://capture-html?template=p&url=' + encodeURIComponent(location.href) + '&title=' + encodeURIComponent(document.title || "[untitled page]") + '&body=' + encodeURIComponent(function () {var html = ""; if (typeof document.getSelection != "undefined") {var sel = document.getSelection(); if (sel.rangeCount) {var container = document.createElement("div"); for (var i = 0, len = sel.rangeCount; i < len; ++i) {container.appendChild(sel.getRangeAt(i).cloneContents());} html = container.innerHTML;}} else if (typeof document.selection != "undefined") {if (document.selection.type == "Text") {html = document.selection.createRange().htmlText;}} var relToAbs = function (href) {var a = document.createElement("a"); a.href = href; var abs = a.protocol + "//" + a.host + a.pathname + a.search + a.hash; a.remove(); return abs;}; var elementTypes = [['a', 'href'], ['img', 'src']]; var div = document.createElement('div'); div.innerHTML = html; elementTypes.map(function(elementType) {var elements = div.getElementsByTagName(elementType[0]); for (var i = 0; i < elements.length; i++) {elements[i].setAttribute(elementType[1], relToAbs(elements[i].getAttribute(elementType[1])));}}); return div.innerHTML;}());
+#+END_SRC
+A convenient way to activate this from Firefox is to use the extension
+[[https://github.com/mikecrittenden/shortkeys][ShortKeys]]. With it, I bind the above to =c b=, for "capture bookmark." One thing to
+note is that the user interface for this extension, at least on Firefox, kinda
+sucks. You have to scroll horizontally to save your keybindings, and it took me
+a while to figure that out. I've also set up many other bindings, like =n= and =p=
+for next and previous tab, but that's another story.
+
+We send the data from =org-protocol= into the following template.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref capture-templates
+("p" "Org Protocol" entry
+ (file org-default-notes-file)
+ "* [[%:link][%(square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%:initial")
+#+END_SRC
+Because Org links are constructed with square brackets, any URL whose title
+contains square brackets (I'm looking at you, arXiv) would break a normal
+implementation of the this template. Thankfully, [[https://github.com/vincent-picaud][Vincent Picaud]] wrote a function
+to fix that up,
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(defun square-to-round-brackets (string-to-transform)
+  "Transforms [ into ( and ] into ), other chars left unchanged."
+  (concat
+  (--map (if (equal it ?[) ?\( (if (equal it ?]) ?\) it))
+   string-to-transform)))
+#+END_SRC
+I also bind =c l= to store the URL of the current page as an Org link.
+#+BEGIN_SRC js :tangle no
+javascript:location.href='org-protocol://store-link://'+encodeURIComponent(location.href)
+#+END_SRC
+Finally, I have a general purpose binding on =c n= for capturing any notes or
+thoughts that come to me while browsing.
+#+BEGIN_SRC js :tangle no
+javascript:location.href='org-protocol://capture://n'
+#+END_SRC
+Here are my capture templates.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb yes :noweb-ref org-settings
 (setq org-capture-templates
- '(("a" "Appointment" entry
-    (file "~/org/gcal.org")
-    "* %i%? \n%^T\n")
-   ("t" "Todo [inbox]" entry
-    (file "~/org/inbox.org")
-    "* TODO %i%?\n:PROPERTIES:\n:CREATED: %U\n:END:")
-   ("j" "Journal" entry
-    (file+olp+datetree "~/org/journal.org")
-    "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
-   ("e" "euler" entry
-    (file+olp "~/website/content-org/blog.org" "Euler")
-    "** Project Euler %^{Problem Number}: %^{Problem Name} %^g
+      `(("a" "Appointment" entry
+         (file ,(expand-file-name "gcal.org" org-directory))
+         "* %i%? \n%^T\n")
+        ("t" "Todo" entry
+         (file org-default-notes-file)
+         "* TODO %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i%?")
+        ("n" "Note" entry
+         (file org-default-notes-file)
+         "* %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i%?")
+        ("j" "Journal" entry
+         (file+olp+datetree ,(expand-file-name "journal.org" org-directory))
+         "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
+        ("e" "euler" entry
+         (file+headline "~/website/content-org/blog.org" "Euler")
+         "** Project Euler %^{Problem Number}: %^{Problem Name} %^g
 :PROPERTIES:
 :EXPORT_FILE_NAME: %\\1
 :EXPORT_DATE: %u
 :EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.
 :END:\n*** Problem Statement\n%?\n*** My Algorithm")
-   ("b" "Bookmark"  entry
-    (file "~/org/inbox.org")
-    "* [[%:link][%:description]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%:initial\n%?")))
+        <<capture-templates>>))
 #+END_SRC
 *** Todo Lists
 I like the following set of =TODO= words. This is what appears
