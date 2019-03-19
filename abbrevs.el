@@ -217,6 +217,10 @@
     ("vss" "vector spaces" nil :count 0)
    ))
 
+(define-abbrev-table 'reb-lisp-mode-abbrev-table '())
+
+(define-abbrev-table 'reb-mode-abbrev-table '())
+
 (define-abbrev-table 'sdcv-mode-abbrev-table '())
 
 (define-abbrev-table 'select-tags-table-mode-abbrev-table '())

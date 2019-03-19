@@ -2,7 +2,7 @@
 !snippets/
 !packages/
 !elisp/
-!README.md
+!README.org
 !.gitignore
 !abbrevs.el
 !custom.el
