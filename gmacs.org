@@ -1875,10 +1875,10 @@ example, decide where to put the result of an Org Capture.
 We similarly decide other default locations.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-default-notes-file (expand-file-name "inbox.org" org-directory)
-      org-agenda-files '((expand-file-name "inbox.org" org-directory)
-                         (expand-file-name "todo.org" org-directory)
-                         (expand-file-name "notes.org" org-directory)
-                         (expand-file-name "gcal.org" org-directory)))
+      org-agenda-files `(,(expand-file-name "inbox.org" org-directory)
+                         ,(expand-file-name "todo.org" org-directory)
+                         ,(expand-file-name "notes.org" org-directory)
+                         ,(expand-file-name "gcal.org" org-directory)))
 #+END_SRC
 Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
@@ -2615,7 +2615,7 @@ We make this our default class.
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-default-class "gm-notes")
 #+END_SRC
-* Social
+* Feeds
 ** Mail
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp :noweb yes
@@ -2744,35 +2744,29 @@ Elfeed is a feed manager for Emacs. It lets me manage YouTube subscriptions and
 other forms of media, such as blogs. I plan to also use it for academic articles
 when the need arises. Many of the snippets (tagged =bjm/=) I use here was written
 by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
-#+BEGIN_SRC emacs-lisp
-(use-package elfeed
-  :ensure t
-  :commands elfeed
-  :init
-  (require 'elfeed)
-  (setq elfeed-db-directory "~/.emacs.d/.elfeed")
-  :config
-  <<elfeed-settings>>
-  (elfeed-org)
-  :bind (:map elfeed-search-mode-map
-              ("q" . bjm/elfeed-save-db-and-bury)
-              ("f" . gm/elfeed-hydra/body)
-              ("*" . bjm/elfeed-star)
-              ("8" . bjm/elfeed-unstar)
-              ([remap elfeed-search-live-filter]
-               . bjm/elfeed-search-life-filter-space)))
+#+BEGIN_SRC emacs-lisp :noweb yes
+(autoload 'elfeed "elfeed")
+(autoload 'elfeed-db-load "elfeed")
+(setq elfeed-db-directory "~/.emacs.d/.elfeed")
+(elfeed-org)
+(bind-keys :map elfeed-search-mode-map
+           ("q" . bjm/elfeed-save-db-and-bury)
+           ("f" . gm/elfeed-hydra/body)
+           ("*" . gm/elfeed-toggle-star)
+           ([remap elfeed-search-live-filter]
+            . bjm/elfeed-search-live-filter-space))
+<<elfeed-settings>>
 #+END_SRC
 By default, =elfeed= stores the feeds it should compile in an elisp file. But Org
 is easier.
 #+BEGIN_SRC emacs-lisp
 (use-package elfeed-org
-  :ensure t
   :commands elfeed-org
-  :after elfeed
   :config
   (setq rmh-elfeed-org-files
         `(,(expand-file-name "elfeed.org" org-directory))))
 #+END_SRC
+*** Launching
 We want to make sure =elfeed= reads from the disk before it launches. This makes
 our =.elfeed= easier to synchronize across machines.
 #+BEGIN_SRC emacs-lisp
@@ -2791,17 +2785,21 @@ our =.elfeed= easier to synchronize across machines.
 
 (bind-key "C-c e" #'bjm/elfeed-load-db-and-open)
 #+END_SRC
+*** Improvements
 It's nice to have a way to star content for future reference.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
-(defalias 'gm/elfeed-toggle-star
-  (elfeed-expose #'elfeed-search-toggle-all 'starred))
+#+BEGIN_SRC emacs-lisp
+(defun gm/elfeed-toggle-star ()
+  (interactive)
+  (elfeed-search-toggle-all 'starred))
 #+END_SRC
 Then we add a visual indicator.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
+#+BEGIN_SRC emacs-lisp
 (defface elfeed-search-starred-title-face
   '((t :foreground "#f77"))
   "Marks a starred Elfeed entry.")
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
 (push '(starred elfeed-search-starred-title-face) elfeed-search-face-alist)
 #+END_SRC
 [[http://pragmaticemacs.com/emacs/a-tweak-to-elfeed-filtering/][Life is too short to type extra spaces.]]
@@ -2811,6 +2809,13 @@ Then we add a visual indicator.
   (interactive)
   (let ((elfeed-search-filter (concat elfeed-search-filter " ")))
     (elfeed-search-live-filter)))
+#+END_SRC
+*** Consuming Media
+When reading articles in =elfeed-show-mode=, the content spans the entire buffer.
+I like to read my content hard-wrapped at 80 chars, so I customize the built-in
+=shr-width= ("Simple HTML Renderer," which is what Elfeed uses).
+#+BEGIN_SRC emacs-lisp
+(setq shr-width 80)
 #+END_SRC
 For YouTube videos, I like to play them right from Emacs with =mpv=.
 #+BEGIN_SRC emacs-lisp
@@ -2845,21 +2850,24 @@ See `gm/elfeed-play-with-mpv'."
       (if (eq major-mode 'elfeed-search-mode)
           (elfeed-search-browse-url)
         (elfeed-show-visit)))))
-
+#+END_SRC
+We bind it to =o=.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
 (bind-key "o" #'gm/elfeed-visit-or-play-with-mpv elfeed-show-mode-map)
 #+END_SRC
+*** Hydra
 I use a hydra to easily navigate between groups of feeds.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (defhydra gm/elfeed-hydra ()
-"filter"
-("a" (elfeed-search-set-filter "@6-months-ago") "All")
-("c" (elfeed-search-set-filter "@6-months-ago +cs") "CS")
-("e" (elfeed-search-set-filter "@6-months-ago +emacs") "Emacs")
-("*" (elfeed-search-set-filter "@6-months-ago +starred") "Starred")
-("t" (elfeed-search-set-filter "@1-day-ago") "Today")
-("M" gm/elfeed-toggle-star "Mark")
-("Q" bjm/elfeed-save-db-and-bury "Quit Elfeed" :color blue)
-("q" nil "quit" :color blue))
+  "filter"
+  ("a" (elfeed-search-set-filter "@6-months-ago") "All")
+  ("c" (elfeed-search-set-filter "@6-months-ago +cs") "CS")
+  ("e" (elfeed-search-set-filter "@6-months-ago +emacs") "Emacs")
+  ("*" (elfeed-search-set-filter "@6-months-ago +starred") "Starred")
+  ("t" (elfeed-search-set-filter "@1-day-ago") "Today")
+  ("M" gm/elfeed-toggle-star "Mark")
+  ("Q" bjm/elfeed-save-db-and-bury "Quit Elfeed" :color blue)
+  ("q" nil "quit" :color blue))
 #+END_SRC
 * Snippets
 I use =SPC= instead of the default =TAB= to expand snippets. I find this more
