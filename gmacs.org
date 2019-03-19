@@ -957,7 +957,9 @@ for selection.
   :commands flyspell-correct-wrapper
   :custom
   (flyspell-correct-interface #'frog-menu-flyspell-correct))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
 (defun frog-menu-flyspell-correct (candidates word)
   "Run `frog-menu-read' for the given CANDIDATES.
 
@@ -965,8 +967,7 @@ List of CANDIDATES is given by flyspell for the WORD.
 
 Return selected word to use as a replacement or a tuple
 of (command . word) to be used by `flyspell-do-correct'."
-  (let* ((avy-background nil)
-         (corrects (if flyspell-sort-corrections
+  (let* ((corrects (if flyspell-sort-corrections
                        (sort candidates 'string<)
                      candidates))
          (actions `(("C-s" "Save word"         (save    . ,word))
@@ -1350,6 +1351,8 @@ extension. Use ~S~ to use in a Dired buffer.
     ([remap org-goto] . counsel-org-goto)
     ([remap find-file] . counsel-find-file)
     ("C-s" . counsel-grep-or-swiper)
+    (:map ivy-minibuffer-map
+          ([remap hungry-delete-backward] . nil))
     :custom
     (counsel-grep-base-command
           "rg -i -M 120 --color auto --line-number %s %s"))
@@ -1446,7 +1449,11 @@ Basic configuration.
               ("h" . pdf-annot-add-highlight-markup-annotation)
               ("t" . pdf-annot-add-text-annotation)
               ("D". pdf-annot-delete)
-              ("r" . pdf-view--rotate))
+              ("r" . pdf-view--rotate)
+              ("n" . pdf-view-next-line-or-next-page)
+              ("C-n" . pdf-view-next-page-command)
+              ("p" . pdf-view-previous-line-or-previous-page)
+              ("C-p" . pdf-view-previous-page-command))
   :hook
   (pdf-view-mode . pdf-view-midnight-minor-mode)
   (pdf-view-mode . pdf-view-fit-width-to-window))
@@ -1563,8 +1570,7 @@ the "other one" is. Instead, you select the window with a number.
 #+BEGIN_SRC emacs-lisp
 (use-package avy
   :ensure t
-  :bind (("M-g" . avy-goto-word-1))
-  :custom (avy-background t))
+  :bind (("M-g" . avy-goto-word-1)))
 #+END_SRC
 *** Company
 #+BEGIN_SRC emacs-lisp
@@ -1577,6 +1583,10 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
   :defer 10
   :diminish
   :config (which-key-mode))
+#+END_SRC
+*** Projectile
+#+BEGIN_SRC emacs-lisp
+(use-package projectile)
 #+END_SRC
 * Keybindings
 ** Better Defaults
@@ -1672,8 +1682,8 @@ When using =C-d= or =Backspace=, delete all white space in a certain direction, 
 not just one.
 #+BEGIN_SRC emacs-lisp
 (use-package hungry-delete
-  :defer 5
-  :config (setq-default hungry-delete-mode t))
+  :commands hungry-delete-mode
+  :hook (text-mode . hungry-delete-mode))
 #+END_SRC
 *** Better Buffers
 Kill better.
@@ -2011,8 +2021,9 @@ I have in my Org Agenda to be able to alert me on my phone. I also want to be
 able to enter new events on the go. The best solution I've found for this is to
 integrate Org Mode with Google Calendar. The setup is contained in the file for
 my personal settings, =private.el=.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp
 (use-package org-gcal
+  :after org
   :commands org-gcal-sync
   :init (setq package-check-signature nil)
   :custom (org-gcal-dir gmacs-cache-dir)
@@ -2604,7 +2615,8 @@ We make this our default class.
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-default-class "gm-notes")
 #+END_SRC
-* Mail
+* Social
+** Mail
 Set up the requirements.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package notmuch
@@ -2680,7 +2692,7 @@ that checks for new mail periodically.
 
 (bind-key "C-c m" #'gm/open-mail)
 #+END_SRC
-** HTML Mail
+*** HTML Mail
 This code from [[http://kitchingroup.cheme.cmu.edu/blog/category/orgmode/4/][John Kitchin]] lets you write mail in Org Mode and send it
 formatted as HTML. This is incredibly powerful, because you can include syntax
 highlighted code, LaTeX math images, and even the image output of Babel blocks,
@@ -2726,6 +2738,128 @@ It's an email, not an essay.
 (setq org-mime-export-options '(:section-numbers nil
                                 :with-author nil
                                 :with-toc nil))
+#+END_SRC
+** Elfeed
+Elfeed is a feed manager for Emacs. It lets me manage YouTube subscriptions and
+other forms of media, such as blogs. I plan to also use it for academic articles
+when the need arises. Many of the snippets (tagged =bjm/=) I use here was written
+by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
+#+BEGIN_SRC emacs-lisp
+(use-package elfeed
+  :ensure t
+  :commands elfeed
+  :init
+  (require 'elfeed)
+  (setq elfeed-db-directory "~/.emacs.d/.elfeed")
+  :config
+  <<elfeed-settings>>
+  (elfeed-org)
+  :bind (:map elfeed-search-mode-map
+              ("q" . bjm/elfeed-save-db-and-bury)
+              ("f" . gm/elfeed-hydra/body)
+              ("*" . bjm/elfeed-star)
+              ("8" . bjm/elfeed-unstar)
+              ([remap elfeed-search-live-filter]
+               . bjm/elfeed-search-life-filter-space)))
+#+END_SRC
+By default, =elfeed= stores the feeds it should compile in an elisp file. But Org
+is easier.
+#+BEGIN_SRC emacs-lisp
+(use-package elfeed-org
+  :ensure t
+  :commands elfeed-org
+  :after elfeed
+  :config
+  (setq rmh-elfeed-org-files
+        `(,(expand-file-name "elfeed.org" org-directory))))
+#+END_SRC
+We want to make sure =elfeed= reads from the disk before it launches. This makes
+our =.elfeed= easier to synchronize across machines.
+#+BEGIN_SRC emacs-lisp
+(defun bjm/elfeed-load-db-and-open ()
+  "Wrapper to load the elfeed db from disk before opening"
+  (interactive)
+  (elfeed-db-load)
+  (elfeed)
+  (elfeed-search-update--force))
+
+(defun bjm/elfeed-save-db-and-bury ()
+  "Wrapper to save the elfeed db to disk before burying buffer"
+  (interactive)
+  (elfeed-db-save)
+  (quit-window))
+
+(bind-key "C-c e" #'bjm/elfeed-load-db-and-open)
+#+END_SRC
+It's nice to have a way to star content for future reference.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
+(defalias 'gm/elfeed-toggle-star
+  (elfeed-expose #'elfeed-search-toggle-all 'starred))
+#+END_SRC
+Then we add a visual indicator.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
+(defface elfeed-search-starred-title-face
+  '((t :foreground "#f77"))
+  "Marks a starred Elfeed entry.")
+
+(push '(starred elfeed-search-starred-title-face) elfeed-search-face-alist)
+#+END_SRC
+[[http://pragmaticemacs.com/emacs/a-tweak-to-elfeed-filtering/][Life is too short to type extra spaces.]]
+#+BEGIN_SRC emacs-lisp
+(defun bjm/elfeed-search-live-filter-space ()
+  "Insert space when running elfeed filter"
+  (interactive)
+  (let ((elfeed-search-filter (concat elfeed-search-filter " ")))
+    (elfeed-search-live-filter)))
+#+END_SRC
+For YouTube videos, I like to play them right from Emacs with =mpv=.
+#+BEGIN_SRC emacs-lisp
+(defvar gm/elfeed-mpv-patterns
+  '("youtu\\.?be")
+  "List of regexp to match against elfeed entry link to know
+whether to use mpv to visit the link.")
+
+(defun gm/elfeed-play-with-mpv ()
+  "Play entry link with mpv."
+  (interactive)
+  (let ((entry (if (eq major-mode 'elfeed-show-mode)
+                   elfeed-show-entry
+                 (elfeed-search-selected :single))))
+    (message "Opening %s with mpv..." (elfeed-entry-link entry))
+    (start-process "elfeed-mpv" nil "mpv" (elfeed-entry-link entry))))
+
+(defun gm/elfeed-visit-or-play-with-mpv ()
+  "Play in mpv if entry link matches `gm/elfeed-mpv-patterns', visit otherwise.
+See `gm/elfeed-play-with-mpv'."
+  (interactive)
+  (let ((entry (if (eq major-mode 'elfeed-show-mode)
+                   elfeed-show-entry
+                 (elfeed-search-selected :single)))
+        (patterns gm/elfeed-mpv-patterns))
+    (while (and patterns
+                (not (string-match (car gm/elfeed-mpv-patterns)
+                                   (elfeed-entry-link entry))))
+      (setq patterns (cdr patterns)))
+    (if patterns
+        (gm/elfeed-play-with-mpv)
+      (if (eq major-mode 'elfeed-search-mode)
+          (elfeed-search-browse-url)
+        (elfeed-show-visit)))))
+
+(bind-key "o" #'gm/elfeed-visit-or-play-with-mpv elfeed-show-mode-map)
+#+END_SRC
+I use a hydra to easily navigate between groups of feeds.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
+(defhydra gm/elfeed-hydra ()
+"filter"
+("a" (elfeed-search-set-filter "@6-months-ago") "All")
+("c" (elfeed-search-set-filter "@6-months-ago +cs") "CS")
+("e" (elfeed-search-set-filter "@6-months-ago +emacs") "Emacs")
+("*" (elfeed-search-set-filter "@6-months-ago +starred") "Starred")
+("t" (elfeed-search-set-filter "@1-day-ago") "Today")
+("M" gm/elfeed-toggle-star "Mark")
+("Q" bjm/elfeed-save-db-and-bury "Quit Elfeed" :color blue)
+("q" nil "quit" :color blue))
 #+END_SRC
 * Snippets
 I use =SPC= instead of the default =TAB= to expand snippets. I find this more
