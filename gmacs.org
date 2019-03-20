@@ -706,7 +706,9 @@ asynchronous tangling and byte-compilation [[#tangle-async][here]].
         (byte-compile-file el))
       (load-file init)
       (run-hooks 'after-init-hook))))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 (bind-key "C-c r" 'gm/reload)
 #+END_SRC
 Finally, I hope it doesn't come to this too often, but sometimes we must close
@@ -2896,117 +2898,112 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 #+END_SRC
 ** QuickMath
 I use a hydra for snippets that just insert/replace text in math mode and thus
-don't require the use of =yasnippets=. To maintain and generate my main snippets,
-I use a data structure called a radix tree.
-#+BEGIN_SRC emacs-lisp
-(require 'radix-tree)
-#+END_SRC
+don't require the use of =yasnippets=.
 *** Math Symbols
 **** Main Math Snippets
 #+BEGIN_SRC emacs-lisp
 (defvar gm/math-snippets
-  '(("==" . "split-equals")
-    ("=>" . "implies")
-    ("CC" . "complex")
-    ("LL" . "cal-L")
-    ("MM" . "cal-M")
-    ("NN" . "natural")
-    ("QQ" . "rational")
-    ("RR" . "real")
-    ("ZZ" . "integers")
-    ("[" . "square-brackets")
-    ("^" . "superscript")
-    ("_" . "subscript")
-    ("abs" . "abs")
-    ("acos" . "acos")
-    ("ale" . "ale")
-    ("aleph" . "aleph")
-    ("asin" . "asin")
-    ("atan" . "atan")
-    ("bigop" . "big-operator")
-    ("binom" . "choose")
-    ("bol" . "bol")
-    ("cb" . "cubed")
-    ("cc" . "subset")
-    ("ceil" . "ceiling")
-    ("cong" . "congruent")
-    ("cos" . "cos")
-    ("cot" . "cot")
-    ("cot" . "acot")
-    ("cu" . "curl")
-    ("dd" . "derivative-one-term")
-    ("del" . "partial")
-    ("det" . "determinant")
-    ("dim" . "dim")
-    ("dint" . "dintegral")
-    ("div" . "divergence")
-    ("dv" . "derivative")
-    ("eq" . "equal-sign")
-    ("exp" . "exponential")
-    ("fa" . "for-all")
-    ("fl" . "floor")
-    ("fr" . "frac")
-    ("fun" . "function")
-    ("ge" . "greater-than")
-    ("gr" . "gradient")
-    ("iint" . "iintegral")
-    ("im" . "image")
-    ("inf" . "infimum")
-    ("inn" . "in")
-    ("int" . "integral")
-    ("inv" . "inverse")
-    ("iso" . "isomorphic")
-    ("ker" . "kernel")
-    ("lap" . "laplacian")
-    ("le" . "less-than")
-    ("lim" . "limit")
-    ("list" . "list")
-    ("ln" . "nat-logarithm")
-    ("log" . "log")
-    ("lr9" . "parentheses")
-    ("lr[" . "brackets")
-    ("lr{" . "set")
-    ("mp" . "minus-plus")
-    ("nabl" . "nabla")
-    ("ndd" . "nth-derivative")
-    ("ndv" . "nth-differential")
-    ("neq" . "neq")
-    ("norm" . "norm")
-    ("npd" . "nth-pderivative")
-    ("npv" . "nth-pdifferential")
-    ("nsq" . "nsqrt")
-    ("o+" . "oplus")
-    ("oint" . "ointegral")
-    ("oo" . "infinity")
-    ("opl" . "oplus")
-    ("ox" . "otimes")
-    ("part" . "partial")
-    ("pd" . "partial")
-    ("pm" . "plus-minus")
-    ("prod" . "product")
-    ("prop" . "proportional-to")
-    ("ps" . "pairsum")
-    ("psum" . "pairsum")
-    ("pv" . "partial-derivative")
-    ("sec" . "sec")
-    ("seq" . "sequence")
-    ("set" . "set")
-    ("sim" . "sim")
-    ("sin" . "sin")
-    ("span" . "span")
-    ("sq" . "sqrt")
-    ("sr" . "squared")
-    ("st" . "such-that")
-    ("star" . "star")
-    ("sum" . "sum")
-    ("sup" . "supremum")
-    ("tan" . "tan")
-    ("then" . "implies")
-    ("to" . "to")
-    ("tr" . "trace")
-    ("vv" . "vec")
-    ("xii" . "x-sub-i")
-    ("xx" . "times")))
+  '(("==" "&= ")
+    ("=>" "\\implies ")
+    ("CC" "\\C")
+    ("LL" "\\mathcal{L}")
+    ("MM" "\\mathcal{M}")
+    ("NN" "\\N")
+    ("QQ" "\\Q")
+    ("RR" "\\R")
+    ("ZZ" "\\Z")
+    ("[" "square-brackets" t)
+    ("^" "superscript" t)
+    ("_" "subscript" t)
+    ("abs" "abs" t)
+    ("acos" "\\arccos ")
+    ("acot" "\\arccot")
+    ("aleph" "\\aleph")
+    ("asin" "\\arcsin ")
+    ("atan" "\\arctan ")
+    ("bigop" "big-operator" t)
+    ("binom" "choose" t)
+    ("bol" "bol" t)
+    ("cb" "^3")
+    ("cc" "\\subset ")
+    ("ceil" "ceiling" t)
+    ("cong" "\\equiv")
+    ("cos" "\\cos ")
+    ("cot" "\\cot ")
+    ("cu" "\\Curl ")
+    ("dd" "derivative-one-term" t)
+    ("del" "partial" t)
+    ("det" "determinant" t)
+    ("dim" "\\Dim ")
+    ("dint" "dintegral" t)
+    ("div" "\\Div ")
+    ("dv" "derivative" t)
+    ("eq" " = ")
+    ("exp" "\\exp ")
+    ("fa" "\\forall ")
+    ("fl" "floor" t)
+    ("fr" "frac" t)
+    ("fun" "function" t)
+    ("ge" "\\ge ")
+    ("gr" "\\Grad ")
+    ("iint" "iintegral" t)
+    ("im" "\\Image ")
+    ("inf" "\\Inf ")
+    ("inn" "in" "\\in ")
+    ("int" "integral" t)
+    ("inv" "inverse" t)
+    ("iso" "\\Iso ")
+    ("ker" "\\Ker ")
+    ("lap" "laplacian" t)
+    ("le" "\\le ")
+    ("lim" "limit" t)
+    ("list" "list" t)
+    ("ln" "\\ln ")
+    ("log" "\\log ")
+    ("lr9" "parentheses" t)
+    ("lr[" "brackets" t)
+    ("lr{" "set" t)
+    ("mp" "\\mp ")
+    ("nabl" "\\nabla ")
+    ("ndd" "nth-derivative" t)
+    ("ndv" "nth-differential" t)
+    ("neq" "neq" t)
+    ("norm" "norm" t)
+    ("npd" "nth-pderivative" t)
+    ("npv" "nth-pdifferential" t)
+    ("nsq" "nsqrt" t)
+    ("o+" "\\oplus ")
+    ("oint" "ointegral" t)
+    ("oo" "\\infty")
+    ("opl" "\\oplus ")
+    ("ox" "\\otimes ")
+    ("part" "partial" t)
+    ("pd" "partial" t)
+    ("pm" "\\pm ")
+    ("prod" "product" t)
+    ("prop" "\\propto ")
+    ("ps" "pairsum" t)
+    ("psum" "pairsum" t)
+    ("pv" "partial-derivative" t)
+    ("sec" "\\sec ")
+    ("seq" "sequence" t)
+    ("set" "set" t)
+    ("sim" "\\sim ")
+    ("sin" "\\sin ")
+    ("span" "\\Span")
+    ("sq" "sqrt" t)
+    ("sr" "^2")
+    ("st" ": ")
+    ("star" "^\\star ")
+    ("sum" "sum" t)
+    ("sup" "\\Sup ")
+    ("tan" "\\tan ")
+    ("then" "\\implies ")
+    ("to" "\\to ")
+    ("tr" "trace" t)
+    ("vv" "\\vec ")
+    ("xi" "x_i")
+    ("xx" "\\times ")))
 #+END_SRC
 **** Hydras
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -3073,8 +3070,7 @@ I use a data structure called a radix tree.
   ("r" (insert "\\varrho") "ρ")
   ("U" (insert "\\cap ") "∩")
   ("x" (insert " \\times ") "×")
-  ("." (insert " \\cdots ") "···")
-  ("-" (gm/snippet "" "conjugate") "-"))
+  ("." (insert " \\cdots ") "···"))
 #+END_SRC
 Then we bind this to semicolon.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
@@ -3083,10 +3079,15 @@ Then we bind this to semicolon.
 *** Helper Functions
 **** QuickMath Minor Mode
 #+BEGIN_SRC emacs-lisp :noweb yes
-(defvar gm/math-mode-map (make-sparse-keymap))
+(defvar gm/math-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map org-mode-map)
+    map))
 
 <<math-mode>>
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 (defun quick-math--add-keymap-to-math-fragments (limit)
   (let ((case-fold-search t))
     (while (re-search-forward (nth 1 (assoc "\\(" org-latex-regexps)) limit t)
@@ -3095,7 +3096,9 @@ Then we bind this to semicolon.
         (progn
           (add-text-properties
            beg end `(local-map ,gm/math-mode-map)))))))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 (define-minor-mode quick-math-mode
   "Minor mode for math"
   :init-value nil
@@ -3184,62 +3187,52 @@ Return the last n characters before the point, or =loc= if provided.
   (unless n (setq n 1))
   (replace-regexp-in-string "[1-9]+" (lambda (x) (format "%d" (+ n (string-to-number x)))) string))
 #+END_SRC
-**** Math Mode Snippet
-#+BEGIN_SRC emacs-lisp
-(defun gm/snippet (key snippet)
-  (let ((len (length key)))
-    (delete-char (- 1 len)) ;; this has to be negative, we're deleting back
-    ;; this is so we don't have two backslashes after something like \sim
-    (when (= (char-before) ?\\) (delete-char -1))
-    (yas-expand-snippet (yas-lookup-snippet snippet))))
-#+END_SRC
 **** Generate Snippets
+:PROPERTIES:
+:ORDERED:  t
+:END:
 I wrote this to reduce the amount of redundant code needed to set up the
 snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/longest-snippet)
-(defvar gm/math-suffix-tree)
 
 (defun gm/math-setup ()
   (setq gm/longest-snippet
         (cons (-max (--map (length (car it)) gm/math-snippets))
-              (-max (--map (length (cdr it)) gm/math-snippets))))
-  (setq gm/math-suffix-tree
-        (--reduce-from (radix-tree-insert acc (car it) (cdr it))
-                       radix-tree-empty (--map (cons (nreverse (car it)) (cdr it))
-                                               gm/math-snippets)))
-  (--map (eval `(define-key gm/math-mode-map
-                  ,it (lambda! (gm/math-snippet ,it)) ))
+              (-max (--map (length (cadr it)) gm/math-snippets))))
+  (let ((unique-suffixes
          (delete-dups (--map (s-right 1 (car it)) gm/math-snippets))))
+    (seq-do (lambda (key)
+              (eval `(define-key gm/math-mode-map
+                       ,key (lambda! () (gm/math-snippet-expand ,key)))))
+            unique-suffixes)))
 #+END_SRC
-We make a completion function.
+We make a function to get the possible completion candidates from the buffer.
 #+BEGIN_SRC emacs-lisp
-(defun radix-tree-keys (subtree prefix)
-  (let ((keys nil))
-    (radix-tree-iter-mappings (radix-tree-subtree subtree prefix)
-			                  (lambda (key val)
-				                (!cons (cons (concat prefix key) val) keys)))
-    keys))
-#+END_SRC
-And a function to get the possible completion candidates from the buffer.
-#+BEGIN_SRC emacs-lisp
-(defun gm/buff-cand (n key)
+(defun gm/buff-cand (n)
   (loop for i from 0 to n
-        collect (concat (gm/last-n-chars i) key)))
+        collect (gm/last-n-chars i)))
 #+END_SRC
 Then, we set up the creation of an actual snippet (note that its length is
-capped at 5 characters). The longest snippet is currently =binom=, for the
-binomial coefficient (choose function).
+capped at a certain number of characters, defined by =gm/longest-snippet=). The
+longest snippet is currently =binom=, for the binomial coefficient (choose
+function).
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-snippet (key)
-  (-if-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet) key))
-             (completions (--filter
-                           (member (reverse (car it)) buff-cand)
-                           (radix-tree-keys gm/math-suffix-tree key)))
-             (snippet (--max-by (> (length (car it)) (length (car other)))
-                                completions)))
-      (gm/snippet (car snippet) (cdr snippet))
-    (insert key)))
+(defun gm/math-snippet-expand (key)
+  (insert key)
+  (-when-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet)))
+               (completions (--keep (assoc it gm/math-snippets) buff-cand))
+               (snippet (--max-by (> (length (car it)) (length (car other)))
+                                  completions)))
+    ;; this has to be negative, we're deleting back
+    (delete-char (- 0 (length (car snippet))))
+    ;; this is so we don't have two backslashes after something like \sim
+    (when (= (char-before) ?\\) (delete-char -1))
+    ;; is this a snippet expansion or just a text insertion?
+    (let ((expand (cadr snippet)))
+      (if (cddr snippet)
+          (yas-expand-snippet (yas-lookup-snippet expand))
+        (insert expand)))))
 #+END_SRC
 Now we give the user a way to easily add snippets.
 #+BEGIN_SRC emacs-lisp
@@ -3266,7 +3259,7 @@ A very rudimentary command to see all current snippet keys and expansions.
   (interactive)
   (with-output-to-temp-buffer "*QuickMath Expansions*"
     (let ((key-len (+ 4 (car gm/longest-snippet)))
-          (snip-len (cdr gm/longest-snippet)))
+          (snip-len (cadr gm/longest-snippet)))
       (princ (format "Key%s  Snippet%s\n%s%s\n"
                      (make-string (- key-len 4) ? )
                      (make-string (- snip-len 8) ? )
@@ -3277,7 +3270,7 @@ A very rudimentary command to see all current snippet keys and expansions.
                        (concat
                         (car snippet)
                         (make-string (- key-len (length (car snippet))) ? ))
-                       (cdr snippet)))))))
+                       (cadr snippet)))))))
 #+END_SRC
 **** Tab Jump to Next LaTeX Position
 Modified from the =cdlatex-tab= function in =cdlatex.el=.
@@ -3331,27 +3324,32 @@ Bind to tab.
 This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
 digit is pressed, if the last character is a letter, then a subscript is
 created. If this subscript is extended to a number with more than 1 digit,
-brackets are added to ensure proper LaTeX rendering.
+brackets are added to ensure proper LaTeX rendering. I also rarely enter a
+numbered subscript of more than two digits, so I also exit the brackets after
+creating them.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-number-subscript ()
-  (interactive)
-  (cond ((string-match "[a-zA-Z]" (gm/last-n-chars 1)) (insert "_"))
+(defun gm/math-number-subscript (n)
+  (cond ((string-match "[a-zA-Z]" (gm/last-n-chars 1))
+         (insert (concat "_" n)))
         ((string-match "\_[0-9]" (gm/last-n-chars 2))
          (save-excursion
            (backward-char)
-           (insert "\{")
-           (forward-char)
-           (insert "\}")))))
+           (insert "\{"))
+           (insert (concat n "\}"))
+        (t (insert n)))))
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp
-;; (defun gm/bind-number-subscript (n)
-;;   (eval `(define-key gm/math-mode-map
-;;            (number-to-string ,n)
-;;            (gm/math-number-subscript))))
-;; (dotimes (n 10)
-;;   (gm/bind-number-subscript n)
-;;   (gm/bind-number-subscript 9))
+(define-key gm/math-mode-map "0" (lambda! () (gm/math-number-subscript "0")))
+(define-key gm/math-mode-map "1" (lambda! () (gm/math-number-subscript "1")))
+(define-key gm/math-mode-map "2" (lambda! () (gm/math-number-subscript "2")))
+(define-key gm/math-mode-map "3" (lambda! () (gm/math-number-subscript "3")))
+(define-key gm/math-mode-map "4" (lambda! () (gm/math-number-subscript "4")))
+(define-key gm/math-mode-map "5" (lambda! () (gm/math-number-subscript "5")))
+(define-key gm/math-mode-map "6" (lambda! () (gm/math-number-subscript "6")))
+(define-key gm/math-mode-map "7" (lambda! () (gm/math-number-subscript "7")))
+(define-key gm/math-mode-map "8" (lambda! () (gm/math-number-subscript "8")))
+(define-key gm/math-mode-map "9" (lambda! () (gm/math-number-subscript "9")))
 #+END_SRC
 **** Fraction
 Typing =/= after an appropriate block (a number or a balanced set of parentheses)

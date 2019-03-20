@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: image
-# key: math-image
-# --
-\Image $0
