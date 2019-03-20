@@ -870,6 +870,8 @@ Default wrap at 80 characters.
 #+END_SRC
 *** Utilities
 **** Dictionary
+See this [[http://jsomers.net/blog/dictionary][beautiful post]] by James Somers on why you should use this dictionary.
+It's Webster's original, his magnum opus.
 #+BEGIN_SRC emacs-lisp
 (autoload 'sdcv-search "sdcv-mode")
 (bind-key "C-c d" 'sdcv-search)
@@ -2303,9 +2305,12 @@ Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
 #+END_SRC
-Where should it be?
+Where should it be? Let's put them all in the same place, so that common
+fragments (like =x^2=) are never generated more than once and so that we don't
+litter our folders.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-preview-latex-image-directory "cache/ltximg/")
+(setq org-preview-latex-image-directory (expand-file-name "cache/ltximg/"
+                                                          gmacs-emacs-dir))
 #+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
@@ -2748,23 +2753,22 @@ by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
 (autoload 'elfeed "elfeed")
 (autoload 'elfeed-db-load "elfeed")
 (setq elfeed-db-directory "~/.emacs.d/.elfeed")
-(elfeed-org)
-(bind-keys :map elfeed-search-mode-map
-           ("q" . bjm/elfeed-save-db-and-bury)
-           ("f" . gm/elfeed-hydra/body)
-           ("*" . gm/elfeed-toggle-star)
-           ([remap elfeed-search-live-filter]
-            . bjm/elfeed-search-live-filter-space))
-<<elfeed-settings>>
+(after! elfeed
+  (bind-keys :map elfeed-search-mode-map
+             ("q" . bjm/elfeed-save-db-and-bury)
+             ("f" . gm/elfeed-hydra/body)
+             ("*" . gm/elfeed-toggle-star)
+             ([remap elfeed-search-live-filter]
+              . bjm/elfeed-search-live-filter-space))
+  <<elfeed-settings>>)
 #+END_SRC
 By default, =elfeed= stores the feeds it should compile in an elisp file. But Org
 is easier.
 #+BEGIN_SRC emacs-lisp
-(use-package elfeed-org
-  :commands elfeed-org
-  :config
-  (setq rmh-elfeed-org-files
-        `(,(expand-file-name "elfeed.org" org-directory))))
+(autoload 'elfeed-org "elfeed-org")
+(elfeed-org)
+(setq rmh-elfeed-org-files
+      `(,(expand-file-name "elfeed.org" org-directory)))
 #+END_SRC
 *** Launching
 We want to make sure =elfeed= reads from the disk before it launches. This makes
