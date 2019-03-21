@@ -2370,7 +2370,7 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
     (goto-char fr-begin)
     (when (and (memq fr-type gm/org-valid-fragment-type)
                (gm/org-curr-fragment))
-      (async-start (symbol-function #'org-toggle-latex-fragment) 'ignore))))
+      (org-toggle-latex-fragment))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -2837,8 +2837,11 @@ whether to use mpv to visit the link.")
                    elfeed-show-entry
                  (elfeed-search-selected :single))))
     (message "Opening %s with mpv..." (elfeed-entry-link entry))
-    (start-process "elfeed-mpv" nil "mpv" (elfeed-entry-link entry))))
-
+    (start-process "elfeed-mpv" nil "mpv" "--fs" (elfeed-entry-link entry))))
+#+END_SRC
+We make a multi-purpose function to open the link with =mpv= if it is a video,
+otherwise with the browser.
+#+BEGIN_SRC emacs-lisp
 (defun gm/elfeed-visit-or-play-with-mpv ()
   "Play in mpv if entry link matches `gm/elfeed-mpv-patterns', visit otherwise.
 See `gm/elfeed-play-with-mpv'."
@@ -2857,9 +2860,13 @@ See `gm/elfeed-play-with-mpv'."
           (elfeed-search-browse-url)
         (elfeed-show-visit)))))
 #+END_SRC
+I don't want Firefox stealing the focus, because I like opening many links from
+Emacs, then switching to Firefox to read them all. To fix this, I toggle
+=browser.tabs.loadDivertedInBackground= to =true=, as per [[https://stackoverflow.com/questions/10506496/run-browse-url-in-emacs-without-giving-focus-to-the-browser][this SO post]].
 We bind it to =o=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
 (bind-key "o" #'gm/elfeed-visit-or-play-with-mpv elfeed-show-mode-map)
+(bind-key "o" #'gm/elfeed-visit-or-play-with-mpv elfeed-search-mode-map)
 #+END_SRC
 *** Hydra
 I use a hydra to easily navigate between groups of feeds.
