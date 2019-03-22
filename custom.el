@@ -62,7 +62,7 @@
 :CREATED: %U
 :END:
 %:initial
-%?"))) t)
+%?"))))
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
  '(org-ellipsis "⬎")
@@ -112,4 +112,4 @@
  ;; If there is more than one, they won't work right.
  '(avy-lead-face ((t (:inherit isearch-fail))))
  '(avy-lead-face-0 ((t (:inherit org-todo :background "#002b36"))))
- '(variable-pitch ((t (:family "Palatino Linotype")))))
+ '(variable-pitch ((t (:family "Source Sans Pro")))))

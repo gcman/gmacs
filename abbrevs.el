@@ -57,8 +57,8 @@
 
 (define-abbrev-table 'emacs-lisp-mode-abbrev-table
   '(
-    ("bsnp" "buffer-substring-no-properties" nil :count 0)
-    ("se" "save-excursion" nil :count 0)
+    ("bsnp" "buffer-substring-no-properties" nil 0)
+    ("se" "save-excursion" nil 0)
    ))
 
 (define-abbrev-table 'epa-info-mode-abbrev-table '())
@@ -81,16 +81,16 @@
 
 (define-abbrev-table 'global-abbrev-table
   '(
-    ("abbreiation" "abbreviation" nil :count 0)
-    ("admittely" "admittedly" nil :count 0)
-    ("becuase" "because" nil :count 0)
-    ("delimieter" "delimiter" nil :count 0)
-    ("eveyr" "every" nil :count 0)
-    ("inadvertantly" "inadvertently" nil :count 0)
-    ("incorectly" "incorrectly" nil :count 0)
-    ("proerty" "property" nil :count 0)
-    ("sherrif" "sheriff" nil :count 0)
-    ("teh" "the" nil :count 0)
+    ("abbreiation" "abbreviation" nil 0)
+    ("admittely" "admittedly" nil 0)
+    ("becuase" "because" nil 0)
+    ("delimieter" "delimiter" nil 0)
+    ("eveyr" "every" nil 0)
+    ("inadvertantly" "inadvertently" nil 0)
+    ("incorectly" "incorrectly" nil 0)
+    ("proerty" "property" nil 0)
+    ("sherrif" "sheriff" nil 0)
+    ("teh" "the" nil 0)
    ))
 
 (define-abbrev-table 'gnus-group-mode-abbrev-table '())
@@ -169,18 +169,19 @@
 
 (define-abbrev-table 'org-mode-abbrev-table
   '(
-    ("abbreiation" "abbreviation" nil :count 0)
-    ("admittely" "admittedly" nil :count 0)
-    ("becuase" "because" nil :count 0)
-    ("delimieter" "delimiter" nil :count 0)
-    ("eveyr" "every" nil :count 0)
-    ("inadvertantly" "inadvertently" nil :count 0)
-    ("incorectly" "incorrectly" nil :count 0)
-    ("intrface" "interface" nil :count 0)
-    ("proerty" "property" nil :count 0)
-    ("sherrif" "sheriff" nil :count 0)
-    ("teh" "the" nil :count 0)
-    ("wrok" #("work" 0 4 (face frog-menu-candidates-face)) nil :count 2)
+    ("abbreiation" "abbreviation" nil 0)
+    ("admittely" "admittedly" nil 0)
+    ("becuase" "because" nil 0)
+    ("delimieter" "delimiter" nil 0)
+    ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 1)
+    ("eveyr" "every" nil 0)
+    ("inadvertantly" "inadvertently" nil 0)
+    ("incorectly" "incorrectly" nil 0)
+    ("intrface" "interface" nil 0)
+    ("proerty" "property" nil 0)
+    ("sherrif" "sheriff" nil 0)
+    ("teh" "the" nil 0)
+    ("wrok" #("work" 0 4 (face frog-menu-candidates-face)) nil 2)
    ))
 
 (define-abbrev-table 'outline-mode-abbrev-table '())
@@ -201,20 +202,20 @@
 
 (define-abbrev-table 'quick-math-mode-abbrev-table
   '(
-    ("bij" "bijective" nil :count 0)
-    ("diffeq" "differential equation" nil :count 0)
-    ("fd" "finite dimensional" nil :count 0)
-    ("fdvs" "finite-dimensional vector space" nil :count 0)
-    ("iff" "if and only if" nil :count 1)
-    ("inj" "injective" nil :count 0)
-    ("intrface" "interface" nil :count 0)
-    ("ip" "in particular" nil :count 1)
-    ("lindep" "linearly dependent" nil :count 0)
-    ("linind" "linearly independent" nil :count 0)
-    ("st" "such that" nil :count 0)
-    ("sur" "surjective" nil :count 0)
-    ("vs" "vector space" nil :count 0)
-    ("vss" "vector spaces" nil :count 0)
+    ("bij" "bijective" nil 0)
+    ("diffeq" "differential equation" nil 0)
+    ("fd" "finite dimensional" nil 0)
+    ("fdvs" "finite-dimensional vector space" nil 0)
+    ("iff" "if and only if" nil 1)
+    ("inj" "injective" nil 0)
+    ("intrface" "interface" nil 0)
+    ("ip" "in particular" nil 1)
+    ("lindep" "linearly dependent" nil 0)
+    ("linind" "linearly independent" nil 0)
+    ("st" "such that" nil 0)
+    ("sur" "surjective" nil 0)
+    ("vs" "vector space" nil 0)
+    ("vss" "vector spaces" nil 0)
    ))
 
 (define-abbrev-table 'reb-lisp-mode-abbrev-table '())
@@ -224,6 +225,8 @@
 (define-abbrev-table 'sdcv-mode-abbrev-table '())
 
 (define-abbrev-table 'select-tags-table-mode-abbrev-table '())
+
+(define-abbrev-table 'sh-mode-abbrev-table '())
 
 (define-abbrev-table 'shell-mode-abbrev-table '())
 
@@ -266,3 +269,4 @@
 (define-abbrev-table 'web-mode-abbrev-table '())
 
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
+

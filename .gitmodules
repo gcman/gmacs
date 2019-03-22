@@ -1,0 +1,3 @@
+[submodule "themes/gautam"]
+	path = themes/gautam
+	url = git@github.com:gcman/gautam-theme.git
