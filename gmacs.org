@@ -1,6 +1,11 @@
--*- coding: utf-8 -*-
-#+TITLE: Emacs Configuration
+#+TITLE: My Emacs Configuration
+#+HUGO_EXPORT_FILE_NAME: dotemacshugo
+#+HUGO_TAGS: emacs
+#+HUGO_CATEGORIES: emacs
 #+HUGO_BASE_DIR: .
+#+HUGO_SECTION: .
+#+HUGO_AUTO_SET_LAST_MOD: t
+#+OPTIONS: num:1
 #+PROPERTY: header-args :results silent
 * Starting Up
 ** Early Init
@@ -115,7 +120,7 @@ Let the user know how quickly GMACS started.
                               (time-subtract after-init-time before-init-time)))
                      gcs-done)))
 #+END_SRC
-** Directories
+** Directories and File Locations
 We define a few custom directories to satisfy my own wishes for how things
 should be named and to speed up the package initialization process by doing it
 ourselves, rather than relying on =package-initialize=. Note that the whole thing
@@ -143,6 +148,16 @@ method makes it easy for to extend to more directories if needed.
                      gmacs-cache-dir))
     (unless (file-directory-p dir)
       (make-directory dir t))))
+#+END_SRC
+I put custom variables outside of my =init.el= file.
+#+BEGIN_SRC emacs-lisp
+(setq custom-file (expand-file-name "custom.el" gmacs-emacs-dir))
+(when (file-exists-p custom-file) (load custom-file))
+#+END_SRC
+I put my personal information in =private.el=.
+#+BEGIN_SRC emacs-lisp
+(setq private-file (expand-file-name "private.el" gmacs-emacs-dir))
+(when (file-exists-p private-file) (load private-file))
 #+END_SRC
 ** Add Package Sources
 We're going to use a custom package directory, so we need to trick Emacs into
@@ -180,11 +195,11 @@ to initialize the packages and make sure that =use-package= is installed if its
 missing. Finally, we tell =use-package= to always install missing packages.
 Otherwise, an error would be thrown when a package is missing.
 
-Note that this whole process only run when the file is byte-compiled. This means
-that by the time the code is actually evaluated, the =use-package= macro has been
-expanded, so the package is not needed anymore. As such, we can do all the
+Note that this whole process is only run when the file is byte-compiled. This
+means that by the time the code is actually evaluated, the =use-package= macro has
+been expanded, so the package is not needed anymore. As such, we can do all the
 expensive and time-consuming work of getting the packages ready before Emacs has
-even started, during byte-compilation.If this config has not been manually
+even started, during byte-compilation. If this config has not been manually
 byte-compiled, Emacs will initialize packages on startup as usual.
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile
@@ -206,24 +221,12 @@ We also require =diminish= and =bind= because I often use these keywords within
 (require 'bind-key)
 (require 'diminish)
 #+END_SRC
-** Other Elisp Files
-I put custom variables outside of my =init.el= file.
-#+BEGIN_SRC emacs-lisp
-(setq custom-file (expand-file-name "custom.el" gmacs-emacs-dir))
-(when (file-exists-p custom-file) (load custom-file))
-#+END_SRC
-I put my personal information in =private.el=.
-#+BEGIN_SRC emacs-lisp
-(setq private-file (expand-file-name "private.el" gmacs-emacs-dir))
-(when (file-exists-p private-file) (load private-file))
-#+END_SRC
 ** Common Libraries
 #+BEGIN_SRC emacs-lisp
 (use-package async :commands (async-start))
 (use-package s :demand t)
 (use-package dash :demand t :config (dash-enable-font-lock))
-(eval-when-compile
-  (require 'cl))
+(eval-when-compile (require 'cl))
 #+END_SRC
 * General Configuration
 ** User Interface
@@ -358,10 +361,19 @@ I change my fonts a lot, so I made it easier to set a font.
     (set-face-attribute 'default nil :font font)
     (set-frame-font font nil t)))
 #+END_SRC
-
+I also like using Palatino here.
 #+BEGIN_SRC emacs-lisp
 (custom-set-faces
  '(variable-pitch ((t (:family "Source Sans Pro" :height 115)))))
+#+END_SRC
+I have experienced problems with certain math characters being displayed with a
+font from the TeX Gyre family, which causes the line width to be very high. I
+found a solution [[https://lists.gnu.org/archive/html/bug-gnu-emacs/2015-05/msg00750.html][here]]. I got the Symbola font from the =ttf-ancient-fonts= package
+on the AUR.
+#+BEGIN_SRC emacs-lisp
+(set-fontset-font "fontset-default"
+                  '(#x1d400 . #x1d7ff)
+                  "Symbola")
 #+END_SRC
 **** Syntax Highlighting
 I want syntax highlighting everywhere...
@@ -1315,37 +1327,33 @@ screen, and once we're done, we can get right back to where we left off.
               ("q" . magit-quit-session)))
 #+END_SRC
 *** Dired
-**** Async
 #+BEGIN_SRC emacs-lisp
 (autoload 'dired-async-mode "dired-async.el" nil t)
 (dired-async-mode 1)
 #+END_SRC
-**** Revert Buffer
 Have the most up-to-date version of the buffer when using Dired.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 #+END_SRC
-**** Declutter
 #+BEGIN_SRC emacs-lisp
 (defun gm/dired-mode-setup ()
   (dired-hide-details-mode 1))
 (add-hook 'dired-mode-hook #'gm/dired-mode-setup)
 #+END_SRC
-**** Copy and Delete
-Allow Dired to recursively copy and delete directories. ~always~ ensures that no
-confirmation dialog comes up, and ~top~ does it only once.
+Allow Dired to recursively copy and delete directories. The option ~always~
+ensures that no confirmation dialog comes up, and ~top~ does it only one layer
+deep.
 #+BEGIN_SRC emacs-lisp
 (setq dired-recursive-copies 'always)
 (setq dired-recursive-deletes 'top)
 #+END_SRC
-**** Speed Sorting
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a Dired buffer.
 #+BEGIN_SRC emacs-lisp
 (use-package dired-quick-sort
   :config (dired-quick-sort-setup))
 #+END_SRC
-**** Sudo
+This is excellent for editing files owned by root in Emacs.
 #+BEGIN_SRC emacs-lisp
 (use-package sudo-edit
   :commands sudo-edit
@@ -1834,9 +1842,7 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
   :init
   (require 'org)
   (require 'ox-latex)
-  (use-package ox-hugo
-               :commands org-hugo-export-wim-to-md
-               :after ox)
+  (require 'ox-hugo)
   :bind (:map org-mode-map
               <<org-keys>>)
   :config
@@ -1887,7 +1893,7 @@ Use a prefix arg to get regular RET. "
 #+END_SRC
 We replace the normal return.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("RET" .  #'gm/org-return)
+("RET" . #'gm/org-return)
 #+END_SRC
 ** Utilities
 *** File Locations
@@ -2993,7 +2999,7 @@ don't require the use of =yasnippets=.
     ("iint" "iintegral" t)
     ("im" "\\Image ")
     ("inf" "\\Inf ")
-    ("inn" "in" "\\in ")
+    ("inn" "\\in ")
     ("int" "integral" t)
     ("inv" "inverse" t)
     ("iso" "\\Iso ")
@@ -3046,7 +3052,7 @@ don't require the use of =yasnippets=.
     ("to" "\\to ")
     ("tr" "trace" t)
     ("vv" "\\vec ")
-    ("xi" "x_i")
+    ("xii" "x_i")
     ("xx" "\\times ")))
 #+END_SRC
 **** Hydras

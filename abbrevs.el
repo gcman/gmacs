@@ -170,14 +170,17 @@
 (define-abbrev-table 'org-mode-abbrev-table
   '(
     ("abbreiation" "abbreviation" nil 0)
+    ("acutally" #("actually" 0 8 (face frog-menu-candidates-face)) nil 1)
     ("admittely" "admittedly" nil 0)
+    ("adn" #("and" 0 3 (face frog-menu-candidates-face)) nil 0)
     ("becuase" "because" nil 0)
     ("delimieter" "delimiter" nil 0)
-    ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 1)
+    ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 3)
     ("eveyr" "every" nil 0)
     ("inadvertantly" "inadvertently" nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("intrface" "interface" nil 0)
+    ("jsut" #("just" 0 4 (face frog-menu-candidates-face)) nil 0)
     ("proerty" "property" nil 0)
     ("sherrif" "sheriff" nil 0)
     ("teh" "the" nil 0)

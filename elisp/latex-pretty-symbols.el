@@ -1,66 +1,3 @@
-;;; latex-pretty-symbols.el --- Display many latex symbols as their unicode counterparts
-
-;; Copyright (C) 2011 Erik Parmann, Pål Drange
-;;
-;; Author: Erik Parmann <eparmann@gmail.com>
-;;         Pål Drange
-;; Created: 10. July 2011
-;; Version: 1.0
-;; Package-Version: 20150409.240
-;; Keywords: convenience, display
-;; Url: https://bitbucket.org/mortiferus/latex-pretty-symbols.el
-;; Derived from  pretty-lambda.el (http://www.emacswiki.org/emacs/PrettyLambda ) by Drew Adams
-
-;; This file is not part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License
-;; as published by the Free Software Foundation; either version 2
-;; of the License, or (at your option) any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-;;; License:
-;; Licensed under the same terms as Emacs.
-
-;;; Commentary:
-;; Description: This library use font-locking to change the way Emacs displays
-;;   various latex commands, like \Gamma, \Phi, etc.  It does not actually
-;;   change the content of the file, only the way it is displayed.
-;;
-;; Quick start:
-;;   add this file to load path, then (require 'latex-pretty-symbols)
-;;
-
-;;; TODO: The most pressing isue is a way to let not only single symbols be
-;;   displayed, but also strings.  Then we can e.g display "⟨⟨C⟩⟩" instead of
-;;   atldiamond.  Currently the 5 symbols gets placed on top of each other,
-;;   resulting in a mighty mess.  This problem might be demomposed into two
-;;   types: When the replaced string is bigger than the string replacing it
-;;   (probably the easiest case), and the converse case.
-;;
-;;   Package it as a elpa/marmelade package.
-;;   --A problem here is that marmelade destroys the unicode encoding. A
-;;   possible fix for this is to change this code, so instead of containing the
-;;   unicode characters directly, it can contain the code for each of them as an
-;;   integer. This would probably be more portable/safe, but in some way less
-;;   userfriendly, as one can not scan through the file to see which symbols it
-;;   has, and to enter one one needs to find the code
-;;
-;;   Also it would be nice if it had some configuration possibilities. Eg the
-;;   ability to add own abreviations through the customization interface, or
-;;   toggle the display of math-curly-braces.
-;;
-;;   On a longer timeline, it would be nice if it could understand some basic
-;;   newcommands, and automatically deduce the needed unicode (but this seems
-;;   super hard).
-
 (require 'cl-lib)
 ;;; Code:
 (defun substitute-pattern-with-unicode-symbol (pattern symbol)
@@ -72,37 +9,25 @@ Symbol can be the symbol directly, no lookup needed."
    nil
    `((,pattern
       (0 (progn
-	   ;;Non-working section kind of able to compose multi-char strings:
-	   ;; (compose-string-to-region (match-beginning 1) (match-end 1)
-	   ;; 				  ,symbol
-	   ;; 				  'decompose-region)
-	   ;; (put-text-property (match-beginning 1) (match-end 1) 'display ,symbol)
-	   (compose-region (match-beginning 1) (match-end 1)
-	   		   ,symbol
-	   		   'decompose-region)
-	   nil))))))
 
-;;The following code can be used to add strings, and not just single
-;; characters. But not really working yet, as it does not remove the thing that
-;; is below
-;; (require 'cl)
-;; (defun compose-string-to-region (start end string decomposingfunct)
-;;   (loop for i from 0 to (- (length string) 1)
-;; 	do (compose-region (+ i start) (+  start i 1) (substring string i (+ i 1) ) decomposingfunct)))
-
+	         (compose-region (match-beginning 1) (match-end 1)
+	   		                   ,symbol
+	   		                   'decompose-region)
+	         nil))))))
 
 (defun substitute-patterns-with-unicode-symbol (patterns)
   "Mapping over PATTERNS, calling SUBSTITUTE-PATTERN-WITH-UNICODE for each of the patterns."
-  (mapcar #'(lambda (x)
-              (substitute-pattern-with-unicode-symbol (car x)
-						      (cl-second x)))
+  (mapcar (lambda (x)
+            (substitute-pattern-with-unicode-symbol (car x)
+						                                        (cl-second x)))
           patterns))
 
 (defun latex-escape-regex (str)
-  "Gets a string, e.g. Alpha, returns the regexp matching the escaped
-version of it in LaTeX code, with no chars in [a-z0-9A-Z] after it."
+  "Gets a string, e.g. Alpha, returns the regexp matching the
+escaped version of it in LaTeX code, with no chars in [a-z0-9A-Z]
+after it, or a {} pair."
   (interactive "MString:")
-  (concat "\\(\\\\" str "\\)[^a-z0-9A-Z]"))
+  (format "\\(\\\\%s\\)\\([^[:alnum:]{]\\)\\|\\({}\\)" str))
 
 ;; (defun latex-escape-regexp-super-or-sub (str sup-or-sub backslash)
 ;;   "Gets a string, e.g. 1, a symbol 'sub or 'sup saying wether it
@@ -111,7 +36,7 @@ version of it in LaTeX code, with no chars in [a-z0-9A-Z] after it."
 ;;   \gamma). It returns the regexp matching the super/sub-scripted
 ;;   version of it in LaTeX code"
 ;;   ;; We can not use "(regexp-opt (list (concat "_" str) (concat "_{" str
-;;   ;; "}")))", as it adds a "?:" after every group, which eveidently breaks the
+;;   ;; "}"))) ", as it adds a "?:" after every group, which eveidently breaks the
 ;;   ;; font-locking engine in emacs. I assume the reason is like this: Normaly a
 ;;   ;; group (denoted with paranthesises) create a "backreference". This makes it
 ;;   ;; possible (I think) for the font-locking-engine no know where it actually
@@ -121,8 +46,8 @@ version of it in LaTeX code, with no chars in [a-z0-9A-Z] after it."
 ;;   ;; matching more effecient, as the engine dont need to make a backreference
 ;;   (if backslash (setf str (concat "\\\\" str)))
 ;;   (cl-case sup-or-sub
-;;     ('sub  (concat "\\(_\\(?:" str "\\|{" str "}\\)\\)"))
-;;     ('sup  (concat "\\(\\^\\(?:" str "\\|{" str "}\\)\\)"))))
+;;     ('sub  (concat "\\(_\\(?:" str "\\|{" str "}\\)\\) "))
+;;     ('sup  (concat "\\(\\^\\(?:" str "\\|{" str "}\\)\\) "))))
 
 ;; (defun latex-escape-regex-sub (str &optional backslash)
 ;;   "Gets a string, e.g. 1, returns the regexp matching the subscripted
@@ -137,158 +62,181 @@ version of it in LaTeX code, with no chars in [a-z0-9A-Z] after it."
 ;;   (latex-escape-regexp-super-or-sub str 'sup backslash))
 
 ;;Goto http://www.fileformat.info/info/unicode/block/mathematical_operators/list.htm and copy the needed character
+
+(defvar gm/math-greek-upper
+  '(("Gamma" "Γ")
+    ("Delta" "Δ")
+    ("Epsilon" "Ε")
+    ("Theta" "Θ")
+    ("Lambda" "Λ")
+    ("Xi" "Ξ")
+    ("Pi" "Π")
+    ("Sigma" "Σ")
+    ("Upsilon" "Υ")
+    ("Phi" "Φ")
+    ("Psi" "Ψ")
+    ("Omega" "Ω")))
+
+(defvar gm/math-greek-lower
+  '(("alpha" "α")
+    ("beta" "β")
+    ("gamma" "γ")
+    ("delta" "δ")
+    ("epsilon" "ε")
+    ("zeta" "ζ")
+    ("eta" "η")
+    ("theta" "θ")
+    ("iota" "ι")
+    ("kappa" "κ")
+    ("lambda" "λ")
+    ("mu" "μ")
+    ("nu" "ν")
+    ("xi" "ξ")
+    ("omicron" "ο")
+    ("pi" "π")
+    ("rho" "ρ")
+    ("sigma" "σ")
+    ("tau" "τ")
+    ("upsilon" "υ")
+    ("phi" "ϕ")
+    ("chi" "χ")
+    ("psi" "ψ")
+    ("omega" "ω")))
+
 (defun latex-unicode-simplified ()
   "Adds a bunch of font-lock rules to display latex commands as
 their unicode counterpart"
   (interactive)
   (substitute-patterns-with-unicode-symbol
    (list
-    ;;These need to be on top, before the versions which are not subscriptet
-    ;; (list (latex-escape-regex-sub "beta" t)"ᵦ")
-    ;; (list (latex-escape-regex-sub "gamma" t)"ᵧ")
-    ;; (list (latex-escape-regex-sub "rho" t)"ᵨ")
-    ;; (list (latex-escape-regex-sub "phi" t)"ᵩ")
-    ;; (list (latex-escape-regex-sub "chi" t)"ᵪ")
+    (list (latex-escape-regex "Gamma") "Γ")
+    (list (latex-escape-regex "Delta") "Δ")
+    (list (latex-escape-regex "Epsilon") "Ε")
+    (list (latex-escape-regex "Theta") "Θ")
+    (list (latex-escape-regex "Lambda") "Λ")
+    (list (latex-escape-regex "Xi") "Ξ")
+    (list (latex-escape-regex "Pi") "Π")
+    (list (latex-escape-regex "Sigma") "Σ")
+    (list (latex-escape-regex "Upsilon") "Υ")
+    (list (latex-escape-regex "Phi") "Φ")
+    (list (latex-escape-regex "Psi") "Ψ")
+    (list (latex-escape-regex "Omega") "Ω")
 
-    (list (latex-escape-regex "Alpha") "Α")
-    (list (latex-escape-regex "Beta") "Β")
-    (list (latex-escape-regex "Gamma")"Γ")
-    (list (latex-escape-regex "Delta")"Δ")
-    (list (latex-escape-regex "Epsilon")"Ε")
-    (list (latex-escape-regex "Zeta")"Ζ")
-    (list (latex-escape-regex "Eta")"Η")
-    (list (latex-escape-regex "Theta")"Θ")
-    (list (latex-escape-regex "Iota")"Ι")
-    (list (latex-escape-regex "Kappa")"Κ")
-    (list (latex-escape-regex "Lambda")"Λ")
-    (list (latex-escape-regex "Mu")"Μ")
-    (list (latex-escape-regex "Nu")"Ν")
-    (list (latex-escape-regex "Xi")"Ξ")
-    (list (latex-escape-regex "Omicron")"Ο")
-    (list (latex-escape-regex "Pi")"Π")
-    (list (latex-escape-regex "Rho")"Ρ")
-    (list (latex-escape-regex "Sigma")"Σ")
-    (list (latex-escape-regex "Tau")"Τ")
-    (list (latex-escape-regex "Upsilon")"Υ")
-    (list (latex-escape-regex "Phi")"Φ")
-    (list (latex-escape-regex "Chi")"Χ")
-    (list (latex-escape-regex "Psi")"Ψ")
-    (list (latex-escape-regex "Omega")"Ω")
-    (list (latex-escape-regex "alpha")"α")
-    (list (latex-escape-regex "beta")"β")
-    (list (latex-escape-regex "gamma")"γ")
-    (list (latex-escape-regex "delta")"δ")
-    (list (latex-escape-regex "epsilon")"ε")
-    (list (latex-escape-regex "zeta")"ζ")
-    (list (latex-escape-regex "eta")"η")
-    (list (latex-escape-regex "theta")"θ")
-    (list (latex-escape-regex "iota")"ι")
-    (list (latex-escape-regex "kappa")"κ")
-    (list (latex-escape-regex "lambda")"λ")
-    (list (latex-escape-regex "mu")"μ")
-    (list (latex-escape-regex "nu")"ν")
-    (list (latex-escape-regex "xi")"ξ")
-    (list (latex-escape-regex "omicron")"ο")
-    (list (latex-escape-regex "pi")"π")
-    (list (latex-escape-regex "rho")"ρ")
-    (list (latex-escape-regex "sigma")"σ")
-    (list (latex-escape-regex "tau")"τ")
-    (list (latex-escape-regex "upsilon")"υ")
+    (list (latex-escape-regex "alpha") "α")
+    (list (latex-escape-regex "beta") "β")
+    (list (latex-escape-regex "gamma") "γ")
+    (list (latex-escape-regex "delta") "δ")
+    (list (latex-escape-regex "epsilon") "ε")
+    (list (latex-escape-regex "zeta") "ζ")
+    (list (latex-escape-regex "eta") "η")
+    (list (latex-escape-regex "theta") "θ")
+    (list (latex-escape-regex "iota") "ι")
+    (list (latex-escape-regex "kappa") "κ")
+    (list (latex-escape-regex "lambda") "λ")
+    (list (latex-escape-regex "mu") "μ")
+    (list (latex-escape-regex "nu") "ν")
+    (list (latex-escape-regex "xi") "ξ")
+    (list (latex-escape-regex "omicron") "ο")
+    (list (latex-escape-regex "pi") "π")
+    (list (latex-escape-regex "rho") "ρ")
+    (list (latex-escape-regex "sigma") "σ")
+    (list (latex-escape-regex "tau") "τ")
+    (list (latex-escape-regex "upsilon") "υ")
     (list (latex-escape-regex "phi") "ϕ")
-    (list (latex-escape-regex "chi")"χ")
-    (list (latex-escape-regex "psi")"ψ")
-    (list (latex-escape-regex "omega")"ω")
+    (list (latex-escape-regex "chi") "χ")
+    (list (latex-escape-regex "psi") "ψ")
+    (list (latex-escape-regex "omega") "ω")
 
     ;; relations
-    (list (latex-escape-regex "geq")"≥")
-    (list (latex-escape-regex "ge")"≥")
-    (list (latex-escape-regex "leq")"≤")
-    (list (latex-escape-regex "le")"≤")
-    (list (latex-escape-regex "neq")"≠")
+    (list (latex-escape-regex "geq") "≥")
+    (list (latex-escape-regex "ge") "≥")
+    (list (latex-escape-regex "leq") "≤")
+    (list (latex-escape-regex "le") "≤")
+    (list (latex-escape-regex "neq") "≠")
 
     ;; logical ops
-    (list (latex-escape-regex "land")"∧")
-    (list (latex-escape-regex "lor")"∨")
-    (list (latex-escape-regex "neg")"¬")
-    (list (latex-escape-regex "rightarrow")"→")
-    (list (latex-escape-regex "leftarrow")"←")
-    (list (latex-escape-regex "leftrightarrow")"↔")
-    (list (latex-escape-regex "Rightarrow")"⇒")
-    (list (latex-escape-regex "Leftarrow")"⇐")
-    (list(latex-escape-regex "Leftrightarrow")"⇔")
-    (list (latex-escape-regex "forall")"∀")
-    (list (latex-escape-regex "exists")"∃")
-    (list (latex-escape-regex "Diamond")"⋄")
-    (list (latex-escape-regex "Box")"□")
-    (list (latex-escape-regex "models")"⊧")
-    (list (latex-escape-regex "bot")"⊥")
-    (list (latex-escape-regex "top")"⊤")
+    (list (latex-escape-regex "land") "∧")
+    (list (latex-escape-regex "lor") "∨")
+    (list (latex-escape-regex "neg") "¬")
+    (list (latex-escape-regex "rightarrow") "→")
+    (list (latex-escape-regex "leftarrow") "←")
+    (list (latex-escape-regex "leftrightarrow") "↔")
+    (list (latex-escape-regex "Rightarrow") "⇒")
+    (list (latex-escape-regex "Leftarrow") "⇐")
+    (list (latex-escape-regex "Leftrightarrow") "⇔")
+    (list (latex-escape-regex "forall") "∀")
+    (list (latex-escape-regex "exists") "∃")
+    (list (latex-escape-regex "Diamond") "⋄")
+    (list (latex-escape-regex "Box") "□")
+    (list (latex-escape-regex "models") "⊧")
+    (list (latex-escape-regex "bot") "⊥")
+    (list (latex-escape-regex "top") "⊤")
 
     ;; infty before in
-    (list (latex-escape-regex "infty")"∞")
+    (list (latex-escape-regex "infty") "∞")
 
     ;; set ops
     ;;Here I have chosen to have \} display as ⎬, to easy reading of set building opperations. Slightly uncertain
-    (list "\\(\\\\}\\)" "⎬")
-    (list "\\(\\\\{\\)" "⎨")
+    (list "\\(\\\\}\\) " "⎬")
+    (list "\\(\\\\{\\) " "⎨")
 
-    (list (latex-escape-regex "mid")"|")
-    (list (latex-escape-regex "in")"∊")
-    (list (latex-escape-regex "notin")"∉")
-    (list (latex-escape-regex "cup")"∪")
-    (list (latex-escape-regex "cap")"∩")
-    (list (latex-escape-regex "setminus")"∖")
-    (list (latex-escape-regex "minus")"∖")
-    (list (latex-escape-regex "subseteq")"⊆")
-    (list (latex-escape-regex "subset")"⊂")
-    (list (latex-escape-regex "emptyset")"∅")
-    (list (latex-escape-regex "ni")"∋")
+    (list (latex-escape-regex "mid") "|")
+    (list (latex-escape-regex "in") "∈")
+    (list (latex-escape-regex "notin") "∉")
+    (list (latex-escape-regex "cup") "∪")
+    (list (latex-escape-regex "cap") "∩")
+    (list (latex-escape-regex "setminus") "∖")
+    (list (latex-escape-regex "minus") "∖")
+    (list (latex-escape-regex "subseteq") "⊆")
+    (list (latex-escape-regex "subset") "⊂")
+    (list (latex-escape-regex "emptyset") "∅")
+    (list (latex-escape-regex "ni") "∋")
 
     ;; generic math
-    (list (latex-escape-regex "dots")"…")
+    (list (latex-escape-regex "dots") "…")
 
     ;;Superscript
-    ;; (list (latex-escape-regex-sup "0")"⁰")
-    ;; (list (latex-escape-regex-sup "1")"¹")
-    ;; (list (latex-escape-regex-sup "2")"²")
-    ;; (list (latex-escape-regex-sup "3")"³")
-    ;; (list (latex-escape-regex-sup "4")"⁴")
-    ;; (list (latex-escape-regex-sup "5")"⁵")
-    ;; (list (latex-escape-regex-sup "6")"⁶")
-    ;; (list (latex-escape-regex-sup "7")"⁷")
-    ;; (list (latex-escape-regex-sup "8")"⁸")
-    ;; (list (latex-escape-regex-sup "9")"⁹")
-    ;; (list (latex-escape-regex-sup "-")"⁻")
-    ;; (list (latex-escape-regex-sup "=")"⁼")
-    ;; (list (latex-escape-regex-sup "\\+")"⁺")
-    ;; (list (latex-escape-regex-sup "a")"ᵃ")
-    ;; (list (latex-escape-regex-sup "b")"ᵇ")
-    ;; (list (latex-escape-regex-sup "c")"ᶜ")
-    ;; (list (latex-escape-regex-sup "d")"ᵈ")
-    ;; (list (latex-escape-regex-sup "e")"ᵉ")
-    ;; (list (latex-escape-regex-sup "f")"ᶠ")
-    ;; (list (latex-escape-regex-sup "g")"ᵍ")
-    ;; (list (latex-escape-regex-sup "h")"ʰ")
-    ;; (list (latex-escape-regex-sup "i")"ⁱ")
-    ;; (list (latex-escape-regex-sup "j")"ʲ")
-    ;; (list (latex-escape-regex-sup "k")"ᵏ")
-    ;; (list (latex-escape-regex-sup "l")"ˡ")
-    ;; (list (latex-escape-regex-sup "m")"ᵐ")
-    ;; (list (latex-escape-regex-sup "n")"ⁿ")
-    ;; (list (latex-escape-regex-sup "o")"ᵒ")
-    ;; (list (latex-escape-regex-sup "p")"ᵖ")
-    ;; (list (latex-escape-regex-sup "r")"ʳ")
-    ;; (list (latex-escape-regex-sup "s")"ˢ")
-    ;; (list (latex-escape-regex-sup "t")"ᵗ")
-    ;; (list (latex-escape-regex-sup "u")"ᵘ")
-    ;; (list (latex-escape-regex-sup "v")"ᵛ")
-    ;; (list (latex-escape-regex-sup "w")"ʷ")
-    ;; (list (latex-escape-regex-sup "x")"ˣ")
-    ;; (list (latex-escape-regex-sup "y")"ʸ")
-    ;; (list (latex-escape-regex-sup "z")"ᶻ")
+    ;; (list (latex-escape-regex-sup "0") "⁰")
+    ;; (list (latex-escape-regex-sup "1") "¹")
+    ;; (list (latex-escape-regex-sup "2") "²")
+    ;; (list (latex-escape-regex-sup "3") "³")
+    ;; (list (latex-escape-regex-sup "4") "⁴")
+    ;; (list (latex-escape-regex-sup "5") "⁵")
+    ;; (list (latex-escape-regex-sup "6") "⁶")
+    ;; (list (latex-escape-regex-sup "7") "⁷")
+    ;; (list (latex-escape-regex-sup "8") "⁸")
+    ;; (list (latex-escape-regex-sup "9") "⁹")
+    ;; (list (latex-escape-regex-sup "-") "⁻")
+    ;; (list (latex-escape-regex-sup "=") "⁼")
+    ;; (list (latex-escape-regex-sup "\\+") "⁺")
+    ;; (list (latex-escape-regex-sup "a") "ᵃ")
+    ;; (list (latex-escape-regex-sup "b") "ᵇ")
+    ;; (list (latex-escape-regex-sup "c") "ᶜ")
+    ;; (list (latex-escape-regex-sup "d") "ᵈ")
+    ;; (list (latex-escape-regex-sup "e") "ᵉ")
+    ;; (list (latex-escape-regex-sup "f") "ᶠ")
+    ;; (list (latex-escape-regex-sup "g") "ᵍ")
+    ;; (list (latex-escape-regex-sup "h") "ʰ")
+    ;; (list (latex-escape-regex-sup "i") "ⁱ")
+    ;; (list (latex-escape-regex-sup "j") "ʲ")
+    ;; (list (latex-escape-regex-sup "k") "ᵏ")
+    ;; (list (latex-escape-regex-sup "l") "ˡ")
+    ;; (list (latex-escape-regex-sup "m") "ᵐ")
+    ;; (list (latex-escape-regex-sup "n") "ⁿ")
+    ;; (list (latex-escape-regex-sup "o") "ᵒ")
+    ;; (list (latex-escape-regex-sup "p") "ᵖ")
+    ;; (list (latex-escape-regex-sup "r") "ʳ")
+    ;; (list (latex-escape-regex-sup "s") "ˢ")
+    ;; (list (latex-escape-regex-sup "t") "ᵗ")
+    ;; (list (latex-escape-regex-sup "u") "ᵘ")
+    ;; (list (latex-escape-regex-sup "v") "ᵛ")
+    ;; (list (latex-escape-regex-sup "w") "ʷ")
+    ;; (list (latex-escape-regex-sup "x") "ˣ")
+    ;; (list (latex-escape-regex-sup "y") "ʸ")
+    ;; (list (latex-escape-regex-sup "z") "ᶻ")
 
-    ;; (list (latex-escape-regex-sup "A")"ᴬ")
-    ;; (list (latex-escape-regex-sup "B")"ᴮ")
+    ;; (list (latex-escape-regex-sup "A") "ᴬ")
+    ;; (list (latex-escape-regex-sup "B") "ᴮ")
     ;; (list (latex-escape-regex-sup "D") "ᴰ")
     ;; (list (latex-escape-regex-sup "E") "ᴱ")
     ;; (list (latex-escape-regex-sup "G") "ᴳ")
@@ -310,41 +258,41 @@ their unicode counterpart"
 
 
     ;; ;;Subscripts, unfortunately we lack important part of the subscriptet alphabet, most notably j and m
-    ;; (list (latex-escape-regex-sub "1")"₁")
-    ;; (list (latex-escape-regex-sub "2")"₂")
-    ;; (list (latex-escape-regex-sub "3")"₃")
-    ;; (list (latex-escape-regex-sub "4")"₄")
-    ;; (list (latex-escape-regex-sub "5")"₅")
-    ;; (list (latex-escape-regex-sub "6")"₆")
-    ;; (list (latex-escape-regex-sub "7")"₇")
-    ;; (list (latex-escape-regex-sub "8")"₈")
-    ;; (list (latex-escape-regex-sub "9")"₉")
-    ;; (list (latex-escape-regex-sub "x")"ₓ")
-    ;; (list (latex-escape-regex-sub "i")"ᵢ")
-    ;; (list (latex-escape-regex-sub "\\+")"₊")
-    ;; (list (latex-escape-regex-sub "-")"₋")
-    ;; (list (latex-escape-regex-sub "=")"₌")
-    ;; (list (latex-escape-regex-sub "a")"ₐ")
-    ;; (list (latex-escape-regex-sub "e")"ₑ")
-    ;; (list (latex-escape-regex-sub "o")"ₒ")
-    ;; (list (latex-escape-regex-sub "i")"ᵢ")
-    ;; (list (latex-escape-regex-sub "r")"ᵣ")
-    ;; (list (latex-escape-regex-sub "u")"ᵤ")
-    ;; (list (latex-escape-regex-sub "v")"ᵥ")
-    ;; (list (latex-escape-regex-sub "x")"ₓ")
+    ;; (list (latex-escape-regex-sub "1") "₁")
+    ;; (list (latex-escape-regex-sub "2") "₂")
+    ;; (list (latex-escape-regex-sub "3") "₃")
+    ;; (list (latex-escape-regex-sub "4") "₄")
+    ;; (list (latex-escape-regex-sub "5") "₅")
+    ;; (list (latex-escape-regex-sub "6") "₆")
+    ;; (list (latex-escape-regex-sub "7") "₇")
+    ;; (list (latex-escape-regex-sub "8") "₈")
+    ;; (list (latex-escape-regex-sub "9") "₉")
+    ;; (list (latex-escape-regex-sub "x") "ₓ")
+    ;; (list (latex-escape-regex-sub "i") "ᵢ")
+    ;; (list (latex-escape-regex-sub "\\+") "₊")
+    ;; (list (latex-escape-regex-sub "-") "₋")
+    ;; (list (latex-escape-regex-sub "=") "₌")
+    ;; (list (latex-escape-regex-sub "a") "ₐ")
+    ;; (list (latex-escape-regex-sub "e") "ₑ")
+    ;; (list (latex-escape-regex-sub "o") "ₒ")
+    ;; (list (latex-escape-regex-sub "i") "ᵢ")
+    ;; (list (latex-escape-regex-sub "r") "ᵣ")
+    ;; (list (latex-escape-regex-sub "u") "ᵤ")
+    ;; (list (latex-escape-regex-sub "v") "ᵥ")
+    ;; (list (latex-escape-regex-sub "x") "ₓ")
 
 
     ;; (list (latex-escape-regex "\\.\\.\\.") 'dots)
-    (list (latex-escape-regex "langle")"⟨")
-    (list (latex-escape-regex "rangle")"⟩")
-    (list (latex-escape-regex "mapsto")"↦")
-    (list (latex-escape-regex "to")"→")
-    (list (latex-escape-regex "times")"×")
-    (list (latex-escape-regex "equiv")"≡")
-    (list (latex-escape-regex "star")"★")
-    (list (latex-escape-regex "nabla")"∇")
-    (list (latex-escape-regex "qed")"□")
-    (list (latex-escape-regex "lightning")"Ϟ")
+    (list (latex-escape-regex "langle") "⟨")
+    (list (latex-escape-regex "rangle") "⟩")
+    (list (latex-escape-regex "mapsto") "↦")
+    (list (latex-escape-regex "to") [?\s (Br . Bl) ?\s (Bc . Bc) ?→])
+    (list (latex-escape-regex "times") "×")
+    (list (latex-escape-regex "equiv") "≡")
+    (list (latex-escape-regex "star") "★")
+    (list (latex-escape-regex "nabla") "∇")
+    (list (latex-escape-regex "qed") "□")
+    (list (latex-escape-regex "lightning") "Ϟ")
 
     ;;New: some of my own abreviations:
 
@@ -355,49 +303,30 @@ their unicode counterpart"
     ;;  My mathcal like ones are from "MATHEMATICAL BOLD SCRIPT CAPITAL", an alternative block is Letterlike symbols:
     ;;http://en.wikipedia.org/wiki/Letterlike_Symbols
 
-    (list (latex-escape-regex "impl") "→")
-    (list (latex-escape-regex "iff") "↔")
-    (list (latex-escape-regex "M") "𝓜")
-    (list (latex-escape-regex "Mo") "𝓜")
-    (list (latex-escape-regex "Fr") "𝓕")
-    (list (latex-escape-regex "gt") ">")
-    (list (latex-escape-regex "lt") "<")
-    (list (latex-escape-regex "from") ":")
-    (list (latex-escape-regex "Pow") "𝒫")
-					;"ℒ"
-    (list (latex-escape-regex "La") "𝓛")
-
     ;;Does not work, as it pushes them all into one character
-    ;; (list (latex-escape-regex "atldiamond")"⟨⟨C⟩⟩")
-    ;Påls single letter abrevs:
-    (list (latex-escape-regex "L") "𝓛")
-    (list (latex-escape-regex "N") "𝓝")
-    (list (latex-escape-regex "E") "𝓔")
-    (list (latex-escape-regex "C") "𝓒")
-    (list (latex-escape-regex "D") "𝓓")
+    ;; (list (latex-escape-regex "atldiamond") "⟨⟨C⟩⟩"
 
-    (list (latex-escape-regex "G") "𝓖")
-    (list (latex-escape-regex "X") "𝓧")
-    (list (latex-escape-regex "U") "𝓤")
-    (list (latex-escape-regex "Q") "𝓠")
+    ;; SERIF
+    ;; (list (latex-escape-regex "N") "𝐍"
+    ;; (list (latex-escape-regex "Z") "𝐙")
+    ;; (list (latex-escape-regex "Q") "𝐐")
+    ;; (list (latex-escape-regex "R") "𝐑")
+    ;; (list (latex-escape-regex "C") "𝐂")
 
+    ;; SANS-SERIF
+    (list (latex-escape-regex "N") "𝗡")
+    (list (latex-escape-regex "Z") "𝗭")
+    (list (latex-escape-regex "Q") "𝗤")
+    (list (latex-escape-regex "R") "𝗥")
+    (list (latex-escape-regex "C") "𝗖")
 
     ;;The following are not really working perfect
     ;; (list (latex-escape-regex "overline{R}") "R̄")
     ;; (list (latex-escape-regex "overline{X}") "X̄")
     ;; (list (latex-escape-regex "overline{G}") "Ḡ")
 
-
-
-    ;;The following is some ugly fucks, as it has to match brackets! This makes
-    ;;$\pair[A,B]$ into $⟨A,B⟩$, but can not handle nesting of the pair command,
-    ;;then it does not convert the last "]" as it should. One can make one
-    ;;regexp matching level of stacking, but my mind blows after even 1
-    ;;level. Regular expressions can not do general, arbitrary depth,
-    ;;paranthesis matching, but maybe emacs's "regexps" are expressiable enough for
-    ;;this?
-    (list  "\\(\\\\pair\\[\\)" "⟨")
-    (list  "\\(?:\\\\pair\\[[^\]]*\\(]\\)\\)" "⟩")
+    (list "\\(\\\\dd{\\)" "𝖽")
+    (list "\\\\dd{[^}]*\\(}\\)" "")
 
     (list (latex-escape-regex "dagger") "†" )
     (list (latex-escape-regex "vDash") "⊨" )
@@ -536,11 +465,6 @@ their unicode counterpart"
     (list (latex-escape-regex "doteq") "≐")
     )))
 
-;;AUCTeX
-(add-hook 'LaTeX-mode-hook 'latex-unicode-simplified)
-
-;;latex-mode
-(add-hook 'latex-mode-hook 'latex-unicode-simplified)
 (provide 'latex-pretty-symbols)
 
 ;;; latex-pretty-symbols.el ends here
