@@ -1,10 +1,4 @@
 #+TITLE: My Emacs Configuration
-#+HUGO_EXPORT_FILE_NAME: dotemacshugo
-#+HUGO_TAGS: emacs
-#+HUGO_CATEGORIES: emacs
-#+HUGO_BASE_DIR: .
-#+HUGO_AUTO_SET_LAST_MOD: t
-#+OPTIONS: num:1
 #+PROPERTY: header-args :results silent
 * Starting Up
 ** Early Init
