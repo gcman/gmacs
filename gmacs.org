@@ -1334,11 +1334,11 @@ Have the most up-to-date version of the buffer when using Dired.
 (add-hook 'dired-mode-hook #'gm/dired-mode-setup)
 #+END_SRC
 Allow Dired to recursively copy and delete directories. The option ~always~
-ensures that no confirmation dialog comes up, and ~top~ does it only one layer
+ensures that no confirmation dialog comes up; ~top~ would do it only one layer
 deep.
 #+BEGIN_SRC emacs-lisp
 (setq dired-recursive-copies 'always)
-(setq dired-recursive-deletes 'top)
+(setq dired-recursive-deletes 'always)
 #+END_SRC
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a Dired buffer.
@@ -3342,7 +3342,7 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
 #+END_SRC
 Bind to tab.
 #+BEGIN_SRC emacs-lisp
-(define-conditional-key gm/math-mode-map #'math-tab (gm/in-math-p))
+(define-conditional-key gm/math-mode-map (kbd "TAB") #'math-tab (gm/in-math-p))
 #+END_SRC
 **** Subscripts/Indices
 This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
