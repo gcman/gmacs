@@ -3,7 +3,6 @@
 #+HUGO_TAGS: emacs
 #+HUGO_CATEGORIES: emacs
 #+HUGO_BASE_DIR: .
-#+HUGO_SECTION: .
 #+HUGO_AUTO_SET_LAST_MOD: t
 #+OPTIONS: num:1
 #+PROPERTY: header-args :results silent
@@ -1915,7 +1914,7 @@ use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-refile-targets `((,(expand-file-name "todo.org" org-directory) :maxlevel . 3)
-                           (,(expand-file-name "notes.org" org-directory) :maxlevel . 2)))
+                           (,(expand-file-name "notes.org" org-directory) :maxlevel . 3)))
 #+END_SRC
 *** Capture
 :PROPERTIES:
