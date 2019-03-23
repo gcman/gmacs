@@ -848,7 +848,14 @@ edited and saved.
 
 (add-hook 'after-save-hook #'gm/tangle-if-config)
 #+END_SRC
-*** Profile Startup Time
+*** Benchmarking
+**** Functions
+To optimize a function, you need to know the actual difference your changes
+make.
+#+BEGIN_SRC emacs-lisp
+(autoload 'benchmark-elapse "benchmark")
+#+END_SRC
+**** Startup
 If I introduce a new feature that increases my startup time, I can test things
 out quantitatively with =esup=, a built-in feature.
 #+BEGIN_SRC emacs-lisp
@@ -1954,18 +1961,18 @@ We send the data from =org-protocol= into the following template.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref capture-templates
 ("p" "Org Protocol" entry
  (file org-default-notes-file)
- "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")")
+ "* [[%:link][%:description]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/square-to-round-brackets %:description)%(gm/quote-if-non-empty \"%i\")")
 #+END_SRC
 Because Org links are constructed with square brackets, any URL whose title
 contains square brackets (I'm looking at you, arXiv) would break a normal
-implementation of the this template. Thankfully, [[https://github.com/vincent-picaud][Vincent Picaud]] wrote a function
-to fix that up,
+implementation of the this template. Our workaround is to change square brackets
+to round ones.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(defun gm/square-to-round-brackets (string-to-transform)
-  "Transforms [ into ( and ] into ), other chars left unchanged."
-  (concat
-  (--map (if (equal it ?[) ?\( (if (equal it ?]) ?\) it))
-   string-to-transform)))
+(defun gm/square-to-round-brackets (s)
+  "Transform [ into ( and ] into ), other chars left unchanged."
+  (->> s
+      (replace-regexp-in-string "\\[" "\(")
+      (replace-regexp-in-string "\\]" "\)")))
 #+END_SRC
 Also, I want to wrap the excerpt in an Org quote block, but not if there is no
 excerpt.
