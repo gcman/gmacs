@@ -3124,7 +3124,7 @@ don't require the use of =yasnippets=.
 #+END_SRC
 Then we bind this to semicolon.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(define-key gm/math-mode-map ";" #'hydra-semicolon-a/body)
+(define-conditional-key gm/math-mode-map ";" #'hydra-semicolon-a/body (gm/in-math-p))
 #+END_SRC
 *** Helper Functions
 **** QuickMath Minor Mode
@@ -3133,67 +3133,50 @@ Then we bind this to semicolon.
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map org-mode-map)
     map))
-
 <<math-mode>>
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-(defun quick-math--add-keymap-to-math-fragments (limit)
-  (let ((case-fold-search t))
-    (while (re-search-forward (nth 1 (assoc "\\(" org-latex-regexps)) limit t)
-      (let ((beg (match-beginning 0))
-            (end (match-end 0)))
-        (progn
-          (add-text-properties
-           beg end `(local-map ,gm/math-mode-map)))))))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (define-minor-mode quick-math-mode
   "Minor mode for math"
   :init-value nil
-  (if quick-math-mode
-      (progn
-        (gm/math-setup)
-        (add-hook 'org-font-lock-hook #'quick-math--add-keymap-to-math-fragments t)
-        (add-to-list 'font-lock-extra-managed-props 'local-map))
-    (remove-hook 'org-font-lock-hook #'quick-math--add-keymap-to-math-fragments))
-  (call-interactively #'font-lock-fontify-buffer))
+  :keymap gm/math-mode-map
+  (when quick-math-mode (gm/math-setup)))
 #+END_SRC
 **** Simpler =texmathp=
 The default =texmathp= function assumes that you are writing valid LaTeX code.
 This is all well and good when you are actually writing LaTeX, where things like
 the dollar sign have only one meaning, but I write documents almost entirely in
 Org Mode (I export them to LaTeX). Here the function easily gets confused. So I
-make my own for checking if you are in math mode, which just looks at the
-surrounding paragraph. We first make a list of math environments that our
-function will look for.
+make my own for checking if you are in math mode, which leverages Org Mode's
+font-locking to narrow down the area we need to check. We first make a list of
+math environments that our function will look for.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/math-environments '("equation" "align")
   "The environments `gm/in-math-p' assumes as valid math environments.")
 #+END_SRC
-The idea is that we search the region from the beginning of the paragraph to the
-point for delimiters for inline math (=\(= and =\)=) and display math (=\begin{ENV}=
-and =\end{ENV}=, where =ENV= is an element of =gm/math-environments=). The one
-subtlety is that we also look at the starred versions of =ENV=. If there are more
-open delimiters than closed delimiters, then the point must be inside a math
-block, and so we return true.
+The only way we're in math mode is if we're in a LaTeX fragment. However, the
+latter sometimes returns false positives when it comes to math mode. That is, we
+can be in a LaTeX fragment (like a =figure= environment) without being in math
+mode.
+
+When Org says we're in inline LaTeX, we're definitely in math mode. If we're in
+an environment, we check from the beginning of the environment to the point. If
+there are more opening delimiters than closing ones (more of =\begin{ENV}= then
+=\end{ENV}=, where =ENV= is an element of =gm/math-environments=), then the point must
+be in math. The one subtlety is that we also look at the starred versions of
+=ENV=.
 #+BEGIN_SRC emacs-lisp
 (defun gm/in-math-p ()
   (defun gm/--in-math-p (begin-delim)
     (concat begin-delim (regexp-opt gm/math-environments) "[\\*]?}"))
-  (let* ((begin (save-excursion
-                  (if (eq major-mode 'org-mode)
-                      (org-backward-paragraph)
-                    (backward-paragraph))
-                  (point)))
-         (end (point))
-         (inline-open (how-many "\\\\(" begin end))
-         (inline-close (how-many "\\\\)" begin end))
-         (env-open (how-many (gm/--in-math-p "\\\\begin{") begin end))
-         (env-close (how-many (gm/--in-math-p "\\\\end{") begin end)))
-    (or (> (- inline-open inline-close) 0)
-        (> (- env-open env-close) 0))))
+  (let* ((fr (org-element-context))
+         (fr-type (car fr)))
+    (cond ((eq fr-type 'latex-fragment) t)
+          ((eq fr-type 'latex-environment)
+           (let* ((begin (org-element-property :begin fr))
+                  (end (point))
+                  (env-open (how-many (gm/--in-math-p "\\\\begin{") begin end))
+                  (env-close (how-many (gm/--in-math-p "\\\\end{") begin end)))
+             (> (- env-open env-close) 0))))))
 #+END_SRC
 **** Enter Math Mode
 Enter a math fragment if inside one, exit otherwise. We keep track of the number
@@ -3253,8 +3236,9 @@ snippets. First, we create a suffix tree of all the math snippets.
   (let ((unique-suffixes
          (delete-dups (--map (s-right 1 (car it)) gm/math-snippets))))
     (seq-do (lambda (key)
-              (eval `(define-key gm/math-mode-map
-                       ,key (lambda! () (gm/math-snippet-expand ,key)))))
+              (eval `(define-conditional-key gm/math-mode-map
+                       ,key (lambda! () (gm/math-snippet-expand ,key))
+                       (gm/in-math-p))))
             unique-suffixes)))
 #+END_SRC
 We make a function to get the possible completion candidates from the buffer.
@@ -3327,48 +3311,45 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
 #+BEGIN_SRC emacs-lisp
 (defun math-tab ()
   (interactive)
-  (if (gm/in-math-p)
-      (catch 'stop
-        (cond
-         ((looking-at "}\\|\\]\\|)")
-          (forward-char 1)
-          (if (or (looking-at "\\\\") (looking-at "[^_\\^({\\[]"))
-              (throw 'stop t)))
-         ((= (following-char) ?$)
-          (while (= (following-char) ?$) (forward-char 1))
-          (throw 'stop t))
-         ((= (following-char) ?\ )
-          (forward-char 1)
-          (re-search-forward "[^ ]")
-          (if (/= (preceding-char) ?\n) (forward-char -1)))
-         (t
-          (forward-char 1)))
-        (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
-          (forward-char -1)
-          (cond
-           ((= (following-char) ?\ )
-            (if (not (bolp)) (forward-char 1)) (throw 'stop t))
-           ((= (following-char) ?\n)
-            (if (and (bolp) (not (eobp)))
-                (throw 'stop t)
-              (if (equal "\\\\" (buffer-substring-no-properties
-                                 (- (point) 2) (point)))
-                  (forward-char 1)
-                (throw 'stop t))))
-           (t
-            (if (or (= (char-syntax (preceding-char)) ?\()
-                    (= (char-syntax (preceding-char)) ?\))
-                    (= (preceding-char) ?-))
-                (throw 'stop t)
+  (catch 'stop
+    (cond
+     ((looking-at "}\\|\\]\\|)")
+      (forward-char 1)
+      (if (or (looking-at "\\\\") (looking-at "[^_\\^({\\[]"))
+          (throw 'stop t)))
+     ((= (following-char) ?$)
+      (while (= (following-char) ?$) (forward-char 1))
+      (throw 'stop t))
+     ((= (following-char) ?\ )
+      (forward-char 1)
+      (re-search-forward "[^ ]")
+      (if (/= (preceding-char) ?\n) (forward-char -1)))
+     (t
+      (forward-char 1)))
+    (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
+      (forward-char -1)
+      (cond
+       ((= (following-char) ?\ )
+        (if (not (bolp)) (forward-char 1)) (throw 'stop t))
+       ((= (following-char) ?\n)
+        (if (and (bolp) (not (eobp)))
+            (throw 'stop t)
+          (if (equal "\\\\" (buffer-substring-no-properties
+                             (- (point) 2) (point)))
               (forward-char 1)
-              (if (looking-at "[^_\\^({\\[]")
-                  (throw 'stop t)))))))
-    (org-cycle)))
+            (throw 'stop t))))
+       (t
+        (if (or (= (char-syntax (preceding-char)) ?\()
+                (= (char-syntax (preceding-char)) ?\))
+                (= (preceding-char) ?-))
+            (throw 'stop t)
+          (forward-char 1)
+          (if (looking-at "[^_\\^({\\[]")
+              (throw 'stop t))))))))
 #+END_SRC
 Bind to tab.
 #+BEGIN_SRC emacs-lisp
-(bind-key (kbd "<tab>") #'math-tab org-mode-map)
-(bind-key (kbd "TAB") #'math-tab org-mode-map)
+(define-conditional-key gm/math-mode-map #'math-tab (gm/in-math-p))
 #+END_SRC
 **** Subscripts/Indices
 This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
@@ -3379,27 +3360,24 @@ numbered subscript of more than two digits, so I also exit the brackets after
 creating them.
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-number-subscript (n)
-  (cond ((string-match "[a-zA-Z]" (gm/last-n-chars 1))
-         (insert (concat "_" n)))
-        ((string-match "\_[0-9]" (gm/last-n-chars 2))
+  (insert n)
+  (cond ((string-match "[a-zA-Z][0-9]" (gm/last-n-chars 2))
          (save-excursion
            (backward-char)
+           (insert "_")))
+        ((string-match "\_[0-9][0-9]" (gm/last-n-chars 3))
+         (save-excursion
+           (backward-char 2)
            (insert "\{"))
-           (insert (concat n "\}"))
-        (t (insert n)))))
+         (insert  "\}"))))
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp
-(define-key gm/math-mode-map "0" (lambda! () (gm/math-number-subscript "0")))
-(define-key gm/math-mode-map "1" (lambda! () (gm/math-number-subscript "1")))
-(define-key gm/math-mode-map "2" (lambda! () (gm/math-number-subscript "2")))
-(define-key gm/math-mode-map "3" (lambda! () (gm/math-number-subscript "3")))
-(define-key gm/math-mode-map "4" (lambda! () (gm/math-number-subscript "4")))
-(define-key gm/math-mode-map "5" (lambda! () (gm/math-number-subscript "5")))
-(define-key gm/math-mode-map "6" (lambda! () (gm/math-number-subscript "6")))
-(define-key gm/math-mode-map "7" (lambda! () (gm/math-number-subscript "7")))
-(define-key gm/math-mode-map "8" (lambda! () (gm/math-number-subscript "8")))
-(define-key gm/math-mode-map "9" (lambda! () (gm/math-number-subscript "9")))
+(cl-loop for i from 0 to 9
+         collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
+                (number-to-string ,i)
+                (lambda! () (gm/math-number-subscript (number-to-string ,i)))
+              (gm/in-math-p)))))
 #+END_SRC
 **** Fraction
 Typing =/= after an appropriate block (a number or a balanced set of parentheses)
@@ -3437,7 +3415,7 @@ then =/= will result in =\frac{\sin x}{|}=.
     (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*"))
    (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
 
-(define-key gm/math-mode-map "/" #'gm/math-frac)
+(define-conditional-key gm/math-mode-map "/" #'gm/math-frac (gm/in-math-p))
 #+END_SRC
 **** Easy Split Environments
 I wanted to make writing environments like =split= and =align= easier, so that I
