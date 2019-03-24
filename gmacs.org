@@ -861,6 +861,22 @@ out quantitatively with =esup=, a built-in feature.
 #+BEGIN_SRC emacs-lisp
 (autoload 'esup "esup")
 #+END_SRC
+*** UTF-8
+From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][Mastering Emacs]].
+#+BEGIN_SRC emacs-lisp
+(prefer-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+;; backwards compatibility as default-buffer-file-coding-system
+;; is deprecated in 23.2.
+(if (boundp 'buffer-file-coding-system)
+    (setq-default buffer-file-coding-system 'utf-8)
+  (setq default-buffer-file-coding-system 'utf-8))
+
+;; Treat clipboard input as UTF-8 string first; compound text next, etc.
+(setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
+#+END_SRC
 ** Wordsmithing
 *** Basic Configuration
 **** Sentences End With a Single Space
@@ -925,8 +941,7 @@ prose in is Org Mode.
   :diminish
   :commands flyspell-mode
   :init
-  (dolist (hook '(text-mode-hook org-mode-hook))
-    (add-hook hook (lambda () (flyspell-mode 1))))
+  (add-hook 'org-mode-hook (lambda () (flyspell-mode 1)))
   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
     (add-hook hook (lambda () (flyspell-mode -1))))
   <<flyspell-init>>
@@ -1437,7 +1452,6 @@ how to fix them. Now we can easily search for the word at point using =swiper=.
 
 ;; bind it to M-j
 (define-key ivy-minibuffer-map (kbd "M-j") 'bjm/ivy-yank-whole-word)
-
 #+END_SRC
 *** God Mode
 In =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
@@ -1849,6 +1863,7 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
   <<org-settings>>)
 #+END_SRC
 ** Configuration
+*** Better Return Behaviour
 A better return for Org mode. If in a list, we want to add a new item.
 If we're in a heading, we want to go the end of the line, then return. This is
 because I never want to split the heading in half. If we're in a table, we add a
@@ -1895,7 +1910,6 @@ We replace the normal return.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("RET" . #'gm/org-return)
 #+END_SRC
-** Utilities
 *** File Locations
 We need a place where Org files go by default. Org Mode uses this to, for
 example, decide where to put the result of an Org Capture.
@@ -1916,6 +1930,34 @@ use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-refile-targets `((,(expand-file-name "todo.org" org-directory) :maxlevel . 3)
                            (,(expand-file-name "notes.org" org-directory) :maxlevel . 3)))
+#+END_SRC
+*** Archival
+[[https://orgmode.org/worg/org-hacks.html#org0344577][Worg]] gives a way to avoid messing up the heading hierarchy of an archive file
+after archiving lower level items.
+#+BEGIN_SRC emacs-lisp
+(defun gm/org-inherited-no-file-tags ()
+  (let ((tags (org-entry-get nil "ALLTAGS" 'selective))
+        (ltags (org-entry-get nil "TAGS")))
+    (mapc (lambda (tag)
+            (setq tags
+                  (replace-regexp-in-string (concat tag ":") "" tags)))
+          (append org-file-tags (when ltags (split-string ltags ":" t))))
+    (if (string= ":" tags) nil tags)))
+
+(defadvice org-archive-subtree (around my-org-archive-subtree-low-level activate)
+  (let ((tags (gm/org-inherited-no-file-tags))
+        (org-archive-location
+         (if (save-excursion (org-back-to-heading)
+                             (> (org-outline-level) 1))
+             (concat (car (split-string org-archive-location "::"))
+                     "::* "
+                     (car (org-get-outline-path)))
+           org-archive-location)))
+    ad-do-it
+    (with-current-buffer (find-file-noselect (org-extract-archive-file))
+      (save-excursion
+        (while (org-up-heading-safe))
+        (org-set-tags-to tags)))))
 #+END_SRC
 *** Capture
 :PROPERTIES:
@@ -1961,7 +2003,7 @@ We send the data from =org-protocol= into the following template.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref capture-templates
 ("p" "Org Protocol" entry
  (file org-default-notes-file)
- "* [[%:link][%:description]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/square-to-round-brackets %:description)%(gm/quote-if-non-empty \"%i\")")
+ "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")")
 #+END_SRC
 Because Org links are constructed with square brackets, any URL whose title
 contains square brackets (I'm looking at you, arXiv) would break a normal
@@ -2041,6 +2083,30 @@ updated when I archive a subtree.
 
 (defadvice org-archive-subtree (after fix-cookies activate)
   (myorg-update-parent-cookie))
+#+END_SRC
+If all the checkboxes in a list are checked, the parent heading is done, and its
+TODO state should be marked as such.
+#+BEGIN_SRC emacs-lisp
+(eval-after-load 'org-list
+  '(add-hook 'org-checkbox-statistics-hook (function ndk/checkbox-list-complete)))
+
+(defun ndk/checkbox-list-complete ()
+  (save-excursion
+    (org-back-to-heading t)
+    (let ((beg (point)) end)
+      (end-of-line)
+      (setq end (point))
+      (goto-char beg)
+      (if (re-search-forward "\\[\\([0-9]*%\\)\\]\\|\\[\\([0-9]*\\)/\\([0-9]*\\)\\]" end t)
+            (if (match-end 1)
+                (if (equal (match-string 1) "100%")
+                    ;; all done - do the state change
+                    (org-todo 'done)
+                  (org-todo 'todo))
+              (if (and (> (match-end 2) (match-beginning 2))
+                       (equal (match-string 2) (match-string 3)))
+                  (org-todo 'done)
+                (org-todo 'todo)))))))
 #+END_SRC
 *** Google Calendar
 I manage deadlines with Org Agenda.
@@ -2307,29 +2373,34 @@ The idea is pretty simple. We just maintain a list of regexps in
 care of too many spaces goes last. This way, we don't have to worry about
 introducing too many spaces in the earlier regexps.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/reformat-fragment-alist
-  '(("\\([^ ]?\\)\\+\\([^ ]?\\)" "\\1 + \\2" "spaces around t")
-    ("[ ]\\(\\^[^\\]\\)" "\\1 " "remove space before e.g ^ in sin ^2")
-    ("\\s-\\s-*" " " "no more than 1 space in a row"))
+(defcustom gm/reformat-fragment-alist
+  '(("+" " + " "spaces around +")
+    ("[ ]*\\([_^]\\)[ ]*" "\\1 " "remove spaces around ^ and _")
+    ("\\s-\\s-*" " " "no more than 1 space in a row")
+    ("\\(\\\\(\\) " "\\1" "no space at start of fragment")
+    (" \\(\\\\)\\)" "\\1" "no space at end of fragment"))
   "Alist of (REGEXP TO DOCSTRING) parsed by `gm/reformat-fragment'.
 Upon reformatting, each REGEXP is replaced with TO. DOCSTRING
 simply explains what the regexp does.")
 
 (defun gm/reformat-fragment (&optional fr)
-  (unless fr (setq fr (gm/org-curr-fragment)))
-  (let ((fr-begin (nth 1 fr))
-        (fr-end (org-element-property :end (org-element-context)))
-        base)
-    (save-excursion
-      (goto-char fr-begin)
-      (setq base (buffer-substring-no-properties fr-begin fr-end))
-      (dolist (reg gm/reformat-fragment-alist)
-        (setq base (replace-regexp-in-string (car reg) (nth 1 reg) base)))
-      (delete-region fr-begin fr-end)
-      (insert base)))
-  (goto-char (org-element-property :end (org-element-context))))
+  (let ((fr-begin (if fr
+                      (nth 1 fr)
+                    (org-element-property :begin (org-element-context))))
+        fr-end base)
+    (goto-char fr-begin)
+    (setq fr-end (- (org-element-property :end (org-element-context))
+                    (org-element-property :post-blank (org-element-context))))
+    (setq base (buffer-substring-no-properties fr-begin fr-end))
+    (dolist (reg gm/reformat-fragment-alist)
+      (setq base (replace-regexp-in-string (car reg) (nth 1 reg) base)))
+    (delete-region fr-begin fr-end)
+    (insert base)))
 #+END_SRC
 *** Equation Auto Preview
+:PROPERTIES:
+:ORDERED:  t
+:END:
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
@@ -2364,17 +2435,16 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
             (fr-end (org-element-property :end fr))
             ;; add one for the space after in \end{equation}
             (fr-post-blank (1+ (org-element-property :post-blank fr))))
-        (unless (or (eq (point) fr-end)
-                    ;; gotta fix some weird behaviour with environments
-                    ;; make sure that if you're on the line after
-                    ;; \end{equation}, you're considered out of the fragment
-                    (and (eq fr-type 'latex-environment)
-                         ;; check if point is between the actual end of the
-                         ;; LaTex environment and the "supposed end" extended by blank ;; lines after the environment
-                         (>= (point) (- fr-end fr-post-blank))
-                         (<= (point) fr-end)
-                         ))
-          (list fr-type fr-begin))))))
+        (when
+            ;; gotta fix some weird behaviour with environments
+            ;; make sure that if you're on the line after
+            ;; \end{equation}, you're considered out of the fragment
+            ;; check if point is between the actual end of the
+            ;; LaTex environment and the "supposed end" extended by blank ;; lines after the environment
+            (and
+             (>= (point) fr-begin)
+             (<= (point) (- fr-end fr-post-blank)))
+          (list fr-type fr-begin ))))))
 
 (defun gm/org-remove-fragment-overlay (fr)
   "Remove fragment overlay at fr"
@@ -2394,9 +2464,8 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
   "Preview org fragment at fr"
   (let ((fr-type (nth 0 fr))
         (fr-begin (nth 1 fr)))
-    (goto-char fr-begin)
-    (when (and (memq fr-type gm/org-valid-fragment-type)
-               (gm/org-curr-fragment))
+    (when (memq fr-type gm/org-valid-fragment-type)
+      (goto-char fr-begin)
       (org-toggle-latex-fragment))))
 #+END_SRC
 
@@ -2416,10 +2485,6 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
             ;; fragment, it is not equal to the last one. We use the begin
             ;; property which is less likely to change for the comparison.
             (not (equal curr gm/org-last-fragment)))
-
-           ;; reformat old fragment
-           ;; (gm/reformat-fragment gm/org-last-fragment)
-
            ;; go back to last one and put image back, provided there is still a fragment there
            (save-excursion
              (gm/org-preview-fragment gm/org-last-fragment)
@@ -2436,8 +2501,6 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
             ;; but we were on one
             gm/org-last-fragment)
 
-           ;; reformat old fragment
-           ;; (gm/reformat-fragment gm/org-last-fragment)
            ;; put image back on, provided that there is still a fragment here.
            (save-excursion
              (gm/org-preview-fragment gm/org-last-fragment))
@@ -2453,8 +2516,7 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
            ;; remove image
            (save-excursion
              (gm/org-remove-fragment-overlay curr)
-             (setq gm/org-last-fragment curr)
-             )
+             (setq gm/org-last-fragment curr))
            ;; there is no point being in on the \( or \) part of the math fragment
            ;; this code jumps the point into the actual math part of the fragment
            (cond
@@ -3165,17 +3227,21 @@ there are more opening delimiters than closing ones (more of =\begin{ENV}= then
 be in math. The one subtlety is that we also look at the starred versions of
 =ENV=.
 #+BEGIN_SRC emacs-lisp
-(defun gm/in-math-p ()
+(defun gm/in-math-p (&optional loc)
+  (unless loc (setq loc (point)))
   (defun gm/--in-math-p (begin-delim)
     (concat begin-delim (regexp-opt gm/math-environments) "[\\*]?}"))
   (let* ((fr (org-element-context))
-         (fr-type (car fr)))
-    (cond ((eq fr-type 'latex-fragment) t)
+         (fr-type (car fr))
+         (begin (org-element-property :begin fr)))
+    (cond ((eq fr-type 'latex-fragment)
+           (and
+            (>= loc begin)
+            (<= loc (1- (- (org-element-property :end fr)
+                           (org-element-property :post-blank fr))))))
           ((eq fr-type 'latex-environment)
-           (let* ((begin (org-element-property :begin fr))
-                  (end (point))
-                  (env-open (how-many (gm/--in-math-p "\\\\begin{") begin end))
-                  (env-close (how-many (gm/--in-math-p "\\\\end{") begin end)))
+           (let ((env-open (how-many (gm/--in-math-p "\\\\begin{") begin loc))
+                 (env-close (how-many (gm/--in-math-p "\\\\end{") begin loc)))
              (> (- env-open env-close) 0))))))
 #+END_SRC
 **** Enter Math Mode
@@ -3187,10 +3253,7 @@ makes for some awkward timing for activating previews.
 (defun gm/create-or-exit-math-fragment ()
   (interactive)
   (if (gm/in-math-p)
-      (let* ((fr (org-element-context))
-            (end (org-element-property :end fr))
-            (post-blank (org-element-property :post-blank fr)))
-        (goto-char (- end post-blank)))
+      (gm/reformat-fragment)
     (insert "\\(")
     (save-excursion (insert "\\)"))))
 #+END_SRC
@@ -3345,11 +3408,14 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
             (throw 'stop t)
           (forward-char 1)
           (if (looking-at "[^_\\^({\\[]")
-              (throw 'stop t))))))))
+              (throw 'stop t)))))))
+  (unless (gm/in-math-p)
+    (forward-char -1)
+    (gm/reformat-fragment)))
 #+END_SRC
 Bind to tab.
 #+BEGIN_SRC emacs-lisp
-(define-conditional-key gm/math-mode-map (kbd "TAB") #'math-tab (gm/in-math-p))
+(define-conditional-key gm/math-mode-map (kbd "<tab>") #'math-tab (gm/in-math-p))
 #+END_SRC
 **** Subscripts/Indices
 This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
