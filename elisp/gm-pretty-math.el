@@ -292,4 +292,4 @@ Symbol can be the symbol directly, no lookup needed."
     (-flatten-n 1 (--map (gm/math-regexp-commands (car it) (nth 1 it) (nth 2 it)) gm/math-commands))))
   (message "Math prettified."))
 
-(provide 'latex-pretty-symbols)
+(provide 'gm-pretty-math)

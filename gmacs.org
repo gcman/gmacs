@@ -2347,7 +2347,7 @@ messing with making =$= an electrically paired delimiter.
 I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-symbols.el][mortiferus]]. The file I use is not the one from
 their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 #+BEGIN_SRC emacs-lisp
-(autoload 'latex-unicode-simplified "latex-pretty-symbols")
+(autoload 'gm/prettify-math "gm-pretty-math")
 #+END_SRC
 *** Don't Break Paragraph on Comments'
 [[https://emacs.stackexchange.com/questions/22574/orgmode-export-how-to-prevent-a-new-line-for-comment-lines][John Kitchin]] tells us how to remove comments from an Org document when exporting
@@ -2375,8 +2375,8 @@ introducing too many spaces in the earlier regexps.
 #+BEGIN_SRC emacs-lisp
 (defcustom gm/reformat-fragment-alist
   '(("+" " + " "spaces around +")
-    ("[ ]*\\([_^]\\)[ ]*" "\\1 " "remove spaces around ^ and _")
-    ("\\s-\\s-*" " " "no more than 1 space in a row")
+    ("[ ]*\\([_^]\\)[ ]*" "\\1" "remove spaces around ^ and _")
+    (" +" " " "no more than 1 space in a row")
     ("\\(\\\\(\\) " "\\1" "no space at start of fragment")
     (" \\(\\\\)\\)" "\\1" "no space at end of fragment"))
   "Alist of (REGEXP TO DOCSTRING) parsed by `gm/reformat-fragment'.
@@ -2384,7 +2384,8 @@ Upon reformatting, each REGEXP is replaced with TO. DOCSTRING
 simply explains what the regexp does.")
 
 (defun gm/reformat-fragment (&optional fr)
-  (let ((fr-begin (if fr
+  (let ((fr-type (car (if fr fr (org-element-context))))
+        (fr-begin (if fr
                       (nth 1 fr)
                     (org-element-property :begin (org-element-context))))
         fr-end base)
@@ -2395,7 +2396,10 @@ simply explains what the regexp does.")
     (dolist (reg gm/reformat-fragment-alist)
       (setq base (replace-regexp-in-string (car reg) (nth 1 reg) base)))
     (delete-region fr-begin fr-end)
-    (insert base)))
+    (insert base)
+    (when (and (eq fr-type 'latex-environment)
+               (eq (char-before) ?}))
+      (newline))))
 #+END_SRC
 *** Equation Auto Preview
 :PROPERTIES:
@@ -2538,7 +2542,7 @@ Toggle the "mode" to preview equations.
         (message "Equation preview disabled."))
     (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display nil t)
     (message "Equation preview enabled."))
-  (togglef gm/eq-preview))
+  (setq-local gm/eq-preview (not gm/eq-preview)))
 
 (bind-key "C-c p" 'gm/toggle-equation-preview)
 #+END_SRC
@@ -2559,7 +2563,7 @@ line are justified."
                    beg (+ beg 6))))
     (let* ((img (create-image image 'png t))
            (width (car (image-size img)))
-           (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 2) (/ width 2)))))
+           (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 2) (/ width 3)))))
       (overlay-put (ov-at) 'before-string (make-string offset ? )))))
 #+END_SRC
 
@@ -3014,9 +3018,10 @@ don't require the use of =yasnippets=.
 *** Math Symbols
 **** Main Math Snippets
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-snippets
+(defcustom gm/math-snippets
   '(("==" "&= ")
     ("=>" "\\implies ")
+    ("(" "paren" t)
     ("CC" "\\C")
     ("LL" "\\mathcal{L}")
     ("MM" "\\mathcal{M}")
@@ -3029,7 +3034,7 @@ don't require the use of =yasnippets=.
     ("_" "subscript" t)
     ("abs" "abs" t)
     ("acos" "\\arccos ")
-    ("acot" "\\arccot")
+    ("acot" "\\arccot ")
     ("aleph" "\\aleph")
     ("asin" "\\arcsin ")
     ("atan" "\\arctan ")
@@ -3058,6 +3063,7 @@ don't require the use of =yasnippets=.
     ("fun" "function" t)
     ("ge" "\\ge ")
     ("gr" "\\Grad ")
+    ("hat" "hat" t)
     ("iint" "iintegral" t)
     ("im" "\\Image ")
     ("inf" "\\Inf ")
@@ -3115,7 +3121,11 @@ don't require the use of =yasnippets=.
     ("tr" "trace" t)
     ("vv" "\\vec ")
     ("xii" "x_i")
-    ("xx" "\\times ")))
+    ("xx" "\\times "))
+  "Contains lists (KEY EXPANSION SNIPPET). When KEY is typed, it
+  will be replaced with EXPANSION. If SNIPPET is non-nil,
+  EXPANSION is taken to be a loaded yasnippet. Otherwise, it is
+  considered the replacement string.")
 #+END_SRC
 **** Hydras
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -3201,7 +3211,8 @@ Then we bind this to semicolon.
   "Minor mode for math"
   :init-value nil
   :keymap gm/math-mode-map
-  (when quick-math-mode (gm/math-setup)))
+  (when quick-math-mode
+    (gm/math-setup)))
 #+END_SRC
 **** Simpler =texmathp=
 The default =texmathp= function assumes that you are writing valid LaTeX code.
@@ -3266,6 +3277,22 @@ Return the last n characters before the point, or =loc= if provided.
     (when (and (>= start (point-min))
                (<= start (point-max)))
       (buffer-substring-no-properties (- loc n) loc))))
+#+END_SRC
+**** Last LaTeX Letter
+Postfix commands often act on the last letter. For example, I want =fhat= to
+expand into =\hat{f}=. However, we cannot just act on the last letter, because
+=\betahat= should expand into =\hat{beta}=, not the invalid =\bet\hat{a}=.
+#+BEGIN_SRC emacs-lisp
+(defun gm/last-letter ()
+  (when (string-match "[a-zA-Z]" (gm/last-n-chars 1))
+    (if (looking-back (regexp-opt
+                       (--map (concat "\\" (car it))
+                              (append gm/math-greek-lower
+                                      gm/math-greek-upper)))
+                      (- (point) 8) t)
+        (buffer-substring-no-properties (match-beginning 0)
+                                        (match-end 0)))
+    (char-to-string (char-before))))
 #+END_SRC
 **** Test if LaTeX Needs to Be Wrapped in Brackets
 #+BEGIN_SRC emacs-lisp
@@ -3356,7 +3383,7 @@ A very rudimentary command to see all current snippet keys and expansions.
   (interactive)
   (with-output-to-temp-buffer "*QuickMath Expansions*"
     (let ((key-len (+ 4 (car gm/longest-snippet)))
-          (snip-len (cadr gm/longest-snippet)))
+          (snip-len (cdr gm/longest-snippet)))
       (princ (format "Key%s  Snippet%s\n%s%s\n"
                      (make-string (- key-len 4) ? )
                      (make-string (- snip-len 8) ? )
@@ -3367,7 +3394,7 @@ A very rudimentary command to see all current snippet keys and expansions.
                        (concat
                         (car snippet)
                         (make-string (- key-len (length (car snippet))) ? ))
-                       (cadr snippet)))))))
+                       (nth 1 snippet)))))))
 #+END_SRC
 **** Tab Jump to Next LaTeX Position
 Modified from the =cdlatex-tab= function in =cdlatex.el=.
@@ -3448,8 +3475,8 @@ Add subscript bindings to each of the ten digits.
 **** Fraction
 Typing =/= after an appropriate block (a number or a balanced set of parentheses)
 creates a fraction with this block in the numerator and the point in the
-denominator. The outside parentheses will be removed; for example, =(\sin x)= and
-then =/= will result in =\frac{\sin x}{|}=.
+denominator. The outside parentheses will be removed; for example, =(\sin x)/=
+results in =\frac{\sin x}{|}=.
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-insert-frac-match (match)
   (when match

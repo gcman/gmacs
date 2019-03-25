@@ -1,0 +1,13 @@
+# -*- mode: snippet -*-
+# name: hat
+# key: math-hat
+# type: command
+# --
+(let ((len (length (gm/last-letter))))
+(if (> len 0)
+(progn
+  (backward-char len)
+  (insert "\\hat{")
+  (forward-char len)
+  (insert "}"))
+ (yas-expand-snippet "\\hat{$1}")))
