@@ -351,8 +351,7 @@ I change my fonts a lot, so I made it easier to set a font.
   (interactive)
   (let ((font (ivy-completing-read "Choose a font: "
                                    (delete-dups (font-family-list)))))
-    (set-face-attribute 'default nil :font font)
-    (set-frame-font font nil t)))
+    (set-face-attribute 'default nil :font font)))
 #+END_SRC
 I also like using Palatino here.
 #+BEGIN_SRC emacs-lisp
@@ -361,12 +360,11 @@ I also like using Palatino here.
 #+END_SRC
 I have experienced problems with certain math characters being displayed with a
 font from the TeX Gyre family, which causes the line width to be very high. I
-found a solution [[https://lists.gnu.org/archive/html/bug-gnu-emacs/2015-05/msg00750.html][here]]. I got the Symbola font from the =ttf-ancient-fonts= package
-on the AUR.
+set the default font for characters in the "Mathematical Alphanumeric Symbols"
+block in Unicode to Symbola. I got the Symbola font from the =ttf-ancient-fonts=
+package on the AUR.
 #+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default"
-                  '(#x1d400 . #x1d7ff)
-                  "Symbola")
+(set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) "Symbola")
 #+END_SRC
 **** Syntax Highlighting
 I want syntax highlighting everywhere...
