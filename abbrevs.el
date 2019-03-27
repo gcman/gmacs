@@ -181,6 +181,7 @@
     ("incorectly" "incorrectly" nil 0)
     ("intrface" "interface" nil 0)
     ("jsut" #("just" 0 4 (face frog-menu-candidates-face)) nil 0)
+    ("onwards" #("onward" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("proerty" "property" nil 0)
     ("sherrif" "sheriff" nil 0)
     ("teh" "the" nil 0)

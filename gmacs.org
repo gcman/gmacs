@@ -2561,7 +2561,7 @@ line are justified."
                    beg (+ beg 6))))
     (let* ((img (create-image image 'png t))
            (width (car (image-size img)))
-           (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 2) (/ width 3)))))
+           (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 3) (/ width 3)))))
       (overlay-put (ov-at) 'before-string (make-string offset ? )))))
 #+END_SRC
 
@@ -2658,6 +2658,15 @@ graphics correctly; =latexmk= handles all of that.
                     (arg (nth 0 desc-list)))
                (format "\\%s{%s}%s" path arg
                        (if (equal "" opt) opt (format "[%s]" opt)))))))
+#+END_SRC
+**** Use Cleveref
+by default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
+=cleveref= package, which uses the =\cref= macro.
+#+BEGIN_SRC emacs-lisp
+(org-link-set-parameters "ref"
+                         :export
+                         (lambda (label desc format)
+                           (format "\\cref{%s}" label)))
 #+END_SRC
 **** Export Classes
 ***** Tufte-LaTeX
@@ -3034,6 +3043,7 @@ don't require the use of =yasnippets=.
     ("acos" "\\arccos ")
     ("acot" "\\arccot ")
     ("aleph" "\\aleph")
+    ("approx" "\\approx ")
     ("asin" "\\arcsin ")
     ("atan" "\\arctan ")
     ("bigop" "big-operator" t)
