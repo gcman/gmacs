@@ -334,7 +334,7 @@ comes back when I switch themes, for some reason), I refresh all open buffers.
 (setq gm/dark t)
 (defun gm/switch-theme ()
   (interactive)
-  (togglef gm/dark)
+  (setq gm/dark (not gm/dark))
   (if gm/dark
       (progn (load-theme 'solarized-light)
              (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
@@ -434,15 +434,6 @@ compilation."
   "A shortcut for inline interactive lambdas."
   (declare (doc-string 1))
   `(lambda () (interactive) ,@body))
-#+END_SRC
-**** togglef
-Simple macro to avoid having to write a variable name twice.
-#+BEGIN_SRC emacs-lisp
-(defmacro togglef (place)
-  "Toggle PLACE.  non-nil becomes nil, nil becomes t.
-PLACE may be a symbol, or any generalized variable allowed by `setf'.
-The return value is the new value of PLACE."
-  `(setf ,place (not ,place)))
 #+END_SRC
 **** Conditional Keybindings
 Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Endless Parentheses]].
