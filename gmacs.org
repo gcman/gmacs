@@ -865,6 +865,11 @@ From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][
 ;; Treat clipboard input as UTF-8 string first; compound text next, etc.
 (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
 #+END_SRC
+*** Visual Regexp
+#+BEGIN_SRC emacs-lisp
+(autoload 'vr/replace "visual-regexp")
+(autoload 'vr/query-replace "visual-regexp")
+#+END_SRC
 ** Wordsmithing
 *** Basic Configuration
 **** Sentences End With a Single Space
@@ -1901,11 +1906,11 @@ We replace the normal return.
 *** File Locations
 We need a place where Org files go by default. Org Mode uses this to, for
 example, decide where to put the result of an Org Capture.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp
 (setq org-directory "~/org/")
 #+END_SRC
 We similarly decide other default locations.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp
 (setq org-default-notes-file (expand-file-name "inbox.org" org-directory)
       org-agenda-files `(,(expand-file-name "inbox.org" org-directory)
                          ,(expand-file-name "todo.org" org-directory)
@@ -1915,7 +1920,7 @@ We similarly decide other default locations.
 Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp
 (setq org-refile-targets `((,(expand-file-name "todo.org" org-directory) :maxlevel . 3)
                            (,(expand-file-name "notes.org" org-directory) :maxlevel . 3)))
 #+END_SRC
@@ -1946,6 +1951,12 @@ after archiving lower level items.
       (save-excursion
         (while (org-up-heading-safe))
         (org-set-tags-to tags)))))
+#+END_SRC
+*** Attachment
+I have started to use Org Mode to manage my files, with the attach
+functionality.
+#+BEGIN_SRC emacs-lisp
+(setq org-attach-method 'mv)
 #+END_SRC
 *** Capture
 :PROPERTIES:
@@ -2375,7 +2386,8 @@ introducing too many spaces in the earlier regexps.
   "Alist of (REGEXP TO DOCSTRING) parsed by `gm/reformat-fragment'.
 Upon reformatting, each REGEXP is replaced with TO. DOCSTRING
 simply explains what the regexp does.")
-
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
 (defun gm/reformat-fragment (&optional fr)
   (let ((fr-type (car (if fr fr (org-element-context))))
         (fr-begin (if fr
@@ -2392,7 +2404,7 @@ simply explains what the regexp does.")
     (insert base)
     (when (and (eq fr-type 'latex-environment)
                (eq (char-before) ?})
-      (newline))))
+      (newline)))))
 #+END_SRC
 *** Equation Auto Preview
 :PROPERTIES:
@@ -2992,6 +3004,74 @@ I use a hydra to easily navigate between groups of feeds.
   ("M" gm/elfeed-toggle-star "Mark")
   ("Q" bjm/elfeed-save-db-and-bury "Quit Elfeed" :color blue)
   ("q" nil "quit" :color blue))
+#+END_SRC
+** Music
+I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "~/.emacs.d/elisp/emms/lisp/")
+
+(require 'emms-setup)
+(require 'emms-player-mpd)
+(emms-all)
+;; (require 'emms-info-libtag) ;;; load functions that will talk to emms-print-metadata which in turn talks to libtag and gets metadata
+;; (setq emms-info-functions '(emms-info-libtag)) ;;; make sure libtag is the only thing delivering metadata
+(require 'emms-mode-line)
+(emms-mode-line 1)
+(require 'emms-playing-time)
+(emms-playing-time 1)
+(bind-keys ("s-j e" . emms)
+           ("s-j b" . emms-smart-browse)
+           ("s-j r" . emms-player-mpd-update-all-reset-cache))
+#+END_SRC
+Now for the settings. I use =mpd=, which I find is minimal and causes no bloat.
+#+BEGIN_SRC emacs-lisp
+(setq emms-seek-seconds 5
+      emms-player-list '(emms-player-mpd)
+      emms-info-list '(emms-info-mpd)
+      emms-player-mpd-server-name "localhost"
+      emms-player-mpd-server-port "6601"
+      emms-source-file-default-directory "~/Music/"
+      emms-playlist-buffer-name "*Music*"
+      emms-info-asynchronously t)
+#+END_SRC
+We use non-default settings for the socket. In order to use the built-in
+functionality for =mpc=, we need to let Emacs know about this.
+#+BEGIN_SRC emacs-lisp
+(setq mpc-host "localhost:6601")
+#+END_SRC
+*** Starting MPD from Emacs
+#+BEGIN_SRC emacs-lisp
+(defun mpd/start-music-daemon ()
+  "Start MPD, connects to it and syncs the metadata cache."
+  (interactive)
+  (shell-command "mpd")
+  (mpd/update-database)
+  (emms-player-mpd-connect)
+  (emms-cache-set-from-mpd-all)
+  (message "MPD Started!"))
+
+(bind-key "s-j c" #'mpd/start-music-daemon)
+#+END_SRC
+*** Killing MPD from Emacs
+#+BEGIN_SRC emacs-lisp
+(defun mpd/kill-music-daemon ()
+  "Stops playback and kill the music daemon."
+  (interactive)
+  (emms-stop)
+  (call-process "killall" nil nil nil "mpd")
+  (message "MPD Killed!"))
+
+(bind-key "s-j k" #'mpd/kill-music-daemon)
+#+END_SRC
+*** Update MPD Database
+#+BEGIN_SRC emacs-lisp
+(defun mpd/update-database ()
+  "Updates the MPD database synchronously."
+  (interactive)
+  (call-process "mpc" nil nil nil "update")
+  (message "MPD Database Updated!"))
+
+(bind-key "s-j u" 'mpd/update-database)
 #+END_SRC
 * Snippets
 I use =SPC= instead of the default =TAB= to expand snippets. I find this more
