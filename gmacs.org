@@ -58,10 +58,9 @@ Emacs.mode-line.attributeBox: (:line-width 1 :color "#073642")
 #+END_SRC
 *** Default Font
 I often experiment with fonts during an Emacs session, so I set up an easy way
-to change that [[*Font Face][here]]. On startup, though, I want something neutral, so I go with
-DejaVu Sans Mono.
+to change that [[*Font Face][here]]. On startup, though, I want something neutral, so I go with Hack.
 #+BEGIN_SRC sh
-Emacs.font: DejaVu Sans Mono-10
+Emacs.font: Hack-10
 #+END_SRC
 ** Lexical Binding
 Enable lexical binding.
@@ -2049,7 +2048,7 @@ Here are my capture templates.
 :END:\n*** Problem Statement\n%?\n*** My Algorithm")
         <<capture-templates>>))
 #+END_SRC
-*** Todo Lists
+*** Todo Lists and Agenda
 I like the following set of =TODO= words. This is what appears
 before an Org headline when a todo state is activated.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -2096,6 +2095,11 @@ TODO state should be marked as such.
                        (equal (match-string 2) (match-string 3)))
                   (org-todo 'done)
                 (org-todo 'todo)))))))
+#+END_SRC
+The default is =week=, which gives the current week (starting on Monday by
+default). I prefer to see a larger view.
+#+BEGIN_SRC emacs-lisp
+(setq org-agenda-span 14)
 #+END_SRC
 *** Google Calendar
 I manage deadlines with Org Agenda.
@@ -2387,7 +2391,7 @@ simply explains what the regexp does.")
     (delete-region fr-begin fr-end)
     (insert base)
     (when (and (eq fr-type 'latex-environment)
-               (eq (char-before) ?}))
+               (eq (char-before) ?})
       (newline))))
 #+END_SRC
 *** Equation Auto Preview

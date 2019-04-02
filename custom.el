@@ -24,7 +24,7 @@
  '(nms-settings-file "/home/gautam/.emacs.d/cache/network-security.data" t)
  '(org-agenda-files
    (quote
-    ("~/org/inbox.org" "~/org/gtd.org" "~/org/notes.org" "~/org/gcal.org")))
+    ("~/org/inbox.org" "~/org/todo.org" "~/org/notes.org" "~/org/gcal.org")))
  '(org-capture-templates
    (quote
     (("a" "Appointment" entry
