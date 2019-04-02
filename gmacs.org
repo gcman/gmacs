@@ -2059,6 +2059,56 @@ Here are my capture templates.
 :END:\n*** Problem Statement\n%?\n*** My Algorithm")
         <<capture-templates>>))
 #+END_SRC
+*** Org Download
+Now we can easily move images into Org Mode buffers.
+#+BEGIN_SRC emacs-lisp
+(use-package org-download
+  :commands (org-download-yank)
+  :custom
+  (org-download-method 'attach)
+  (org-download-timestamp t))
+#+END_SRC
+**** Add Images to Notes Live :ATTACH:
+:PROPERTIES:
+:Attachments: 20190331_182318.jpg 20190331_164501.jpg 20190331_164434.mp4 20190331_164428.jpg
+:ID:       43b5539c-435a-42cc-934d-abbe9f141c3d
+:END:
+[[http://pragmaticemacs.com/emacs/a-workflow-to-quickly-add-photos-to-org-mode-notes/][This article]] gives a neat way to add images taken from your phone into an Org
+Mode buffer. This could be useful if you are taking notes in a class or
+conference and want to reference a slide or diagram on the board.
+
+I use Syncthing to get photos from my phone to my computer, but any syncing
+service works, like Google Drive or Dropbox.
+#+BEGIN_SRC emacs-lisp
+(defvar gm/live-image-dir (expand-file-name "~/Camera/Camera"))
+#+END_SRC
+We use =ivy= to prompt the user for a file from the camera roll, sorted by most
+recent. Then, we attach the file to the current subtree by /copying/ it, add an
+image link, and display it.
+#+BEGIN_SRC emacs-lisp
+(defun gm/insert-live-image ()
+  (interactive)
+  (let (file-list file-list-sorted start-file start-file-full)
+    (setq file-list
+          (-remove (lambda (x) (nth 1 x))
+                   (directory-files-and-attributes gm/live-image-dir)))
+    (setq file-list-sorted
+          (mapcar #'car
+                  (sort file-list
+                        #'(lambda (x y) (time-less-p (nth 6 y) (nth 6 x))))))
+    (setq start-file (ivy-read
+                      (concat "Move selected file to " target-dir ":")
+                      file-list-sorted
+                      :re-builder #'ivy--regex
+                      :sort nil
+                      :initial-input nil))
+    (setq start-file-full
+          (expand-file-name start-file gm/live-image-dir))
+    (org-attach-attach start-file-full nil 'cp)
+    (message "Attached %s" start-file-full)
+    (insert (org-make-link-string (format "file:%s" (expand-file-name start-file (org-attach-dir nil)))))
+    (org-display-inline-images t t)))
+#+END_SRC
 *** Todo Lists and Agenda
 I like the following set of =TODO= words. This is what appears
 before an Org headline when a todo state is activated.
@@ -2403,8 +2453,8 @@ simply explains what the regexp does.")
     (delete-region fr-begin fr-end)
     (insert base)
     (when (and (eq fr-type 'latex-environment)
-               (eq (char-before) ?})
-      (newline)))))
+               (eq (char-before) (string-to-char "}")))
+      (newline))))
 #+END_SRC
 *** Equation Auto Preview
 :PROPERTIES:
@@ -2729,9 +2779,16 @@ We make this our default class.
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-default-class "gm-notes")
 #+END_SRC
-* Feeds
+* Media
+Here I configure everything for recreation and contact with the outside world:
+managing email, consuming published media (blog posts and YouTube videos), and
+listening to music.
 ** Mail
-Set up the requirements.
+I used to use =mu4e=, but now I use =notmuch=. It has greater synergy with =elfeed=,
+my RSS reader (in fact, =elfeed= was inspired by =notmuch=). Also, I found that =mu4e=
+was too complicated and tried to do too much. As the name suggests, =notmuch=
+doesn't have much. It's simple, transparent, and it works. That makes it perfect
+for me.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package notmuch
   :commands (notmuch)
