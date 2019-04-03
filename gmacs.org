@@ -330,7 +330,7 @@ everything looks right, including the colours in PDFs and the asterisks
 for headlines in Org Mode (I hide them with =org-bullets-mode= but one of them
 comes back when I switch themes, for some reason), I refresh all open buffers.
 #+BEGIN_SRC emacs-lisp
-(setq gm/dark t)
+(defvar gm/dark t)
 (defun gm/switch-theme ()
   (interactive)
   (setq gm/dark (not gm/dark))
@@ -340,8 +340,6 @@ comes back when I switch themes, for some reason), I refresh all open buffers.
     (load-theme 'solarized-dark)
     (setq pdf-view-midnight-colors '("#839496" . "#002b36")))
   (modi/revert-all-file-buffers))
-
-(bind-key "C-c t" #'gm/switch-theme)
 #+END_SRC
 **** Font Face
 I change my fonts a lot, so I made it easier to set a font.
@@ -577,6 +575,7 @@ test out some Elisp. It would be nice to have it saved; I could clear it easily 
 I wanted to. Luckily, there's a package that does just that.
 #+BEGIN_SRC emacs-lisp
 (use-package persistent-scratch
+  :demand t
   :config
   (persistent-scratch-setup-default))
 #+END_SRC
@@ -648,9 +647,9 @@ Now we specify what to save.
         regexp-search-ring))
 #+END_SRC
 *** Reloading
-As I am an avid Emacs hacker, it became clear to me very quickly that reloading
-Emacs is very useful when testing something out. There are three fronts on which
-reloading is useful.
+As I tinkered with my Emacs configuration, it quickly became clear to me that
+reloading Emacs is useful when testing something out. There are three fronts on
+which reloading is useful.
 
 When a file is changed on the disk, I want the content in my Emacs buffer to
 reflect that. The only problem with this is that you could lose data if you're
@@ -699,6 +698,17 @@ run the procedure of =init.el= again. Usually, we want to load the byte-compiled
 version, but for those cases where we just want to load the uncompiled =.el= file,
 a prefix argument does the job. I disable =after-save-hook= because I set up
 asynchronous tangling and byte-compilation [[#tangle-async][here]].
+
+Finally, I hope it doesn't come to this too often, but sometimes we must close
+Emacs entirely and start a new session. I know, I can feel the agony. =C-x C-c=,
+then move your mouse to click Emacs again! Luckily, there's a package for that.
+This kills Emacs and starts a new session.
+#+BEGIN_SRC emacs-lisp
+(use-package restart-emacs
+  :commands restart-emacs)
+#+END_SRC
+Our function completely restarts, compiles and reloads with a prefix argument,
+and just loads the existing =.el= file with two prefix arguments.
 #+BEGIN_SRC emacs-lisp
 (defun gm/reload (p)
   (interactive "P")
@@ -707,28 +717,20 @@ asynchronous tangling and byte-compilation [[#tangle-async][here]].
         (el (expand-file-name "gmacs.el" gmacs-emacs-dir))
         (elc (expand-file-name "gmacs.elc" gmacs-emacs-dir))
         (init (expand-file-name "init.el" gmacs-emacs-dir)))
-    (if p
-        (org-babel-load-file org)
-      (save-buffer)
-      (when (or (not (file-exists-p elc))
-                (file-newer-than-file-p org elc))
-        (org-babel-tangle-file org el)
-        (byte-compile-file el))
-      (load-file init)
-      (run-hooks 'after-init-hook))))
+    (save-buffer)
+    (cond ((equal p '(4))
+           (when (or (not (file-exists-p elc))
+                     (file-newer-than-file-p org elc))
+             (org-babel-tangle-file org el)
+             (byte-compile-file el))
+           (load-file init)
+           (run-hooks 'after-init-hook))
+          ((equal p '(16))
+           (org-babel-load-file org))
+          (t (restart-emacs)))))
 #+END_SRC
-
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c r" 'gm/reload)
-#+END_SRC
-Finally, I hope it doesn't come to this too often, but sometimes we must close
-Emacs entirely and start a new session. I know, I can feel the agony. =C-x C-c=,
-then move your mouse to click Emacs again! Luckily, there's a package for that.
-This kills Emacs and starts a new session.
-#+BEGIN_SRC emacs-lisp
-(use-package restart-emacs
-  :commands restart-emacs
-  :bind (("C-c R" . restart-emacs)))
 #+END_SRC
 *** Abbreviations
 Abbrevs are a pretty common and useful feature in editors. You can define
@@ -1842,6 +1844,28 @@ especially useful when typing LaTeX.
 (key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
 #+END_SRC
+** Toggles
+We use a hydra to toggle various features in our setup.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
+(defhydra hydra-toggle (:color pink)
+  "
+_t_ theme-colour       %`gm/dark
+_m_ quick-math-mode:   %`debug-on-error
+_e_ equation-preview:  %`gm/eq-preview
+_p_ pretty-math:
+_D_ dubcaps-mode:      %`gm/dubcaps-mode
+
+"
+  ("t" gm/switch-theme nil)
+  ("m" quick-math-mode nil)
+  ("e" equation-preview nil)
+  ("p" pretty-math nil)
+  ("D" gm/dubcaps-mode nil)
+  ("q" nil "cancel"))
+
+(bind-key "C-c t" #'hydra-toggle/body)
+#+END_SRC
+
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
@@ -2068,11 +2092,7 @@ Now we can easily move images into Org Mode buffers.
   (org-download-method 'attach)
   (org-download-timestamp t))
 #+END_SRC
-**** Add Images to Notes Live :ATTACH:
-:PROPERTIES:
-:Attachments: 20190331_182318.jpg 20190331_164501.jpg 20190331_164434.mp4 20190331_164428.jpg
-:ID:       43b5539c-435a-42cc-934d-abbe9f141c3d
-:END:
+**** Add Images to Notes Live
 [[http://pragmaticemacs.com/emacs/a-workflow-to-quickly-add-photos-to-org-mode-notes/][This article]] gives a neat way to add images taken from your phone into an Org
 Mode buffer. This could be useful if you are taking notes in a class or
 conference and want to reference a slide or diagram on the board.
@@ -2084,11 +2104,12 @@ service works, like Google Drive or Dropbox.
 #+END_SRC
 We use =ivy= to prompt the user for a file from the camera roll, sorted by most
 recent. Then, we attach the file to the current subtree by /copying/ it, add an
-image link, and display it.
+image link, and display it. Because most images taken this way are vertical, I
+rotate the image first to make sure it displays correctly.
 #+BEGIN_SRC emacs-lisp
 (defun gm/insert-live-image ()
   (interactive)
-  (let (file-list file-list-sorted start-file start-file-full)
+  (let (file-list file-list-sorted start-file start-file-full end-file)
     (setq file-list
           (-remove (lambda (x) (nth 1 x))
                    (directory-files-and-attributes gm/live-image-dir)))
@@ -2097,7 +2118,7 @@ image link, and display it.
                   (sort file-list
                         #'(lambda (x y) (time-less-p (nth 6 y) (nth 6 x))))))
     (setq start-file (ivy-read
-                      (concat "Move selected file to " target-dir ":")
+                      "Select file to attach:"
                       file-list-sorted
                       :re-builder #'ivy--regex
                       :sort nil
@@ -2106,7 +2127,9 @@ image link, and display it.
           (expand-file-name start-file gm/live-image-dir))
     (org-attach-attach start-file-full nil 'cp)
     (message "Attached %s" start-file-full)
-    (insert (org-make-link-string (format "file:%s" (expand-file-name start-file (org-attach-dir nil)))))
+    (setq end-file (expand-file-name start-file (org-attach-dir nil)))
+    (call-process "convert" nil nil nil end-file "-rotate" "-90" end-file)
+    (insert (org-make-link-string (format "file:%s" end-file)))
     (org-display-inline-images t t)))
 #+END_SRC
 *** Todo Lists and Agenda
@@ -2114,11 +2137,15 @@ I like the following set of =TODO= words. This is what appears
 before an Org headline when a todo state is activated.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+      '((sequence "TODO(t!)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
 Automatically archive cancelled tasks.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-todo-state-tags-triggers '(("CANCELLED" ("ARCHIVE" . t))))
+#+END_SRC
+Track the time when a TODO item is marked DONE.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(setq org-log-done 'time)
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
 updated when I archive a subtree.
@@ -2585,22 +2612,6 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
                   (eq (char-after) 41))
              (backward-char 1))))))))
 #+END_SRC
-Toggle the "mode" to preview equations.
-#+BEGIN_SRC emacs-lisp
-(defvar gm/eq-preview nil)
-;; this is buffer local
-(defun gm/toggle-equation-preview ()
-  (interactive)
-  (if gm/eq-preview
-      (progn
-        (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t)
-        (message "Equation preview disabled."))
-    (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display nil t)
-    (message "Equation preview enabled."))
-  (setq-local gm/eq-preview (not gm/eq-preview)))
-
-(bind-key "C-c p" 'gm/toggle-equation-preview)
-#+END_SRC
 We can also center equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
 on it. This is more John Kitchin code.
@@ -2633,10 +2644,24 @@ line are justified."
                                       `())
                                     map)))
 #+END_SRC
-
 #+BEGIN_SRC emacs-lisp
 (advice-add 'org--format-latex-make-overlay :after 'org-justify-fragment-overlay)
 (advice-add 'org--format-latex-make-overlay :after 'org-latex-fragment-tooltip)
+#+END_SRC
+Toggle the "mode" to preview equations. The keybinding is setup in [[*Hydra][the section
+on hydras]].
+#+BEGIN_SRC emacs-lisp
+(defvar gm/eq-preview nil)
+;; this is buffer local
+(defun gm/toggle-equation-preview ()
+  (interactive)
+  (if gm/eq-preview
+      (progn
+        (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t)
+        (message "Equation preview disabled."))
+    (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display nil t)
+    (message "Equation preview enabled."))
+  (setq-local gm/eq-preview (not gm/eq-preview)))
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
@@ -3066,19 +3091,13 @@ I use a hydra to easily navigate between groups of feeds.
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path "~/.emacs.d/elisp/emms/lisp/")
-
 (require 'emms-setup)
 (require 'emms-player-mpd)
 (emms-all)
-;; (require 'emms-info-libtag) ;;; load functions that will talk to emms-print-metadata which in turn talks to libtag and gets metadata
-;; (setq emms-info-functions '(emms-info-libtag)) ;;; make sure libtag is the only thing delivering metadata
 (require 'emms-mode-line)
 (emms-mode-line 1)
 (require 'emms-playing-time)
 (emms-playing-time 1)
-(bind-keys ("s-j e" . emms)
-           ("s-j b" . emms-smart-browse)
-           ("s-j r" . emms-player-mpd-update-all-reset-cache))
 #+END_SRC
 Now for the settings. I use =mpd=, which I find is minimal and causes no bloat.
 #+BEGIN_SRC emacs-lisp
@@ -3106,8 +3125,6 @@ functionality for =mpc=, we need to let Emacs know about this.
   (emms-player-mpd-connect)
   (emms-cache-set-from-mpd-all)
   (message "MPD Started!"))
-
-(bind-key "s-j c" #'mpd/start-music-daemon)
 #+END_SRC
 *** Killing MPD from Emacs
 #+BEGIN_SRC emacs-lisp
@@ -3117,18 +3134,31 @@ functionality for =mpc=, we need to let Emacs know about this.
   (emms-stop)
   (call-process "killall" nil nil nil "mpd")
   (message "MPD Killed!"))
-
-(bind-key "s-j k" #'mpd/kill-music-daemon)
 #+END_SRC
-*** Update MPD Database
-#+BEGIN_SRC emacs-lisp
-(defun mpd/update-database ()
-  "Updates the MPD database synchronously."
-  (interactive)
-  (call-process "mpc" nil nil nil "update")
-  (message "MPD Database Updated!"))
+*** Bindings
+I use a prefix map to compactify this set of keybindings.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
+(defhydra hydra-emms (:color pink)
+  "
+  ^
+  ^EMMS^              ^Track^             ^MPD (daemon)^
+  ^────────^──────────^──────^────────────^───────^─────
+  _q_ quit            _p_ previous        _c_ start
+  _e_ emms            _n_ next            _k_ kill
+  _b_ browse          _P_ pause           _r_ reload
+  ^^                  ^^                  ^^
+  "
+  ("q" nil)
+  ("e" emms :color blue)
+  ("b" emms-smart-browse :color blue)
+  ("p" emms-previous)
+  ("n" emms-next)
+  ("P" emms-pause)
+  ("k" mpd/kill-music-daemon)
+  ("c" mpd/start-music-daemon)
+  ("r" emms-player-mpd-update-all-reset-cache :color blue))
 
-(bind-key "s-j u" 'mpd/update-database)
+(bind-key "s-j" #'hydra-emms/body)
 #+END_SRC
 * Snippets
 I use =SPC= instead of the default =TAB= to expand snippets. I find this more
