@@ -330,15 +330,17 @@ everything looks right, including the colours in PDFs and the asterisks
 for headlines in Org Mode (I hide them with =org-bullets-mode= but one of them
 comes back when I switch themes, for some reason), I refresh all open buffers.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/dark t)
+(defvar gm/theme 'dark)
 (defun gm/switch-theme ()
   (interactive)
-  (setq gm/dark (not gm/dark))
-  (if gm/dark
-      (progn (load-theme 'solarized-light)
-             (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
+  (if (eq gm/theme 'dark)
+      (progn
+        (load-theme 'solarized-light)
+        (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3"))
+        (setq gm/theme 'light))
     (load-theme 'solarized-dark)
-    (setq pdf-view-midnight-colors '("#839496" . "#002b36")))
+    (setq pdf-view-midnight-colors '("#839496" . "#002b36"))
+    (setq gm/theme 'dark))
   (modi/revert-all-file-buffers))
 #+END_SRC
 **** Font Face
@@ -1849,7 +1851,7 @@ We use a hydra to toggle various features in our setup.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (defhydra hydra-toggle (:color pink)
   "
-_t_ theme-colour       %`gm/dark
+_t_ theme-colour       %`gm/theme
 _m_ quick-math-mode:   %`debug-on-error
 _e_ equation-preview:  %`gm/eq-preview
 _p_ pretty-math:
@@ -1858,14 +1860,13 @@ _D_ dubcaps-mode:      %`gm/dubcaps-mode
 "
   ("t" gm/switch-theme nil)
   ("m" quick-math-mode nil)
-  ("e" equation-preview nil)
-  ("p" pretty-math nil)
+  ("p" gm/toggle-equation-preview nil)
+  ("e" gm/prettify-math nil)
   ("D" gm/dubcaps-mode nil)
   ("q" nil "cancel"))
 
 (bind-key "C-c t" #'hydra-toggle/body)
 #+END_SRC
-
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
