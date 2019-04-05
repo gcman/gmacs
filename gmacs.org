@@ -1422,10 +1422,18 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
 
 (setq counsel-find-file-ignore-regexp
       (s-join "\\|" (list (concat (regexp-opt
-                       (--map (concat "." it) gm/find-file-ignore-extensions))
-                      "\\'")            ; make sure we only match end of filename
-              (regexp-opt
-               gm/find-file-ignore-dirs))))
+                                   (--map (concat "." it) gm/find-file-ignore-extensions))
+                                  "\\'")            ; make sure we only match end of filename
+                          (regexp-opt
+                           gm/find-file-ignore-dirs))))
+#+END_SRC
+We do something similar for =ivy-switch-buffer=.
+#+BEGIN_SRC emacs-lisp
+(defconst gm/find-file-ignore-names
+  '("*elfeed-org*"
+    ".org-gcal-token"))
+
+(push (regexp-opt gm/find-file-ignore-names) ivy-ignore-buffers)
 #+END_SRC
 [[http://pragmaticemacs.com/page/6/][This post]] explains the pitfalls of the default behaviour of =ivy-yank-word= and
 how to fix them. Now we can easily search for the word at point using =swiper=.
@@ -1626,8 +1634,49 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
   :config (which-key-mode))
 #+END_SRC
 *** Projectile
+A neat package to perform operations with respect to the active "project,"
+usually a git repo. The most useful function for me is =projectile-find-file=.
 #+BEGIN_SRC emacs-lisp
-(use-package projectile)
+(use-package projectile
+  :defer 5)
+#+END_SRC
+I use a hydra to manage its many keybindings.
+#+BEGIN_SRC emacs-lisp :noweb-ref hydra
+(defhydra hydra-projectile
+  (:color teal :hint nil)
+  "
+  PROJECTILE: %(projectile-project-root)
+
+  ^Find File^        ^Search/Tags^        ^Buffers^         ^Cache^                      ^Project^
+  ^---------^        ^-----------^        ^-------^         ^-----^                      ^-------^
+  _f_: file          _r_: grep            _i_: Ibuffer      _c_: cache clear             _p_: switch proj
+  _F_: file dwim     _g_: update gtags    _b_: switch to    _x_: remove known project
+  _C-f_: file pwd    _o_: multi-occur     _s-k_: Kill all   _X_: cleanup non-existing
+  _r_: recent file   ^ ^                  ^ ^               _z_: cache current
+  _d_: dir
+"
+  ("r"   projectile-ripgrep)
+  ("b"   projectile-switch-to-buffer)
+  ("c"   projectile-invalidate-cache)
+  ("d"   projectile-find-dir)
+  ("f"   projectile-find-file)
+  ("F"   projectile-find-file-dwim)
+  ("C-f" projectile-find-file-in-directory)
+  ("g"   ggtags-update-tags)
+  ("s-g" ggtags-update-tags)
+  ("i"   projectile-ibuffer)
+  ("K"   projectile-kill-buffers)
+  ("s-k" projectile-kill-buffers)
+  ("m"   projectile-multi-occur)
+  ("o"   projectile-multi-occur)
+  ("p"   projectile-switch-project)
+  ("r"   projectile-recentf)
+  ("x"   projectile-remove-known-project)
+  ("X"   projectile-cleanup-known-projects)
+  ("z"   projectile-cache-current-file)
+  ("q"   nil "cancel" :color blue))
+
+(bind-key "C-c p" #'hydra-projectile/body)
 #+END_SRC
 * Keybindings
 ** Better Defaults
