@@ -397,8 +397,8 @@ especially for Lisps such as Emacs Lisp. However, it's too distracting in org
 mode source blocks, and it also slows down the point's movement, so I find it
 best not to enable it globally.
 #+BEGIN_SRC emacs-lisp
-(use-package rainbow-delimiters
-   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
+;; (use-package rainbow-delimiters
+;;   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
 #+END_SRC
 Finally, =rainbow-mode= highlights hex-color strings with their colour. Very handy
 for choosing colours, especially when editing CSS files.
@@ -1174,7 +1174,18 @@ produces =capitAlize= is silly; I can't think of a situation where I would want 
 capitalize just the following character if the cursor is in the middle of a
 word.
 #+BEGIN_SRC emacs-lisp
-(bind-key "M-c" #'captialize-dwim)
+(defun gm/capitalize-word ()
+  (interactive)
+  (when (eq (char-before) ? )
+      (backward-char))
+  (let (bounds beg end word)
+    (setq bounds (bounds-of-thing-at-point 'symbol))
+    (setq beg (car bounds))
+    (setq end (cdr bounds))
+    (setq word (buffer-substring-no-properties beg end))
+    (delete-region beg end)
+    (insert (capitalize word))))
+(bind-key "M-c" #'gm/capitalize-word)
 #+END_SRC
 **** Expand Region
 #+BEGIN_SRC emacs-lisp
@@ -1182,6 +1193,69 @@ word.
   :commands er/expand-region
   :bind (("C-=" . er/expand-region)
          ("M-2" . er/expand-region)))
+#+END_SRC
+**** Change Region to Title Case
+#+BEGIN_SRC emacs-lisp
+(defun xah-title-case-region-or-line (@begin @end)
+  "Title case text between nearest brackets, or current line, or text selection.
+Capitalize first letter of each word, except words like {to, of,
+the, a, in, or, and, …}. If a word already contains cap letters
+such as HTTP, URL, they are left as is.
+
+When called in a elisp program, *begin *end are region boundaries.
+URL `http://ergoemacs.org/emacs/elisp_title_case_text.html'
+Version 2017-01-11"
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (let (
+           $p1
+           $p2
+           ($skipChars "^\"<>(){}[]“”‘’‹›«»「」『』【】〖〗《》〈〉〔〕"))
+       (progn
+         (skip-chars-backward $skipChars (line-beginning-position))
+         (setq $p1 (point))
+         (skip-chars-forward $skipChars (line-end-position))
+         (setq $p2 (point)))
+       (list $p1 $p2))))
+  (let* (
+         ($strPairs [
+                     [" A " " a "]
+                     [" And " " and "]
+                     [" At " " at "]
+                     [" As " " as "]
+                     [" By " " by "]
+                     [" Be " " be "]
+                     [" Into " " into "]
+                     [" In " " in "]
+                     [" Is " " is "]
+                     [" It " " it "]
+                     [" For " " for "]
+                     [" Of " " of "]
+                     [" Or " " or "]
+                     [" On " " on "]
+                     [" Via " " via "]
+                     [" The " " the "]
+                     [" That " " that "]
+                     [" To " " to "]
+                     [" Vs " " vs "]
+                     [" With " " with "]
+                     [" From " " from "]
+                     ["'S " "'s "]
+                     ["'T " "'t "]
+                     ]))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region @begin @end)
+        (upcase-initials-region (point-min) (point-max))
+        (let ((case-fold-search nil))
+          (mapc
+           (lambda ($x)
+             (goto-char (point-min))
+             (while
+                 (search-forward (aref $x 0) nil t)
+               (replace-match (aref $x 1) "FIXEDCASE" "LITERAL")))
+           $strPairs))))))
 #+END_SRC
 ** Programming
 The age old debate: tabs or spaces? I say spaces.
@@ -1579,7 +1653,7 @@ default; set PAGE-P to non-nil to rotate only the current page.
 *** Hydra
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package hydra
-  :defer 3
+  :defer 2
   :config
   <<hydra>>)
 #+END_SRC
@@ -3165,13 +3239,15 @@ functionality for =mpc=, we need to let Emacs know about this.
 #+BEGIN_SRC emacs-lisp
 (setq mpc-host "localhost:6601")
 #+END_SRC
+When the music I have isn't tagged right or needs some editing, I use the
+command line tool =id3v2=.
 *** Starting MPD from Emacs
 #+BEGIN_SRC emacs-lisp
 (defun mpd/start-music-daemon ()
   "Start MPD, connects to it and syncs the metadata cache."
   (interactive)
   (shell-command "mpd")
-  (mpd/update-database)
+  (emms-player-mpd-update-all-reset-cache)
   (emms-player-mpd-connect)
   (emms-cache-set-from-mpd-all)
   (message "MPD Started!"))
@@ -3207,7 +3283,8 @@ I use a prefix map to compactify this set of keybindings.
   ("k" mpd/kill-music-daemon)
   ("c" mpd/start-music-daemon)
   ("r" emms-player-mpd-update-all-reset-cache :color blue))
-
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
 (bind-key "s-j" #'hydra-emms/body)
 #+END_SRC
 * Snippets
