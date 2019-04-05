@@ -398,7 +398,7 @@ mode source blocks, and it also slows down the point's movement, so I find it
 best not to enable it globally.
 #+BEGIN_SRC emacs-lisp
 (use-package rainbow-delimiters
-  :hook (emacs-lisp-mode . rainbow-delimiters-mode))
+   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
 #+END_SRC
 Finally, =rainbow-mode= highlights hex-color strings with their colour. Very handy
 for choosing colours, especially when editing CSS files.
