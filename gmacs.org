@@ -1197,6 +1197,8 @@ word.
 #+END_SRC
 **** Change Region to Title Case
 #+BEGIN_SRC emacs-lisp
+(defvar gm/title-case-skip-chars
+  "^\"<>(){}[]“”‘’‹›«»「」『』【】〖〗《》〈〉〔〕")
 (defun xah-title-case-region-or-line (@begin @end)
   "Title case text between nearest brackets, or current line, or text selection.
 Capitalize first letter of each word, except words like {to, of,
@@ -1210,17 +1212,17 @@ Version 2017-01-11"
    (if (use-region-p)
        (list (region-beginning) (region-end))
      (let (
-           $p1
-           $p2
-           ($skipChars "^\"<>(){}[]“”‘’‹›«»「」『』【】〖〗《》〈〉〔〕"))
+           p1
+           p2
+           (skipChars gm/title-case-skip-chars))
        (progn
-         (skip-chars-backward $skipChars (line-beginning-position))
-         (setq $p1 (point))
-         (skip-chars-forward $skipChars (line-end-position))
-         (setq $p2 (point)))
-       (list $p1 $p2))))
+         (skip-chars-backward skipChars (line-beginning-position))
+         (setq p1 (point))
+         (skip-chars-forward skipChars (line-end-position))
+         (setq p2 (point)))
+       (list p1 p2))))
   (let* (
-         ($strPairs [
+         (strPairs [
                      [" A " " a "]
                      [" And " " and "]
                      [" At " " at "]
@@ -1251,13 +1253,14 @@ Version 2017-01-11"
         (upcase-initials-region (point-min) (point-max))
         (let ((case-fold-search nil))
           (mapc
-           (lambda ($x)
+           (lambda (x)
              (goto-char (point-min))
              (while
-                 (search-forward (aref $x 0) nil t)
-               (replace-match (aref $x 1) "FIXEDCASE" "LITERAL")))
-           $strPairs))))))
+                 (search-forward (aref x 0) nil t)
+               (replace-match (aref x 1) "FIXEDCASE" "LITERAL")))
+           strPairs))))))
 #+END_SRC
+Note that one of the characters we skip is ="=.
 ** Programming
 The age old debate: tabs or spaces? I say spaces.
 #+BEGIN_SRC emacs-lisp
@@ -1713,7 +1716,8 @@ A neat package to perform operations with respect to the active "project,"
 usually a git repo. The most useful function for me is =projectile-find-file=.
 #+BEGIN_SRC emacs-lisp
 (use-package projectile
-  :defer 5)
+  :defer 5
+  :config (use-package counsel-projectile :demand t))
 #+END_SRC
 I use a hydra to manage its many keybindings.
 #+BEGIN_SRC emacs-lisp :noweb-ref hydra
@@ -1730,12 +1734,12 @@ I use a hydra to manage its many keybindings.
   _r_: recent file   ^ ^                  ^ ^               _z_: cache current
   _d_: dir
 "
-  ("r"   projectile-ripgrep)
-  ("b"   projectile-switch-to-buffer)
+  ("r"   counsel-projectile-rg)
+  ("b"   counsel-projectile-switch-to-buffer)
   ("c"   projectile-invalidate-cache)
-  ("d"   projectile-find-dir)
-  ("f"   projectile-find-file)
-  ("F"   projectile-find-file-dwim)
+  ("d"   counsel-projectile-find-dir)
+  ("f"   counsel-projectile-find-file)
+  ("F"   counsel-projectile-find-file-dwim)
   ("C-f" projectile-find-file-in-directory)
   ("g"   ggtags-update-tags)
   ("s-g" ggtags-update-tags)
