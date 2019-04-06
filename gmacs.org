@@ -1177,14 +1177,15 @@ word.
 (defun gm/capitalize-word ()
   (interactive)
   (when (eq (char-before) ? )
-      (backward-char))
-  (let (bounds beg end word)
-    (setq bounds (bounds-of-thing-at-point 'symbol))
-    (setq beg (car bounds))
-    (setq end (cdr bounds))
-    (setq word (buffer-substring-no-properties beg end))
+    (backward-char))
+  (let* ((bounds (bounds-of-thing-at-point 'symbol))
+         (beg (car bounds))
+         (end (cdr bounds))
+         (word (buffer-substring-no-properties beg end)))
     (delete-region beg end)
-    (insert (capitalize word))))
+    (if (string= word (capitalize word))
+        (insert (downcase word))
+    (insert (capitalize word)))))
 (bind-key "M-c" #'gm/capitalize-word)
 #+END_SRC
 **** Expand Region
@@ -2099,12 +2100,6 @@ after archiving lower level items.
       (save-excursion
         (while (org-up-heading-safe))
         (org-set-tags-to tags)))))
-#+END_SRC
-*** Attachment
-I have started to use Org Mode to manage my files, with the attach
-functionality.
-#+BEGIN_SRC emacs-lisp
-(setq org-attach-method 'mv)
 #+END_SRC
 *** Capture
 :PROPERTIES:
