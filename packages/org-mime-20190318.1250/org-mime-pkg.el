@@ -1,2 +1,0 @@
-;;; -*- no-byte-compile: t -*-
-(define-package "org-mime" "20190318.1250" "org html export for text/html MIME emails" '((emacs "24.4") (cl-lib "0.5")) :stars '(#("21" 0 2 (font-lock-face paradox-star-face))) :commit "817744f3b1b1d5c9f32e66e9667ff711439d8c77" :keywords '("mime" "mail" "email" "html") :authors '(("Eric Schulte")) :maintainer '("Chen Bin (redguardtoo)") :url "http://github.com/org-mime/org-mime")
