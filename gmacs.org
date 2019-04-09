@@ -365,6 +365,11 @@ package on the AUR.
 #+BEGIN_SRC emacs-lisp
 (set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) "Symbola")
 #+END_SRC
+I do something similar for my =org-ellipsis= character (=⬎=); here, though, I just
+prefer how this font draws the character.
+#+BEGIN_SRC emacs-lisp
+(set-fontset-font "fontset-default" '(#x2b0e . #x2b0e) "Symbola")
+#+END_SRC
 **** Syntax Highlighting
 I want syntax highlighting everywhere...
 #+BEGIN_SRC emacs-lisp
@@ -1980,9 +1985,9 @@ We use a hydra to toggle various features in our setup.
 (defhydra hydra-toggle (:color pink)
   "
 _t_ theme-colour       %`gm/theme
-_m_ quick-math-mode:   %`debug-on-error
-_e_ equation-preview:  %`gm/eq-preview
-_p_ pretty-math:
+_m_ quick-math-mode:   %`quick-math-mode
+_p_ equation-preview:  %`gm/eq-preview
+_e_ pretty-math:
 _D_ dubcaps-mode:      %`gm/dubcaps-mode
 
 "
@@ -2110,8 +2115,8 @@ after archiving lower level items.
 :END:
 Org Capture is one of the best features of Org Mode. I use it to organize my
 todo list, take note of ideas I think of, and kickstart blog posts.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("C-c c" . org-capture)
+#+BEGIN_SRC emacs-lisp
+(bind-key "C-c c" #'org-capture)
 #+END_SRC
 The two applications I spend the most time in are Emacs and Firefox. It would be
 very nice if I could use Org Capture from within the web browser. In particular,
@@ -2314,8 +2319,8 @@ default). I prefer to see a larger view.
 #+END_SRC
 *** Google Calendar
 I manage deadlines with Org Agenda.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("C-c a" . org-agenda)
+#+BEGIN_SRC emacs-lisp
+(bind-key "C-c a" #'org-agenda)
 #+END_SRC
 However, that's not quite enough, because when I'm out and about, I want whatever
 I have in my Org Agenda to be able to alert me on my phone. I also want to be
@@ -2382,6 +2387,11 @@ Because it's always active, it's best to diminish it.
 #+BEGIN_SRC emacs-lisp
 (setq org-startup-indented t)
 (diminish 'org-indent-mode)
+#+END_SRC
+The dot-dot-dot ellipsis that indicates hidden content can become a bit much
+when you have a lot of headlines.
+#+BEGIN_SRC emacs-lisp
+(setq org-ellipsis "⬎")
 #+END_SRC
 *** Emphasis Markers
 It looks much cleaner if we omit emphasis markers such as the =*= asterisks that
@@ -2618,8 +2628,8 @@ Where should it be? Let's put them all in the same place, so that common
 fragments (like =x^2=) are never generated more than once and so that we don't
 litter our folders.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-preview-latex-image-directory (expand-file-name "cache/ltximg/"
-                                                          gmacs-emacs-dir))
+(setq org-preview-latex-image-directory
+      (expand-file-name "cache/ltximg/" gmacs-emacs-dir))
 #+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
@@ -3196,6 +3206,31 @@ We bind it to =o=.
 (bind-key "o" #'gm/elfeed-visit-or-play-with-mpv elfeed-show-mode-map)
 (bind-key "o" #'gm/elfeed-visit-or-play-with-mpv elfeed-search-mode-map)
 #+END_SRC
+Sometimes I want to download videos to watch them later or in higher quality.
+For this I use skeeto's =youtube-dl=.
+#+BEGIN_SRC emacs-lisp
+(autoload #'youtube-dl "youtube-dl")
+(setq youtube-dl-directory "~/Videos/YouTube")
+(setq youtube-dl-arguments
+      '("--download-archive" "downloaded.txt"
+        "-i"
+        "-f" "bestvideo[ext=mp4]+bestaudio"
+        "-o" "%(uploader)s/%(upload_date)s - %(title)s - (%(duration)ss) [%(resolution)s].%(ext)s"))
+#+END_SRC
+I wrap it for use in =elfeed=.
+#+BEGIN_SRC emacs-lisp
+(defun gm/youtube-dl ()
+  (interactive)
+  (let* ((entry-full (if (eq major-mode 'elfeed-show-mode)
+                   elfeed-show-entry
+                 (elfeed-search-selected :single)))
+         (entry (elfeed-entry-link entry-full)))
+    (youtube-dl entry)))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
+(bind-key "d" #'gm/youtube-dl elfeed-show-mode-map)
+(bind-key "d" #'gm/youtube-dl elfeed-search-mode-map)
+#+END_SRC
 *** Hydra
 I use a hydra to easily navigate between groups of feeds.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -3239,7 +3274,8 @@ functionality for =mpc=, we need to let Emacs know about this.
 (setq mpc-host "localhost:6601")
 #+END_SRC
 When the music I have isn't tagged right or needs some editing, I use the
-command line tool =id3v2=.
+command line tool =id3v2= for quick or repetitive jobs. When appropriate, I prefer
+the GUI application =easytag=.
 *** Starting MPD from Emacs
 #+BEGIN_SRC emacs-lisp
 (defun mpd/start-music-daemon ()

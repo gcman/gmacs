@@ -69,8 +69,7 @@
  '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
  '(org-refile-targets
    (quote
-    (("~/org/gtd.org" :maxlevel . 3)
-     ("~/org/someday.org" :level . 1)
+    (("~/org/gtd.org" :maxlevel . 3) ("~/org/someday.org" :level . 1)
      ("~/org/tickler.org" :maxlevel . 2)
      ("~/org/notes.org" :maxlevel . 2))))
  '(org-todo-keywords

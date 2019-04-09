@@ -61,6 +61,12 @@
     ("se" "save-excursion" nil 0)
    ))
 
+(define-abbrev-table 'emms-lyrics-mode-abbrev-table '())
+
+(define-abbrev-table 'emms-show-all-mode-abbrev-table '())
+
+(define-abbrev-table 'emms-tag-editor-mode-abbrev-table '())
+
 (define-abbrev-table 'epa-info-mode-abbrev-table '())
 
 (define-abbrev-table 'epa-key-list-mode-abbrev-table '())
@@ -101,6 +107,8 @@
 
 (define-abbrev-table 'helpful-mode-abbrev-table '())
 
+(define-abbrev-table 'html-mode-abbrev-table '())
+
 (define-abbrev-table 'ibuffer-mode-abbrev-table '())
 
 (define-abbrev-table 'inferior-python-mode-abbrev-table '())
@@ -112,6 +120,8 @@
 (define-abbrev-table 'latex-mode-abbrev-table '())
 
 (define-abbrev-table 'lisp-mode-abbrev-table '())
+
+(define-abbrev-table 'locate-mode-abbrev-table '())
 
 (define-abbrev-table 'log-edit-mode-abbrev-table '())
 
@@ -177,6 +187,7 @@
     ("delimieter" "delimiter" nil 0)
     ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 3)
     ("eveyr" "every" nil 0)
+    ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 0)
     ("inadvertantly" "inadvertently" nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("intrface" "interface" nil 0)
@@ -230,6 +241,8 @@
 
 (define-abbrev-table 'select-tags-table-mode-abbrev-table '())
 
+(define-abbrev-table 'sgml-mode-abbrev-table '())
+
 (define-abbrev-table 'sh-mode-abbrev-table '())
 
 (define-abbrev-table 'shell-mode-abbrev-table '())
@@ -273,3 +286,4 @@
 (define-abbrev-table 'web-mode-abbrev-table '())
 
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
+
