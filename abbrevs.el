@@ -11,6 +11,8 @@
 
 (define-abbrev-table 'TeX-special-mode-abbrev-table '())
 
+(define-abbrev-table 'awk-mode-abbrev-table '())
+
 (define-abbrev-table 'backtrace-mode-abbrev-table '())
 
 (define-abbrev-table 'bibtex-mode-abbrev-table '())
@@ -22,6 +24,10 @@
 (define-abbrev-table 'browse-kill-ring-edit-mode-abbrev-table '())
 
 (define-abbrev-table 'browse-kill-ring-mode-abbrev-table '())
+
+(define-abbrev-table 'c++-mode-abbrev-table '())
+
+(define-abbrev-table 'c-mode-abbrev-table '())
 
 (define-abbrev-table 'calendar-mode-abbrev-table '())
 
@@ -111,11 +117,19 @@
 
 (define-abbrev-table 'ibuffer-mode-abbrev-table '())
 
+(define-abbrev-table 'idl-mode-abbrev-table '())
+
 (define-abbrev-table 'inferior-python-mode-abbrev-table '())
 
 (define-abbrev-table 'ivy-occur-grep-mode-abbrev-table '())
 
 (define-abbrev-table 'ivy-occur-mode-abbrev-table '())
+
+(define-abbrev-table 'java-mode-abbrev-table '())
+
+(define-abbrev-table 'js-jsx-mode-abbrev-table '())
+
+(define-abbrev-table 'js-mode-abbrev-table '())
 
 (define-abbrev-table 'latex-mode-abbrev-table '())
 
@@ -171,6 +185,8 @@
 
 (define-abbrev-table 'notmuch-tree-mode-abbrev-table '())
 
+(define-abbrev-table 'objc-mode-abbrev-table '())
+
 (define-abbrev-table 'occur-edit-mode-abbrev-table '())
 
 (define-abbrev-table 'occur-mode-abbrev-table '())
@@ -187,7 +203,9 @@
     ("delimieter" "delimiter" nil 0)
     ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 3)
     ("eveyr" "every" nil 0)
+    ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 0)
+    ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("inadvertantly" "inadvertently" nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("intrface" "interface" nil 0)
@@ -196,6 +214,8 @@
     ("proerty" "property" nil 0)
     ("sherrif" "sheriff" nil 0)
     ("teh" "the" nil 0)
+    ("test" "ignore" nil 3)
+    ("underfilling" "under filling" nil 4)
     ("wrok" #("work" 0 4 (face frog-menu-candidates-face)) nil 2)
    ))
 
@@ -203,7 +223,13 @@
 
 (define-abbrev-table 'package-menu-mode-abbrev-table '())
 
+(define-abbrev-table 'paradox-commit-list-mode-abbrev-table '())
+
+(define-abbrev-table 'paradox-menu-mode-abbrev-table '())
+
 (define-abbrev-table 'pdf-occur-buffer-mode-abbrev-table '())
+
+(define-abbrev-table 'pike-mode-abbrev-table '())
 
 (define-abbrev-table 'plain-tex-mode-abbrev-table '())
 
@@ -286,4 +312,3 @@
 (define-abbrev-table 'web-mode-abbrev-table '())
 
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
-

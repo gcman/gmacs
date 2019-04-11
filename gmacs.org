@@ -415,7 +415,26 @@ for choosing colours, especially when editing CSS files.
 #+END_SRC
 ** Quality of Life
 *** Macros
-Some great macros. =after!= and =lambda!= are from the popular DOOM! Emacs
+First, I make defining keyboard macros easier by not quitting them with =C-g=. I
+got this from [[https://www.reddit.com/r/emacs/comments/bb5c1w/weekly_tipstricketc_thread/][Reddit]].
+#+BEGIN_SRC emacs-lisp
+(defun gm/escape ()
+  "Quit in current context.
+
+   When there is an active minibuffer exit that.
+   Ignore quit command for keyboard macros. Otherwise
+   behave like `keyboad-quit'."
+  (interactive)
+  (if-let ((minibuffer (active-minibuffer-window)))
+      (with-current-buffer (window-buffer minibuffer)
+        (minibuffer-keyboard-quit))
+    ;; ignore quit for macros
+    (unless (or defining-kbd-macro executing-kbd-macro)
+      (keyboard-quit))))
+
+(bind-key [remap keyboard-quit] #'gm/escape)
+#+END_SRC
+Now for the Elisp macros. =after!= and =lambda!= are from the popular DOOM! Emacs
 configuration. The documentation on these will be sparse, because the docstrings
 do an excellent job of explaining what's going on.
 **** after!
@@ -1008,7 +1027,6 @@ for selection.
   :custom
   (flyspell-correct-interface #'frog-menu-flyspell-correct))
 #+END_SRC
-
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
 (defun frog-menu-flyspell-correct (candidates word)
   "Run `frog-menu-read' for the given CANDIDATES.
@@ -1946,7 +1964,7 @@ buffer.
     (switch-to-buffer-other-window buf)))
 #+END_SRC
 I rebind the redundant help binding (there is already a more convenient prefix
-map at =C-h=). I would use =C-M-t= to open a normal terminal, rebinding the Ubuntu
+map at =C-h=). I would use =C-M-t= to open a normal terminal, rebinding the Deepin
 default, but I'm not sure how to make this Emacs command override the system
 default.
 #+BEGIN_SRC emacs-lisp
@@ -3171,9 +3189,11 @@ whether to use mpv to visit the link.")
 (defun gm/elfeed-play-with-mpv ()
   "Play entry link with mpv."
   (interactive)
-  (let ((entry (if (eq major-mode 'elfeed-show-mode)
+  (let (entry)
+    (if (eq major-mode 'elfeed-show-mode)
                    elfeed-show-entry
-                 (elfeed-search-selected :single))))
+      (setq entry (elfeed-search-selected :single))
+      (elfeed-search-untag-all-unread))
     (message "Opening %s with mpv..." (elfeed-entry-link entry))
     (start-process "elfeed-mpv" nil "mpv" "--fs" (elfeed-entry-link entry))))
 #+END_SRC
