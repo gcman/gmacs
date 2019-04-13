@@ -58,7 +58,8 @@ Emacs.mode-line.attributeBox: (:line-width 1 :color "#073642")
 #+END_SRC
 *** Default Font
 I often experiment with fonts during an Emacs session, so I set up an easy way
-to change that [[*Font Face][here]]. On startup, though, I want something neutral, so I go with Hack.
+to change that [[*Font Face][here]]. On startup, though, I want something neutral, so I go with
+Hack.
 #+BEGIN_SRC sh
 Emacs.font: Hack-10
 #+END_SRC
@@ -1529,7 +1530,7 @@ T - tag prefix
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(bind-key dired-mode-map "." 'hydra-dired/body)
+(bind-key "." 'hydra-dired/body dired-mode-map)
 #+END_SRC
 *** Ivy
 #+BEGIN_SRC emacs-lisp
@@ -3795,7 +3796,7 @@ should expand."
       (find-file file-cand)
       (yas-expand-snippet (yas-lookup-snippet "new-math-snippet")))
     (gm/math-setup)))
-#+EN D_SRC
+#+END_SRC
 A very rudimentary command to see all current snippet keys and expansions.
 #+BEGIN_SRC emacs-lisp
 (defun gm/view-snippets ()
