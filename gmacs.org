@@ -1042,9 +1042,11 @@ of (command . word) to be used by `flyspell-do-correct'."
                     ("C-a" "Accept (session)"  (session . ,word))
                     ("C-b" "Accept (buffer)"   (buffer  . ,word))
                     ("C-c" "Skip"              (skip    . ,word))))
-         (prompt   (format "Dictionary: [%s]"  (or ispell-local-dictionary
-                                                   ispell-dictionary
-                                                   "default")))
+         (prompt   (format "Correcting %s with [%s]"
+                           word
+                           (or ispell-local-dictionary
+                               ispell-dictionary
+                               "default")))
          (res      (frog-menu-read prompt corrects actions)))
     (unless res
       (error "Quit"))
@@ -1471,6 +1473,63 @@ This is excellent for editing files owned by root in Emacs.
 (use-package sudo-edit
   :commands sudo-edit
   :bind (("C-c C-x r" . sudo-edit)))
+#+END_SRC
+I often find the commands in Dired hard to remember.
+#+BEGIN_SRC emacs-lisp :noweb-ref hydra
+(defhydra hydra-dired (:hint nil :color pink)
+  "
+_+_ mkdir          _v_iew           _m_ark             _(_ details        _i_nsert-subdir    wdired
+_C_opy             _O_ view other   _U_nmark all       _)_ omit-mode      _$_ hide-subdir    C-x C-q : edit
+_D_elete           _o_pen other     _u_nmark           _l_ redisplay      _w_ kill-subdir    C-c C-c : commit
+_R_ename           _M_ chmod        _t_oggle           _g_ revert buf     _e_ ediff          C-c ESC : abort
+_Y_ rel symlink    _G_ chgrp        _E_xtension mark   _s_ort             _=_ pdiff
+_S_ymlink          ^ ^              _F_ind marked      _._ toggle hydra   \\ flyspell
+_r_sync            ^ ^              ^ ^                ^ ^                _?_ summary
+_z_ compress-file  _A_ find regexp
+_Z_ compress       _Q_ repl regexp
+
+T - tag prefix
+"
+  ("\\" dired-do-ispell)
+  ("(" dired-hide-details-mode)
+  (")" dired-omit-mode)
+  ("+" dired-create-directory)
+  ("=" diredp-ediff)         ;; smart diff
+  ("?" dired-summary)
+  ("$" diredp-hide-subdir-nomove)
+  ("A" dired-do-find-regexp)
+  ("C" dired-do-copy)        ;; Copy all marked files
+  ("D" dired-do-delete)
+  ("E" dired-mark-extension)
+  ("e" dired-ediff-files)
+  ("F" dired-do-find-marked-files)
+  ("G" dired-do-chgrp)
+  ("g" revert-buffer)        ;; read all directories again (refresh)
+  ("i" dired-maybe-insert-subdir)
+  ("l" dired-do-redisplay)   ;; relist the marked or singel directory
+  ("M" dired-do-chmod)
+  ("m" dired-mark)
+  ("O" dired-display-file)
+  ("o" dired-find-file-other-window)
+  ("Q" dired-do-find-regexp-and-replace)
+  ("R" dired-do-rename)
+  ("r" dired-do-rsynch)
+  ("S" dired-do-symlink)
+  ("s" dired-sort-toggle-or-edit)
+  ("t" dired-toggle-marks)
+  ("U" dired-unmark-all-marks)
+  ("u" dired-unmark)
+  ("v" dired-view-file)      ;; q to exit, s to search, = gets line #
+  ("w" dired-kill-subdir)
+  ("Y" dired-do-relsymlink)
+  ("z" diredp-compress-this-file)
+  ("Z" dired-do-compress)
+  ("q" nil)
+  ("." nil :color blue))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(bind-key dired-mode-map "." 'hydra-dired/body)
 #+END_SRC
 *** Ivy
 #+BEGIN_SRC emacs-lisp
@@ -2130,6 +2189,7 @@ after archiving lower level items.
 #+END_SRC
 *** Capture
 :PROPERTIES:
+:ORDERED:  t
 :END:
 Org Capture is one of the best features of Org Mode. I use it to organize my
 todo list, take note of ideas I think of, and kickstart blog posts.
@@ -2170,9 +2230,11 @@ for next and previous tab, but that's another story.
 
 We send the data from =org-protocol= into the following template.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref capture-templates
-("p" "Org Protocol" entry
- (file org-default-notes-file)
- "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")")
+(push
+ '("p" "Org Protocol" entry
+   (file org-default-notes-file)
+   "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")")
+ org-capture-templates)
 #+END_SRC
 Because Org links are constructed with square brackets, any URL whose title
 contains square brackets (I'm looking at you, arXiv) would break a normal
@@ -3191,11 +3253,12 @@ whether to use mpv to visit the link.")
   (interactive)
   (let (entry)
     (if (eq major-mode 'elfeed-show-mode)
-                   elfeed-show-entry
+       (setq entry elfeed-show-entry)
       (setq entry (elfeed-search-selected :single))
       (elfeed-search-untag-all-unread))
-    (message "Opening %s with mpv..." (elfeed-entry-link entry))
-    (start-process "elfeed-mpv" nil "mpv" "--fs" (elfeed-entry-link entry))))
+    (setq entry (elfeed-entry-link entry))
+    (message "Opening %s with mpv..." entry)
+    (start-process "elfeed-mpv" nil "mpv" "--fs" entry)))
 #+END_SRC
 We make a multi-purpose function to open the link with =mpv= if it is a video,
 otherwise with the browser.
@@ -3267,18 +3330,20 @@ I use a hydra to easily navigate between groups of feeds.
 #+END_SRC
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "~/.emacs.d/elisp/emms/lisp/")
-(require 'emms-setup)
-(require 'emms-player-mpd)
-(emms-all)
-(require 'emms-mode-line)
-(emms-mode-line 1)
-(require 'emms-playing-time)
-(emms-playing-time 1)
+#+BEGIN_SRC emacs-lisp :noweb yes
+(defun gm/emms-setup ()
+  (add-to-list 'load-path "~/.emacs.d/elisp/emms/lisp/")
+  (require 'emms-setup)
+  (require 'emms-player-mpd)
+  (emms-all)
+  (require 'emms-mode-line)
+  (emms-mode-line 1)
+  (require 'emms-playing-time)
+  (emms-playing-time 1)
+  <<emms>>)
 #+END_SRC
 Now for the settings. I use =mpd=, which I find is minimal and causes no bloat.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb-ref emms
 (setq emms-seek-seconds 5
       emms-player-list '(emms-player-mpd)
       emms-info-list '(emms-info-mpd)
@@ -3290,7 +3355,7 @@ Now for the settings. I use =mpd=, which I find is minimal and causes no bloat.
 #+END_SRC
 We use non-default settings for the socket. In order to use the built-in
 functionality for =mpc=, we need to let Emacs know about this.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb-ref emms
 (setq mpc-host "localhost:6601")
 #+END_SRC
 When the music I have isn't tagged right or needs some editing, I use the
@@ -3319,7 +3384,7 @@ the GUI application =easytag=.
 *** Bindings
 I use a prefix map to compactify this set of keybindings.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
-(defhydra hydra-emms (:color pink)
+(defhydra hydra-emms (:color pink :pre (gm/emms-setup))
   "
   ^
   ^EMMS^              ^Track^             ^MPD (daemon)^
@@ -3390,6 +3455,7 @@ don't require the use of =yasnippets=.
     ("approx" "\\approx ")
     ("asin" "\\arcsin ")
     ("atan" "\\arctan ")
+    ("bar" "bar" t)
     ("bigop" "big-operator" t)
     ("binom" "choose" t)
     ("bol" "bol" t)
@@ -3449,6 +3515,7 @@ don't require the use of =yasnippets=.
     ("ox" "\\otimes ")
     ("part" "partial" t)
     ("pd" "partial" t)
+    ("pi" "\\pi")
     ("pm" "\\pm ")
     ("prod" "product" t)
     ("prop" "\\propto ")
@@ -3728,7 +3795,7 @@ should expand."
       (find-file file-cand)
       (yas-expand-snippet (yas-lookup-snippet "new-math-snippet")))
     (gm/math-setup)))
-#+END_SRC
+#+EN D_SRC
 A very rudimentary command to see all current snippet keys and expansions.
 #+BEGIN_SRC emacs-lisp
 (defun gm/view-snippets ()

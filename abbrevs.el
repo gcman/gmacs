@@ -37,6 +37,24 @@
 
 (define-abbrev-table 'completion-list-mode-abbrev-table '())
 
+(define-abbrev-table 'conf-colon-mode-abbrev-table '())
+
+(define-abbrev-table 'conf-desktop-mode-abbrev-table '())
+
+(define-abbrev-table 'conf-javaprop-mode-abbrev-table '())
+
+(define-abbrev-table 'conf-ppd-mode-abbrev-table '())
+
+(define-abbrev-table 'conf-space-mode-abbrev-table '())
+
+(define-abbrev-table 'conf-toml-mode-abbrev-table '())
+
+(define-abbrev-table 'conf-unix-mode-abbrev-table '())
+
+(define-abbrev-table 'conf-windows-mode-abbrev-table '())
+
+(define-abbrev-table 'conf-xdefaults-mode-abbrev-table '())
+
 (define-abbrev-table 'debugger-mode-abbrev-table '())
 
 (define-abbrev-table 'diary-fancy-display-mode-abbrev-table '())
@@ -199,23 +217,33 @@
     ("acutally" #("actually" 0 8 (face frog-menu-candidates-face)) nil 1)
     ("admittely" "admittedly" nil 0)
     ("adn" #("and" 0 3 (face frog-menu-candidates-face)) nil 0)
+    ("anwyay" #("anyway" 0 6 (face frog-menu-candidates-face)) nil 0)
+    ("atreus" #("Atreus" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("becuase" "because" nil 0)
+    ("colemak" #("Colemak" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("delimieter" "delimiter" nil 0)
+    ("didnt" #("didn't" 0 6 (face frog-menu-candidates-face)) nil 0)
+    ("dumbells" #("dumbbells" 0 9 (face frog-menu-candidates-face)) nil 0)
     ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 3)
     ("eveyr" "every" nil 0)
     ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 0)
     ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
-    ("inadvertantly" "inadvertently" nil 0)
+    ("inadvertantly" #("inadvertently" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("intrface" "interface" nil 0)
     ("jsut" #("just" 0 4 (face frog-menu-candidates-face)) nil 0)
+    ("netowrk" #("network" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("onwards" #("onward" 0 6 (face frog-menu-candidates-face)) nil 0)
+    ("parastiic" #("parasitic" 0 9 (face frog-menu-candidates-face)) nil 0)
+    ("practicing" #("practising" 0 10 (face frog-menu-candidates-face)) nil 1)
     ("proerty" "property" nil 0)
-    ("sherrif" "sheriff" nil 0)
+    ("reluctancy" #("reluctance" 0 10 (face frog-menu-candidates-face)) nil 0)
+    ("sherrif" #("sheriff" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("teh" "the" nil 0)
     ("test" "ignore" nil 3)
     ("underfilling" "under filling" nil 4)
+    ("vecotr" #("vector" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("wrok" #("work" 0 4 (face frog-menu-candidates-face)) nil 2)
    ))
 
