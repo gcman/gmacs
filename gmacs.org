@@ -595,7 +595,6 @@ Authorize actions.
 (auth-source-pass-enable)
 (setq auth-sources '("~/.authinfo.gpg"))
 #+END_SRC
-
 *** Persistent Scratch Buffer
 The =*scratch*= buffer has come in handy for me many times when I want to quickly
 test out some Elisp. It would be nice to have it saved; I could clear it easily if
@@ -3388,12 +3387,14 @@ I use a prefix map to compactify this set of keybindings.
 (defhydra hydra-emms (:color pink :pre (gm/emms-setup))
   "
   ^
-  ^EMMS^              ^Track^             ^MPD (daemon)^
+  ^EMMS^            ^Track^             ^MPD (daemon)^
   ^────────^──────────^──────^────────────^───────^─────
-  _q_ quit            _p_ previous        _c_ start
-  _e_ emms            _n_ next            _k_ kill
-  _b_ browse          _P_ pause           _r_ reload
-  ^^                  ^^                  ^^
+  _q_uit            _p_revious          _c_reate
+  _e_mms            _n_ext              _k_ill
+  _b_rowse          _P_ause             _r_eload
+  ^^                _B_back (10s)       ^^
+  ^^                _F_orward (10s)     ^^
+  ^^                ^^                  ^^
   "
   ("q" nil)
   ("e" emms :color blue)
@@ -3401,6 +3402,8 @@ I use a prefix map to compactify this set of keybindings.
   ("p" emms-previous)
   ("n" emms-next)
   ("P" emms-pause)
+  ("B" emms-seek-backward)
+  ("F" emms-seek-forward)
   ("k" mpd/kill-music-daemon)
   ("c" mpd/start-music-daemon)
   ("r" emms-player-mpd-update-all-reset-cache :color blue))

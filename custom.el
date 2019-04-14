@@ -10,6 +10,7 @@
    (quote
     ("8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" "d677ef584c6dfc0697901a44b885cc18e206f05114c8a3b7fde674fce6180879" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default)))
  '(flycheck-display-errors-delay 0.3)
+ '(flyspell-correct-interface (quote frog-menu-flyspell-correct) t)
  '(ivy-display-style (quote fancy))
  '(ivy-initial-inputs-alist nil)
  '(ivy-re-builders-alist
@@ -62,14 +63,17 @@
 :CREATED: %U
 :END:
 %:initial
-%?"))))
+%?"))) t)
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
+ '(org-download-method (quote attach))
+ '(org-download-timestamp t)
  '(org-ellipsis "⬎")
- '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
+ '(org-gcal-dir "/home/gautam/.emacs.d/cache/")
  '(org-refile-targets
    (quote
-    (("~/org/gtd.org" :maxlevel . 3) ("~/org/someday.org" :level . 1)
+    (("~/org/gtd.org" :maxlevel . 3)
+     ("~/org/someday.org" :level . 1)
      ("~/org/tickler.org" :maxlevel . 2)
      ("~/org/notes.org" :maxlevel . 2))))
  '(org-todo-keywords
@@ -77,7 +81,7 @@
     ((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)"))))
  '(package-selected-packages
    (quote
-    (exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
+    (org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
  '(paradox-github-token t)
  '(pdf-misc-print-programm "/usr/bin/gtklp")
  '(safe-local-variable-values
@@ -92,16 +96,18 @@
      (eval ov-highlight-load)
      (after-save-hook . gm/org-latex-export)
      (org-hugo-auto-export-on-save . t))))
- '(setq "/home/gautam/.emacs.d/abbrevs.el" t)
+ '(setq
+   (quote
+    (password-store "~/.authinfo" "~/.authinfo.gpg" "~/.netrc")) t)
  '(setq-default t t)
  '(smex-history-length 50)
  '(smex-save-file "/home/gautam/.emacs.d/cache/smex")
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style (quote post-forward) nil (uniquify))
  '(uniquify-strip-common-suffix t)
- '(web-mode-code-indent-offset 2 t)
- '(web-mode-css-indent-offset 2 t)
- '(web-mode-markup-indent-offset 2 t)
+ '(web-mode-code-indent-offset 2)
+ '(web-mode-css-indent-offset 2)
+ '(web-mode-markup-indent-offset 2)
  '(yas-snippet-dirs (quote ("~/.emacs.d/snippets")))
  '(yas-triggers-in-field t))
 (custom-set-faces
