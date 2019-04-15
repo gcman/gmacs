@@ -25,7 +25,7 @@
  '(nms-settings-file "/home/gautam/.emacs.d/cache/network-security.data" t)
  '(org-agenda-files
    (quote
-    ("~/org/inbox.org" "~/org/todo.org" "~/org/notes.org" "~/org/gcal.org")))
+    ("~/school/classics/arch-dig/report.org" "/home/gautam/org/inbox.org" "/home/gautam/org/todo.org" "/home/gautam/org/notes.org" "/home/gautam/org/gcal.org")))
  '(org-capture-templates
    (quote
     (("a" "Appointment" entry
@@ -66,10 +66,10 @@
 %?"))) t)
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
- '(org-download-method (quote attach))
- '(org-download-timestamp t)
+ '(org-download-method (quote attach) t)
+ '(org-download-timestamp t t)
  '(org-ellipsis "⬎")
- '(org-gcal-dir "/home/gautam/.emacs.d/cache/")
+ '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
  '(org-refile-targets
    (quote
     (("~/org/gtd.org" :maxlevel . 3)
@@ -81,7 +81,7 @@
     ((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)"))))
  '(package-selected-packages
    (quote
-    (org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
+    (org-ref org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
  '(paradox-github-token t)
  '(pdf-misc-print-programm "/usr/bin/gtklp")
  '(safe-local-variable-values
@@ -105,9 +105,9 @@
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style (quote post-forward) nil (uniquify))
  '(uniquify-strip-common-suffix t)
- '(web-mode-code-indent-offset 2)
- '(web-mode-css-indent-offset 2)
- '(web-mode-markup-indent-offset 2)
+ '(web-mode-code-indent-offset 2 t)
+ '(web-mode-css-indent-offset 2 t)
+ '(web-mode-markup-indent-offset 2 t)
  '(yas-snippet-dirs (quote ("~/.emacs.d/snippets")))
  '(yas-triggers-in-field t))
 (custom-set-faces
