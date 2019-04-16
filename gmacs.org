@@ -2177,6 +2177,30 @@ todo list, take note of ideas I think of, and kickstart blog posts.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c c" #'org-capture)
 #+END_SRC
+Here are my capture templates.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb yes :noweb-ref org-settings
+(setq org-capture-templates
+      `(("a" "Appointment" entry
+         (file ,(expand-file-name "gcal.org" org-directory))
+         "* %i%? \n%^T\n")
+        ("t" "Todo" entry
+         (file org-default-notes-file)
+         "* TODO %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i%?")
+        ("n" "Note" entry
+         (file org-default-notes-file)
+         "* %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i%?")
+        ("j" "Journal" entry
+         (file+olp+datetree ,(expand-file-name "journal.org" org-directory))
+         "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
+        ("e" "euler" entry
+         (file+headline "~/website/content-org/blog.org" "Euler")
+         "** Project Euler %^{Problem Number}: %^{Problem Name} %^g
+:PROPERTIES:
+:EXPORT_FILE_NAME: %\\1
+:EXPORT_DATE: %u
+:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.
+:END:\n*** Problem Statement\n%?\n*** My Algorithm")))
+#+END_SRC
 The two applications I spend the most time in are Emacs and Firefox. It would be
 very nice if I could use Org Capture from within the web browser. In particular,
 I want to be able to rely on the functionality of Org Mode to manage my
@@ -2210,7 +2234,7 @@ a while to figure that out. I've also set up many other bindings, like =n= and =
 for next and previous tab, but that's another story.
 
 We send the data from =org-protocol= into the following template.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref capture-templates
+#+BEGIN_SRC emacs-lisp
 (push
  '("p" "Org Protocol" entry
    (file org-default-notes-file)
@@ -2246,31 +2270,6 @@ Finally, I have a general purpose binding on =c n= for capturing any notes or
 thoughts that come to me while browsing.
 #+BEGIN_SRC js :tangle no
 javascript:location.href='org-protocol://capture?template=n'
-#+END_SRC
-Here are my capture templates.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb yes :noweb-ref org-settings
-(setq org-capture-templates
-      `(("a" "Appointment" entry
-         (file ,(expand-file-name "gcal.org" org-directory))
-         "* %i%? \n%^T\n")
-        ("t" "Todo" entry
-         (file org-default-notes-file)
-         "* TODO %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i%?")
-        ("n" "Note" entry
-         (file org-default-notes-file)
-         "* %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i%?")
-        ("j" "Journal" entry
-         (file+olp+datetree ,(expand-file-name "journal.org" org-directory))
-         "** %^{Heading}\n:PROPERTIES:\n:CREATED: %U\n:END:")
-        ("e" "euler" entry
-         (file+headline "~/website/content-org/blog.org" "Euler")
-         "** Project Euler %^{Problem Number}: %^{Problem Name} %^g
-:PROPERTIES:
-:EXPORT_FILE_NAME: %\\1
-:EXPORT_DATE: %u
-:EXPORT_DESCRIPTION: My solution to problem %\\1 of Project Euler.
-:END:\n*** Problem Statement\n%?\n*** My Algorithm")
-        <<capture-templates>>))
 #+END_SRC
 *** Org Download
 Now we can easily move images into Org Mode buffers.

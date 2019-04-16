@@ -63,7 +63,7 @@
 :CREATED: %U
 :END:
 %:initial
-%?"))) t)
+%?"))))
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
  '(org-download-method (quote attach) t)
