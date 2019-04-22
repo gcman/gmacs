@@ -931,6 +931,22 @@ It's Webster's original, his magnum opus.
 (bind-key "C-c h" 'ov-highlight/body)
 (bind-key "C-c C-h" 'ov-highlight/body)
 #+END_SRC
+**** Writing
+A minor mode that centres the text in the buffer. Nice distraction-free
+environment for writing.
+#+BEGIN_SRC emacs-lisp
+(use-package olivetti)
+#+END_SRC
+A major mode for writing screenplays in the =.fountain= format.
+#+BEGIN_SRC emacs-lisp
+(use-package fountain-mode
+  :commands fountain-mode
+  :hook (fountain-mode . (lambda! () (auto-fill-mode -1)
+                           (olivetti-mode 1)))
+  :custom
+  (fountain-export-font "Courier New")
+  (fountain-export-scene-heading-format 'bold))
+#+END_SRC
 *** Spelling
 **** Setup
 The article [[https://joelkuiper.eu/spellcheck_emacs][Spell checking in Emacs]] helped me out in setting up spellchecking in
@@ -1442,6 +1458,11 @@ deep.
 #+BEGIN_SRC emacs-lisp
 (setq dired-recursive-copies 'always)
 (setq dired-recursive-deletes 'always)
+#+END_SRC
+Great for renaming things in Dired.
+#+BEGIN_SRC emacs-lisp
+(after! dired
+  (require 'visual-regexp))
 #+END_SRC
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a Dired buffer.
@@ -1965,7 +1986,7 @@ Rename better (from Magnar Sveen).
 #+END_SRC
 Switch better.
 #+BEGIN_SRC emacs-lisp
-(bind-key [remap switch-buffer] #'ivy-switch-buffer)
+(bind-key "C-x b" #'counsel-switch-buffer)
 #+END_SRC
 Use =ibuffer=.
 #+BEGIN_SRC emacs-lisp
@@ -2945,6 +2966,16 @@ graphics correctly; =latexmk= handles all of that.
                     (arg (nth 0 desc-list)))
                (format "\\%s{%s}%s" path arg
                        (if (equal "" opt) opt (format "[%s]" opt)))))))
+#+END_SRC
+***** Todo Link
+#+BEGIN_SRC emacs-lisp
+(org-link-set-parameters
+ "todo"
+ :follow nil
+ :face '(:foreground "red" :underline t)
+ :export (lambda (path desc format)
+           (when (eq format 'latex)
+             (format "\\marginnote{\\textcolor{red}{\\textbf{TODO:}} %s}" path))))
 #+END_SRC
 **** Use Cleveref
 by default, Org Mode exports references to LaTeX with =\ref=. I prefer using the

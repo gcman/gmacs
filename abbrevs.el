@@ -115,6 +115,8 @@
 
 (define-abbrev-table 'flymake-diagnostics-buffer-mode-abbrev-table '())
 
+(define-abbrev-table 'fountain-mode-abbrev-table '())
+
 (define-abbrev-table 'fundamental-mode-abbrev-table '())
 
 (define-abbrev-table 'git-commit-elisp-text-mode-abbrev-table '())
@@ -130,7 +132,7 @@
     ("incorectly" "incorrectly" nil 0)
     ("proerty" "property" nil 0)
     ("sherrif" "sheriff" nil 0)
-    ("teh" "the" nil 0)
+    ("teh" "the" nil 1)
    ))
 
 (define-abbrev-table 'gnus-group-mode-abbrev-table '())
@@ -240,6 +242,7 @@
     ("delimieter" "delimiter" nil 0)
     ("didnt" #("didn't" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("dumbells" #("dumbbells" 0 9 (face frog-menu-candidates-face)) nil 0)
+    ("eleusisian" #("Eleusinian" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 3)
     ("eveyr" "every" nil 0)
     ("fo" #("f" 0 1 (face frog-menu-candidates-face)) nil 0)
@@ -250,6 +253,7 @@
     ("incorectly" "incorrectly" nil 0)
     ("intrface" "interface" nil 0)
     ("jsut" #("just" 0 4 (face frog-menu-candidates-face)) nil 0)
+    ("massachusets" #("Massachusetts" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("netowrk" #("network" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("onwards" #("onward" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("parastiic" #("parasitic" 0 9 (face frog-menu-candidates-face)) nil 0)

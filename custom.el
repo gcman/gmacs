@@ -5,12 +5,14 @@
  ;; If there is more than one, they won't work right.
  '(beacon-color "#b58900")
  '(beacon-push-mark 35)
+ '(bibtex-dialect (quote biblatex))
  '(counsel-grep-base-command "rg -i -M 120 --color auto --line-number %s %s")
  '(custom-safe-themes
    (quote
     ("8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" "d677ef584c6dfc0697901a44b885cc18e206f05114c8a3b7fde674fce6180879" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default)))
  '(flycheck-display-errors-delay 0.3)
  '(flyspell-correct-interface (quote frog-menu-flyspell-correct) t)
+ '(fountain-export-font "Courier New")
  '(ivy-display-style (quote fancy))
  '(ivy-initial-inputs-alist nil)
  '(ivy-re-builders-alist
@@ -25,7 +27,7 @@
  '(nms-settings-file "/home/gautam/.emacs.d/cache/network-security.data" t)
  '(org-agenda-files
    (quote
-    ("~/school/classics/arch-dig/report.org" "/home/gautam/org/inbox.org" "/home/gautam/org/todo.org" "/home/gautam/org/notes.org" "/home/gautam/org/gcal.org")))
+    ("/home/gautam/org/inbox.org" "/home/gautam/org/todo.org" "/home/gautam/org/notes.org" "/home/gautam/org/gcal.org")))
  '(org-capture-templates
    (quote
     (("a" "Appointment" entry
@@ -70,6 +72,8 @@
  '(org-download-timestamp t t)
  '(org-ellipsis "⬎")
  '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
+ '(org-ref-completion-library (quote org-ref-ivy-cite))
+ '(org-ref-default-citation-link "footcite")
  '(org-refile-targets
    (quote
     (("~/org/gtd.org" :maxlevel . 3)
@@ -81,7 +85,7 @@
     ((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)"))))
  '(package-selected-packages
    (quote
-    (org-ref org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
+    (olivetti fountain-mode org-ref org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
  '(paradox-github-token t)
  '(pdf-misc-print-programm "/usr/bin/gtklp")
  '(safe-local-variable-values
