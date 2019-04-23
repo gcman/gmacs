@@ -1470,7 +1470,7 @@ extension. Use ~S~ to use in a Dired buffer.
 (use-package dired-quick-sort
   :config (dired-quick-sort-setup))
 #+END_SRC
-This is excellent for editing files owned by root in Emacs.
+This is excellent for editing files owned by root.
 #+BEGIN_SRC emacs-lisp
 (use-package sudo-edit
   :commands sudo-edit
@@ -2893,9 +2893,10 @@ on hydras]].
 #+BEGIN_SRC emacs-lisp
 (defun gm/org-latex-export ()
   (interactive)
+  (require 'ox-tufte-latex)
   (save-excursion
     (search-backward "EXPORT_FILE_NAME")
-    (org-latex-export-to-pdf t t)))
+    (org-latex-export-to-latex t t)))
 #+END_SRC
 Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
