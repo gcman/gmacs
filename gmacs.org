@@ -943,6 +943,8 @@ A major mode for writing screenplays in the =.fountain= format.
   :commands fountain-mode
   :hook (fountain-mode . (lambda! () (auto-fill-mode -1)
                            (olivetti-mode 1)))
+  :config
+  (add-to-list 'auto-mode-alist '("\\.fountain\\'" . fountain-mode))
   :custom
   (fountain-export-font "Courier New")
   (fountain-export-scene-heading-format 'bold))
@@ -1706,6 +1708,52 @@ default; set PAGE-P to non-nil to rotate only the current page.
                                  file pages file file file)))
             (pdf-view-revert-buffer nil t)
           (error "Rotation error!"))))))
+#+END_SRC
+*** Epub reading
+We use =nov.el=.
+#+BEGIN_SRC emacs-lisp
+(use-package nov
+  :commands (nov-mode)
+  :config
+  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+  :hook (nov-mode . gm/nov-font-setup))
+#+END_SRC
+Change default reading font from Source Sans Pro (my default variable pitch
+font) to Minion Pro.
+#+BEGIN_SRC emacs-lisp
+(defun gm/nov-font-setup ()
+  (face-remap-add-relative 'variable-pitch :family "Minion Pro"
+                                           :height 2.0))
+#+END_SRC
+Justifying e-book text. This code was taken from [[https://github.com/wasamasa/nov.el][wasamasa/nov.el]].
+#+BEGIN_SRC emacs-lisp
+(require 'justify-kp)
+(setq nov-text-width most-positive-fixnum)
+
+(defun my-nov-window-configuration-change-hook ()
+  (my-nov-post-html-render-hook)
+  (remove-hook 'window-configuration-change-hook
+               'my-nov-window-configuration-change-hook
+               t))
+
+(defun my-nov-post-html-render-hook ()
+  (if (get-buffer-window)
+      (let ((max-width (pj-line-width))
+            buffer-read-only)
+        (save-excursion
+          (goto-char (point-min))
+          (while (not (eobp))
+            (when (not (looking-at "^[[:space:]]*$"))
+              (goto-char (line-end-position))
+              (when (> (shr-pixel-column) max-width)
+                (goto-char (line-beginning-position))
+                (pj-justify)))
+            (forward-line 1))))
+    (add-hook 'window-configuration-change-hook
+              'my-nov-window-configuration-change-hook
+              nil t)))
+
+(add-hook 'nov-post-html-render-hook 'my-nov-post-html-render-hook)
 #+END_SRC
 *** TeX
 #+BEGIN_SRC emacs-lisp
