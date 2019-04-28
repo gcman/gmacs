@@ -217,6 +217,8 @@
 
 (define-abbrev-table 'notmuch-tree-mode-abbrev-table '())
 
+(define-abbrev-table 'nov-mode-abbrev-table '())
+
 (define-abbrev-table 'objc-mode-abbrev-table
   '(
    ))
@@ -246,11 +248,12 @@
     ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 3)
     ("eveyr" "every" nil 0)
     ("fo" #("f" 0 1 (face frog-menu-candidates-face)) nil 0)
-    ("hangg" #("hang" 0 4 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
+    ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 0)
-    ("imediately" #("immediately" 0 11 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
+    ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("inadvertantly" #("inadvertently" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("incorectly" "incorrectly" nil 0)
+    ("interpetive" #("Interpretive" 0 12 (face frog-menu-candidates-face)) nil 0)
     ("intrface" "interface" nil 0)
     ("jsut" #("just" 0 4 (face frog-menu-candidates-face)) nil 0)
     ("massachusets" #("Massachusetts" 0 13 (face frog-menu-candidates-face)) nil 0)
@@ -276,7 +279,11 @@
 
 (define-abbrev-table 'paradox-menu-mode-abbrev-table '())
 
+(define-abbrev-table 'pdf-annot-list-mode-abbrev-table '())
+
 (define-abbrev-table 'pdf-occur-buffer-mode-abbrev-table '())
+
+(define-abbrev-table 'pdf-outline-buffer-mode-abbrev-table '())
 
 (define-abbrev-table 'pike-mode-abbrev-table
   '(
@@ -290,7 +297,9 @@
 
 (define-abbrev-table 'python-mode-abbrev-table '())
 
-(define-abbrev-table 'python-mode-skeleton-abbrev-table '())
+(define-abbrev-table 'python-mode-skeleton-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'quick-math-mode-abbrev-table
   '(

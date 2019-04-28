@@ -90,16 +90,13 @@
  '(pdf-misc-print-programm "/usr/bin/gtklp")
  '(safe-local-variable-values
    (quote
-    ((after-save-hook lambda nil
-                      (save-excursion
-                        (org-hugo-export-wim-to-md)))
-     (after-save-hook lambda nil
-                      (save-excursion org-hugo-export-wim-to-md))
-     (after-save-hook . org-hugo-export-wim-to-md)
+    ((after-save-hook . org-hugo-export-wim-to-md)
      (after-save-hook . org-babel-tangle)
      (eval ov-highlight-load)
      (after-save-hook . gm/org-latex-export)
-     (org-hugo-auto-export-on-save . t))))
+     (org-hugo-auto-export-on-save . t)
+     (tex-command . "xelatex")
+     (TeX-engine . xetex))))
  '(setq
    (quote
     (password-store "~/.authinfo" "~/.authinfo.gpg" "~/.netrc")) t)
