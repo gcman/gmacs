@@ -941,9 +941,10 @@ A major mode for writing screenplays in the =.fountain= format.
 #+BEGIN_SRC emacs-lisp
 (use-package fountain-mode
   :commands fountain-mode
-  :hook (fountain-mode . (lambda! () (auto-fill-mode -1)
-                           (olivetti-mode 1)))
   :config
+  (add-hook 'fountain-mode-hook
+            (lambda () (auto-fill-mode -1)
+              (olivetti-mode 1)))
   (add-to-list 'auto-mode-alist '("\\.fountain\\'" . fountain-mode))
   :custom
   (fountain-export-font "Courier New")
@@ -1460,6 +1461,10 @@ deep.
 #+BEGIN_SRC emacs-lisp
 (setq dired-recursive-copies 'always)
 (setq dired-recursive-deletes 'always)
+#+END_SRC
+But I don't want to permanently delete things. Not yet, anyway.
+#+BEGIN_SRC emacs-lisp
+(setq delete-by-moving-to-trash t)
 #+END_SRC
 Great for renaming things in Dired.
 #+BEGIN_SRC emacs-lisp
@@ -2034,7 +2039,7 @@ Rename better (from Magnar Sveen).
 #+END_SRC
 Switch better.
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-x b" #'counsel-switch-buffer)
+(bind-key "C-x b" #'ivy-switch-buffer)
 #+END_SRC
 Use =ibuffer=.
 #+BEGIN_SRC emacs-lisp
@@ -3307,6 +3312,9 @@ Then we add a visual indicator.
     (elfeed-search-live-filter)))
 #+END_SRC
 *** Consuming Media
+:PROPERTIES:
+:ORDERED:  t
+:END:
 When reading articles in =elfeed-show-mode=, the content spans the entire buffer.
 I like to read my content hard-wrapped at 80 chars, so I customize the built-in
 =shr-width= ("Simple HTML Renderer," which is what Elfeed uses).
@@ -3323,14 +3331,27 @@ whether to use mpv to visit the link.")
 (defun gm/elfeed-play-with-mpv ()
   "Play entry link with mpv."
   (interactive)
-  (let (entry)
+  (let (entry title link)
     (if (eq major-mode 'elfeed-show-mode)
-       (setq entry elfeed-show-entry)
+        (setq entry elfeed-show-entry)
       (setq entry (elfeed-search-selected :single))
       (elfeed-search-untag-all-unread))
-    (setq entry (elfeed-entry-link entry))
-    (message "Opening %s with mpv..." entry)
-    (start-process "elfeed-mpv" nil "mpv" "--fs" entry)))
+    (setq title (elfeed-entry-title entry))
+    (setq link (elfeed-entry-link entry))
+    (if-let*
+        ((id (nth 1 (s-split "watch\\?v=" link)))
+         (default-directory "~/Videos/YouTube/")
+         (video (with-temp-buffer
+                  (shell-command
+                   (format "find . -regextype sed -regex '.*\\[%s\\].mkv'" id)
+                   (current-buffer))
+                  (unless (string= (buffer-string) "")
+                    (expand-file-name (buffer-substring-no-properties (+ 2 (line-beginning-position)) (line-end-position)) default-directory)))))
+        (progn
+          (message "Playing \"%s\" from local copy..." title)
+          (setq link video))
+      (message "Streaming \"%s\"..." title))
+    (start-process "elfeed-mpv" nil "mpv" "--fs" link)))
 #+END_SRC
 We make a multi-purpose function to open the link with =mpv= if it is a video,
 otherwise with the browser.
@@ -3366,11 +3387,7 @@ For this I use skeeto's =youtube-dl=.
 #+BEGIN_SRC emacs-lisp
 (autoload #'youtube-dl "youtube-dl")
 (setq youtube-dl-directory "~/Videos/YouTube")
-(setq youtube-dl-arguments
-      '("--download-archive" "downloaded.txt"
-        "-i"
-        "-f" "bestvideo[ext=mp4]+bestaudio"
-        "-o" "%(uploader)s/%(upload_date)s - %(title)s - (%(duration)ss) [%(resolution)s].%(ext)s"))
+(setq youtube-dl-arguments '("--config-location" "youtube-dl.conf"))
 #+END_SRC
 I wrap it for use in =elfeed=.
 #+BEGIN_SRC emacs-lisp
