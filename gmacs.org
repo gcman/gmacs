@@ -3436,19 +3436,6 @@ For this I use skeeto's =youtube-dl=.
 #+BEGIN_SRC emacs-lisp
 (autoload #'youtube-dl "youtube-dl")
 (setq youtube-dl-directory "~/Videos/YouTube")
-(setq youtube-dl-arguments
-      '("--download-archive" "downloaded.txt"
-        "-i"
-        "--prefer-ffmpeg"
-        "--merge-output-format" "mkv"
-        "--write-sub"
-        "--embed-subs"
-        "--all-subs"
-        "--convert-subs" "srt"
-        "--add-metadata"
-        "--write-description"
-        "--write-thumbnail"
-        "-o" "%(uploader)s [%(uploader_id)s]/%(upload_date)s - %(title)s - (%(duration)ss) [%(resolution)s] [%(id)s].%(ext)s"))
 #+END_SRC
 I wrap it for use in =elfeed=.
 #+BEGIN_SRC emacs-lisp
