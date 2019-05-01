@@ -12,7 +12,7 @@
     ("8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" "d677ef584c6dfc0697901a44b885cc18e206f05114c8a3b7fde674fce6180879" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default)))
  '(flycheck-display-errors-delay 0.3)
  '(flyspell-correct-interface (quote frog-menu-flyspell-correct) t)
- '(fountain-export-font "Courier New")
+ '(fountain-export-font "Courier New" t)
  '(ivy-display-style (quote fancy))
  '(ivy-initial-inputs-alist nil)
  '(ivy-re-builders-alist

@@ -942,11 +942,12 @@ A major mode for writing screenplays in the =.fountain= format.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package fountain-mode
   :commands fountain-mode
+  :init
+  (add-to-list 'auto-mode-alist '("\\.fountain\\'" . fountain-mode))
   :config
   (add-hook 'fountain-mode-hook
             (lambda () (auto-fill-mode -1)
               (olivetti-mode 1)))
-  (add-to-list 'auto-mode-alist '("\\.fountain\\'" . fountain-mode))
   <<fountain-mode>>
   :custom
   (fountain-export-font "Courier New")
@@ -1624,7 +1625,7 @@ I want to ignore certain file extensions when searching for a file, so I add
 them to the regexp in =counsel-find-file-ignore-regexp=.
 #+BEGIN_SRC emacs-lisp
 (defconst gm/find-file-ignore-extensions
-  '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc"
+  '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc" "xdv" "fdx"
     "synctex.gz" "fdb_latexmk"
     "desktop" "elc"
     "pyc"))
@@ -3391,9 +3392,10 @@ whether to use mpv to visit the link.")
     (let*
         ((id (nth 1 (s-split "watch\\?v=" link)))
          (video (gm/search-local-yt-video id "~/Videos/YouTube"))
+         (drive-video-path (expand-file-name "Videos/YouTube/" gm--drive-path))
          drive-video)
-      (unless video
-        (when-let ((drive-video (gm/search-local-yt-video id (expand-file-name "Videos/YouTube/" gm--drive-path))))
+      (when (and (not video) (file-directory-p drive-video-path))
+        (when-let ((drive-video (gm/search-local-yt-video id drive-video-path)))
           (setq video drive-video)))
       (if video
           (progn
