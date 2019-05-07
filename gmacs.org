@@ -1,4 +1,4 @@
-#+TITLE: My Emacs Configuration
+o#+TITLE: My Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
 ** Early Init
@@ -77,17 +77,10 @@ Always load up a server when opening Emacs.
 I was inspired to implement these optimizations in GMACS thanks to
 [[https://github.com/nilcons/emacs-use-package-fast][nilcons/emacs-use-package-fast]].
 
-To increase startup speed, we're going to set =gc-cons-threshold= to a very high
-number. This is not ideal when actually using Emacs, so we turn this off when we
-finish starting up. If we were to leave this on, we would experience long
-garbage collection pauses during use.
+During startup, we make the garbage collection threshold very high. [[*Garbage Collection][After
+startup]], we manage garbage collection with a package.
 #+BEGIN_SRC emacs-lisp
-(eval-and-compile
-  (setq gc-cons-threshold 402653184
-        gc-cons-percentage 0.6))
-
-(add-hook 'after-init-hook (lambda () (setq gc-cons-threshold 16777216
-                                                 gc-cons-percentage 0.1)))
+(setq gc-cons-threshold #x40000000)
 #+END_SRC
 We increase these so that we don't exceed recursion limits unless there is some
 kind of infinite loop.
@@ -415,6 +408,14 @@ for choosing colours, especially when editing CSS files.
   :config (rainbow-mode 1))
 #+END_SRC
 ** Quality of Life
+*** Garbage Collection
+This package minimizes the interference of garbage collection with the user
+experience. That means fewer annoyingly long pauses while you are using Emacs.
+#+BEGIN_SRC emacs-lisp
+(use-package gcmh
+  :demand t
+  :config (gcmh-mode 1))
+#+END_SRC
 *** Macros
 Now for the Elisp macros. =after!= and =lambda!= are from the popular DOOM! Emacs
 configuration. The documentation on these will be sparse, because the docstrings
@@ -1910,13 +1911,13 @@ I use a hydra to manage its many keybindings.
 
   ^Find File^        ^Search/Tags^        ^Buffers^         ^Cache^                      ^Project^
   ^---------^        ^-----------^        ^-------^         ^-----^                      ^-------^
-  _f_: file          _r_: grep            _i_: Ibuffer      _c_: cache clear             _p_: switch proj
+  _f_: file          _R_: grep            _i_: Ibuffer      _c_: cache clear             _p_: switch proj
   _F_: file dwim     _g_: update gtags    _b_: switch to    _x_: remove known project
   _C-f_: file pwd    _o_: multi-occur     _s-k_: Kill all   _X_: cleanup non-existing
   _r_: recent file   ^ ^                  ^ ^               _z_: cache current
   _d_: dir
 "
-  ("r"   counsel-projectile-rg)
+  ("R"   counsel-projectile-rg)
   ("b"   counsel-projectile-switch-to-buffer)
   ("c"   projectile-invalidate-cache)
   ("d"   counsel-projectile-find-dir)
