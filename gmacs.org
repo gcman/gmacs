@@ -4114,6 +4114,3 @@ to make LaTeX happy.
 
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
-**** Ignore
-I'm just going to do a couple tests out here, just to see how the general typing
-experience works out.
