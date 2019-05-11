@@ -13,6 +13,7 @@
  '(flycheck-display-errors-delay 0.3)
  '(flyspell-correct-interface (quote frog-menu-flyspell-correct) t)
  '(fountain-export-font "Courier New" t)
+ '(fountain-export-scene-heading-format (quote (bold)) t)
  '(ivy-display-style (quote fancy))
  '(ivy-initial-inputs-alist nil)
  '(ivy-re-builders-alist
@@ -65,15 +66,15 @@
 :CREATED: %U
 :END:
 %:initial
-%?"))))
+%?"))) t)
  '(org-default-notes-file "~/org/inbox.org")
  '(org-directory "~/org/")
  '(org-download-method (quote attach) t)
  '(org-download-timestamp t t)
  '(org-ellipsis "⬎")
  '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
- '(org-ref-completion-library (quote org-ref-ivy-cite))
- '(org-ref-default-citation-link "footcite")
+ '(org-ref-completion-library (quote org-ref-ivy-cite) t)
+ '(org-ref-default-citation-link "footcite" t)
  '(org-refile-targets
    (quote
     (("~/org/gtd.org" :maxlevel . 3)
@@ -85,7 +86,7 @@
     ((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)"))))
  '(package-selected-packages
    (quote
-    (elmacro olivetti fountain-mode org-ref org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph esup org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
+    (esup elmacro olivetti fountain-mode org-ref org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
  '(paradox-github-token t)
  '(pdf-misc-print-programm "/usr/bin/gtklp")
  '(safe-local-variable-values

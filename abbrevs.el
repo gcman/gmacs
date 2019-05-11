@@ -265,7 +265,6 @@
     ("reluctancy" #("reluctance" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("sherrif" #("sheriff" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("teh" "the" nil 0)
-    ("test" "ignore" nil 3)
     ("underfilling" "under filling" nil 4)
     ("vecotr" #("vector" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("wrok" #("work" 0 4 (face frog-menu-candidates-face)) nil 2)
@@ -372,4 +371,3 @@
 (define-abbrev-table 'web-mode-abbrev-table '())
 
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
-

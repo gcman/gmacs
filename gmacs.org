@@ -1,4 +1,4 @@
-o#+TITLE: My Emacs Configuration
+#+TITLE: My Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
 ** Early Init
@@ -293,15 +293,6 @@ And make mouse scrolling smoother.
 (setq scroll-step 1) ;; keyboard scroll one line at a time
 (setq scroll-margin 3) ;; give the cursor some buffer room before scrolling window
 #+END_SRC
-*** Wrap Indented Lines Sensibly
-This way, indented lines (such as those visually indented by =org-indent-mode=)
-that are wrapped with ~visual-line-mode~ do not begin at character 0, but from
-where they are indented.
-#+BEGIN_SRC emacs-lisp
-(use-package adaptive-wrap
-  :commands (adaptive-wrap-prefix-mode)
-  :hook (visual-line-mode . adaptive-wrap-prefix-mode))
-#+END_SRC
 *** Theme
 I use the popular Solarized Light/Dark themes.
 #+BEGIN_SRC emacs-lisp
@@ -414,6 +405,7 @@ experience. That means fewer annoyingly long pauses while you are using Emacs.
 #+BEGIN_SRC emacs-lisp
 (use-package gcmh
   :demand t
+  :diminish
   :config (gcmh-mode 1))
 #+END_SRC
 *** Macros
@@ -725,7 +717,6 @@ and just loads the existing =.el= file with two prefix arguments.
         (el (expand-file-name "gmacs.el" gmacs-emacs-dir))
         (elc (expand-file-name "gmacs.elc" gmacs-emacs-dir))
         (init (expand-file-name "init.el" gmacs-emacs-dir)))
-    (save-buffer)
     (cond ((equal p '(4))
            (when (or (not (file-exists-p elc))
                      (file-newer-than-file-p org elc))
@@ -1765,8 +1756,7 @@ We use =nov.el=.
 #+BEGIN_SRC emacs-lisp
 (use-package nov
   :commands (nov-mode)
-  :config
-  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+  :init (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
   :hook (nov-mode . gm/nov-font-setup))
 #+END_SRC
 Change default reading font from Source Sans Pro (my default variable pitch
@@ -1870,7 +1860,6 @@ the "other one" is. Instead, you select the window with a number.
              gm/split-window-right-and-switch
              gm/split-window-below-and-switch)
   :bind (("C-x o" . ace-window)
-         ("M-o" . ace-window)
          ("C-x 0" . delete-window)
          ("M-1" . delete-other-windows)
          ("M-3" . gm/split-window-right-and-switch)
@@ -1881,6 +1870,15 @@ the "other one" is. Instead, you select the window with a number.
 (use-package avy
   :ensure t
   :bind (("M-g" . avy-goto-word-1)))
+#+END_SRC
+Similarly, we use =ace-link= to open links quickly.
+#+BEGIN_SRC emacs-lisp
+(use-package ace-link
+  :config
+  (ace-link-setup-default)
+  :bind
+  (:map org-mode-map
+        ("M-o" . ace-link-org)))
 #+END_SRC
 *** Company
 #+BEGIN_SRC emacs-lisp
@@ -2192,6 +2190,12 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
   <<org-settings>>)
 #+END_SRC
 ** Configuration
+*** Invisible Edits
+When text is entered near a hidden area (...), it is hard to see what is
+changed.
+#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+(setq org-catch-invisible-edits 'show-and-error)
+#+END_SRC
 *** Better Return Behaviour
 A better return for Org mode. If in a list, we want to add a new item.
 If we're in a heading, we want to go the end of the line, then return. This is
@@ -2238,6 +2242,7 @@ Use a prefix arg to get regular RET. "
 We replace the normal return.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("RET" . #'gm/org-return)
+("C-RET" . #'org-return)
 #+END_SRC
 *** File Locations
 We need a place where Org files go by default. Org Mode uses this to, for
@@ -3185,6 +3190,9 @@ more rigorous system of encryption.
       smtpmail-smtp-server gm--send-mail-server
       smtpmail-smtp-service 587)
 #+END_SRC
+#+BEGIN_SRC emacs-lisp
+
+#+END_SRC
 Some commonly used searches.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq notmuch-saved-searches
@@ -3688,7 +3696,8 @@ don't require the use of =yasnippets=.
   "Contains lists (KEY EXPANSION SNIPPET). When KEY is typed, it
   will be replaced with EXPANSION. If SNIPPET is non-nil,
   EXPANSION is taken to be a loaded yasnippet. Otherwise, it is
-  considered the replacement string.")
+  considered the replacement string."
+  :group 'quick-math)
 #+END_SRC
 **** Hydras
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -4105,3 +4114,6 @@ to make LaTeX happy.
 
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
+**** Ignore
+I'm just going to do a couple tests out here, just to see how the general typing
+experience works out.
