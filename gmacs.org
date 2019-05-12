@@ -508,7 +508,7 @@ around the non-unique buffer names, and I prefer a less confusing style.
 beginning of the indentation of the line (that is, the logical/contextual
 beginning of the line) as opposed to the literal beginning of the line. I tend
 to agree. If you do want to go to the actual beginning of the line, then just
-press =C-a= again.
+press =C-a= again. Also, this frees up =M-m=, bound to =back-to-indentation=.
 #+BEGIN_SRC emacs-lisp
 (defun smarter-move-beginning-of-line (arg)
   "Move point back to indentation of beginning of line.
@@ -533,7 +533,6 @@ point reaches the beginning or end of the buffer, stop there."
     (when (= orig-point (point))
       (move-beginning-of-line 1))))
 
-;; remap C-a to `smarter-move-beginning-of-line'
 (global-set-key [remap move-beginning-of-line] 'smarter-move-beginning-of-line)
 (global-set-key [remap org-beginning-of-line]  'smarter-move-beginning-of-line)
 #+END_SRC
@@ -917,6 +916,7 @@ It's Webster's original, his magnum opus.
 (autoload 'sdcv-search "sdcv-mode")
 (bind-key "C-c d" 'sdcv-search)
 #+END_SRC
+On Arch Linux, this goes with the =sdcv= package.
 **** Highlighting/Comments
 #+BEGIN_SRC emacs-lisp
 (autoload 'ov-highlight/body "ov-highlight")
@@ -1479,9 +1479,10 @@ screen, and once we're done, we can get right back to where we left off.
               ("q" . magit-quit-session)))
 #+END_SRC
 *** Dired
+I don't have much of a use for just listing the contents of a directory, and I
+sometimes accidentally use this command instead of =dired=.
 #+BEGIN_SRC emacs-lisp
-(autoload 'dired-async-mode "dired-async.el" nil t)
-(dired-async-mode 1)
+(bind-key "C-x C-d" #'dired)
 #+END_SRC
 Have the most up-to-date version of the buffer when using Dired.
 #+BEGIN_SRC emacs-lisp
@@ -1503,7 +1504,45 @@ But I don't want to permanently delete things. Not yet, anyway.
 #+BEGIN_SRC emacs-lisp
 (setq delete-by-moving-to-trash t)
 #+END_SRC
-Great for renaming things in Dired.
+We might as well perform file operations asynchronously.
+#+BEGIN_SRC emacs-lisp
+(autoload 'dired-async-mode "dired-async.el" nil t)
+(dired-async-mode 1)
+#+END_SRC
+For really big files, =rsync= is nice.
+#+BEGIN_SRC emacs-lisp
+(defun gm/dired-rsync (dest)
+  (interactive
+   (list
+    (expand-file-name
+     (read-file-name
+      "Rsync to: "
+      (dired-dwim-target-directory)))))
+  ;; store all selected files into "files" list
+  (let ((files (dired-get-marked-files
+                nil current-prefix-arg))
+        ;; the rsync command
+        (tmtxt/rsync-command
+         "rsync -arvz --progress "))
+    ;; add all selected file names as arguments
+    ;; to the rsync command
+    (dolist (file files)
+      (setq tmtxt/rsync-command
+            (concat tmtxt/rsync-command
+                    (shell-quote-argument file)
+                    " ")))
+    ;; append the destination
+    (setq tmtxt/rsync-command
+          (concat tmtxt/rsync-command
+                  (shell-quote-argument dest)))
+    ;; run the async shell command
+    (async-shell-command tmtxt/rsync-command "*rsync*")
+    ;; finally, switch to that window
+    (other-window 1)))
+
+(bind-key "C" #'gm/dired-rsync dired-mode-map)
+#+END_SRC
+Great for renaming files in bulk.
 #+BEGIN_SRC emacs-lisp
 (after! dired
   (require 'visual-regexp))
@@ -1530,9 +1569,8 @@ _D_elete           _o_pen other     _u_nmark           _l_ redisplay      _w_ ki
 _R_ename           _M_ chmod        _t_oggle           _g_ revert buf     _e_ ediff          C-c ESC : abort
 _Y_ rel symlink    _G_ chgrp        _E_xtension mark   _s_ort             _=_ pdiff
 _S_ymlink          ^ ^              _F_ind marked      _._ toggle hydra   \\ flyspell
-_r_sync            ^ ^              ^ ^                ^ ^                _?_ summary
-_z_ compress-file  _A_ find regexp
-_Z_ compress       _Q_ repl regexp
+_z_ compress file  ^ ^              ^ ^                ^ ^                _?_ summary
+_Z_ compress       _A_ find regexp  _Q_ repl regexp
 
 T - tag prefix
 "
@@ -1544,7 +1582,7 @@ T - tag prefix
   ("?" dired-summary)
   ("$" diredp-hide-subdir-nomove)
   ("A" dired-do-find-regexp)
-  ("C" dired-do-copy)        ;; Copy all marked files
+  ("C" gm/dired-rsync)        ;; Copy all marked files
   ("D" dired-do-delete)
   ("E" dired-mark-extension)
   ("e" dired-ediff-files)
@@ -1559,7 +1597,6 @@ T - tag prefix
   ("o" dired-find-file-other-window)
   ("Q" dired-do-find-regexp-and-replace)
   ("R" dired-do-rename)
-  ("r" dired-do-rsynch)
   ("S" dired-do-symlink)
   ("s" dired-sort-toggle-or-edit)
   ("t" dired-toggle-marks)
@@ -1989,7 +2026,11 @@ sometimes useful, so I kept the package around.
 *** Join Line
 This allows me to combine text over multiple lines into one line.
 #+BEGIN_SRC emacs-lisp
-(bind-key "M-j" (lambda! (join-line -1)))
+(defun gm/join-line ()
+  (interactive)
+  (join-line -1))
+
+(bind-key "M-j" #'gm/join-line)
 #+END_SRC
 *** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
@@ -3557,7 +3598,7 @@ I use a prefix map to compactify this set of keybindings.
   ("r" emms-player-mpd-update-all-reset-cache :color blue))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(bind-key "s-j" #'hydra-emms/body)
+(bind-key "M-m" #'hydra-emms/body)
 #+END_SRC
 * Snippets
 I use =SPC= instead of the default =TAB= to expand snippets. I find this more
