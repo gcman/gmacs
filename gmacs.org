@@ -1440,7 +1440,9 @@ could.
   :defer 2
   :config
   (keyfreq-mode 1)
-  (keyfreq-autosave-mode 1))
+  (keyfreq-autosave-mode 1)
+  :custom
+  (keyfreq-file "~/emacs-keyfreq"))
 #+END_SRC
 *** Tramp
 Make sure to keep backups locally and not remotely.

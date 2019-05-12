@@ -43,4 +43,5 @@
 (TeX-load-hack)
 
 (provide 'auctex)
+
 ;;; auctex.el ends here
