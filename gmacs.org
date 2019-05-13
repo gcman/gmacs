@@ -564,9 +564,16 @@ contents to the kill ring.
 *** Work with Protected Files
 Authorize actions.
 #+BEGIN_SRC emacs-lisp
-(require 'auth-source-pass)
-(auth-source-pass-enable)
-(setq auth-sources '("~/.authinfo.gpg"))
+(use-package pinentry
+  :commands pinentry-start)
+(require 'epa-file)
+(epa-file-enable)
+(pinentry-start)
+(setenv "GPG_AGENT_INFO" nil)
+(setq epg-gpg-program "/usr/bin/gpg2")
+(setq epa-file-cache-passphrase-for-symmetric-encryption t)
+(setq epa-file-select-keys nil)
+(setq epa-pinentry-mode 'loopback)
 #+END_SRC
 *** Persistent Scratch Buffer
 The =*scratch*= buffer has come in handy for me many times when I want to quickly
@@ -1482,6 +1489,23 @@ screen, and once we're done, we can get right back to where we left off.
               ("q" . magit-quit-session)))
 #+END_SRC
 *** Dired
+Great for renaming files in bulk.
+#+BEGIN_SRC emacs-lisp
+(after! dired
+  (require 'visual-regexp))
+#+END_SRC
+Easily sort based on a lot of options such as name, time, size, and
+extension. Use ~S~ to use in a Dired buffer.
+#+BEGIN_SRC emacs-lisp
+(use-package dired-quick-sort
+  :config (dired-quick-sort-setup))
+#+END_SRC
+This is excellent for editing files owned by root.
+#+BEGIN_SRC emacs-lisp
+(use-package sudo-edit
+  :commands sudo-edit
+  :bind (("C-c C-x r" . sudo-edit)))
+#+END_SRC
 I don't have much of a use for just listing the contents of a directory, and I
 sometimes accidentally use this command instead of =dired=.
 #+BEGIN_SRC emacs-lisp
@@ -1511,6 +1535,10 @@ We might as well perform file operations asynchronously.
 #+BEGIN_SRC emacs-lisp
 (autoload 'dired-async-mode "dired-async.el" nil t)
 (dired-async-mode 1)
+#+END_SRC
+Always follow symlinks to their source if the source is version controlled.
+#+BEGIN_SRC emacs-lisp
+(setq vc-follow-symlinks t)
 #+END_SRC
 For really big files, =rsync= is nice.
 #+BEGIN_SRC emacs-lisp
@@ -1544,23 +1572,6 @@ For really big files, =rsync= is nice.
     (other-window 1)))
 
 (bind-key "C" #'gm/dired-rsync dired-mode-map)
-#+END_SRC
-Great for renaming files in bulk.
-#+BEGIN_SRC emacs-lisp
-(after! dired
-  (require 'visual-regexp))
-#+END_SRC
-Easily sort based on a lot of options such as name, time, size, and
-extension. Use ~S~ to use in a Dired buffer.
-#+BEGIN_SRC emacs-lisp
-(use-package dired-quick-sort
-  :config (dired-quick-sort-setup))
-#+END_SRC
-This is excellent for editing files owned by root.
-#+BEGIN_SRC emacs-lisp
-(use-package sudo-edit
-  :commands sudo-edit
-  :bind (("C-c C-x r" . sudo-edit)))
 #+END_SRC
 I often find the commands in Dired hard to remember.
 #+BEGIN_SRC emacs-lisp :noweb-ref hydra
@@ -1613,7 +1624,6 @@ T - tag prefix
   ("q" nil)
   ("." nil :color blue))
 #+END_SRC
-
 #+BEGIN_SRC emacs-lisp
 (bind-key "." 'hydra-dired/body dired-mode-map)
 #+END_SRC
@@ -2153,10 +2163,8 @@ Pretty straightforward. A better version of the built-in =comment-dwim= from
   :bind (("M-;" . comment-dwim-2)))
 #+END_SRC
 ** Open Shell
-I have started to use =eshell= as my primary shell. However, I sometimes want to
-use my default =zsh= shell, which I access with =deepin-terminal= as a frontend.
-This command ensures that =eshell= is opened next to, not instead of, my current
-buffer.
+I have started to use =eshell= as my primary shell. This command ensures that
+=eshell= is opened next to, not instead of, my current buffer.
 #+BEGIN_SRC emacs-lisp
 (defun eshell-other-window ()
   "Open a `eshell' in a new window."
@@ -2166,12 +2174,17 @@ buffer.
     (switch-to-buffer-other-window buf)))
 #+END_SRC
 I rebind the redundant help binding (there is already a more convenient prefix
-map at =C-h=). I would use =C-M-t= to open a normal terminal, rebinding the Deepin
-default, but I'm not sure how to make this Emacs command override the system
-default.
+map at =C-h=).
 #+BEGIN_SRC emacs-lisp
 (bind-key "<f1>" #'eshell-other-window)
-(bind-key "C-M-s" (lambda! (shell-command "deepin-terminal")))
+#+END_SRC
+We also make some aliases.
+#+BEGIN_SRC emacs-lisp
+(defun eshell/ff (&rest args)
+  (apply #'find-file args))
+
+(defun eshell/d (&rest args)
+  (apply #'dired args))
 #+END_SRC
 ** Find Inbox
 #+BEGIN_SRC emacs-lisp
@@ -2555,7 +2568,8 @@ However, that's not quite enough, because when I'm out and about, I want whateve
 I have in my Org Agenda to be able to alert me on my phone. I also want to be
 able to enter new events on the go. The best solution I've found for this is to
 integrate Org Mode with Google Calendar. The setup is contained in the file for
-my personal settings, =private.el=.
+my personal settings, =private.el=. Once you've set it up, you can find your
+calendar's private and secret IDs from [[https://console.developers.google.com/apis/credentials][this link]] (Google).
 #+BEGIN_SRC emacs-lisp
 (use-package org-gcal
   :after org
@@ -3234,9 +3248,6 @@ more rigorous system of encryption.
       smtpmail-smtp-server gm--send-mail-server
       smtpmail-smtp-service 587)
 #+END_SRC
-#+BEGIN_SRC emacs-lisp
-
-#+END_SRC
 Some commonly used searches.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq notmuch-saved-searches
@@ -3338,6 +3349,43 @@ It's an email, not an essay.
 (setq org-mime-export-options '(:section-numbers nil
                                 :with-author nil
                                 :with-toc nil))
+#+END_SRC
+*** Attachment Check
+From [[https://gitlab.com/ambrevar/dotfiles/blob/master/.emacs.d/lisp/patch-notmuch.el][ambrevar's dotfiles]].
+#+BEGIN_SRC emacs-lisp
+(defcustom notmuch-message-attach-regex
+  "\\b\\(attache\?ment\\|attached\\|attach\\|pi[èe]ce\s+jointe?\\)\\b"
+  "Pattern of text announcing there should be an attachment.
+
+This is used by `notmuch-message-check-attach' to check email
+bodies for words that might indicate the email should have an
+attachement. If the pattern matches and there is no attachment (a
+`<#part ...>' magic block), notmuch will show a confirmation
+prompt before sending the email.
+
+The default regular expression is deliberately liberal: we prefer
+false positive than forgotten attachments. This should be
+customized for non-english languages and notmuch welcomes
+additions to the pattern for your native language, unless it
+conflicts with common words in other languages."
+  :type '(regexp)
+  :group 'notmuch-send)
+
+(defun notmuch-message-check-attach ()
+  """Check for missing attachments.
+
+This is normally added to `message-send-hook' and is configured
+through `notmuch-message-attach-regex'."""
+  (save-excursion ;; XXX: this fails somehow: point is at the end of the buffer on error
+    (goto-char (point-min))
+    (if (re-search-forward notmuch-message-attach-regex nil t)
+        (progn
+          (goto-char (point-min))
+          (unless (re-search-forward "<#part [^>]*filename=[^>]*>" nil t)
+            (or (y-or-n-p "Email seems to refer to attachment, but nothing attached, send anyways?")
+                (error "No attachment found, aborting")))))))
+
+(add-hook 'message-send-hook 'notmuch-message-check-attach)
 #+END_SRC
 ** Elfeed
 Elfeed is a feed manager for Emacs. It lets me manage YouTube subscriptions and
