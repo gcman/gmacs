@@ -1007,8 +1007,9 @@ prose in is Org Mode.
   <<flyspell-settings>>)
 #+END_SRC
 Set up spellchecking using =ispell= and the dictionary =hunspell=. We set the
-locally used dictionary to Canadian English, and we set up the list of valid
-dictionaries.
+locally used dictionary to Canadian English, and we set up the liscbt of valid
+dictionaries. I found the official Canadian English dictionary [[https://sourceforge.net/projects/wordlist/files/speller/2018.04.16/hunspell-en_CA-2018.04.16.zip/download?use_mirror=ayera][here]] (warning:
+download link). The =.aff= and =.dic= files go in =/usr/share/hunspell/=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
 (setq ispell-program-name "hunspell"
       ispell-local-dictionary "en_CA"
@@ -3540,7 +3541,7 @@ Now for the settings. I use =mpd=, which I find is minimal and causes no bloat.
       emms-info-list '(emms-info-mpd)
       emms-player-mpd-server-name "localhost"
       emms-player-mpd-server-port "6601"
-      emms-source-file-default-directory "~/Music/"
+      emms-source-file-default-directory "~/music/"
       emms-playlist-buffer-name "*Music*"
       emms-info-asynchronously t)
 #+END_SRC
