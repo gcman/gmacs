@@ -194,7 +194,7 @@ been expanded, so the package is not needed anymore. As such, we can do all the
 expensive and time-consuming work of getting the packages ready before Emacs has
 even started, during byte-compilation. If this config has not been manually
 byte-compiled, Emacs will initialize packages on startup as usual.
-#+BEGIN_SRC emacs-lisp :noweb-yes
+#+BEGIN_SRC emacs-lisp :noweb yes
 (eval-when-compile
   (require 'package)
   <<pack-arch>>
@@ -1433,7 +1433,6 @@ For example, packages must be initialized to evaluate code blocks with
   (package-initialize)
   (package-refresh-contents))
 #+END_SRC
-
 *** Helpful
 This package is a more informative alternative to the default Emacs
 documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
@@ -2004,6 +2003,16 @@ I use a hydra to manage its many keybindings.
   ("q"   nil "cancel" :color blue))
 
 (bind-key "C-c p" #'hydra-projectile/body)
+#+END_SRC
+*** Control Desktop
+#+BEGIN_SRC emacs-lisp
+(use-package desktop-environment
+  :defer 2
+  :config (desktop-environment-mode)
+  :custom (desktop-environment-screenshot-directory "~/pictures")
+  :bind (:map desktop-environment-mode-map
+              ("<print>" . desktop-environment-screenshot-part)
+              ("S-<print>" . desktop-environment-screenshot)))
 #+END_SRC
 * Keybindings
 ** Better Defaults
@@ -3488,6 +3497,8 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
   "List of regexp to match against elfeed entry link to know
 whether to use mpv to visit the link.")
 
+(defvar gm/youtube-dl-dir "videos/YouTube")
+
 (defun gm/search-local-yt-video (id dir)
   (let ((default-directory dir))
     (with-temp-buffer
@@ -3509,8 +3520,8 @@ whether to use mpv to visit the link.")
     (setq link (elfeed-entry-link entry))
     (let*
         ((id (nth 1 (s-split "watch\\?v=" link)))
-         (video (gm/search-local-yt-video id "~/Videos/YouTube"))
-         (drive-video-path (expand-file-name "Videos/YouTube/" gm--drive-path))
+         (video (gm/search-local-yt-video id (concat "~/" gm/youtube-dl-dir)))
+         (drive-video-path (expand-file-name gm/youtube-dl-dir gm--drive-path))
          drive-video)
       (when (and (not video) (file-directory-p drive-video-path))
         (when-let ((drive-video (gm/search-local-yt-video id drive-video-path)))
@@ -3555,7 +3566,7 @@ Sometimes I want to download videos to watch them later or in higher quality.
 For this I use skeeto's =youtube-dl=.
 #+BEGIN_SRC emacs-lisp
 (autoload #'youtube-dl "youtube-dl")
-(setq youtube-dl-directory "~/Videos/YouTube")
+(setq youtube-dl-directory (concat "~/" gm/youtube-dl-dir))
 #+END_SRC
 I wrap it for use in =elfeed=.
 #+BEGIN_SRC emacs-lisp
@@ -3667,6 +3678,7 @@ I use a prefix map to compactify this set of keybindings.
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (bind-key "M-m" #'hydra-emms/body)
+(bind-key "<pause>" #'emms-pause)
 #+END_SRC
 * Snippets
 I use =SPC= instead of the default =TAB= to expand snippets. I find this more

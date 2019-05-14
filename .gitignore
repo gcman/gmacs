@@ -3,6 +3,7 @@
 !packages/
 !elisp/
 !docs/
+!.gitmodules
 !README.org
 !.gitignore
 !abbrevs.el
