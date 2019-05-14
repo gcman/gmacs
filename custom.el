@@ -9,8 +9,8 @@
  '(counsel-grep-base-command "rg -i -M 120 --color auto --line-number %s %s")
  '(custom-safe-themes
    (quote
-    ("8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" "d677ef584c6dfc0697901a44b885cc18e206f05114c8a3b7fde674fce6180879" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default)))
- '(flycheck-display-errors-delay 0.3)
+    ("0598c6a29e13e7112cfbc2f523e31927ab7dce56ebb2016b567e1eff6dc1fd4f" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" "d677ef584c6dfc0697901a44b885cc18e206f05114c8a3b7fde674fce6180879" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default)))
+ '(flycheck-display-errors-delay 0.3 t)
  '(flyspell-correct-interface (quote frog-menu-flyspell-correct) t)
  '(fountain-export-font "Courier New" t)
  '(fountain-export-scene-heading-format (quote (bold)) t)
@@ -102,8 +102,8 @@
    (quote
     (password-store "~/.authinfo" "~/.authinfo.gpg" "~/.netrc")) t)
  '(setq-default t t)
- '(smex-history-length 50)
- '(smex-save-file "/home/gautam/.emacs.d/cache/smex")
+ '(smex-history-length 50 t)
+ '(smex-save-file "/home/gautam/.emacs.d/cache/smex" t)
  '(uniquify-after-kill-buffer-p t)
  '(uniquify-buffer-name-style (quote post-forward) nil (uniquify))
  '(uniquify-strip-common-suffix t)

@@ -181,19 +181,23 @@ to initialize the packages and make sure that =use-package= is installed if its
 missing. Finally, we tell =use-package= to always install missing packages.
 Otherwise, an error would be thrown when a package is missing.
 
+We use the following package archives.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref pack-arch
+(setq package-archives
+        '(("melpa" . "https://melpa.org/packages/")
+          ("gnu" . "https://elpa.gnu.org/packages/")
+          ("org" . "http://orgmode.org/elpa/")))
+#+END_SRC
 Note that this whole process is only run when the file is byte-compiled. This
 means that by the time the code is actually evaluated, the =use-package= macro has
 been expanded, so the package is not needed anymore. As such, we can do all the
 expensive and time-consuming work of getting the packages ready before Emacs has
 even started, during byte-compilation. If this config has not been manually
 byte-compiled, Emacs will initialize packages on startup as usual.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb-yes
 (eval-when-compile
   (require 'package)
-  (setq package-archives
-        '(("melpa" . "https://melpa.org/packages/")
-          ("gnu" . "https://elpa.gnu.org/packages/")
-          ("org" . "http://orgmode.org/elpa/")))
+  <<pack-arch>>
   (package-initialize)
   (unless (package-installed-p 'use-package)
     (package-install 'use-package)
@@ -1417,6 +1421,19 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 (bind-key "M-0" #'forward-sexp)
 #+END_SRC
 ** Packages
+*** Initialize During Emacs
+Although we load and initialize all packages at startup, it is sometimes useful
+for the user to be able to interact with this process after it has taken place.
+For example, packages must be initialized to evaluate code blocks with
+=use-package= declarations in them.
+#+BEGIN_SRC emacs-lisp :noweb yes
+(defun gm/package-intiialize ()
+  (interactive)
+  <<pack-arch>>
+  (package-initialize)
+  (package-refresh-contents))
+#+END_SRC
+
 *** Helpful
 This package is a more informative alternative to the default Emacs
 documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
