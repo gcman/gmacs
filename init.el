@@ -1,7 +1,3 @@
-;; The main entry point into GMACS. It either loads the byte-compiled
-;; GMACS configuration file or tangles and loades the GMACS literate
-;; config file written in Org Mode.
-
 (advice-add #'display-startup-echo-area-message :override #'ignore)
 (setq inhibit-startup-message t
       inhibit-startup-echo-area-message user-login-name

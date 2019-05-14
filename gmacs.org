@@ -63,6 +63,26 @@ Hack.
 #+BEGIN_SRC sh
 Emacs.font: Hack-10
 #+END_SRC
+** =init.el=
+The main entry point into GMACS. First, we remove some features that would make
+startup take longer and aren't that useful.
+#+BEGIN_SRC emacs-lisp :tangle init.el
+(advice-add #'display-startup-echo-area-message :override #'ignore)
+(setq inhibit-startup-message t
+      inhibit-startup-echo-area-message user-login-name
+      inhibit-default-init t
+      initial-major-mode 'fundamental-mode
+      initial-scratch-message nil)
+#+END_SRC
+We either load the byte-compiled GMACS configuration file or tangle and load
+the GMACS literate config file (you're reading it!) written in Org Mode.
+#+BEGIN_SRC emacs-lisp :tangle init.el
+(let ((file-name-handler-alist nil))
+  (cond ((file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
+         (load-file (expand-file-name "gmacs.elc" user-emacs-directory)))
+        (t (require 'org)
+           (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory)))))
+#+END_SRC
 ** Lexical Binding
 Enable lexical binding.
 #+BEGIN_SRC emacs-lisp
@@ -880,6 +900,14 @@ From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][
 #+BEGIN_SRC emacs-lisp
 (autoload 'vr/replace "visual-regexp")
 (autoload 'vr/query-replace "visual-regexp")
+#+END_SRC
+*** Faster Scroll Down
+I found this snippet on [[https://emacs.stackexchange.com/questions/28736/emacs-pointcursor-movement-lag/28746][StackExchange]]. To summarize, =next-line= called
+=line-move-partial=, which is expensive. The function =previous-line= does not do
+this, so scrolling forward can sometimes feel jumpy, even when scrolling up is
+smooth.
+#+BEGIN_SRC emacs-lisp
+(setq auto-window-vscroll nil)
 #+END_SRC
 ** Wordsmithing
 *** Basic Configuration
