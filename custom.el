@@ -9,7 +9,8 @@
  '(counsel-grep-base-command "rg -i -M 120 --color auto --line-number %s %s")
  '(custom-safe-themes
    (quote
-    ("0598c6a29e13e7112cfbc2f523e31927ab7dce56ebb2016b567e1eff6dc1fd4f" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" "d677ef584c6dfc0697901a44b885cc18e206f05114c8a3b7fde674fce6180879" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default)))
+    ("d91ef4e714f05fff2070da7ca452980999f5361209e679ee988e3c432df24347" "0598c6a29e13e7112cfbc2f523e31927ab7dce56ebb2016b567e1eff6dc1fd4f" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" "d677ef584c6dfc0697901a44b885cc18e206f05114c8a3b7fde674fce6180879" "a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" default)))
+ '(desktop-environment-screenshot-directory "~/pictures")
  '(flycheck-display-errors-delay 0.3)
  '(flyspell-correct-interface (quote frog-menu-flyspell-correct) t)
  '(fountain-export-font "Courier New" t)
@@ -22,6 +23,7 @@
      (ivy-switch-buffer . ivy--regex-plus)
      (t . ivy--regex-fuzzy))) t)
  '(ivy-use-virtual-buffers t)
+ '(keyfreq-file "~/emacs-keyfreq")
  '(minibuffer-prompt-properties
    (quote
     (read-only t cursor-intangible t face minibuffer-prompt)))
@@ -86,7 +88,7 @@
     ((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)"))))
  '(package-selected-packages
    (quote
-    (desktop-environment pinentry esup elmacro olivetti fountain-mode org-ref org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode lispy linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
+    (ace-window desktop-environment pinentry esup elmacro olivetti fountain-mode org-ref org-protocol-capture-html youtube-dl ibuffer frog-menu posframe ivy swiper dash ov key-chord auth-source-pass quelpa-use-package quelpa exwm flyspell-correct htmlize restart-emacs persistent-scratch paradox org visual-fill-column visual-full-column helpful abbrev-mode abbrev aggressive-fill-paragraph org-plus-contrib nlinum-relative uniquify elpy delight aggressive-indent sdcv-mode yasnippet yaml-mode ws-butler which-key web-mode use-package unfill undo-tree sudo-edit solarized-theme smex smart-mode-line rjsx-mode rainbow-mode rainbow-delimiters py-autopep8 projectile pdf-tools ox-hugo org-wc org-mime org-gcal org-cliplink org-bullets notmuch nix-mode neotree multiple-cursors markdown-mode magit lua-mode linum-relative ledger-mode keyfreq hungry-delete god-mode ghc flycheck flx f expand-region dtrt-indent dired-quick-sort diminish diff-hl default-text-scale counsel company browse-kill-ring beacon bbdb auctex async-test ag adaptive-wrap)))
  '(paradox-github-token t)
  '(pdf-misc-print-programm "/usr/bin/gtklp")
  '(safe-local-variable-values

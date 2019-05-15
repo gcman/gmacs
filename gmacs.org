@@ -1,16 +1,6 @@
 #+TITLE: My Emacs Configuration
 #+PROPERTY: header-args :results silent
 * Starting Up
-** Early Init
-Here's some cutting edge technology. Emacs 27+ introduces =early-init.el=, which
-is run before =init.el=, before package initialization.
-
-Package initialization occurs automatically, before =user-init-file= is loaded,
-but after =early-init-file=. As we'll see later, we can handle package
-initialization ourselves, so there's no need for Emacs to do it first.
-#+BEGIN_SRC emacs-lisp :tangle early-init.el
-(setq package-enable-at-startup nil)
-#+END_SRC
 ** Fixing the UI
 :PROPERTIES:
 :header-args: :tangle no
@@ -63,6 +53,16 @@ Hack.
 #+BEGIN_SRC sh
 Emacs.font: Hack-10
 #+END_SRC
+** Early Init
+Here's some cutting edge technology. Emacs 27+ introduces =early-init.el=, which
+is run before =init.el=, before package initialization.
+
+Package initialization occurs automatically, before =user-init-file= is loaded,
+but after =early-init-file=. As we'll see later, we can handle package
+initialization ourselves, so there's no need for Emacs to do it first.
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+(setq package-enable-at-startup nil)
+#+END_SRC
 ** =init.el=
 The main entry point into GMACS. First, we remove some features that would make
 startup take longer and aren't that useful.
@@ -83,22 +83,18 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
         (t (require 'org)
            (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory)))))
 #+END_SRC
-** Lexical Binding
+** Initialization Settings
 Enable lexical binding.
 #+BEGIN_SRC emacs-lisp
 ;; -*- lexical-binding: t -*-
 #+END_SRC
-** Start Server
 Always load up a server when opening Emacs.
 #+BEGIN_SRC emacs-lisp
 (server-start)
 #+END_SRC
-** Initialization Settings
-I was inspired to implement these optimizations in GMACS thanks to
-[[https://github.com/nilcons/emacs-use-package-fast][nilcons/emacs-use-package-fast]].
-
-During startup, we make the garbage collection threshold very high. [[*Garbage Collection][After
-startup]], we manage garbage collection with a package.
+I was inspired to implement the following optimizations in GMACS thanks to
+[[https://github.com/nilcons/emacs-use-package-fast][nilcons/emacs-use-package-fast]]. During startup, we make the garbage collection
+threshold very high. [[*Garbage Collection][After startup]], we manage garbage collection with a package.
 #+BEGIN_SRC emacs-lisp
 (setq gc-cons-threshold #x40000000)
 #+END_SRC
@@ -108,7 +104,7 @@ kind of infinite loop.
 (setq max-lisp-eval-depth 50000
       max-specpdl-size 10000)
 #+END_SRC
-Now we prevent loading double buffers. This reduces stuttering.
+Now we prevent loading double buffers, which reduces stuttering.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'default-frame-alist '(inhibit-double-buffering . t))
 #+END_SRC
@@ -165,7 +161,7 @@ I put my personal information in =private.el=.
 (setq private-file (expand-file-name "private.el" gmacs-emacs-dir))
 (when (file-exists-p private-file) (load private-file))
 #+END_SRC
-** Add Package Sources
+** Setup Packages
 We're going to use a custom package directory, so we need to trick Emacs into
 thinking it has initialized packages by setting =package--init-file-ensured= to =t=.
 Also, we don't enable packages at startup, because we will let =use-package=
@@ -231,7 +227,8 @@ We also require =diminish= and =bind= because I often use these keywords within
 (require 'bind-key)
 (require 'diminish)
 #+END_SRC
-** Common Libraries
+*** Common Libraries
+We load some packages that I use throughout my configuration.
 #+BEGIN_SRC emacs-lisp
 (use-package async :commands (async-start))
 (use-package s :demand t)
@@ -690,6 +687,11 @@ that a buffer has been reverted.
 (setq-default auto-revert-mode t)
 (setq auto-revert-verbose nil)
 (diminish 'auto-revert-mode)
+#+END_SRC
+When this doesn't work, I still want to be able to quickly revert a buffer
+manually.
+#+BEGIN_SRC emacs-lisp
+(defalias 'rb 'revert-buffer)
 #+END_SRC
 Sometimes, however, there are other cases in which we want to reload a buffer.
 The change have been not in the file's contents, but in an Emacs setting, such
@@ -1580,7 +1582,20 @@ We might as well perform file operations asynchronously.
 (autoload 'dired-async-mode "dired-async.el" nil t)
 (dired-async-mode 1)
 #+END_SRC
-Always follow symlinks to their source if the source is version controlled.
+When you open, say, an audio or video file from Dired, Emacs displays the raw
+data in that file in a text buffer. We want to open files with the appropriate
+application.
+#+BEGIN_SRC emacs-lisp
+(autoload 'dired-open-xdg "dired-open")
+(bind-key "O" #'dired-open-xdg dired-mode-map)
+#+END_SRC
+Condense unique subtrees like GitHub does.
+#+BEGIN_SRC emacs-lisp
+(require 'dired-collapse)
+(add-hook 'dired-mode-hook #'dired-collapse-mode)
+#+END_SRC
+Always follow symlinks to their source if the source is version
+controlled.
 #+BEGIN_SRC emacs-lisp
 (setq vc-follow-symlinks t)
 #+END_SRC
@@ -1845,6 +1860,15 @@ default; set PAGE-P to non-nil to rotate only the current page.
             (pdf-view-revert-buffer nil t)
           (error "Rotation error!"))))))
 #+END_SRC
+Open PDFs to where they were last opened.
+#+BEGIN_SRC emacs-lisp
+(use-package pdf-view-restore
+  :after pdf-tools
+  :config
+  (add-hook 'pdf-view-mode-hook #'pdf-view-restore-mode)
+  :custom
+  (pdf-view-restore-filename "~/.emacs.d/cache/.pdf-view-restore"))
+#+END_SRC
 *** Epub reading
 We use =nov.el=.
 #+BEGIN_SRC emacs-lisp
@@ -2032,16 +2056,6 @@ I use a hydra to manage its many keybindings.
 
 (bind-key "C-c p" #'hydra-projectile/body)
 #+END_SRC
-*** Control Desktop
-#+BEGIN_SRC emacs-lisp
-(use-package desktop-environment
-  :defer 2
-  :config (desktop-environment-mode)
-  :custom (desktop-environment-screenshot-directory "~/pictures")
-  :bind (:map desktop-environment-mode-map
-              ("<print>" . desktop-environment-screenshot-part)
-              ("S-<print>" . desktop-environment-screenshot)))
-#+END_SRC
 * Keybindings
 ** Better Defaults
 These are what I think are better bindings for or better versions of the default
@@ -2055,14 +2069,14 @@ Alt is simply too hard to hit for such a commonly used command.
 Need a replacement because we rebound ~C-SPC~ above. And I know, I know, everyone
 loves =transpose-chars=, but I don't see myself using it that much.
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-t" 'set-mark-command)
+(bind-key "C-t" #'set-mark-command)
 #+END_SRC
 *** Shell Kill Word
 Use the standard Unix shell binding for deleting the previous word. As a result,
 it's fine to remove the default Emacs bindings for this. In fact,
 =C-<backspace>= in particular can get in the way.
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-w" 'backward-kill-word)
+(bind-key "C-w" #'backward-kill-word)
 (unbind-key "C-<backspace>")
 (unbind-key "M-DEL")
 #+END_SRC
@@ -2209,8 +2223,7 @@ The default =C-x 5 0= is too clunky for this.
 (bind-key "C-x w" #'delete-frame)
 #+END_SRC
 *** Comment Dwim
-Pretty straightforward. A better version of the built-in =comment-dwim= from
-[[https://github.com/remyferre/comment-dwim-2][remyferre/comment-dwim-2]].
+A better version of the built-in =comment-dwim= from [[https://github.com/remyferre/comment-dwim-2][remyferre/comment-dwim-2]].
 #+BEGIN_SRC emacs-lisp
 (use-package comment-dwim-2
   :commands comment-dwim-2
@@ -2276,7 +2289,6 @@ _m_ quick-math-mode:   %`quick-math-mode
 _p_ equation-preview:  %`gm/eq-preview
 _e_ pretty-math:
 _D_ dubcaps-mode:      %`gm/dubcaps-mode
-
 "
   ("t" gm/switch-theme nil)
   ("m" quick-math-mode nil)
@@ -2454,11 +2466,9 @@ code by [[https://github.com/alphapapa/org-protocol-capture-html][alphapapa]].
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (require 'org-protocol-capture-html)
 #+END_SRC
-So how do we actually get data from Firefox to Emacs? You can read the [[https://orgmode.org/worg/org-contrib/org-protocol.html][Org Mode
-wiki]] for the basics.
-
-The meat of the following snippet is in the function that turns the browser
-selection into HTML (after =&body==). It was sourced from [[https://stackoverflow.com/questions/5643635/how-to-get-selected-html-text-with-javascript/6668159#6668159][StackOverflow]].
+So how do we actually get data from Firefox to Emacs? The [[https://orgmode.org/worg/org-contrib/org-protocol.html][Org Mode wiki]] has the
+basics. The meat of the following snippet is in the function that turns the
+browser selection into HTML (after =&body==). It was sourced from [[https://stackoverflow.com/questions/5643635/how-to-get-selected-html-text-with-javascript/6668159#6668159][StackOverflow]].
 #+BEGIN_SRC js :tangle no
 javascript:location.href = 'org-protocol://capture-html?template=p&url=' + encodeURIComponent(location.href) + '&title=' + encodeURIComponent(document.title || "[untitled page]") + '&body=' + encodeURIComponent(function () {var html = ""; if (typeof document.getSelection != "undefined") {var sel = document.getSelection(); if (sel.rangeCount) {var container = document.createElement("div"); for (var i = 0, len = sel.rangeCount; i < len; ++i) {container.appendChild(sel.getRangeAt(i).cloneContents());} html = container.innerHTML;}} else if (typeof document.selection != "undefined") {if (document.selection.type == "Text") {html = document.selection.createRange().htmlText;}} var relToAbs = function (href) {var a = document.createElement("a"); a.href = href; var abs = a.protocol + "//" + a.host + a.pathname + a.search + a.hash; a.remove(); return abs;}; var elementTypes = [['a', 'href'], ['img', 'src']]; var div = document.createElement('div'); div.innerHTML = html; elementTypes.map(function(elementType) {var elements = div.getElementsByTagName(elementType[0]); for (var i = 0; i < elements.length; i++) {elements[i].setAttribute(elementType[1], relToAbs(elements[i].getAttribute(elementType[1])));}}); return div.innerHTML;}());
 #+END_SRC
@@ -2785,7 +2795,7 @@ default execution commands.
                                   (latex . t)
                                   (shell . t)))
 
-(setq org-babel-python-command "python3.6"
+(setq org-babel-python-command "python3.7"
       org-babel-latex-command "pdflatex")
 #+END_SRC
 Make Org Mode source blocks act normally with respect to indentation and syntax
