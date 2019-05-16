@@ -586,10 +586,10 @@ contents to the kill ring.
 Authorize actions.
 #+BEGIN_SRC emacs-lisp
 (use-package pinentry
-  :commands pinentry-start)
+  :demand t
+  :config (pinentry-start))
 (require 'epa-file)
 (epa-file-enable)
-(pinentry-start)
 (setenv "GPG_AGENT_INFO" nil)
 (setq epg-gpg-program "/usr/bin/gpg2")
 (setq epa-file-cache-passphrase-for-symmetric-encryption t)
