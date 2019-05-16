@@ -1,10 +1,10 @@
 *
-!snippets/
-!packages/
-!elisp/
-!docs/
-!.gitmodules
+!snippets/*
+!packages/*
+packages/elpy-*/elpy/__pycache__/
+!elisp/*
 !README.org
+!.gitmodules
 !.gitignore
 !abbrevs.el
 !custom.el
