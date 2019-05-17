@@ -388,12 +388,13 @@ definitely slow things down. In such buffers I also remove line numbers.
 (defun buffer-too-big-p ()
   (or (> (buffer-size) (* 5000 80))
       (> (line-number-at-pos (point-max)) 5000)))
-(add-hook 'prog-mode-hook
-          (lambda ()
-            ;; turn off `nlinum-relative-mode' when there are more than 5000 lines
-            (when (buffer-too-big-p)
+
+(defun gm/big-buffer-setup ()
+  (when (buffer-too-big-p)
               (nlinum-relative-mode -1)
-              (font-lock-mode -1))))
+              (font-lock-mode -1)))
+
+(add-hook 'prog-mode-hook #'gm/big-buffer-setup)
 #+END_SRC
 Normally, I want the opening and closing parentheses highlighted. I used to set
 =show-paren-style= to =expression=, all that highlighting was not really necessary.
@@ -911,6 +912,18 @@ smooth.
 #+BEGIN_SRC emacs-lisp
 (setq auto-window-vscroll nil)
 #+END_SRC
+*** Create Necessary Directories
+I find it annoying to answer the prompt to make a new directory when making a
+file in a nonexistent directory. And so we advise =find-file= to transparently
+create necessary directories (from this [[https://superuser.com/questions/131538/can-i-create-directories-that-dont-exist-while-creating-a-new-file-in-emacs][SE post]]).
+#+BEGIN_SRC emacs-lisp
+(defadvice find-file (before make-directory-maybe (filename &optional wildcards) activate)
+  "Create parent directory if not exists while visiting file."
+  (unless (file-exists-p filename)
+    (let ((dir (file-name-directory filename)))
+      (unless (file-exists-p dir)
+        (make-directory dir)))))
+#+END_SRC
 ** Wordsmithing
 *** Basic Configuration
 **** Sentences End With a Single Space
@@ -1028,6 +1041,21 @@ otherwise kill destination buffer."
       (setq complete t)
       (run-hooks hook))))
 #+END_SRC
+**** Edit Browser Text with Emacs
+Sometimes, we have to fill in a text box in the browser. If only we could use
+Emacs for this! But copy-pasting can be annoying. Get the [[https://addons.mozilla.org/en-US/firefox/addon/edit-with-emacs1/][Edit with Emacs]] addon
+for Firefox. Ideally, I would use the [[https://addons.mozilla.org/en-US/firefox/addon/ghosttext/][GhostText]] addon (this extension also
+exists for Chrome) along with the =atomic-chrome= Emacs package, but I haven't
+figured out how to activate that one with the keyboard. I'd need to call a JS
+function, which I could do with ShortKeys, but I'm not sure which one to call.
+The advantage this has over =edit-server= and Edit with Emacs is that the
+GhostText method syncs your edits live between the browser and Emacs, while with
+Edit with Emacs,,your edits only show up once you "commit" them with =C-c C-c=.
+#+BEGIN_SRC emacs-lisp
+(use-package edit-server
+  :defer 2
+  :config (edit-server-start))
+#+END_SRC
 *** Spelling
 **** Setup
 The article [[https://joelkuiper.eu/spellcheck_emacs][Spell checking in Emacs]] helped me out in setting up spellchecking in
@@ -1040,7 +1068,7 @@ prose in is Org Mode.
   :diminish
   :commands flyspell-mode
   :init
-  (add-hook 'org-mode-hook (lambda () (flyspell-mode 1)))
+  (add-hook 'org-mode-hook #'flyspell-mode)
   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
     (add-hook hook (lambda () (flyspell-mode -1))))
   <<flyspell-init>>
@@ -1562,9 +1590,7 @@ Have the most up-to-date version of the buffer when using Dired.
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(defun gm/dired-mode-setup ()
-  (dired-hide-details-mode 1))
-(add-hook 'dired-mode-hook #'gm/dired-mode-setup)
+(add-hook 'dired-mode-hook #'dired-hide-details-mode)
 #+END_SRC
 Allow Dired to recursively copy and delete directories. The option ~always~
 ensures that no confirmation dialog comes up; ~top~ would do it only one layer
@@ -2286,13 +2312,13 @@ We use a hydra to toggle various features in our setup.
   "
 _t_ theme-colour       %`gm/theme
 _m_ quick-math-mode:   %`quick-math-mode
-_p_ equation-preview:  %`gm/eq-preview
+_p_ equation-preview:  %`gm/eq-preview-mode
 _e_ pretty-math:
 _D_ dubcaps-mode:      %`gm/dubcaps-mode
 "
   ("t" gm/switch-theme nil)
   ("m" quick-math-mode nil)
-  ("p" gm/toggle-equation-preview nil)
+  ("p" gm/eq-preview-mode nil)
   ("e" gm/prettify-math nil)
   ("D" gm/dubcaps-mode nil)
   ("q" nil "cancel"))
@@ -2880,7 +2906,7 @@ messing with making =$= an electrically paired delimiter.
 I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-symbols.el][mortiferus]]. The file I use is not the one from
 their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 #+BEGIN_SRC emacs-lisp
-(autoload 'gm/prettify-math "gm-pretty-math")
+(require 'gm-pretty-math)
 #+END_SRC
 *** Don't Break Paragraph on Comments'
 [[https://emacs.stackexchange.com/questions/22574/orgmode-export-how-to-prevent-a-new-line-for-comment-lines][John Kitchin]] tells us how to remove comments from an Org document when exporting
@@ -3068,7 +3094,7 @@ We can also center equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
 on it. This is more John Kitchin code.
 #+BEGIN_SRC emacs-lisp
-(defun org-justify-fragment-overlay (beg end image imagetype)
+(defun gm/org-justify-fragment-overlay (beg end image imagetype)
   "Adjust the justification of a LaTeX fragment.
 The justification is set by :justify in
 `org-format-latex-options'. Only equations at the beginning of a
@@ -3086,7 +3112,7 @@ line are justified."
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(defun org-latex-fragment-tooltip (beg end image imagetype)
+(defun gm/org-latex-fragment-tooltip (beg end image imagetype)
   "Add the fragment tooltip to the overlay and set click function to toggle it."
   (overlay-put (ov-at) 'help-echo
                (concat (buffer-substring beg end)
@@ -3097,23 +3123,27 @@ line are justified."
                                     map)))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(advice-add 'org--format-latex-make-overlay :after 'org-justify-fragment-overlay)
-(advice-add 'org--format-latex-make-overlay :after 'org-latex-fragment-tooltip)
+(advice-add 'org--format-latex-make-overlay :after 'gm/org-justify-fragment-overlay)
+(advice-add 'org--format-latex-make-overlay :after 'gm/org-latex-fragment-tooltip)
 #+END_SRC
-Toggle the "mode" to preview equations. The keybinding is setup in [[*Hydra][the section
+Create a minor mode to preview equations. The keybinding is setup in [[*Hydra][the section
 on hydras]].
 #+BEGIN_SRC emacs-lisp
-(defvar gm/eq-preview nil)
-;; this is buffer local
-(defun gm/toggle-equation-preview ()
-  (interactive)
-  (if gm/eq-preview
-      (progn
-        (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t)
-        (message "Equation preview disabled."))
-    (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display nil t)
-    (message "Equation preview enabled."))
-  (setq-local gm/eq-preview (not gm/eq-preview)))
+(define-minor-mode gm/eq-preview-mode
+  :init-value nil)
+
+(defun gm/eq-toggle ()
+  (if gm/eq-preview-mode
+      (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t 'local)
+  (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display 'local)))
+
+(add-hook 'gm/eq-preview-mode-hook #'gm/eq-toggle)
+#+END_SRC
+*** Change Bracket Sizes
+This allows the user to easily change the size of brackets in LaTeX expressions.
+#+BEGIN_SRC emacs-lisp
+(autoload 'bratex-config "bratex")
+(add-hook 'quick-math-mode-hook #'bratex-config)
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
@@ -3770,6 +3800,7 @@ don't require the use of =yasnippets=.
     ("bigop" "big-operator" t)
     ("binom" "choose" t)
     ("bol" "bol" t)
+    ("cases" "cases" t)
     ("cb" "^3")
     ("cc" "\\subset ")
     ("ceil" "ceiling" t)
@@ -3807,7 +3838,7 @@ don't require the use of =yasnippets=.
     ("list" "list" t)
     ("ln" "\\ln ")
     ("log" "\\log ")
-    ("lr9" "parentheses" t)
+    ("lr(" "parentheses" t)
     ("lr[" "brackets" t)
     ("lr{" "set" t)
     ("mp" "\\mp ")
@@ -4260,16 +4291,25 @@ to make LaTeX happy.
 
 (defun gm/tex-newline ()
   (interactive)
-  (if (equal (buffer-substring-no-properties
+  (let ((current-line (buffer-substring-no-properties
               (line-beginning-position)
-              (line-end-position))
-             "\\begin{split}")
+              (line-end-position))))
+  (if (equal current-line "\\begin{split}")
       (newline)
     (end-of-line)
-    (if (equal (gm/last-n-chars 2) "\\\\")
-        (forward-line)
-      (insert " \\\\")
-      (newline))))
+    (unless (equal (gm/last-n-chars 2) "\\\\")
+      (insert " \\\\"))
+    (if (save-excursion
+          (forward-line)
+          (equal (buffer-substring-no-properties
+                  (line-beginning-position)
+                  (line-end-position))
+                 "\\end{split}"))
+        (progn
+          (newline)
+          (when (equal (substring (s-trim current-line) 0 2) "&=")
+            (insert "&= ")))
+      (forward-line)))))
 
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
