@@ -1,4 +1,5 @@
 # -*- mode: snippet -*-
 # name: norm
+# key: math-norm
 # --
 \norm{$1}$0
