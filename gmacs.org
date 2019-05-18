@@ -19,7 +19,7 @@ background, this makes for some very fun times debugging.
 After editing =.Xresources=, remember to reload it with =xrdb merge ~/.Xresources=.
 *** Bars
 I never use menu bars, tool bars, or scroll bars in Emacs.
-#+BEGIN_SRC sh
+#+BEGIN_SRC conf
 Emacs.menuBar: off
 Emacs.toolBar: off
 Emacs.verticalScrollBars: off
@@ -27,7 +27,7 @@ Emacs.verticalScrollBars: off
 *** Cursor Blinking
 In earlier versions of Emacs, the cursor would blink ten or so times, then
 suddenly stop. This got annoying quickly.
-#+BEGIN_SRC sh
+#+BEGIN_SRC conf
 Emacs.cursorBlink: off
 #+END_SRC
 *** Background Colour
@@ -36,12 +36,12 @@ is white. However, my default theme is a dark theme (Solarized Dark). If I were
 to change the background colour after Emacs starts, the screen would flash as it
 changes colour. And so I set the default background colour to be that of
 Solarized Dark.
-#+BEGIN_SRC sh
+#+BEGIN_SRC conf
 Emacs.background: #002b36
 #+END_SRC
 The last thing left that is visible throughout startup is the modeline. It
 took a bit of Internet sleuthing to figure out how to set this, but here it is.
-#+BEGIN_SRC sh
+#+BEGIN_SRC conf
 Emacs.mode-line.attributeForeground: #93a1a1
 Emacs.mode-line.attributeBackground: #002b36
 Emacs.mode-line.attributeBox: (:line-width 1 :color "#073642")
@@ -52,16 +52,6 @@ to change that [[*Font Face][here]]. On startup, though, I want something neutra
 Hack.
 #+BEGIN_SRC sh
 Emacs.font: Hack-10
-#+END_SRC
-** Early Init
-Here's some cutting edge technology. Emacs 27+ introduces =early-init.el=, which
-is run before =init.el=, before package initialization.
-
-Package initialization occurs automatically, before =user-init-file= is loaded,
-but after =early-init-file=. As we'll see later, we can handle package
-initialization ourselves, so there's no need for Emacs to do it first.
-#+BEGIN_SRC emacs-lisp :tangle early-init.el
-(setq package-enable-at-startup nil)
 #+END_SRC
 ** =init.el=
 The main entry point into GMACS. First, we remove some features that would make
@@ -135,9 +125,6 @@ method makes it easy for to extend to more directories if needed.
   (defvar gmacs-emacs-dir (expand-file-name user-emacs-directory)
     "The path to the emacs.d directory.")
 
-  (defvar gmacs-packages-dir (concat gmacs-emacs-dir "packages/")
-    "Where package.el and elpa plugins (and their caches) are stored.")
-
   (defvar gmacs-custom-dir (concat gmacs-emacs-dir "elisp/")
     "Where custom lisp files are stored")
 
@@ -145,11 +132,14 @@ method makes it easy for to extend to more directories if needed.
     "Where temporary files that could be deleted without anything
     terrible happening are stored.")
 
-  (dolist (dir (list gmacs-packages-dir
-                     gmacs-custom-dir
+  (dolist (dir (list gmacs-custom-dir
                      gmacs-cache-dir))
     (unless (file-directory-p dir)
       (make-directory dir t))))
+#+END_SRC
+Load custom elisp files.
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path gmacs-custom-dir)
 #+END_SRC
 I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
@@ -162,77 +152,47 @@ I put my personal information in =private.el=.
 (when (file-exists-p private-file) (load private-file))
 #+END_SRC
 ** Setup Packages
-We're going to use a custom package directory, so we need to trick Emacs into
-thinking it has initialized packages by setting =package--init-file-ensured= to =t=.
-Also, we don't enable packages at startup, because we will let =use-package=
-intelligently defer and handle package loading.
+Bootstrap =straight.el=
 #+BEGIN_SRC emacs-lisp
-(eval-and-compile
-  (setq load-prefer-newer t
-        package-user-dir gmacs-packages-dir
-        package--init-file-ensured t
-        package-enable-at-startup nil))
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+END_SRC
+Only check if local packages differ from upstream ones when they are edited in Emacs.
+#+BEGIN_SRC emacs-lisp
+(setq straight-check-for-modifications 'live)
+#+END_SRC
+We use =straight.el= to install =use-package=. The variable
+=straight-use-package-by-default= is the replacement for
+=use-package-always-ensure=. The latter uses =package.el=, which we do not want.
+This allows packages to be installed on the fly.
+#+BEGIN_SRC emacs-lisp
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
 #+END_SRC
 Get =use-package= to always defer loading packages until they are actually needed.
-This reduces startup time significantly. We're doing this now, before
-=use-package= is even loaded, because otherwise it won't help us when the code
-that loads =use-package= is evaluated upon byte-compilation.
+This reduces startup time significantly.
 #+BEGIN_SRC emacs-lisp
 (setq use-package-always-defer t
       use-package-verbose t)
-#+END_SRC
-We set the =load-path= ourselves. This will be faster than letting
-=package-intialize= handle it, because we only add directories we know are from
-packages. This way, we don't need to search all third party paths every time we
-require a file. We'll also store custom or third-party Emacs Lisp files in
-=gmacs-custom-dir=, so we add that to the =load-path=.
-#+BEGIN_SRC emacs-lisp
-(eval-and-compile
-  (setq load-path (append load-path (directory-files package-user-dir t "^[^.]" t)))
-  (add-to-list 'load-path gmacs-custom-dir))
-#+END_SRC
-Our next step is to load =package.el=. We add our package repositories "melpa" and
-"gnu," because Emacs' default list of packages is so conservative. Then we need
-to initialize the packages and make sure that =use-package= is installed if its
-missing. Finally, we tell =use-package= to always install missing packages.
-Otherwise, an error would be thrown when a package is missing.
-
-We use the following package archives.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref pack-arch
-(setq package-archives
-        '(("melpa" . "https://melpa.org/packages/")
-          ("gnu" . "https://elpa.gnu.org/packages/")
-          ("org" . "http://orgmode.org/elpa/")))
-#+END_SRC
-Note that this whole process is only run when the file is byte-compiled. This
-means that by the time the code is actually evaluated, the =use-package= macro has
-been expanded, so the package is not needed anymore. As such, we can do all the
-expensive and time-consuming work of getting the packages ready before Emacs has
-even started, during byte-compilation. If this config has not been manually
-byte-compiled, Emacs will initialize packages on startup as usual.
-#+BEGIN_SRC emacs-lisp :noweb yes
-(eval-when-compile
-  (require 'package)
-  <<pack-arch>>
-  (package-initialize)
-  (unless (package-installed-p 'use-package)
-    (package-install 'use-package)
-    (package-refresh-contents))
-  (require 'use-package)
-  (setq use-package-always-ensure t))
-#+END_SRC
-We also require =diminish= and =bind= because I often use these keywords within
-=use-package= declarations.
-#+BEGIN_SRC emacs-lisp
-(require 'bind-key)
-(require 'diminish)
 #+END_SRC
 *** Common Libraries
 We load some packages that I use throughout my configuration.
 #+BEGIN_SRC emacs-lisp
 (use-package async :commands (async-start))
-(use-package s :demand t)
-(use-package dash :demand t :config (dash-enable-font-lock))
+(use-package s :defer 2)
+(use-package dash :defer 2 :config (dash-enable-font-lock))
+(use-package bind-key :demand t)
+(use-package diminish :demand t)
 (eval-when-compile (require 'cl))
 #+END_SRC
 * General Configuration
@@ -426,7 +386,7 @@ This package minimizes the interference of garbage collection with the user
 experience. That means fewer annoyingly long pauses while you are using Emacs.
 #+BEGIN_SRC emacs-lisp
 (use-package gcmh
-  :demand t
+  :defer 2
   :diminish
   :config (gcmh-mode 1))
 #+END_SRC
@@ -596,16 +556,6 @@ Authorize actions.
 (setq epa-file-cache-passphrase-for-symmetric-encryption t)
 (setq epa-file-select-keys nil)
 (setq epa-pinentry-mode 'loopback)
-#+END_SRC
-*** Persistent Scratch Buffer
-The =*scratch*= buffer has come in handy for me many times when I want to quickly
-test out some Elisp. It would be nice to have it saved; I could clear it easily if
-I wanted to. Luckily, there's a package that does just that.
-#+BEGIN_SRC emacs-lisp
-(use-package persistent-scratch
-  :demand t
-  :config
-  (persistent-scratch-setup-default))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -901,8 +851,9 @@ From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][
 #+END_SRC
 *** Visual Regexp
 #+BEGIN_SRC emacs-lisp
-(autoload 'vr/replace "visual-regexp")
-(autoload 'vr/query-replace "visual-regexp")
+(use-package visual-regexp
+  :straight (:host github :repo "benma/visual-regexp.el")
+  :commands (vr/replace vr/query-replace))
 #+END_SRC
 *** Faster Scroll Down
 I found this snippet on [[https://emacs.stackexchange.com/questions/28736/emacs-pointcursor-movement-lag/28746][StackExchange]]. To summarize, =next-line= called
@@ -967,16 +918,11 @@ Default wrap at 80 characters.
 See this [[http://jsomers.net/blog/dictionary][beautiful post]] by James Somers on why you should use this dictionary.
 It's Webster's original, his magnum opus.
 #+BEGIN_SRC emacs-lisp
-(autoload 'sdcv-search "sdcv-mode")
-(bind-key "C-c d" 'sdcv-search)
+(use-package sdcv-mode
+  :straight (:host github :repo "gucong/emacs-sdcv")
+  :bind (("C-c d" . sdcv-search)))
 #+END_SRC
 On Arch Linux, this goes with the =sdcv= package.
-**** Highlighting/Comments
-#+BEGIN_SRC emacs-lisp
-(autoload 'ov-highlight/body "ov-highlight")
-(bind-key "C-c h" 'ov-highlight/body)
-(bind-key "C-c C-h" 'ov-highlight/body)
-#+END_SRC
 **** Writing
 A minor mode that centres the text in the buffer. Nice distraction-free
 environment for writing.
@@ -1128,7 +1074,10 @@ place, just as the frog's tongue pouncing on the fly.
 We use the =flyspell-correct= package to implement such an interface. It uses =avy=
 for selection.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
-(autoload 'frog-menu-read "frog-menu")
+(use-package frog-menu
+  :straight (:host github :repo "clemera/frog-menu")
+  :commands frog-menu-read)
+
 (use-package flyspell-correct
   :commands flyspell-correct-wrapper
   :custom
@@ -1479,18 +1428,6 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 (bind-key "M-0" #'forward-sexp)
 #+END_SRC
 ** Packages
-*** Initialize During Emacs
-Although we load and initialize all packages at startup, it is sometimes useful
-for the user to be able to interact with this process after it has taken place.
-For example, packages must be initialized to evaluate code blocks with
-=use-package= declarations in them.
-#+BEGIN_SRC emacs-lisp :noweb yes
-(defun gm/package-intiialize ()
-  (interactive)
-  <<pack-arch>>
-  (package-initialize)
-  (package-refresh-contents))
-#+END_SRC
 *** Helpful
 This package is a more informative alternative to the default Emacs
 documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
@@ -1509,12 +1446,6 @@ could.
              helpful-key
              helpful-function
              helpful-command))
-#+END_SRC
-*** Paradox
-#+BEGIN_SRC emacs-lisp
-(use-package paradox
-  :commands (package-initialize)
-  :config (paradox-enable))
 #+END_SRC
 *** Key Frequency
 #+BEGIN_SRC emacs-lisp
@@ -1563,11 +1494,6 @@ screen, and once we're done, we can get right back to where we left off.
               ("q" . magit-quit-session)))
 #+END_SRC
 *** Dired
-Great for renaming files in bulk.
-#+BEGIN_SRC emacs-lisp
-(after! dired
-  (require 'visual-regexp))
-#+END_SRC
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a Dired buffer.
 #+BEGIN_SRC emacs-lisp
@@ -1605,7 +1531,7 @@ But I don't want to permanently delete things. Not yet, anyway.
 #+END_SRC
 We might as well perform file operations asynchronously.
 #+BEGIN_SRC emacs-lisp
-(autoload 'dired-async-mode "dired-async.el" nil t)
+(autoload 'dired-async-mode "dired-async" nil t)
 (dired-async-mode 1)
 #+END_SRC
 When you open, say, an audio or video file from Dired, Emacs displays the raw
@@ -1719,7 +1645,7 @@ T - tag prefix
   :demand t
   :config
   (ivy-mode 1)
-  (use-package flx)
+  (use-package flx :demand t)
   (use-package smex
     :commands (counsel-M-x)
     :custom
@@ -1889,6 +1815,7 @@ default; set PAGE-P to non-nil to rotate only the current page.
 Open PDFs to where they were last opened.
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-view-restore
+  :straight (:host github :repo "007kevin/pdf-view-restore")
   :after pdf-tools
   :config
   (add-hook 'pdf-view-mode-hook #'pdf-view-restore-mode)
@@ -1912,7 +1839,9 @@ font) to Minion Pro.
 #+END_SRC
 Justifying e-book text. This code was taken from [[https://github.com/wasamasa/nov.el][wasamasa/nov.el]].
 #+BEGIN_SRC emacs-lisp
-(require 'justify-kp)
+(use-package justify-kp
+  :straight (:host github :repo "Fuco1/justify-kp"))
+
 (setq nov-text-width most-positive-fixnum)
 
 (defun my-nov-window-configuration-change-hook ()
@@ -1955,8 +1884,13 @@ Justifying e-book text. This code was taken from [[https://github.com/wasamasa/n
 #+END_SRC
 *** Screencast
 #+BEGIN_SRC emacs-lisp
-(autoload 'gif-screencast "gif-screencast" "Start GIF Screencast" t)
-(autoload 'keycast-mode "keycast" "Start `keycast-mode'" t)
+(use-package gif-screencast
+  :straight (:host gitlab :repo "ambrevar/emacs-gif-screencast")
+  :commands gif-screencast)
+
+(use-package keycast
+  :straight (:host github :repo "tarsius/keycast")
+  :commands keycast-mode)
 
 (defun gm/begin-screencast ()
   (interactive)
@@ -2012,7 +1946,6 @@ the "other one" is. Instead, you select the window with a number.
 *** Avy
 #+BEGIN_SRC emacs-lisp
 (use-package avy
-  :ensure t
   :bind (("M-g" . avy-goto-word-1)))
 #+END_SRC
 Similarly, we use =ace-link= to open links quickly.
@@ -2285,8 +2218,9 @@ We also make some aliases.
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
-(require 'key-chord)
-(key-chord-mode 1)
+(use-package key-chord
+  :straight (:host github :repo "emacsorphanage/key-chord")
+  :config (key-chord-mode 1))
 #+END_SRC
 *** Number Symbols
 Eliminate the shift key for inputting symbols. The dollar sign ($) keychord is
@@ -2330,9 +2264,7 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org
   :init
-  (require 'org)
   (require 'ox-latex)
-  (require 'ox-hugo)
   :bind (:map org-mode-map
               <<org-keys>>)
   :config
@@ -2490,7 +2422,8 @@ text. Pretty much every browser has the ability to copy text as HTML. So we
 leverage the power of =pandoc= to convert this HTML to Org Mode syntax using some
 code by [[https://github.com/alphapapa/org-protocol-capture-html][alphapapa]].
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(require 'org-protocol-capture-html)
+(use-package org-protocol-capture-html
+  :straight (:host github :repo "alphapapa/org-protocol-capture-html"))
 #+END_SRC
 So how do we actually get data from Firefox to Emacs? The [[https://orgmode.org/worg/org-contrib/org-protocol.html][Org Mode wiki]] has the
 basics. The meat of the following snippet is in the function that turns the
@@ -2979,7 +2912,8 @@ litter our folders.
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
-(require 'ov)
+(use-package ov
+  :commands (ov-at))
 (defvar gm/org-last-fragment nil
   "Holds the type and position of last valid fragment we were on.
   Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
@@ -2987,15 +2921,10 @@ leaving a math fragment.
 (defvar gm/org-valid-fragment-type '(latex-fragment latex-environment)
   "List of types of fragments that will be previewed by `gm/org-preview-fragment'")
 
-(defun gm/org-curr-fragment (&optional location)
+(defun gm/org-curr-fragment ()
   "Returns the type and position of the current fragment available
 for preview inside org-mode. Returns nil at non-displayable fragments."
-  (let* ((loc (if location location (point)))
-         (fr (if (not (eq loc (point)))
-                 (save-excursion
-                   (goto-char loc)
-                   (org-element-context))
-               (org-element-context)))
+  (let* ((fr (org-element-context))
          (fr-type (car fr)))
     (when (memq fr-type gm/org-valid-fragment-type)
       ;; \(...\)| cursor there should not result in active fragment
@@ -3011,9 +2940,9 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
             ;; check if point is between the actual end of the
             ;; LaTex environment and the "supposed end" extended by blank ;; lines after the environment
             (and
-             (> loc fr-begin)
-             (<= loc (- fr-end fr-post-blank)))
-          (list fr-type fr-begin))))))
+             (>= (point) fr-begin)
+             (<= (point) (- fr-end fr-post-blank)))
+          (list fr-type fr-begin ))))))
 
 (defun gm/org-remove-fragment-overlay (fr)
   "Remove fragment overlay at fr"
@@ -3042,12 +2971,8 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
 (defun gm/org-auto-toggle-fragment-display ()
   "Automatically toggle a displayable org mode fragment."
   (and (eq 'org-mode major-mode)
-       (let ((curr (gm/org-curr-fragment))
-             (next (gm/org-curr-fragment (1+ (point)))))
+       (let ((curr (gm/org-curr-fragment)))
          (cond
-          ((and (not curr) next)
-           (gm/org-remove-fragment-overlay next)
-           (setq gm/org-last-fragment next))
           ;; were on a fragment and now on a new fragment
           ((and
             ;; fragment we were on
@@ -3092,19 +3017,14 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
              (setq gm/org-last-fragment curr))
            ;; there is no point being in on the \( or \) part of the math fragment
            ;; this code jumps the point into the actual math part of the fragment
-           (when (and (eq (char-before) 92)
-                       (eq (char-after) 41))
-                  (backward-char 1)))
-          ;; for the forward char, we have to do things a little
-          ;; differently, because the point is already in the fragment
-          ((and curr
-                gm/org-last-fragment
-                (eq (char-before) 92)
-                (eq (char-after) 40)
-                (eq last-command 'forward-char))
-           (forward-char 1))))))
+           (cond
+            ((equal (gm/last-n-chars -2) "\\(")
+             (forward-char 2))
+            ((and (eq (char-before) 92)
+                  (eq (char-after) 41))
+             (backward-char 1))))))))
 #+END_SRC
-We can also centre equations and (this is useful when equation preview mode is
+We can also center equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
 on it. This is more John Kitchin code.
 #+BEGIN_SRC emacs-lisp
@@ -3123,7 +3043,9 @@ line are justified."
            (width (car (image-size img)))
            (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 3) (/ width 3)))))
       (overlay-put (ov-at) 'before-string (make-string offset ? )))))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 (defun gm/org-latex-fragment-tooltip (beg end image imagetype)
   "Add the fragment tooltip to the overlay and set click function to toggle it."
   (overlay-put (ov-at) 'help-echo
@@ -3133,34 +3055,40 @@ line are justified."
                                     (define-key map [mouse-1]
                                       `())
                                     map)))
-
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
 (advice-add 'org--format-latex-make-overlay :after 'gm/org-justify-fragment-overlay)
 (advice-add 'org--format-latex-make-overlay :after 'gm/org-latex-fragment-tooltip)
 #+END_SRC
-Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hydra]].
+Create a minor mode to preview equations. The keybinding is setup in [[*Hydra][the section
+on hydras]].
 #+BEGIN_SRC emacs-lisp
 (define-minor-mode gm/eq-preview-mode
   :init-value nil)
 
 (defun gm/eq-toggle ()
   (if gm/eq-preview-mode
-      (progn
-        (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t 'local))
-    (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display 'local)))
+      (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t 'local)
+  (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display 'local)))
 
 (add-hook 'gm/eq-preview-mode-hook #'gm/eq-toggle)
 #+END_SRC
 *** Change Bracket Sizes
 This allows the user to easily change the size of brackets in LaTeX expressions.
 #+BEGIN_SRC emacs-lisp
-(autoload 'bratex-config "bratex")
+(use-package bratex
+  :straight (:host github :repo "sbrisard/bratex")
+  :commands (bratex-config))
 (add-hook 'quick-math-mode-hook #'bratex-config)
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
+(use-package ox-tufte-latex
+  :straight (:host github :repo "tsdye/tufte-org-mode")
+  :commands (org-tufte-latex-export-to-latex))
+
 (defun gm/org-latex-export ()
   (interactive)
-  (require 'ox-tufte-latex)
   (save-excursion
     (search-backward "EXPORT_FILE_NAME")
     (org-latex-export-to-latex t t)))
@@ -3415,7 +3343,8 @@ Looking at the =rights= field makes it clear that the permissions were off.
 
 Now for the Emacs setup. This library converts Org into HTML.
 #+BEGIN_SRC emacs-lisp
-(require 'org-mime)
+(use-package org-mime
+  :commands (org-mime-htmlize))
 #+END_SRC
 Then we give ourselves a way to activate Org Mode mail.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
@@ -3498,25 +3427,29 @@ other forms of media, such as blogs. I plan to also use it for academic articles
 when the need arises. Many of the snippets (tagged =bjm/=) I use here was written
 by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
 #+BEGIN_SRC emacs-lisp :noweb yes
-(autoload 'elfeed "elfeed")
-(autoload 'elfeed-db-load "elfeed")
-(setq elfeed-db-directory "~/.emacs.d/.elfeed")
-(after! elfeed
+(use-package elfeed
+  :commands (elfeed elfeed-db-load)
+  :config
   (bind-keys :map elfeed-search-mode-map
              ("q" . bjm/elfeed-save-db-and-bury)
              ("f" . gm/elfeed-hydra/body)
              ("*" . gm/elfeed-toggle-star)
              ([remap elfeed-search-live-filter]
               . bjm/elfeed-search-live-filter-space))
-  <<elfeed-settings>>)
+  <<elfeed-settings>>
+  :custom
+  (elfeed-db-directory "~/.emacs.d/.elfeed"))
 #+END_SRC
 By default, =elfeed= stores the feeds it should compile in an elisp file. But Org
 is easier.
 #+BEGIN_SRC emacs-lisp
-(autoload 'elfeed-org "elfeed-org")
-(elfeed-org)
-(setq rmh-elfeed-org-files
-      `(,(expand-file-name "elfeed.org" org-directory)))
+(use-package elfeed-org
+  :straight (:host github :repo "remyhonig/elfeed-org")
+  :commands elfeed-org
+  :config (elfeed-org)
+  :custom
+  (rmh-elfeed-org-files
+      `(,(expand-file-name "elfeed.org" org-directory))))
 #+END_SRC
 *** Launching
 We want to make sure =elfeed= reads from the disk before it launches. This makes
@@ -3644,8 +3577,10 @@ We bind it to =o=.
 Sometimes I want to download videos to watch them later or in higher quality.
 For this I use skeeto's =youtube-dl=.
 #+BEGIN_SRC emacs-lisp
-(autoload #'youtube-dl "youtube-dl")
-(setq youtube-dl-directory (concat "~/" gm/youtube-dl-dir))
+(use-package youtube-dl
+  :straight (:host github :repo "skeeto/youtube-dl-emacs")
+  :commands (youtube-dl youtube-dl-list)
+  :custom (youtube-dl-directory (concat "~/" gm/youtube-dl-dir)))
 #+END_SRC
 I wrap it for use in =elfeed=.
 #+BEGIN_SRC emacs-lisp
@@ -3678,8 +3613,8 @@ I use a hydra to easily navigate between groups of feeds.
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
 #+BEGIN_SRC emacs-lisp :noweb yes
+(use-package emms)
 (defun gm/emms-setup ()
-  (add-to-list 'load-path "~/.emacs.d/elisp/emms/lisp/")
   (require 'emms-setup)
   (require 'emms-player-mpd)
   (emms-all)
