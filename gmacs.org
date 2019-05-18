@@ -152,8 +152,8 @@ I put my personal information in =private.el=.
 (when (file-exists-p private-file) (load private-file))
 #+END_SRC
 ** Setup Packages
-Bootstrap =straight.el=
-#+BEGIN_SRC emacs-lisp
+Bootstrap =straight.el=.
+#+BEGIN_SRC emacs-lisp :noweb-ref pack-init
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -165,7 +165,13 @@ Bootstrap =straight.el=
          'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
+  (load bootstrap-file nil 'nomessage)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :noweb yes
+(defun gm/package-initialize ()
+  <<pack-init>>)
+
+(eval-when-compile <<pack-init>>)
 #+END_SRC
 Only check if local packages differ from upstream ones when they are edited in Emacs.
 #+BEGIN_SRC emacs-lisp
