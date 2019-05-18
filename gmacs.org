@@ -167,6 +167,10 @@ Bootstrap =straight.el=
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 #+END_SRC
+Only check if local packages differ from upstream ones when they are edited in Emacs.
+#+BEGIN_SRC emacs-lisp
+(setq straight-check-for-modifications 'live)
+#+END_SRC
 We use =straight.el= to install =use-package=. The variable
 =straight-use-package-by-default= is the replacement for
 =use-package-always-ensure=. The latter uses =package.el=, which we do not want.
@@ -185,8 +189,8 @@ This reduces startup time significantly.
 We load some packages that I use throughout my configuration.
 #+BEGIN_SRC emacs-lisp
 (use-package async :commands (async-start))
-(use-package s :demand t)
-(use-package dash :demand t :config (dash-enable-font-lock))
+(use-package s :defer 2)
+(use-package dash :defer 2 :config (dash-enable-font-lock))
 (use-package bind-key :demand t)
 (use-package diminish :demand t)
 (eval-when-compile (require 'cl))
@@ -382,7 +386,7 @@ This package minimizes the interference of garbage collection with the user
 experience. That means fewer annoyingly long pauses while you are using Emacs.
 #+BEGIN_SRC emacs-lisp
 (use-package gcmh
-  :demand t
+  :defer 2
   :diminish
   :config (gcmh-mode 1))
 #+END_SRC
@@ -552,16 +556,6 @@ Authorize actions.
 (setq epa-file-cache-passphrase-for-symmetric-encryption t)
 (setq epa-file-select-keys nil)
 (setq epa-pinentry-mode 'loopback)
-#+END_SRC
-*** Persistent Scratch Buffer
-The =*scratch*= buffer has come in handy for me many times when I want to quickly
-test out some Elisp. It would be nice to have it saved; I could clear it easily if
-I wanted to. Luckily, there's a package that does just that.
-#+BEGIN_SRC emacs-lisp
-(use-package persistent-scratch
-  :demand t
-  :config
-  (persistent-scratch-setup-default))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -1453,12 +1447,6 @@ could.
              helpful-function
              helpful-command))
 #+END_SRC
-*** Paradox
-#+BEGIN_SRC emacs-lisp
-(use-package paradox
-  :commands (package-initialize)
-  :config (paradox-enable))
-#+END_SRC
 *** Key Frequency
 #+BEGIN_SRC emacs-lisp
 (use-package keyfreq
@@ -2276,7 +2264,6 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org
   :init
-  (require 'org)
   (require 'ox-latex)
   :bind (:map org-mode-map
               <<org-keys>>)
