@@ -1,7 +1,5 @@
 *
 !snippets/*
-!packages/*
-packages/elpy-*/elpy/__pycache__/
 !elisp/*
 !README.org
 !.gitmodules
