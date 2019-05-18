@@ -19,7 +19,7 @@ background, this makes for some very fun times debugging.
 After editing =.Xresources=, remember to reload it with =xrdb merge ~/.Xresources=.
 *** Bars
 I never use menu bars, tool bars, or scroll bars in Emacs.
-#+BEGIN_SRC sh
+#+BEGIN_SRC conf
 Emacs.menuBar: off
 Emacs.toolBar: off
 Emacs.verticalScrollBars: off
@@ -27,7 +27,7 @@ Emacs.verticalScrollBars: off
 *** Cursor Blinking
 In earlier versions of Emacs, the cursor would blink ten or so times, then
 suddenly stop. This got annoying quickly.
-#+BEGIN_SRC sh
+#+BEGIN_SRC conf
 Emacs.cursorBlink: off
 #+END_SRC
 *** Background Colour
@@ -36,12 +36,12 @@ is white. However, my default theme is a dark theme (Solarized Dark). If I were
 to change the background colour after Emacs starts, the screen would flash as it
 changes colour. And so I set the default background colour to be that of
 Solarized Dark.
-#+BEGIN_SRC sh
+#+BEGIN_SRC conf
 Emacs.background: #002b36
 #+END_SRC
 The last thing left that is visible throughout startup is the modeline. It
 took a bit of Internet sleuthing to figure out how to set this, but here it is.
-#+BEGIN_SRC sh
+#+BEGIN_SRC conf
 Emacs.mode-line.attributeForeground: #93a1a1
 Emacs.mode-line.attributeBackground: #002b36
 Emacs.mode-line.attributeBox: (:line-width 1 :color "#073642")
@@ -86,7 +86,7 @@ I was inspired to implement the following optimizations in GMACS thanks to
 [[https://github.com/nilcons/emacs-use-package-fast][nilcons/emacs-use-package-fast]]. During startup, we make the garbage collection
 threshold very high. [[*Garbage Collection][After startup]], we manage garbage collection with a package.
 #+BEGIN_SRC emacs-lisp
-;; (setq gc-cons-threshold #x40000000)
+(setq gc-cons-threshold #x40000000)
 #+END_SRC
 We increase these so that we don't exceed recursion limits unless there is some
 kind of infinite loop.
@@ -181,18 +181,14 @@ This reduces startup time significantly.
 (setq use-package-always-defer t
       use-package-verbose t)
 #+END_SRC
-We also require =diminish= and =bind= because I often use these keywords within
-=use-package= declarations.
-#+BEGIN_SRC emacs-lisp
-(use-package bind-key)
-(use-package diminish)
-#+END_SRC
 *** Common Libraries
 We load some packages that I use throughout my configuration.
 #+BEGIN_SRC emacs-lisp
 (use-package async :commands (async-start))
 (use-package s :demand t)
 (use-package dash :demand t :config (dash-enable-font-lock))
+(use-package bind-key :demand t)
+(use-package diminish :demand t)
 (eval-when-compile (require 'cl))
 #+END_SRC
 * General Configuration
@@ -861,8 +857,9 @@ From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][
 #+END_SRC
 *** Visual Regexp
 #+BEGIN_SRC emacs-lisp
-(autoload 'vr/replace "visual-regexp")
-(autoload 'vr/query-replace "visual-regexp")
+(use-package visual-regexp
+  :straight (:host github :repo "benma/visual-regexp.el")
+  :commands (vr/replace vr/query-replace))
 #+END_SRC
 *** Faster Scroll Down
 I found this snippet on [[https://emacs.stackexchange.com/questions/28736/emacs-pointcursor-movement-lag/28746][StackExchange]]. To summarize, =next-line= called
@@ -927,16 +924,11 @@ Default wrap at 80 characters.
 See this [[http://jsomers.net/blog/dictionary][beautiful post]] by James Somers on why you should use this dictionary.
 It's Webster's original, his magnum opus.
 #+BEGIN_SRC emacs-lisp
-(autoload 'sdcv-search "sdcv-mode")
-(bind-key "C-c d" 'sdcv-search)
+(use-package sdcv-mode
+  :straight (:host github :repo "gucong/emacs-sdcv")
+  :bind (("C-c d" . sdcv-search)))
 #+END_SRC
 On Arch Linux, this goes with the =sdcv= package.
-**** Highlighting/Comments
-#+BEGIN_SRC emacs-lisp
-(autoload 'ov-highlight/body "ov-highlight")
-(bind-key "C-c h" 'ov-highlight/body)
-(bind-key "C-c C-h" 'ov-highlight/body)
-#+END_SRC
 **** Writing
 A minor mode that centres the text in the buffer. Nice distraction-free
 environment for writing.
@@ -1088,7 +1080,10 @@ place, just as the frog's tongue pouncing on the fly.
 We use the =flyspell-correct= package to implement such an interface. It uses =avy=
 for selection.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
-(autoload 'frog-menu-read "frog-menu")
+(use-package frog-menu
+  :straight (:host github :repo "clemera/frog-menu")
+  :commands frog-menu-read)
+
 (use-package flyspell-correct
   :commands flyspell-correct-wrapper
   :custom
@@ -1439,18 +1434,6 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 (bind-key "M-0" #'forward-sexp)
 #+END_SRC
 ** Packages
-*** Initialize During Emacs
-Although we load and initialize all packages at startup, it is sometimes useful
-for the user to be able to interact with this process after it has taken place.
-For example, packages must be initialized to evaluate code blocks with
-=use-package= declarations in them.
-#+BEGIN_SRC emacs-lisp :noweb yes
-(defun gm/package-intiialize ()
-  (interactive)
-  <<pack-arch>>
-  (package-initialize)
-  (package-refresh-contents))
-#+END_SRC
 *** Helpful
 This package is a more informative alternative to the default Emacs
 documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
@@ -1523,11 +1506,6 @@ screen, and once we're done, we can get right back to where we left off.
               ("q" . magit-quit-session)))
 #+END_SRC
 *** Dired
-Great for renaming files in bulk.
-#+BEGIN_SRC emacs-lisp
-(after! dired
-  (require 'visual-regexp))
-#+END_SRC
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a Dired buffer.
 #+BEGIN_SRC emacs-lisp
@@ -1565,7 +1543,7 @@ But I don't want to permanently delete things. Not yet, anyway.
 #+END_SRC
 We might as well perform file operations asynchronously.
 #+BEGIN_SRC emacs-lisp
-(autoload 'dired-async-mode "dired-async.el" nil t)
+(autoload 'dired-async-mode "dired-async" nil t)
 (dired-async-mode 1)
 #+END_SRC
 When you open, say, an audio or video file from Dired, Emacs displays the raw
@@ -1679,7 +1657,7 @@ T - tag prefix
   :demand t
   :config
   (ivy-mode 1)
-  (use-package flx)
+  (use-package flx :demand t)
   (use-package smex
     :commands (counsel-M-x)
     :custom
@@ -1849,6 +1827,7 @@ default; set PAGE-P to non-nil to rotate only the current page.
 Open PDFs to where they were last opened.
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-view-restore
+  :straight (:host github :repo "007kevin/pdf-view-restore")
   :after pdf-tools
   :config
   (add-hook 'pdf-view-mode-hook #'pdf-view-restore-mode)
@@ -1872,7 +1851,9 @@ font) to Minion Pro.
 #+END_SRC
 Justifying e-book text. This code was taken from [[https://github.com/wasamasa/nov.el][wasamasa/nov.el]].
 #+BEGIN_SRC emacs-lisp
-(require 'justify-kp)
+(use-package justify-kp
+  :straight (:host github :repo "Fuco1/justify-kp"))
+
 (setq nov-text-width most-positive-fixnum)
 
 (defun my-nov-window-configuration-change-hook ()
@@ -1915,8 +1896,13 @@ Justifying e-book text. This code was taken from [[https://github.com/wasamasa/n
 #+END_SRC
 *** Screencast
 #+BEGIN_SRC emacs-lisp
-(autoload 'gif-screencast "gif-screencast" "Start GIF Screencast" t)
-(autoload 'keycast-mode "keycast" "Start `keycast-mode'" t)
+(use-package gif-screencast
+  :straight (:host gitlab :repo "ambrevar/emacs-gif-screencast")
+  :commands gif-screencast)
+
+(use-package keycast
+  :straight (:host github :repo "tarsius/keycast")
+  :commands keycast-mode)
 
 (defun gm/begin-screencast ()
   (interactive)
@@ -2244,8 +2230,9 @@ We also make some aliases.
 #+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp
-(require 'key-chord)
-(key-chord-mode 1)
+(use-package key-chord
+  :straight (:host github :repo "emacsorphanage/key-chord")
+  :config (key-chord-mode 1))
 #+END_SRC
 *** Number Symbols
 Eliminate the shift key for inputting symbols. The dollar sign ($) keychord is
@@ -2448,7 +2435,8 @@ text. Pretty much every browser has the ability to copy text as HTML. So we
 leverage the power of =pandoc= to convert this HTML to Org Mode syntax using some
 code by [[https://github.com/alphapapa/org-protocol-capture-html][alphapapa]].
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(require 'org-protocol-capture-html)
+(use-package org-protocol-capture-html
+  :straight (:host github :repo "alphapapa/org-protocol-capture-html"))
 #+END_SRC
 So how do we actually get data from Firefox to Emacs? The [[https://orgmode.org/worg/org-contrib/org-protocol.html][Org Mode wiki]] has the
 basics. The meat of the following snippet is in the function that turns the
@@ -2937,7 +2925,8 @@ litter our folders.
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
-(require 'ov)
+(use-package ov
+  :commands (ov-at))
 (defvar gm/org-last-fragment nil
   "Holds the type and position of last valid fragment we were on.
   Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
@@ -3111,14 +3100,19 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
 *** Change Bracket Sizes
 This allows the user to easily change the size of brackets in LaTeX expressions.
 #+BEGIN_SRC emacs-lisp
-(autoload 'bratex-config "bratex")
+(use-package bratex
+  :straight (:host github :repo "sbrisard/bratex")
+  :commands (bratex-config))
 (add-hook 'quick-math-mode-hook #'bratex-config)
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
+(use-package ox-tufte-latex
+  :straight (:host github :repo "tsdye/tufte-org-mode")
+  :commands (org-tufte-latex-export-to-latex))
+
 (defun gm/org-latex-export ()
   (interactive)
-  (require 'ox-tufte-latex)
   (save-excursion
     (search-backward "EXPORT_FILE_NAME")
     (org-latex-export-to-latex t t)))
@@ -3373,7 +3367,8 @@ Looking at the =rights= field makes it clear that the permissions were off.
 
 Now for the Emacs setup. This library converts Org into HTML.
 #+BEGIN_SRC emacs-lisp
-(require 'org-mime)
+(use-package org-mime
+  :commands (org-mime-htmlize))
 #+END_SRC
 Then we give ourselves a way to activate Org Mode mail.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
@@ -3472,10 +3467,13 @@ by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
 By default, =elfeed= stores the feeds it should compile in an elisp file. But Org
 is easier.
 #+BEGIN_SRC emacs-lisp
-(autoload 'elfeed-org "elfeed-org")
-(elfeed-org)
-(setq rmh-elfeed-org-files
-      `(,(expand-file-name "elfeed.org" org-directory)))
+(use-package elfeed-org
+  :straight (:host github :repo "remyhonig/elfeed-org")
+  :commands elfeed-org
+  :config (elfeed-org)
+  :custom
+  (rmh-elfeed-org-files
+      `(,(expand-file-name "elfeed.org" org-directory))))
 #+END_SRC
 *** Launching
 We want to make sure =elfeed= reads from the disk before it launches. This makes
@@ -3603,8 +3601,10 @@ We bind it to =o=.
 Sometimes I want to download videos to watch them later or in higher quality.
 For this I use skeeto's =youtube-dl=.
 #+BEGIN_SRC emacs-lisp
-(autoload #'youtube-dl "youtube-dl")
-(setq youtube-dl-directory (concat "~/" gm/youtube-dl-dir))
+(use-package youtube-dl
+  :straight (:host github :repo "skeeto/youtube-dl-emacs")
+  :commands (youtube-dl youtube-dl-list)
+  :custom (youtube-dl-directory (concat "~/" gm/youtube-dl-dir)))
 #+END_SRC
 I wrap it for use in =elfeed=.
 #+BEGIN_SRC emacs-lisp
@@ -3637,8 +3637,8 @@ I use a hydra to easily navigate between groups of feeds.
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
 #+BEGIN_SRC emacs-lisp :noweb yes
+(use-package emms)
 (defun gm/emms-setup ()
-  (add-to-list 'load-path "~/.emacs.d/elisp/emms/lisp/")
   (require 'emms-setup)
   (require 'emms-player-mpd)
   (emms-all)
