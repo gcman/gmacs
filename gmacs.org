@@ -9,12 +9,12 @@ Emacs ships with a set of pretty strange defaults. The UI is the first thing we
 see when we open Emacs, so it better not look ugly. We're going to configure
 part of the UI outside Emacs entirely, by editing the =~/.Xresources=.
 
-This has the advantage of killing the ugly parts of the UI before they are born.
-This is slightly faster than doing it within Emacs, but it comes at the cost of
-less flexibility. For example, if Emacs fails to start up properly, you are
-possibly left staring at a chimera of an editor, with default font colours but
-themed background colours---because the font is about the same shade as the
-background, this makes for some very fun times debugging.
+This kills the ugly parts of the UI before they are born. This is slightly
+faster than disabling them within Emacs, but it offers less flexibility. For
+example, if Emacs fails to start up properly, you are possibly left staring at a
+chimera of an editor, with default font colours but themed background
+colours. Because the font is about the same shade as the background, this makes
+for some very fun times debugging.
 
 After editing =.Xresources=, remember to reload it with =xrdb merge ~/.Xresources=.
 *** Bars
@@ -67,11 +67,12 @@ startup take longer and aren't that useful.
 We either load the byte-compiled GMACS configuration file or tangle and load
 the GMACS literate config file (you're reading it!) written in Org Mode.
 #+BEGIN_SRC emacs-lisp :tangle init.el
+(require 'org)
+
 (let ((file-name-handler-alist nil))
-  (cond ((file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
-         (load-file (expand-file-name "gmacs.elc" user-emacs-directory)))
-        (t (require 'org)
-           (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory)))))
+  (if (file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
+      (load-file (expand-file-name "gmacs.elc" user-emacs-directory))
+    (load-file (expand-file-name "gmacs.el" user-emacs-directory))))
 #+END_SRC
 ** Initialization Settings
 Enable lexical binding.
@@ -104,13 +105,15 @@ Silence some common warnings from the byte-compiler.
 #+END_SRC
 Let the user know how quickly GMACS started.
 #+BEGIN_SRC emacs-lisp
-(add-hook 'after-init-hook
-          (lambda ()
-            (message "GMACS ready in %s with %d garbage collections."
-                     (format "%.2f seconds"
-                             (float-time
-                              (time-subtract after-init-time before-init-time)))
-                     gcs-done)))
+(defun gm/startup-time ()
+  (interactive)
+  (message "GMACS ready in %s with %d garbage collections."
+           (format "%.2f seconds"
+                   (float-time
+                    (time-subtract after-init-time before-init-time)))
+           gcs-done))
+
+(add-hook 'after-init-hook #'gm/startup-time)
 #+END_SRC
 ** Directories and File Locations
 We define a few custom directories to satisfy my own wishes for how things
@@ -121,21 +124,20 @@ is wrapped in a byte-compile block.
 We make the directories if they don't exist by iterating over a list. This
 method makes it easy for to extend to more directories if needed.
 #+BEGIN_SRC emacs-lisp
-(eval-and-compile
-  (defvar gmacs-emacs-dir (expand-file-name user-emacs-directory)
-    "The path to the emacs.d directory.")
+(defvar gmacs-emacs-dir (expand-file-name user-emacs-directory)
+  "The path to the emacs.d directory.")
 
-  (defvar gmacs-custom-dir (concat gmacs-emacs-dir "elisp/")
-    "Where custom lisp files are stored")
+(defvar gmacs-custom-dir (concat gmacs-emacs-dir "elisp/")
+  "Where custom lisp files are stored")
 
-  (defvar gmacs-cache-dir (concat gmacs-emacs-dir "cache/")
-    "Where temporary files that could be deleted without anything
-    terrible happening are stored.")
+(defvar gmacs-cache-dir (concat gmacs-emacs-dir "cache/")
+  "Where temporary files that could be deleted without anything
+  terrible happening are stored.")
 
-  (dolist (dir (list gmacs-custom-dir
-                     gmacs-cache-dir))
-    (unless (file-directory-p dir)
-      (make-directory dir t))))
+(dolist (dir (list gmacs-custom-dir
+                   gmacs-cache-dir))
+  (unless (file-directory-p dir)
+    (make-directory dir t)))
 #+END_SRC
 Load custom elisp files.
 #+BEGIN_SRC emacs-lisp
@@ -153,25 +155,22 @@ I put my personal information in =private.el=.
 #+END_SRC
 ** Setup Packages
 Bootstrap =straight.el=.
-#+BEGIN_SRC emacs-lisp :noweb-ref pack-init
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage)
-#+END_SRC
-#+BEGIN_SRC emacs-lisp :noweb yes
-(defun gm/package-initialize ()
-  <<pack-init>>)
-
-(eval-when-compile <<pack-init>>)
+#+BEGIN_SRC emacs-lisp
+(eval-when-compile
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
+  (require 'straight)
+  (straight-use-package 'use-package))
 #+END_SRC
 Only check if local packages differ from upstream ones when they are edited in Emacs.
 #+BEGIN_SRC emacs-lisp
@@ -180,9 +179,8 @@ Only check if local packages differ from upstream ones when they are edited in E
 We use =straight.el= to install =use-package=. The variable
 =straight-use-package-by-default= is the replacement for
 =use-package-always-ensure=. The latter uses =package.el=, which we do not want.
-This allows packages to be installed on the fly.
+This allows packages to be installed and built on the fly.
 #+BEGIN_SRC emacs-lisp
-(straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
 #+END_SRC
 Get =use-package= to always defer loading packages until they are actually needed.
@@ -199,7 +197,7 @@ We load some packages that I use throughout my configuration.
 (use-package dash :defer 2 :config (dash-enable-font-lock))
 (use-package bind-key :demand t)
 (use-package diminish :demand t)
-(eval-when-compile (require 'cl))
+(require 'cl)
 #+END_SRC
 * General Configuration
 ** User Interface
@@ -552,16 +550,9 @@ contents to the kill ring.
 *** Work with Protected Files
 Authorize actions.
 #+BEGIN_SRC emacs-lisp
-(use-package pinentry
+(use-package auth-source
   :demand t
-  :config (pinentry-start))
-(require 'epa-file)
-(epa-file-enable)
-(setenv "GPG_AGENT_INFO" nil)
-(setq epg-gpg-program "/usr/bin/gpg2")
-(setq epa-file-cache-passphrase-for-symmetric-encryption t)
-(setq epa-file-select-keys nil)
-(setq epa-pinentry-mode 'loopback)
+  :config (setq auth-sources '("~/.authinfo.gpg")))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -787,10 +778,9 @@ transpositions to execute in sequence."
 :PROPERTIES:
 :CUSTOM_ID: tangle-async
 :END:
-I used to have my =init.el= set up so that, if =gmacs.elc= did not exist, it would
-tangle =gmacs.org=. This unfortunately means that when I clear out the
-byte-compiled file, Emacs takes a long time to start up (about 6 seconds). To
-solve this, I tangle this very file on save.
+I used to have my =init.el= set up so that it would always tangle =gmacs.org=. This
+unfortunately means that Emacs takes a long time to start up (about 6 seconds).
+To solve this, I tangle this very file on save.
 
 First, we set up a function to do the tangling. We have to, for example, refer
 to =user-emacs-directory= and not =gmacs-emacs-directory=, and run =(require
@@ -801,10 +791,7 @@ allows it to be asynchronous).
   (let ((src (expand-file-name "gmacs.org" user-emacs-directory))
         (dst (expand-file-name "gmacs.el" user-emacs-directory)))
     (require 'ob-tangle)
-    (org-babel-tangle-file src dst)
-    (byte-compile-file dst)
-    (with-current-buffer byte-compile-log-buffer
-      (buffer-string))))
+    (org-babel-tangle-file src dst)))
 #+END_SRC
 Then, we wrap this in an asynchronous process. I only really want to know about
 this process if it failed.
@@ -817,8 +804,8 @@ this process if it failed.
                    (message "GMACS unsuccessfully tangled: %s" result)))))
 #+END_SRC
 Finally. we wrap this in a function that checks whether we're in the right file.
-It would be inefficient to tangle the configuration file a different file was
-edited and saved.
+It would be inefficient to tangle the configuration file every time a different
+file was edited and saved.
 #+BEGIN_SRC emacs-lisp
 (defun gm/tangle-if-config ()
     (when (string-suffix-p "gmacs.org" (buffer-file-name))
@@ -837,7 +824,8 @@ make.
 If I introduce a new feature that increases my startup time, I can test things
 out quantitatively with =esup=, a built-in feature.
 #+BEGIN_SRC emacs-lisp
-(autoload 'esup "esup")
+(use-package esup
+  :commands esup)
 #+END_SRC
 *** UTF-8
 From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][Mastering Emacs]].
@@ -880,6 +868,11 @@ create necessary directories (from this [[https://superuser.com/questions/131538
     (let ((dir (file-name-directory filename)))
       (unless (file-exists-p dir)
         (make-directory dir)))))
+#+END_SRC
+*** Auto =chmod +x=
+Make files that start with a =#!= shebang executable.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 #+END_SRC
 ** Wordsmithing
 *** Basic Configuration
@@ -1645,32 +1638,13 @@ T - tag prefix
 (bind-key "." 'hydra-dired/body dired-mode-map)
 #+END_SRC
 *** Ivy
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package ivy
   :diminish
-  :demand t
+  :defer 1
   :config
   (ivy-mode 1)
-  (use-package flx :demand t)
-  (use-package smex
-    :commands (counsel-M-x)
-    :custom
-    (smex-save-file (expand-file-name "smex" gmacs-cache-dir))
-    (smex-history-length 50))
-  (use-package swiper
-    :commands (swiper swiper-all))
-  (use-package counsel
-    :demand t
-    :bind
-    ([remap execute-extended-command] . counsel-M-x)
-    ([remap org-goto] . counsel-org-goto)
-    ([remap find-file] . counsel-find-file)
-    ("C-s" . counsel-grep-or-swiper)
-    (:map ivy-minibuffer-map
-          ([remap hungry-delete-backward] . nil))
-    :custom
-    (counsel-grep-base-command
-          "rg -i -M 120 --color auto --line-number %s %s"))
+  <<ivy>>
   :custom
   (ivy-re-builders-alist
    '((swiper . ivy--regex-plus)
@@ -1679,10 +1653,37 @@ T - tag prefix
   (ivy-use-virtual-buffers t)
   (ivy-display-style 'fancy)
   (ivy-initial-inputs-alist nil))
+
+(use-package flx
+  :after ivy)
+
+(use-package smex
+  :after ivy
+  :commands (counsel-M-x)
+  :custom
+  (smex-save-file (expand-file-name "smex" gmacs-cache-dir))
+  (smex-history-length 50))
+
+(use-package swiper
+  :after ivy
+  :commands (swiper swiper-all))
+
+(use-package counsel
+  :after ivy
+  :bind
+  ([remap execute-extended-command] . counsel-M-x)
+  ([remap org-goto] . counsel-org-goto)
+  ([remap find-file] . counsel-find-file)
+  ("C-s" . counsel-grep-or-swiper)
+  (:map ivy-minibuffer-map
+        ([remap hungry-delete-backward] . nil))
+  :custom
+  (counsel-grep-base-command
+   "rg -i -M 120 --color auto --line-number %s %s"))
 #+END_SRC
 I want to ignore certain file extensions when searching for a file, so I add
 them to the regexp in =counsel-find-file-ignore-regexp=.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref ivy
 (defconst gm/find-file-ignore-extensions
   '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc" "xdv" "fdx"
     "synctex.gz" "fdb_latexmk"
@@ -1701,7 +1702,7 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
                            gm/find-file-ignore-dirs))))
 #+END_SRC
 We do something similar for =ivy-switch-buffer=.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref ivy
 (defconst gm/find-file-ignore-names
   '("*elfeed-org*"
     ".org-gcal-token"))
@@ -1710,7 +1711,7 @@ We do something similar for =ivy-switch-buffer=.
 #+END_SRC
 [[http://pragmaticemacs.com/page/6/][This post]] explains the pitfalls of the default behaviour of =ivy-yank-word= and
 how to fix them. Now we can easily search for the word at point using =swiper=.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref ivy
 ;; version of ivy-yank-word to yank from start of word
 (defun bjm/ivy-yank-whole-word ()
   "Pull next word from buffer into search string."
@@ -1728,8 +1729,7 @@ how to fix them. Now we can easily search for the word at point using =swiper=.
     (when amend
       (insert (replace-regexp-in-string "  +" " " amend)))))
 
-;; bind it to M-j
-(define-key ivy-minibuffer-map (kbd "M-j") 'bjm/ivy-yank-whole-word)
+(bind-key "M-j" #'bjm/ivy-yank-whole-word ivy-minibuffer-map)
 #+END_SRC
 *** God Mode
 In =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
@@ -1779,7 +1779,6 @@ Basic configuration.
   :hook
   (pdf-view-mode . pdf-view-midnight-minor-mode)
   (pdf-view-mode . pdf-view-fit-width-to-window))
-(eval-when-compile (pdf-tools-install))
 #+END_SRC
 Allow rotation.
 #+BEGIN_SRC emacs-lisp
@@ -2268,13 +2267,10 @@ _D_ dubcaps-mode:      %`gm/dubcaps-mode
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 #+BEGIN_SRC emacs-lisp :noweb yes
-(use-package org
-  :init
-  (require 'ox-latex)
-  :bind (:map org-mode-map
-              <<org-keys>>)
-  :config
-  <<org-settings>>)
+(after! org
+  <<org-settings>>
+  (bind-keys :map org-mode-map
+             <<org-keys>>))
 #+END_SRC
 ** Configuration
 *** Invisible Edits
@@ -2327,9 +2323,9 @@ Use a prefix arg to get regular RET. "
       (org-return)))))
 #+END_SRC
 We replace the normal return.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("RET" . #'gm/org-return)
-("C-RET" . #'org-return)
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(bind-key "RET" #'gm/org-return org-mode-map)
+(bind-key "C-RET" #'org-return org-mode-map)
 #+END_SRC
 *** File Locations
 We need a place where Org files go by default. Org Mode uses this to, for
@@ -2428,8 +2424,7 @@ text. Pretty much every browser has the ability to copy text as HTML. So we
 leverage the power of =pandoc= to convert this HTML to Org Mode syntax using some
 code by [[https://github.com/alphapapa/org-protocol-capture-html][alphapapa]].
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(use-package org-protocol-capture-html
-  :straight (:host github :repo "alphapapa/org-protocol-capture-html"))
+(require 'org-protocol-capture-html)
 #+END_SRC
 So how do we actually get data from Firefox to Emacs? The [[https://orgmode.org/worg/org-contrib/org-protocol.html][Org Mode wiki]] has the
 basics. The meat of the following snippet is in the function that turns the
@@ -2583,15 +2578,14 @@ TODO state should be marked as such.
                   (org-todo 'done)
                 (org-todo 'todo)))))))
 #+END_SRC
+I manage deadlines with Org Agenda.
+#+BEGIN_SRC emacs-lisp
+(bind-key "C-c a" #'org-agenda)
+#+END_SRC
 The default is =week=, which gives the current week (starting on Monday by
 default). I prefer to see a larger view.
 #+BEGIN_SRC emacs-lisp
 (setq org-agenda-span 14)
-#+END_SRC
-*** Google Calendar
-I manage deadlines with Org Agenda.
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-c a" #'org-agenda)
 #+END_SRC
 However, that's not quite enough, because when I'm out and about, I want whatever
 I have in my Org Agenda to be able to alert me on my phone. I also want to be
@@ -2600,12 +2594,9 @@ integrate Org Mode with Google Calendar. The setup is contained in the file for
 my personal settings, =private.el=. Once you've set it up, you can find your
 calendar's private and secret IDs from [[https://console.developers.google.com/apis/credentials][this link]] (Google).
 #+BEGIN_SRC emacs-lisp
-(use-package org-gcal
-  :after org
-  :commands org-gcal-sync
-  :init (setq package-check-signature nil)
-  :custom (org-gcal-dir gmacs-cache-dir)
-  :hook (org-agenda-mode . org-gcal-sync))
+(use-package request)
+(use-package alert
+  :straight (:host github :repo "jwiegley/alert"))
 #+END_SRC
 *** Links
 I often use links to easily navigate to a relevant file in cases where I would
@@ -2918,8 +2909,7 @@ litter our folders.
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
-(use-package ov
-  :commands (ov-at))
+(require 'ov)
 (defvar gm/org-last-fragment nil
   "Holds the type and position of last valid fragment we were on.
   Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
@@ -3093,19 +3083,14 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
 *** Change Bracket Sizes
 This allows the user to easily change the size of brackets in LaTeX expressions.
 #+BEGIN_SRC emacs-lisp
-(use-package bratex
-  :straight (:host github :repo "sbrisard/bratex")
-  :commands (bratex-config))
+(autoload 'bratex-config "bratex")
 (add-hook 'quick-math-mode-hook #'bratex-config)
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
-(use-package ox-tufte-latex
-  :straight (:host github :repo "tsdye/tufte-org-mode")
-  :commands (org-tufte-latex-export-to-latex))
-
 (defun gm/org-latex-export ()
   (interactive)
+  (require 'ox-tufte-latex)
   (save-excursion
     (search-backward "EXPORT_FILE_NAME")
     (org-latex-export-to-latex t t)))
@@ -3203,12 +3188,12 @@ by default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 ***** Tufte-LaTeX
 ****** Class Options
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'org-latex-classes
+(after! ox-latex (add-to-list 'org-latex-classes
              '("tufte-handout"
                "\\documentclass{tufte-handout}
    [NO-DEFAULT-PACKAGES]"
                ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")))
+               ("\\subsection{%s}" . "\\subsection*{%s}"))))
 #+END_SRC
 ***** Assignment
 #+BEGIN_SRC emacs-lisp
@@ -3731,548 +3716,4 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
   (yas-snippet-dirs '("~/.emacs.d/snippets")))
 (yas-global-mode 1)
 (diminish 'yas-minor-mode " ✂")
-#+END_SRC
-** QuickMath
-I use a hydra for snippets that just insert/replace text in math mode and thus
-don't require the use of =yasnippets=.
-*** Math Symbols
-**** Main Math Snippets
-#+BEGIN_SRC emacs-lisp
-(defcustom gm/math-snippets
-  '(("==" "&= ")
-    ("=>" "\\implies ")
-    ("(" "paren" t)
-    ("CC" "\\C")
-    ("LL" "\\mathcal{L}")
-    ("MM" "\\mathcal{M}")
-    ("NN" "\\N")
-    ("QQ" "\\Q")
-    ("RR" "\\R")
-    ("ZZ" "\\Z")
-    ("[" "square-brackets" t)
-    ("^" "superscript" t)
-    ("_" "subscript" t)
-    ("abs" "abs" t)
-    ("acos" "\\arccos ")
-    ("acot" "\\arccot ")
-    ("aleph" "\\aleph")
-    ("approx" "\\approx ")
-    ("asin" "\\arcsin ")
-    ("atan" "\\arctan ")
-    ("bar" "bar" t)
-    ("bigop" "big-operator" t)
-    ("binom" "choose" t)
-    ("bol" "bol" t)
-    ("cases" "cases" t)
-    ("cb" "^3")
-    ("cc" "\\subset ")
-    ("ceil" "ceiling" t)
-    ("cong" "\\equiv")
-    ("cos" "\\cos ")
-    ("cot" "\\cot ")
-    ("cu" "\\Curl ")
-    ("dd" "derivative-one-term" t)
-    ("del" "partial" t)
-    ("det" "determinant" t)
-    ("dim" "\\Dim ")
-    ("dint" "dintegral" t)
-    ("div" "\\Div ")
-    ("dv" "derivative" t)
-    ("eq" " = ")
-    ("exp" "\\exp ")
-    ("fa" "\\forall ")
-    ("fl" "floor" t)
-    ("fr" "frac" t)
-    ("fun" "function" t)
-    ("ge" "\\ge ")
-    ("gr" "\\Grad ")
-    ("hat" "hat" t)
-    ("iint" "iintegral" t)
-    ("im" "\\Image ")
-    ("inf" "\\Inf ")
-    ("inn" "\\in ")
-    ("int" "integral" t)
-    ("inv" "inverse" t)
-    ("iso" "\\Iso ")
-    ("ker" "\\Ker ")
-    ("lap" "laplacian" t)
-    ("le" "\\le ")
-    ("lim" "limit" t)
-    ("list" "list" t)
-    ("ln" "\\ln ")
-    ("log" "\\log ")
-    ("lr(" "parentheses" t)
-    ("lr[" "brackets" t)
-    ("lr{" "set" t)
-    ("mp" "\\mp ")
-    ("nabl" "\\nabla ")
-    ("ndd" "nth-derivative" t)
-    ("ndv" "nth-differential" t)
-    ("neq" "neq" t)
-    ("norm" "norm" t)
-    ("npd" "nth-pderivative" t)
-    ("npv" "nth-pdifferential" t)
-    ("nsq" "nsqrt" t)
-    ("o+" "\\oplus ")
-    ("oint" "ointegral" t)
-    ("oo" "\\infty")
-    ("opl" "\\oplus ")
-    ("ox" "\\otimes ")
-    ("part" "partial" t)
-    ("pd" "partial" t)
-    ("pi" "\\pi")
-    ("pm" "\\pm ")
-    ("prod" "product" t)
-    ("prop" "\\propto ")
-    ("ps" "pairsum" t)
-    ("psum" "pairsum" t)
-    ("pv" "partial-derivative" t)
-    ("sec" "\\sec ")
-    ("seq" "sequence" t)
-    ("set" "set" t)
-    ("sim" "\\sim ")
-    ("sin" "\\sin ")
-    ("span" "\\Span")
-    ("sq" "sqrt" t)
-    ("sr" "^2")
-    ("st" ": ")
-    ("star" "^\\star ")
-    ("sum" "sum" t)
-    ("sup" "\\Sup ")
-    ("tan" "\\tan ")
-    ("then" "\\implies ")
-    ("to" "\\to ")
-    ("tr" "trace" t)
-    ("vv" "\\vec ")
-    ("xii" "x_i")
-    ("xx" "\\times "))
-  "Contains lists (KEY EXPANSION SNIPPET). When KEY is typed, it
-  will be replaced with EXPANSION. If SNIPPET is non-nil,
-  EXPANSION is taken to be a loaded yasnippet. Otherwise, it is
-  considered the replacement string."
-  :group 'quick-math)
-#+END_SRC
-**** Hydras
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
-(defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
-  (";" hydra-semicolon-b/body "Level 2")
-  ("SPC" (insert "; ") ";")
-  ("a" (insert "\\alpha") "α")
-  ("A" (insert "\\forall ") "∀")
-  ("b" (insert "\\beta") "β")
-  ("C" (insert "\\mathbb{C}") "ℂ")
-  ("d" (insert "\\delta") "δ")
-  ("D" (insert "\\Delta") "Δ")
-  ("e" (insert "\\epsilon") "ε")
-  ("E" (insert "\\exists ") "∃")
-  ("f" (insert "\\varphi") "φ")
-  ("F" (insert "\\Phi") "Φ")
-  ("g" (insert "\\gamma") "γ")
-  ("G" (insert "\\Gamma") "Γ")
-  ("h" (insert "\\eta") "η")
-  ("k" (insert "\\kappa") "κ")
-  ("l" (insert "\\lambda") "λ")
-  ("L" (insert "\\Lambda") "Λ")
-  ("m" (insert "\\mu") "µ")
-  ("n" (insert "\\nu") "ν")
-  ("N" (insert "\\nabla ") "∇")
-  ("o" (insert "\\omega") "ω")
-  ("O" (insert "\\Omega") "Ω")
-  ("p" (insert "\\pi") "π")
-  ("P" (insert "\\Pi") "Π")
-  ("q" (insert "\\theta") "θ")
-  ("Q" (insert "\\mathbb{Q}") "ℚ")
-  ("r" (insert "\\rho") "ρ")
-  ("R" (insert "\\mathbb{R}") "ℝ")
-  ("s" (insert "\\sigma") "σ")
-  ("t" (insert "\\tau") "τ")
-  ("u" (insert "\\upsilon") "υ")
-  ("U" (insert " \\cup ") "∪")
-  ("v" (insert "\\vec ") "v")
-  ("w" (insert "\\xi") "ξ")
-  ("W" (insert "\\Xi") "Ξ")
-  ("x" (insert "\\chi") "χ")
-  ("y" (insert "\\psi") "ψ")
-  ("Y" (insert "\\Psi") "Ψ")
-  ("z" (insert "\\zeta") "ζ")
-  ("Z" (insert "\\mathbb{Z}") "ℤ")
-  ("0" (insert " \\emptyset") "∅")
-  ("8" (insert "\\infinity") "∞")
-  ("!" (insert "\\neg") "¬")
-  ("*" (insert "\\star") "⋆")
-  ("\\" (insert "\\setminus ") "∖")
-  ("'" (insert "\\prime ") "′")
-  ("," (insert ",\\ldots,") ".")
-  ("." (insert " \\cdot ") "·"))
-
-(defhydra hydra-semicolon-b (:color blue :idle 1.0 :columns 8)
-  (";" hydra-semicolon-a/body "base")
-  (" " (insert "; " "semicolon"))
-  ("A" (insert "\\aleph") "ℵ")
-  ("e" (insert "\\varepsilon") "ε")
-  ("f" (insert "\\phi") "φ")
-  ("F" (insert "\\mathbb{F}") "𝔽")
-  ("l" (insert "\\ell") "ℓ")
-  ("q" (insert "\\Theta") "Θ")
-  ("r" (insert "\\varrho") "ρ")
-  ("U" (insert "\\cap ") "∩")
-  ("x" (insert " \\times ") "×")
-  ("." (insert " \\cdots ") "···"))
-#+END_SRC
-Then we bind this to semicolon.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(define-conditional-key gm/math-mode-map ";" #'hydra-semicolon-a/body (gm/in-math-p))
-#+END_SRC
-*** Helper Functions
-**** QuickMath Minor Mode
-#+BEGIN_SRC emacs-lisp :noweb yes
-(defvar gm/math-mode-map
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map org-mode-map)
-    map))
-<<math-mode>>
-
-(define-minor-mode quick-math-mode
-  "Minor mode for math"
-  :init-value nil
-  :keymap gm/math-mode-map
-  (when quick-math-mode
-    (gm/math-setup)))
-#+END_SRC
-**** Simpler =texmathp=
-The default =texmathp= function assumes that you are writing valid LaTeX code.
-This is all well and good when you are actually writing LaTeX, where things like
-the dollar sign have only one meaning, but I write documents almost entirely in
-Org Mode (I export them to LaTeX). Here the function easily gets confused. So I
-make my own for checking if you are in math mode, which leverages Org Mode's
-font-locking to narrow down the area we need to check. We first make a list of
-math environments that our function will look for.
-#+BEGIN_SRC emacs-lisp
-(defvar gm/math-environments '("equation" "align")
-  "The environments `gm/in-math-p' assumes as valid math environments.")
-#+END_SRC
-The only way we're in math mode is if we're in a LaTeX fragment. However, the
-latter sometimes returns false positives when it comes to math mode. That is, we
-can be in a LaTeX fragment (like a =figure= environment) without being in math
-mode.
-
-When Org says we're in inline LaTeX, we're definitely in math mode. If we're in
-an environment, we check from the beginning of the environment to the point. If
-there are more opening delimiters than closing ones (more of =\begin{ENV}= then
-=\end{ENV}=, where =ENV= is an element of =gm/math-environments=), then the point must
-be in math. The one subtlety is that we also look at the starred versions of
-=ENV=.
-#+BEGIN_SRC emacs-lisp
-(defun gm/in-math-p (&optional loc)
-  (unless loc (setq loc (point)))
-  (defun gm/--in-math-p (begin-delim)
-    (concat begin-delim (regexp-opt gm/math-environments) "[\\*]?}"))
-  (let* ((fr (org-element-context))
-         (fr-type (car fr))
-         (begin (org-element-property :begin fr)))
-    (cond ((eq fr-type 'latex-fragment)
-           (and
-            (>= loc begin)
-            (<= loc (1- (- (org-element-property :end fr)
-                           (org-element-property :post-blank fr))))))
-          ((eq fr-type 'latex-environment)
-           (let ((env-open (how-many (gm/--in-math-p "\\\\begin{") begin loc))
-                 (env-close (how-many (gm/--in-math-p "\\\\end{") begin loc)))
-             (> (- env-open env-close) 0))))))
-#+END_SRC
-**** Enter Math Mode
-Enter a math fragment if inside one, exit otherwise. We keep track of the number
-of blank lines that follow the fragment, because according to Org, an =equation=
-environment doesn't end until the first non-newline character that follows. This
-makes for some awkward timing for activating previews.
-#+BEGIN_SRC emacs-lisp
-(defun gm/create-or-exit-math-fragment ()
-  (interactive)
-  (if (gm/in-math-p)
-      (gm/reformat-fragment)
-    (insert "\\(")
-    (save-excursion (insert "\\)"))))
-#+END_SRC
-**** Last n Characters Before Point
-Return the last n characters before the point, or =loc= if provided.
-#+BEGIN_SRC emacs-lisp
-(defun gm/last-n-chars (n &optional loc)
-  (unless loc (setq loc (point)))
-  (let ((start (- loc n)))
-    (when (and (>= start (point-min))
-               (<= start (point-max)))
-      (buffer-substring-no-properties (- loc n) loc))))
-#+END_SRC
-**** Last LaTeX Letter
-Postfix commands often act on the last letter. For example, I want =fhat= to
-expand into =\hat{f}=. However, we cannot just act on the last letter, because
-=\betahat= should expand into =\hat{beta}=, not the invalid =\bet\hat{a}=.
-#+BEGIN_SRC emacs-lisp
-(defun gm/last-letter ()
-  (when (string-match "[a-zA-Z]" (gm/last-n-chars 1))
-    (if (looking-back (regexp-opt
-                       (--map (concat "\\" (car it))
-                              (append gm/math-greek-lower
-                                      gm/math-greek-upper)))
-                      (- (point) 8) t)
-        (buffer-substring-no-properties (match-beginning 0)
-                                        (match-end 0)))
-    (char-to-string (char-before))))
-#+END_SRC
-**** Test if LaTeX Needs to Be Wrapped in Brackets
-#+BEGIN_SRC emacs-lisp
-(defun gm/math-expression-p (math)
-  (when math
-    (or (eq (length math) 1)
-        ;; match one single latex command, with opt-args and args
-        ;; such as \command[1][2]{3}{4}
-        ;; only validate if this is the entire string
-        (string-match "\\`\\\\[[:alpha:]]+\\(\\[[^\\]]*]\\)*\\({[^}]*}\\)*\\'" math))))
-#+END_SRC
-**** Increment Snippet Fields
-#+BEGIN_SRC emacs-lisp
-(defun gm/increment-snippet-fields (string &optional n)
-  (unless n (setq n 1))
-  (replace-regexp-in-string "[1-9]+" (lambda (x) (format "%d" (+ n (string-to-number x)))) string))
-#+END_SRC
-**** Generate Snippets
-:PROPERTIES:
-:ORDERED:  t
-:END:
-I wrote this to reduce the amount of redundant code needed to set up the
-snippets. First, we create a suffix tree of all the math snippets.
-#+BEGIN_SRC emacs-lisp
-(defvar gm/longest-snippet)
-
-(defun gm/math-setup ()
-  (setq gm/longest-snippet
-        (cons (-max (--map (length (car it)) gm/math-snippets))
-              (-max (--map (length (cadr it)) gm/math-snippets))))
-  (let ((unique-suffixes
-         (delete-dups (--map (s-right 1 (car it)) gm/math-snippets))))
-    (seq-do (lambda (key)
-              (eval `(define-conditional-key gm/math-mode-map
-                       ,key (lambda! () (gm/math-snippet-expand ,key))
-                       (gm/in-math-p))))
-            unique-suffixes)))
-#+END_SRC
-We make a function to get the possible completion candidates from the buffer.
-#+BEGIN_SRC emacs-lisp
-(defun gm/buff-cand (n)
-  (loop for i from 0 to n
-        collect (gm/last-n-chars i)))
-#+END_SRC
-Then, we set up the creation of an actual snippet (note that its length is
-capped at a certain number of characters, defined by =gm/longest-snippet=). The
-longest snippet is currently =binom=, for the binomial coefficient (choose
-function).
-#+BEGIN_SRC emacs-lisp
-(defun gm/math-snippet-expand (key)
-  (insert key)
-  (-when-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet)))
-               (completions (--keep (assoc it gm/math-snippets) buff-cand))
-               (snippet (--max-by (> (length (car it)) (length (car other)))
-                                  completions)))
-    ;; this has to be negative, we're deleting back
-    (delete-char (- 0 (length (car snippet))))
-    ;; this is so we don't have two backslashes after something like \sim
-    (when (= (char-before) ?\\) (delete-char -1))
-    ;; is this a snippet expansion or just a text insertion?
-    (let ((expand (cadr snippet)))
-      (if (cddr snippet)
-          (yas-expand-snippet (yas-lookup-snippet expand))
-        (insert expand)))))
-#+END_SRC
-Now we give the user a way to easily add snippets.
-#+BEGIN_SRC emacs-lisp
-(defun gm/new-math-snippet (key name)
-  "Creates a new math snippet. Adds the cons (KEY . NAME) to
-`gm/math-snippets'. If no snippet with the name NAME exists in
-the yasnippet directory for latex-mode, then the such a file is
-created. The user can then write the code into which te snippet
-should expand."
-  (interactive "sSnippet key: \nSnippet name: ")
-  (unless (or (s-blank-str? key)
-              (s-blank-str? name))
-    (push (cons key name) gm/math-snippets)
-    (setq file-cand (expand-file-name
-                     (format "%s/latex-mode/%s" (car (yas-snippet-dirs)) name)))
-    (unless (file-exists-p file-cand)
-      (find-file file-cand)
-      (yas-expand-snippet (yas-lookup-snippet "new-math-snippet")))
-    (gm/math-setup)))
-#+END_SRC
-A very rudimentary command to see all current snippet keys and expansions.
-#+BEGIN_SRC emacs-lisp
-(defun gm/view-snippets ()
-  (interactive)
-  (with-output-to-temp-buffer "*QuickMath Expansions*"
-    (let ((key-len (+ 4 (car gm/longest-snippet)))
-          (snip-len (cdr gm/longest-snippet)))
-      (princ (format "Key%s  Snippet%s\n%s%s\n"
-                     (make-string (- key-len 4) ? )
-                     (make-string (- snip-len 8) ? )
-                     (make-string key-len ?-)
-                     (make-string (1+ snip-len) ?-)))
-      (dolist (snippet gm/math-snippets)
-        (princ (format "%s %s\n"
-                       (concat
-                        (car snippet)
-                        (make-string (- key-len (length (car snippet))) ? ))
-                       (nth 1 snippet)))))))
-#+END_SRC
-**** Tab Jump to Next LaTeX Position
-Modified from the =cdlatex-tab= function in =cdlatex.el=.
-#+BEGIN_SRC emacs-lisp
-(defun math-tab ()
-  (interactive)
-  (catch 'stop
-    (cond
-     ((looking-at "}\\|\\]\\|)")
-      (forward-char 1)
-      (if (or (looking-at "\\\\") (looking-at "[^_\\^({\\[]"))
-          (throw 'stop t)))
-     ((= (following-char) ?$)
-      (while (= (following-char) ?$) (forward-char 1))
-      (throw 'stop t))
-     ((= (following-char) ?\ )
-      (forward-char 1)
-      (re-search-forward "[^ ]")
-      (if (/= (preceding-char) ?\n) (forward-char -1)))
-     (t
-      (forward-char 1)))
-    (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
-      (forward-char -1)
-      (cond
-       ((= (following-char) ?\ )
-        (if (not (bolp)) (forward-char 1)) (throw 'stop t))
-       ((= (following-char) ?\n)
-        (if (and (bolp) (not (eobp)))
-            (throw 'stop t)
-          (if (equal "\\\\" (buffer-substring-no-properties
-                             (- (point) 2) (point)))
-              (forward-char 1)
-            (throw 'stop t))))
-       (t
-        (if (or (= (char-syntax (preceding-char)) ?\()
-                (= (char-syntax (preceding-char)) ?\))
-                (= (preceding-char) ?-))
-            (throw 'stop t)
-          (forward-char 1)
-          (if (looking-at "[^_\\^({\\[]")
-              (throw 'stop t)))))))
-  (unless (gm/in-math-p)
-    (forward-char -1)
-    (gm/reformat-fragment)))
-#+END_SRC
-Bind to tab.
-#+BEGIN_SRC emacs-lisp
-(define-conditional-key gm/math-mode-map (kbd "<tab>") #'math-tab (gm/in-math-p))
-#+END_SRC
-**** Subscripts/Indices
-This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
-digit is pressed, if the last character is a letter, then a subscript is
-created. If this subscript is extended to a number with more than 1 digit,
-brackets are added to ensure proper LaTeX rendering. I also rarely enter a
-numbered subscript of more than two digits, so I also exit the brackets after
-creating them.
-#+BEGIN_SRC emacs-lisp
-(defun gm/math-number-subscript (n)
-  (insert n)
-  (cond ((string-match "[a-zA-Z][0-9]" (gm/last-n-chars 2))
-         (save-excursion
-           (backward-char)
-           (insert "_")))
-        ((string-match "\_[0-9][0-9]" (gm/last-n-chars 3))
-         (save-excursion
-           (backward-char 2)
-           (insert "\{"))
-         (insert  "\}"))))
-#+END_SRC
-Add subscript bindings to each of the ten digits.
-#+BEGIN_SRC emacs-lisp
-(cl-loop for i from 0 to 9
-         collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
-                (number-to-string ,i)
-                (lambda! () (gm/math-number-subscript (number-to-string ,i)))
-              (gm/in-math-p)))))
-#+END_SRC
-**** Fraction
-Typing =/= after an appropriate block (a number or a balanced set of parentheses)
-creates a fraction with this block in the numerator and the point in the
-denominator. The outside parentheses will be removed; for example, =(\sin x)/=
-results in =\frac{\sin x}{|}=.
-#+BEGIN_SRC emacs-lisp
-(defun gm/math-insert-frac-match (match)
-  (when match
-    (yas-expand-snippet (yas-lookup-snippet "frac"))
-    (insert match)
-    (yas-next-field)))
-
-(defun gm/math-frac-helper (regexp)
-  (when (looking-back regexp (line-beginning-position) t)
-    (let* ((begin (match-beginning 0))
-           (end (match-end 0))
-           (match (buffer-substring-no-properties begin end)))
-      (delete-region begin end)
-      (gm/math-insert-frac-match match))))
-
-(defun gm/math-frac ()
-  (interactive)
-  (cond
-   ((string-match "[\])]" (char-to-string (char-before)))
-    (let ((end (point))
-          match)
-      (backward-sexp)
-      (setq match (buffer-substring-no-properties (point) end))
-      (delete-region (point) end)
-      (gm/math-insert-frac-match (substring match 1 -1))))
-   ((string-match "}" (char-to-string (char-before)))
-    (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]"))
-   ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
-    (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*"))
-   (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
-
-(define-conditional-key gm/math-mode-map "/" #'gm/math-frac (gm/in-math-p))
-#+END_SRC
-**** Easy Split Environments
-I wanted to make writing environments like =split= and =align= easier, so that I
-wouldn't have to manually add the newline (=\\=) at the end of each line required
-to make LaTeX happy.
-#+BEGIN_SRC emacs-lisp
-(defun gm/math-split-p ()
-  (when (gm/in-math-p)
-    (save-excursion
-      (if (eq major-mode 'org-mode)
-          (org-backward-paragraph)
-        (backward-paragraph))
-      (forward-line)
-      (equal (buffer-substring-no-properties
-              (line-beginning-position)
-              (line-end-position))
-             "\\begin{split}"))))
-
-(defun gm/tex-newline ()
-  (interactive)
-  (let ((current-line (buffer-substring-no-properties
-              (line-beginning-position)
-              (line-end-position))))
-  (if (equal current-line "\\begin{split}")
-      (newline)
-    (end-of-line)
-    (unless (equal (gm/last-n-chars 2) "\\\\")
-      (insert " \\\\"))
-    (if (save-excursion
-          (forward-line)
-          (equal (buffer-substring-no-properties
-                  (line-beginning-position)
-                  (line-end-position))
-                 "\\end{split}"))
-        (progn
-          (newline)
-          (when (equal (substring (s-trim current-line) 0 2) "&=")
-            (insert "&= ")))
-      (forward-line)))))
-
-(define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
