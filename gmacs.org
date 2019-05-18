@@ -2987,10 +2987,15 @@ leaving a math fragment.
 (defvar gm/org-valid-fragment-type '(latex-fragment latex-environment)
   "List of types of fragments that will be previewed by `gm/org-preview-fragment'")
 
-(defun gm/org-curr-fragment ()
+(defun gm/org-curr-fragment (&optional location)
   "Returns the type and position of the current fragment available
 for preview inside org-mode. Returns nil at non-displayable fragments."
-  (let* ((fr (org-element-context))
+  (let* ((loc (if location location (point)))
+         (fr (if (not (eq loc (point)))
+                 (save-excursion
+                   (goto-char loc)
+                   (org-element-context))
+               (org-element-context)))
          (fr-type (car fr)))
     (when (memq fr-type gm/org-valid-fragment-type)
       ;; \(...\)| cursor there should not result in active fragment
@@ -3006,9 +3011,9 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
             ;; check if point is between the actual end of the
             ;; LaTex environment and the "supposed end" extended by blank ;; lines after the environment
             (and
-             (>= (point) fr-begin)
-             (<= (point) (- fr-end fr-post-blank)))
-          (list fr-type fr-begin ))))))
+             (> loc fr-begin)
+             (<= loc (- fr-end fr-post-blank)))
+          (list fr-type fr-begin))))))
 
 (defun gm/org-remove-fragment-overlay (fr)
   "Remove fragment overlay at fr"
@@ -3037,8 +3042,12 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
 (defun gm/org-auto-toggle-fragment-display ()
   "Automatically toggle a displayable org mode fragment."
   (and (eq 'org-mode major-mode)
-       (let ((curr (gm/org-curr-fragment)))
+       (let ((curr (gm/org-curr-fragment))
+             (next (gm/org-curr-fragment (1+ (point)))))
          (cond
+          ((and (not curr) next)
+           (gm/org-remove-fragment-overlay next)
+           (setq gm/org-last-fragment next))
           ;; were on a fragment and now on a new fragment
           ((and
             ;; fragment we were on
@@ -3083,14 +3092,19 @@ for preview inside org-mode. Returns nil at non-displayable fragments."
              (setq gm/org-last-fragment curr))
            ;; there is no point being in on the \( or \) part of the math fragment
            ;; this code jumps the point into the actual math part of the fragment
-           (cond
-            ((equal (gm/last-n-chars -2) "\\(")
-             (forward-char 2))
-            ((and (eq (char-before) 92)
-                  (eq (char-after) 41))
-             (backward-char 1))))))))
+           (when (and (eq (char-before) 92)
+                       (eq (char-after) 41))
+                  (backward-char 1)))
+          ;; for the forward char, we have to do things a little
+          ;; differently, because the point is already in the fragment
+          ((and curr
+                gm/org-last-fragment
+                (eq (char-before) 92)
+                (eq (char-after) 40)
+                (eq last-command 'forward-char))
+           (forward-char 1))))))
 #+END_SRC
-We can also center equations and (this is useful when equation preview mode is
+We can also centre equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
 on it. This is more John Kitchin code.
 #+BEGIN_SRC emacs-lisp
@@ -3109,9 +3123,7 @@ line are justified."
            (width (car (image-size img)))
            (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 3) (/ width 3)))))
       (overlay-put (ov-at) 'before-string (make-string offset ? )))))
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp
 (defun gm/org-latex-fragment-tooltip (beg end image imagetype)
   "Add the fragment tooltip to the overlay and set click function to toggle it."
   (overlay-put (ov-at) 'help-echo
@@ -3121,21 +3133,20 @@ line are justified."
                                     (define-key map [mouse-1]
                                       `())
                                     map)))
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
+
 (advice-add 'org--format-latex-make-overlay :after 'gm/org-justify-fragment-overlay)
 (advice-add 'org--format-latex-make-overlay :after 'gm/org-latex-fragment-tooltip)
 #+END_SRC
-Create a minor mode to preview equations. The keybinding is setup in [[*Hydra][the section
-on hydras]].
+Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hydra]].
 #+BEGIN_SRC emacs-lisp
 (define-minor-mode gm/eq-preview-mode
   :init-value nil)
 
 (defun gm/eq-toggle ()
   (if gm/eq-preview-mode
-      (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t 'local)
-  (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display 'local)))
+      (progn
+        (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t 'local))
+    (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display 'local)))
 
 (add-hook 'gm/eq-preview-mode-hook #'gm/eq-toggle)
 #+END_SRC
