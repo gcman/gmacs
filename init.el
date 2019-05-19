@@ -8,5 +8,5 @@
 (let ((file-name-handler-alist nil))
   (if (file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
       (load-file (expand-file-name "gmacs.elc" user-emacs-directory))
-    (require 'org) 
+    (require 'org)
     (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory))))

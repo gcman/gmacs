@@ -80,7 +80,7 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
 (let ((file-name-handler-alist nil))
   (if (file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
       (load-file (expand-file-name "gmacs.elc" user-emacs-directory))
-    (require 'org) 
+    (require 'org)
     (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory))))
 #+END_SRC
 ** Initialization Settings
@@ -3315,10 +3315,12 @@ for me.
   :config
   (require 'smtpmail)
   (require 'smtpmail-async)
+  <<notmuch-settings>>
   :custom
   (nms-settings-file (expand-file-name "network-security.data" gmacs-cache-dir))
-  :config
-  <<notmuch-settings>>)
+  :bind (:map notmuch-common-keymap
+              ("g" . notmuch-refresh-this-buffer)
+              ("G" . notmuch-refresh-all-buffers)))
 #+END_SRC
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
