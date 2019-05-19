@@ -5,9 +5,8 @@
       initial-major-mode 'fundamental-mode
       initial-scratch-message nil)
 
-(require 'org)
-
 (let ((file-name-handler-alist nil))
-  (if (file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
-      (load-file (expand-file-name "gmacs.elc" user-emacs-directory))
-    (load-file (expand-file-name "gmacs.el" user-emacs-directory))))
+  (cond ((file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
+         (load-file (expand-file-name "gmacs.elc" user-emacs-directory)))
+        (t (require 'org)
+           (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory)))))
