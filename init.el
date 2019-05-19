@@ -6,7 +6,7 @@
       initial-scratch-message nil)
 
 (let ((file-name-handler-alist nil))
-  (cond ((file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
-         (load-file (expand-file-name "gmacs.elc" user-emacs-directory)))
-        (t (require 'org)
-           (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory)))))
+  (if (file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
+      (load-file (expand-file-name "gmacs.elc" user-emacs-directory))
+    (require 'org) 
+    (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory))))

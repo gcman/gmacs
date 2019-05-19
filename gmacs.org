@@ -53,6 +53,16 @@ Hack.
 #+BEGIN_SRC conf
 Emacs.font: Hack-10
 #+END_SRC
+** Early Init
+Here's some cutting edge technology. Emacs 27 introduced =early-init.el=, which
+is run before =init.el=, before package initialization.
+
+Package initialization occurs automatically, before =user-init-file= is loaded,
+but after =early-init-file=. As we'll see later, we can handle package
+initialization ourselves, so there's no need for Emacs to do it first.
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+(setq package-enable-at-startup nil)
+#+END_SRC
 ** =init.el=
 The main entry point into GMACS. First, we remove some features that would make
 startup take longer and aren't that useful.
@@ -67,12 +77,11 @@ startup take longer and aren't that useful.
 We either load the byte-compiled GMACS configuration file or tangle and load
 the GMACS literate config file (you're reading it!) written in Org Mode.
 #+BEGIN_SRC emacs-lisp :tangle init.el
-(require 'org)
-
 (let ((file-name-handler-alist nil))
   (if (file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
       (load-file (expand-file-name "gmacs.elc" user-emacs-directory))
-    (load-file (expand-file-name "gmacs.el" user-emacs-directory))))
+    (require 'org) 
+    (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory))))
 #+END_SRC
 ** Initialization Settings
 Enable lexical binding.
@@ -955,9 +964,8 @@ Default wrap at 80 characters.
 See this [[http://jsomers.net/blog/dictionary][beautiful post]] by James Somers on why you should use this dictionary.
 It's Webster's original, his magnum opus.
 #+BEGIN_SRC emacs-lisp
-(use-package sdcv-mode
-  :straight (:host github :repo "gucong/emacs-sdcv")
-  :bind (("C-c d" . sdcv-search)))
+(autoload #'sdcv-search "sdcv-mode")
+(bind-key "C-c d" #'sdcv-search)
 #+END_SRC
 On Arch Linux, this goes with the =sdcv= package.
 **** Writing
