@@ -77,11 +77,18 @@ startup take longer and aren't that useful.
 We either load the byte-compiled GMACS configuration file or tangle and load
 the GMACS literate config file (you're reading it!) written in Org Mode.
 #+BEGIN_SRC emacs-lisp :tangle init.el
-(let ((file-name-handler-alist nil))
-  (if (file-exists-p (expand-file-name "gmacs.elc" user-emacs-directory))
-      (load-file (expand-file-name "gmacs.elc" user-emacs-directory))
-    (require 'org)
-    (org-babel-load-file (expand-file-name "gmacs.org" user-emacs-directory))))
+(let ((file-name-handler-alist nil)
+      (orgfile (expand-file-name "gmacs.org" user-emacs-directory))
+      (elfile (expand-file-name "gmacs.el" user-emacs-directory))
+      (elcfile (expand-file-name "gmacs.elc" user-emacs-directory)))
+  (if (file-exists-p elcfile)
+      (load-file elcfile)
+    (if (or (not (file-exists-p elfile))
+            (file-newer-than-file-p orgfile elfile))
+        (progn
+          (require 'org)
+          (org-babel-load-file orgfile))
+      (load-file elfile))))
 #+END_SRC
 ** Initialization Settings
 Enable lexical binding.
@@ -824,8 +831,7 @@ transpositions to execute in sequence."
 :CUSTOM_ID: tangle-async
 :END:
 I used to have my =init.el= set up so that, if =gmacs.elc= did not exist, it would
-tangle =gmacs.org=. This unfortunately means that when I clear out the
-byte-compiled file, Emacs takes a long time to start up (about 6 seconds). To
+tangle =gmacs.org=. This unfortunately means that Emacs takes a long time to start up (about 6 seconds). To
 solve this, I tangle this very file on save.
 
 First, we set up a function to do the tangling. We have to, for example, refer
@@ -837,10 +843,7 @@ allows it to be asynchronous).
   (let ((src (expand-file-name "gmacs.org" user-emacs-directory))
         (dst (expand-file-name "gmacs.el" user-emacs-directory)))
     (require 'ob-tangle)
-    (org-babel-tangle-file src dst)
-    (byte-compile-file dst)
-    (with-current-buffer byte-compile-log-buffer
-      (buffer-string))))
+    (org-babel-tangle-file src dst)))
 #+END_SRC
 Then, we wrap this in an asynchronous process. I only really want to know about
 this process if it failed.
@@ -2016,10 +2019,11 @@ Similarly, we use =ace-link= to open links quickly.
 #+BEGIN_SRC emacs-lisp
 (use-package ace-link
   :config
-  (ace-link-setup-default)
-  :bind
-  (:map org-mode-map
-        ("M-o" . ace-link-org)))
+  (ace-link-setup-default))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(after! org
+  (bind-key "M-o" #'ace-link-org org-mode-map))
 #+END_SRC
 *** Company
 #+BEGIN_SRC emacs-lisp
@@ -2498,7 +2502,7 @@ a while to figure that out. I've also set up many other bindings, like =n= and =
 for next and previous tab, but that's another story.
 
 We send the data from =org-protocol= into the following template.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (push
  '("p" "Org Protocol" entry
    (file org-default-notes-file)
@@ -2863,7 +2867,7 @@ relevant hook.
   (call-interactively #'font-lock-fontify-buffer))
 #+END_SRC
 Here are the actual maps.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (defvar gm/src-block-keymaps
       `(("python" . ,(let ((map (make-composed-keymap
                                  `(,(when (boundp 'elpy-mode)
@@ -2890,7 +2894,7 @@ Highlight LateX inline math in org mode.
 *** Math Mode
 Define a keychord to enter inline math mode. This allows me to get around
 messing with making =$= an electrically paired delimiter.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (key-chord-define org-mode-map "r4" #'gm/create-or-exit-math-fragment)
 #+END_SRC
 **** Pretty Math Symbols
@@ -3190,7 +3194,10 @@ graphics correctly; =latexmk= handles all of that.
 (add-hook 'org-export-latex-after-initial-vars-hook 'gm/auto-tex-cmd)
 #+END_SRC
 **** Command Links
-***** No Option
+:PROPERTIES:
+:header-args: :tangle no :noweb-ref org-settings
+:END:
+No option.
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters
  "latex"
@@ -3199,7 +3206,7 @@ graphics correctly; =latexmk= handles all of that.
            (when (eq format 'latex)
              (format "\\%s{%s}" path desc))))
 #+END_SRC
-***** One Option
+One option.
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters
  "latex-opt"
@@ -3213,7 +3220,7 @@ graphics correctly; =latexmk= handles all of that.
                        (if (equal "" opt) opt (format "[%s]" opt))
                        arg)))))
 #+END_SRC
-***** One Option (After Main)
+One option, which goes afterwards.
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters
  "latex-opt-after"
@@ -3226,7 +3233,7 @@ graphics correctly; =latexmk= handles all of that.
                (format "\\%s{%s}%s" path arg
                        (if (equal "" opt) opt (format "[%s]" opt)))))))
 #+END_SRC
-***** Todo Link
+Todo link.
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters
  "todo"
@@ -3236,8 +3243,7 @@ graphics correctly; =latexmk= handles all of that.
            (when (eq format 'latex)
              (format "\\marginnote{\\textcolor{red}{\\textbf{TODO:}} %s}" path))))
 #+END_SRC
-**** Use Cleveref
-by default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
+By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 =cleveref= package, which uses the =\cref= macro.
 #+BEGIN_SRC emacs-lisp
 (org-link-set-parameters "ref"
@@ -3247,18 +3253,15 @@ by default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 #+END_SRC
 **** Export Classes
 ***** Tufte-LaTeX
-****** Class Options
 #+BEGIN_SRC emacs-lisp
-(after! ox-latex (add-to-list 'org-latex-classes
-             '("tufte-handout"
-               "\\documentclass{tufte-handout}
+(after! ox-latex
+  (add-to-list 'org-latex-classes
+               '("tufte-handout"
+                 "\\documentclass{tufte-handout}
    [NO-DEFAULT-PACKAGES]"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}"))))
-#+END_SRC
-***** Assignment
-#+BEGIN_SRC emacs-lisp
-(after! ox-latex (add-to-list 'org-latex-classes
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")))
+  (add-to-list 'org-latex-classes
                '("assignment"
                  "\\documentclass[12pt]{article}
 \\usepackage{uts-assignment}
@@ -3269,11 +3272,9 @@ by default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
                  ("\\subsection{%s}" . "\\subsection*{%s}")
                  ("\\subsubsection{%s}" . "\\subsubection*{%s}")
                  ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
-#+END_SRC
-***** MLA
-#+BEGIN_SRC emacs-lisp
-(after! ox-latex (add-to-list 'org-latex-classes
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+  (add-to-list 'org-latex-classes
                '("gm-mla"
                  "\\documentclass[12pt]{article}
 \\usepackage{uts-mla}
@@ -3283,11 +3284,8 @@ by default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 [EXTRA]"
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubection*{%s}"))))
-#+END_SRC
-***** Notes
-#+BEGIN_SRC emacs-lisp
-(after! ox-latex (add-to-list 'org-latex-classes
+                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")))
+  (add-to-list 'org-latex-classes
                '("gm-notes"
                  "\\documentclass{gm-notes}
 [NO-DEFAULT-PACKAGES]"
@@ -3295,7 +3293,7 @@ by default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
                  ("\\subsection{%s}" . "\\subsection*{%s}")
                  ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
 #+END_SRC
-We make this our default class.
+We make =gm-notes= our default class.
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-default-class "gm-notes")
 #+END_SRC
@@ -3967,18 +3965,19 @@ Then we bind this to semicolon.
 *** Helper Functions
 **** QuickMath Minor Mode
 #+BEGIN_SRC emacs-lisp :noweb yes
-(defvar gm/math-mode-map
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map org-mode-map)
-    map))
-<<math-mode>>
+(after! org
+  (defvar gm/math-mode-map
+    (let ((map (make-sparse-keymap)))
+      (set-keymap-parent map org-mode-map)
+      map))
+  <<math-mode>>
 
-(define-minor-mode quick-math-mode
-  "Minor mode for math"
-  :init-value nil
-  :keymap gm/math-mode-map
-  (when quick-math-mode
-    (gm/math-setup)))
+  (define-minor-mode quick-math-mode
+    "Minor mode for math"
+    :init-value nil
+    :keymap gm/math-mode-map
+    (when quick-math-mode
+      (gm/math-setup))))
 #+END_SRC
 **** Simpler =texmathp=
 The default =texmathp= function assumes that you are writing valid LaTeX code.
