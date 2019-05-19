@@ -843,7 +843,8 @@ allows it to be asynchronous).
   (let ((src (expand-file-name "gmacs.org" user-emacs-directory))
         (dst (expand-file-name "gmacs.el" user-emacs-directory)))
     (require 'ob-tangle)
-    (org-babel-tangle-file src dst)))
+    (org-babel-tangle-file src dst)
+    (byte-compile-file dst)))
 #+END_SRC
 Then, we wrap this in an asynchronous process. I only really want to know about
 this process if it failed.
@@ -1710,7 +1711,7 @@ T - tag prefix
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package ivy
   :diminish
-  :defer 1
+  :demand t
   :config
   (ivy-mode 1)
   <<ivy>>
@@ -1727,8 +1728,7 @@ T - tag prefix
   :after ivy)
 
 (use-package smex
-  :after ivy
-  :commands (counsel-M-x)
+  :after counsel
   :custom
   (smex-save-file (expand-file-name "smex" gmacs-cache-dir))
   (smex-history-length 50))
@@ -1834,9 +1834,10 @@ Basic configuration.
   :commands pdf-view-mode
   :config
   (setq pdf-annot-activate-created-annotations t)
+  (after! counsel
+    (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
   :diminish pdf-view-midnight-minor-mode
   :bind (:map pdf-view-mode-map
-              ("C-s" . counsel-grep-or-swiper)
               ("h" . pdf-annot-add-highlight-markup-annotation)
               ("t" . pdf-annot-add-text-annotation)
               ("D". pdf-annot-delete)
