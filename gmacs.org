@@ -97,7 +97,9 @@ Enable lexical binding.
 #+END_SRC
 Always load up a server when opening Emacs.
 #+BEGIN_SRC emacs-lisp
-(server-start)
+(unless (and (boundp 'server-process)
+             (memq (process-status server-process) '(connect listen open run)))
+  (server-start))
 #+END_SRC
 I was inspired to implement the following optimizations in GMACS thanks to
 [[https://github.com/nilcons/emacs-use-package-fast][nilcons/emacs-use-package-fast]]. During startup, we make the garbage collection
@@ -736,7 +738,7 @@ not careful but I autosave almost too often, so this is not a concern for me.
 And so I enable =auto-revert-mode= globally. Given this, I silence the messages
 that a buffer has been reverted.
 #+BEGIN_SRC emacs-lisp
-(setq-default auto-revert-mode t)
+(global-auto-revert-mode 1)
 (setq auto-revert-verbose nil)
 (diminish 'auto-revert-mode)
 #+END_SRC
@@ -744,15 +746,23 @@ When this doesn't work, I still want to be able to quickly revert a buffer
 manually.
 #+BEGIN_SRC emacs-lisp
 (defalias 'rb 'revert-buffer)
+(defalias 'arm 'auto-revert-mode)
 #+END_SRC
-Sometimes, however, there are other cases in which we want to reload a buffer.
-The change have been not in the file's contents, but in an Emacs setting, such
-as the colours of the theme. Or the buffer might not have been representing a
-file at all. In these cases, it's usually easiest to revert every open buffer.
-This might be a problem for you if you're one of those people who keeps hundreds
-of buffers open at a time, but I like to close my buffers liberally with the
-knowledge that =recentf= will remember where I've been for me. I obtained the
-following function from [[https://emacs.stackexchange.com/questions/24459/revert-all-open-buffers-and-ignore-errors][Emacs Stack Exchange]].
+The type of file I most often revert is PDFs, because I want to check the output
+of =.tex= files exported from Org Mode. And so I don't need to double check before
+I revert.
+#+BEGIN_SRC emacs-lisp
+(setq revert-without-query '("\\.pdf"))
+#+END_SRC
+Sometimes, however, there are other cases
+in which we want to reload a buffer. The change have been not in the file's
+contents, but in an Emacs setting, such as the colours of the theme. Or the
+buffer might not have been representing a file at all. In these cases, it's
+usually easiest to revert every open buffer. This might be a problem for you if
+you're one of those people who keeps hundreds of buffers open at a time, but I
+like to close my buffers liberally with the knowledge that =recentf= will remember
+where I've been for me. I obtained the following function from [[https://emacs.stackexchange.com/questions/24459/revert-all-open-buffers-and-ignore-errors][Emacs Stack
+Exchange]].
 #+BEGIN_SRC emacs-lisp
 (defun modi/revert-all-file-buffers ()
   "Refresh all open file buffers without confirmation.
@@ -1384,6 +1394,7 @@ word.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/title-case-skip-chars
   "^\"<>(){}[]“”‘’‹›«»「」『』【】〖〗《》〈〉〔〕")
+
 (defun xah-title-case-region-or-line (@begin @end)
   "Title case text between nearest brackets, or current line, or text selection.
 Capitalize first letter of each word, except words like {to, of,
@@ -2767,14 +2778,51 @@ the file is (usually) unnecessary and (always) too slow.
 *** Org Ref
 A wonderfully featured framework for maintaining bibliographies and writing
 academic papers in Org Mode by Org-guru John Kitchin.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org-ref
+  :commands (org-ref-bibtex-new-entry/body)
+  :config
+  (require 'doi-utils)
+  (key-chord-define-global "jj" 'org-ref-bibtex-hydra/body)
   :custom
-  (org-ref-completion-library 'org-ref-ivy-cite)
-  (org-ref-default-citation-link "footcite")
-  (bibtex-dialect 'biblatex)
+  <<org-ref>>
   :bind (:map bibtex-mode-map
               ("C-c b" . org-ref-bibtex-new-entry/body)))
+#+END_SRC
+Keep everything in my org directory.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
+(org-ref-bibliography-notes (expand-file-name "ref/notes.org" org-directory))
+(org-ref-default-bibliography (expand-file-name "ref/references.bib" org-directory))
+(org-ref-pdf-directory (expand-file-name "ref/pdf/" org-directory))
+#+END_SRC
+Use =ivy= instead of =helm= for =org-ref= completion. It makes everything more
+cohesive, as I use =ivy= everywhere else.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
+(org-ref-completion-library 'org-ref-ivy-cite)
+#+END_SRC
+Whether it's side citations or footnotes, I almost always use the =\footcite=
+macro in LaTeX.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
+(org-ref-default-citation-link "footcite")
+#+END_SRC
+It's >=2019. BibTeX is a thing of the past.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
+(bibtex-dialect 'biblatex)
+#+END_SRC
+Format the automatically generated keys.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
+(bibtex-autokey-year-length 4)
+(bibtex-autokey-name-year-separator "-")
+(bibtex-autokey-year-title-separator "-")
+(bibtex-autokey-titleword-separator "-")
+(bibtex-autokey-titlewords 2)
+(bibtex-autokey-titlewords-stretch 1)
+(bibtex-autokey-titleword-length 5)
+#+END_SRC
+I'm not entirely sure what this file does or how useful it is, but I didn't want
+it cluttering up my home directory.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
+(orhc-bibtex-cache-file (expand-file-name ".orhc-bibtex-cache" gmacs-cache-dir))
 #+END_SRC
 ** Prettifying
 *** Headlines
@@ -3223,7 +3271,7 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
   (require 'ox-tufte-latex)
   (save-excursion
     (search-backward "EXPORT_FILE_NAME")
-    (org-latex-export-to-latex t t)))
+    (org-latex-export-to-latex nil t)))
 #+END_SRC
 Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
@@ -3383,7 +3431,9 @@ for me.
   (nms-settings-file (expand-file-name "network-security.data" gmacs-cache-dir))
   :bind (:map notmuch-common-keymap
               ("g" . notmuch-refresh-this-buffer)
-              ("G" . notmuch-refresh-all-buffers)))
+              ("G" . notmuch-refresh-all-buffers)
+         :map notmuch-show-mode-map
+              ("o" . ace-link-addr)))
 #+END_SRC
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
