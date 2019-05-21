@@ -11,7 +11,11 @@
 
 (define-abbrev-table 'TeX-special-mode-abbrev-table '())
 
-(define-abbrev-table 'awk-mode-abbrev-table '())
+(define-abbrev-table 'apropos-mode-abbrev-table '())
+
+(define-abbrev-table 'awk-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'backtrace-mode-abbrev-table '())
 
@@ -27,9 +31,13 @@
 
 (define-abbrev-table 'browse-kill-ring-mode-abbrev-table '())
 
-(define-abbrev-table 'c++-mode-abbrev-table '())
+(define-abbrev-table 'c++-mode-abbrev-table
+  '(
+   ))
 
-(define-abbrev-table 'c-mode-abbrev-table '())
+(define-abbrev-table 'c-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'calc-trail-mode-abbrev-table '())
 
@@ -58,6 +66,8 @@
 (define-abbrev-table 'conf-windows-mode-abbrev-table '())
 
 (define-abbrev-table 'conf-xdefaults-mode-abbrev-table '())
+
+(define-abbrev-table 'css-mode-abbrev-table '())
 
 (define-abbrev-table 'debugger-mode-abbrev-table '())
 
@@ -101,6 +111,10 @@
 
 (define-abbrev-table 'epa-key-mode-abbrev-table '())
 
+(define-abbrev-table 'ert-results-mode-abbrev-table '())
+
+(define-abbrev-table 'ert-simple-view-mode-abbrev-table '())
+
 (define-abbrev-table 'eshell-mode-abbrev-table '())
 
 (define-abbrev-table 'ffip-diff-mode-abbrev-table '())
@@ -133,6 +147,8 @@
 
 (define-abbrev-table 'grep-mode-abbrev-table '())
 
+(define-abbrev-table 'helm-major-mode-abbrev-table '())
+
 (define-abbrev-table 'help-mode-abbrev-table '())
 
 (define-abbrev-table 'helpful-mode-abbrev-table '())
@@ -149,7 +165,9 @@
 
 (define-abbrev-table 'ivy-occur-mode-abbrev-table '())
 
-(define-abbrev-table 'java-mode-abbrev-table '())
+(define-abbrev-table 'java-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'js-jsx-mode-abbrev-table '())
 
@@ -157,11 +175,15 @@
 
 (define-abbrev-table 'latex-mode-abbrev-table '())
 
+(define-abbrev-table 'ld-script-mode-abbrev-table '())
+
 (define-abbrev-table 'lisp-mode-abbrev-table '())
 
 (define-abbrev-table 'locate-mode-abbrev-table '())
 
 (define-abbrev-table 'log-edit-mode-abbrev-table '())
+
+(define-abbrev-table 'log-view-mode-abbrev-table '())
 
 (define-abbrev-table 'log4e-mode-abbrev-table '())
 
@@ -199,6 +221,8 @@
 
 (define-abbrev-table 'messages-buffer-mode-abbrev-table '())
 
+(define-abbrev-table 'mhtml-mode-abbrev-table '())
+
 (define-abbrev-table 'notmuch-hello-mode-abbrev-table '())
 
 (define-abbrev-table 'notmuch-message-mode-abbrev-table '())
@@ -211,7 +235,11 @@
 
 (define-abbrev-table 'nov-mode-abbrev-table '())
 
-(define-abbrev-table 'objc-mode-abbrev-table '())
+(define-abbrev-table 'nxml-mode-abbrev-table '())
+
+(define-abbrev-table 'objc-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'occur-edit-mode-abbrev-table '())
 
@@ -242,10 +270,11 @@
     ("fd" "finite dimensional" nil 0)
     ("fdvs" "finite-dimensional vector space" nil 0)
     ("fo" #("f" 0 1 (face frog-menu-candidates-face)) nil 0)
-    ("hangg" #("hang" 0 4 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
+    ("forsee" #("foresee" 0 7 (face frog-menu-candidates-face)) nil 0)
+    ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 1)
     ("iff" "if and only if" nil 2)
-    ("imediately" #("immediately" 0 11 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
+    ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("inadvertantly" #("inadvertently" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("inj" "injective" nil 0)
@@ -289,7 +318,9 @@
 
 (define-abbrev-table 'pdf-outline-buffer-mode-abbrev-table '())
 
-(define-abbrev-table 'pike-mode-abbrev-table '())
+(define-abbrev-table 'pike-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'plain-tex-mode-abbrev-table '())
 
@@ -322,6 +353,8 @@
 (define-abbrev-table 'reb-lisp-mode-abbrev-table '())
 
 (define-abbrev-table 'reb-mode-abbrev-table '())
+
+(define-abbrev-table 'scss-mode-abbrev-table '())
 
 (define-abbrev-table 'sdcv-mode-abbrev-table '())
 

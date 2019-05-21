@@ -1653,8 +1653,15 @@ Have the most up-to-date version of the buffer when using Dired.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'dired-mode-hook 'auto-revert-mode)
 #+END_SRC
+Don't show details by default.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'dired-mode-hook #'dired-hide-details-mode)
+#+END_SRC
+Show recursive folder sizes.
+#+BEGIN_SRC emacs-lisp
+(use-package dired-du
+  :commands (dired-du-mode))
+(bind-key "C-x M-r" #'dired-du-mode dired-mode-map)
 #+END_SRC
 Allow Dired to recursively copy and delete directories. The option ~always~
 ensures that no confirmation dialog comes up; ~top~ would do it only one layer
@@ -2720,6 +2727,10 @@ I manage deadlines with Org Agenda.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c a" #'org-agenda)
 #+END_SRC
+I've never used this command on purpose.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(unbind-key "C-c [")
+#+END_SRC
 The default is =week=, which gives the current week (starting on Monday by
 default). I prefer to see a larger view.
 #+BEGIN_SRC emacs-lisp
@@ -2823,6 +2834,33 @@ I'm not entirely sure what this file does or how useful it is, but I didn't want
 it cluttering up my home directory.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
 (orhc-bibtex-cache-file (expand-file-name ".orhc-bibtex-cache" gmacs-cache-dir))
+#+END_SRC
+Small modification to how files are attached to bib entries. I want the default
+directory to be my downloads folder.
+#+BEGIN_SRC emacs-lisp
+(after! org-ref
+  (defun org-ref-bibtex-assoc-pdf-with-entry (&optional prefix)
+    "Prompt for pdf associated with entry at point and rename it.
+Check whether a pdf already exists in `org-ref-pdf-directory' with the
+name '[bibtexkey].pdf'. If the file does not exist, rename it to
+'[bibtexkey].pdf' using
+`org-ref-bibtex-assoc-pdf-with-entry-move-function' and place it in
+`org-ref-pdf-directory'. Optional PREFIX argument toggles between
+`rename-file' and `copy-file'."
+    (interactive "P")
+    (save-excursion
+      (bibtex-beginning-of-entry)
+      (let* ((file (read-file-name "Select file associated with entry: " "~/Downloads"))
+             (bibtex-expand-strings t)
+             (entry (bibtex-parse-entry t))
+             (key (reftex-get-bib-field "=key=" entry))
+             (pdf (concat org-ref-pdf-directory (concat key ".pdf")))
+             (file-move-func (org-ref-bibtex-get-file-move-func prefix)))
+        (if (file-exists-p pdf)
+            (message (format "A file named %s already exists" pdf))
+          (progn
+            (funcall file-move-func file pdf)
+            (message (format "Created file %s" pdf))))))))
 #+END_SRC
 ** Prettifying
 *** Headlines
@@ -4250,8 +4288,9 @@ makes for some awkward timing for activating previews.
   (interactive)
   (if (gm/in-math-p)
       (gm/reformat-fragment)
-    (insert "\\(")
-    (save-excursion (insert "\\)"))))
+    (unless (org-in-src-block-p)
+      (insert "\\(")
+      (save-excursion (insert "\\)")))))
 #+END_SRC
 **** Last n Characters Before Point
 Return the last n characters before the point, or =loc= if provided.
