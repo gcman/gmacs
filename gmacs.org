@@ -1646,8 +1646,10 @@ This is excellent for editing files owned by root.
 #+END_SRC
 I don't have much of a use for just listing the contents of a directory, and I
 sometimes accidentally use this command instead of =dired=.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb yes
 (bind-key "C-x C-d" #'dired)
+(after! dired
+  <<dired-keys>>)
 #+END_SRC
 Have the most up-to-date version of the buffer when using Dired.
 #+BEGIN_SRC emacs-lisp
@@ -1658,7 +1660,7 @@ Don't show details by default.
 (add-hook 'dired-mode-hook #'dired-hide-details-mode)
 #+END_SRC
 Show recursive folder sizes.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-keys
 (use-package dired-du
   :commands (dired-du-mode))
 (bind-key "C-x M-r" #'dired-du-mode dired-mode-map)
@@ -1682,7 +1684,7 @@ We might as well perform file operations asynchronously.
 When you open, say, an audio or video file from Dired, Emacs displays the raw
 data in that file in a text buffer. We want to open files with the appropriate
 application.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-keys
 (autoload 'dired-open-xdg "dired-open")
 (bind-key "O" #'dired-open-xdg dired-mode-map)
 #+END_SRC
@@ -1726,7 +1728,8 @@ For really big files, =rsync= is nice.
     (async-shell-command tmtxt/rsync-command "*rsync*")
     ;; finally, switch to that window
     (other-window 1)))
-
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-keys
 (bind-key "C" #'gm/dired-rsync dired-mode-map)
 #+END_SRC
 I often find the commands in Dired hard to remember.
@@ -1780,7 +1783,7 @@ T - tag prefix
   ("q" nil)
   ("." nil :color blue))
 #+END_SRC
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-keys
 (bind-key "." 'hydra-dired/body dired-mode-map)
 #+END_SRC
 *** Ivy
@@ -2421,7 +2424,7 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
 *** Invisible Edits
 When text is entered near a hidden area (...), it is hard to see what is
 changed.
-#+BEGIN_SRC emacs-lisp :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-catch-invisible-edits 'show-and-error)
 #+END_SRC
 *** Better Return Behaviour
@@ -3460,7 +3463,7 @@ doesn't have much. It's simple, transparent, and it works. That makes it perfect
 for me.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package notmuch
-  :commands (notmuch)
+  :commands (notmuch notmuch-refresh-all-buffers)
   :config
   (require 'smtpmail)
   (require 'smtpmail-async)
@@ -3598,7 +3601,7 @@ It's an email, not an essay.
                                 :with-author nil
                                 :with-toc nil))
 #+END_SRC
-*** Attachment Check
+*** Check for Attachments
 From [[https://gitlab.com/ambrevar/dotfiles/blob/master/.emacs.d/lisp/patch-notmuch.el][ambrevar's dotfiles]].
 #+BEGIN_SRC emacs-lisp
 (defcustom notmuch-message-attach-regex
@@ -3633,7 +3636,7 @@ through `notmuch-message-attach-regex'."""
             (or (y-or-n-p "Email seems to refer to attachment, but nothing attached, send anyways?")
                 (error "No attachment found, aborting")))))))
 
-(add-hook 'message-send-hook 'notmuch-message-check-attach)
+(add-hook 'message-send-hook #'notmuch-message-check-attach)
 #+END_SRC
 *** Better Hello Screen
 From [[http://www.holgerschurig.de/en/emacs-notmuch-hello/][Holger Schurig]].
@@ -3939,7 +3942,7 @@ I got the setup information from [[https://www.reddit.com/r/emacs/comments/981kh
   <<emms>>)
 #+END_SRC
 Now for the settings. I use =mpd=, which I find is minimal and causes no bloat.
-#+BEGIN_SRC emacs-lisp :noweb-ref emms
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref emms
 (setq emms-seek-seconds 5
       emms-player-list '(emms-player-mpd)
       emms-info-list '(emms-info-mpd)
@@ -3951,7 +3954,7 @@ Now for the settings. I use =mpd=, which I find is minimal and causes no bloat.
 #+END_SRC
 We use non-default settings for the socket. In order to use the built-in
 functionality for =mpc=, we need to let Emacs know about this.
-#+BEGIN_SRC emacs-lisp :noweb-ref emms
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref emms
 (setq mpc-host "localhost:6601")
 #+END_SRC
 When the music I have isn't tagged right or needs some editing, I use the
