@@ -1136,7 +1136,7 @@ prose in is Org Mode.
   <<flyspell-settings>>)
 #+END_SRC
 Set up spellchecking using =ispell= and the dictionary =hunspell=. We set the
-locally used dictionary to Canadian English, and we set up the liscbt of valid
+locally used dictionary to Canadian English, and we set up the list of valid
 dictionaries. I found the official Canadian English dictionary [[https://sourceforge.net/projects/wordlist/files/speller/2018.04.16/hunspell-en_CA-2018.04.16.zip/download?use_mirror=ayera][here]] (warning:
 download link). The =.aff= and =.dic= files go in =/usr/share/hunspell/=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
@@ -1145,15 +1145,14 @@ download link). The =.aff= and =.dic= files go in =/usr/share/hunspell/=.
       ispell-hunspell-dictionary-alist
       '(("en_CA" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_CA") nil utf-8)))
 #+END_SRC
-As suggested by the Emacs wiki, I supress messages, which slows down
+As suggested by the Emacs wiki, I suppress messages, which slows down
 performance when checking the entire buffer.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
 (setq-default flyspell-issue-message-flag nil
               flyspell-issue-welcome-flag nil)
 #+END_SRC
 Spellchecking should not occur inside certain parts of Org Mode buffers like
-property drawers and code source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?source=rss][Making Ispell work with org-mode
-in Emacs]].
+property drawers and code source blocks. From [[http://endlessparentheses.com/ispell-and-org-mode.html?source=rss][Making Ispell work with org-mode in Emacs]].
 #+BEGIN_SRC emacs-lisp
 (defun endless/org-ispell ()
   "Configure `ispell-skip-region-alist' for `org-mode'."
@@ -1231,7 +1230,7 @@ we've subsumed its role with =flyspell-correct= anyway.
 **** Correct Double Capitals
 Taken from [[https://emacs.stackexchange.com/questions/13970/fixing-double-capitals-as-i-type/13975#13975][Stack Exchange]]. It's a piece of code with a great impact to
 complexity ratio. Whenever you're a bit slow in releasing the Shift key and type
-something like "THis," =dubcaps-mode= converts it to "This" for you automatically.
+something like "This," =dubcaps-mode= converts it to "This" for you automatically.
 This isn't really a hindrance, because if I actually want two capital letters in
 a row, I almost never want a lowercase letter to follow.
 #+BEGIN_SRC emacs-lisp
@@ -1501,8 +1500,10 @@ Relative line numbers, useful for Vim-like navigation with God Mode.
   ("m" flycheck-mode)
   ("s" flycheck-select-checker)
   ("v" flycheck-verify-setup))
+
 (bind-key "C-c f" #'hydra-flycheck/body)
 #+END_SRC
+suppress
 *** Python
 Indent with 4 spaces.
 #+BEGIN_SRC emacs-lisp
