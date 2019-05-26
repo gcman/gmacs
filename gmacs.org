@@ -271,8 +271,7 @@ screen/cursor position is refactored. It's much more useful than it sounds.
   :defer 2
   :diminish (beacon-mode " ☀")
   :config (beacon-mode 1)
-  :custom
-  (beacon-color "#b58900"))
+  :custom (beacon-color "#b58900"))
 #+END_SRC
 *** Bells
 Visual, not audible bells.
@@ -288,8 +287,7 @@ minor modes are displayed.
 #+BEGIN_SRC emacs-lisp
 (use-package smart-mode-line
   :defer 1
-  :config
-  (sml/setup))
+  :config (sml/setup))
 #+END_SRC
 What time is it, Mr. Emacs?
 #+BEGIN_SRC emacs-lisp
@@ -457,8 +455,7 @@ FACE defaults to inheriting from default and highlight."
     (overlay-put ol 'face 'bold)
     ol))
 
-(remove-hook 'post-self-insert-hook
-             #'blink-paren-post-self-insert-function)
+(remove-hook 'post-self-insert-hook #'blink-paren-post-self-insert-function)
 
 (setq show-paren-style 'paren
       show-paren-delay 0.03
@@ -2798,6 +2795,8 @@ academic papers in Org Mode by Org-guru John Kitchin.
   :config
   (require 'doi-utils)
   (key-chord-define-global "jj" 'org-ref-bibtex-hydra/body)
+  (add-hook 'bibtex-mode-hook
+            (lambda () (require 'org-ref)))
   :custom
   <<org-ref>>
   :bind (:map bibtex-mode-map
