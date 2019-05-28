@@ -229,8 +229,8 @@ byte-compiled, Emacs will initialize packages on startup as usual.
   (unless (package-installed-p 'use-package)
     (package-install 'use-package)
     (package-refresh-contents))
-  (require 'use-package)
-  (setq use-package-always-ensure t))
+  (require 'use-package))
+(setq use-package-always-ensure t)
 #+END_SRC
 We also require =diminish= and =bind= because I often use these keywords within
 =use-package= declarations.
@@ -479,6 +479,10 @@ for choosing colours, especially when editing CSS files.
   :defer 2
   :diminish
   :config (rainbow-mode 1))
+#+END_SRC
+Highlight =.service= files like they are configuration files.
+#+BEGIN_SRC emacs-lisp
+(use-package systemd)
 #+END_SRC
 ** Quality of Life
 *** Garbage Collection
@@ -1110,11 +1114,23 @@ figured out how to activate that one with the keyboard. I'd need to call a JS
 function, which I could do with ShortKeys, but I'm not sure which one to call.
 The advantage this has over =edit-server= and Edit with Emacs is that the
 GhostText method syncs your edits live between the browser and Emacs, while with
-Edit with Emacs,,your edits only show up once you "commit" them with =C-c C-c=.
+Edit with Emacs, your edits only show up once you "commit" them with =C-c C-c=.
 #+BEGIN_SRC emacs-lisp
 (use-package edit-server
   :defer 2
   :config (edit-server-start))
+#+END_SRC
+**** Easier Regexp
+#+BEGIN_SRC emacs-lisp
+(use-package anzu
+  :diminish "杏"
+  :bind
+  (([remap query-replace] . 'anzu-query-replace)
+   ([remap query-replace-regexp] . 'anzu-query-replace-regexp))
+  :config
+  (unless (keymap-parent lisp-mode-shared-map)
+    (set-keymap-parent lisp-mode-shared-map prog-mode-map))
+  (bind-key [convert] #'anzu-query-replace-at-cursor-thing prog-mode-map))
 #+END_SRC
 *** Spelling
 **** Setup
@@ -1226,6 +1242,11 @@ we've subsumed its role with =flyspell-correct= anyway.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-settings
 (bind-key [remap flyspell-auto-correct-previous-word]
           #'flyspell-correct-wrapper flyspell-mode-map)
+#+END_SRC
+When moving backwards in the document, the correction menu can appear at the top
+of the screen, obscuring the context surrounding the error.
+#+BEGIN_SRC emacs-lisp
+(advice-add 'flyspell-correct-wrapper :before #'recenter-top-bottom)
 #+END_SRC
 **** Correct Double Capitals
 Taken from [[https://emacs.stackexchange.com/questions/13970/fixing-double-capitals-as-i-type/13975#13975][Stack Exchange]]. It's a piece of code with a great impact to
@@ -2109,10 +2130,6 @@ We set up some easier to read faces.
  '(avy-lead-face ((t (:inherit isearch-fail))))
  '(avy-lead-face-0 ((t (:inherit org-todo :background "#002b36")))))
 #+END_SRC
-*** Company
-#+BEGIN_SRC emacs-lisp
-(use-package company)
-#+END_SRC
 *** Which Key Mode
 Helpful when you want to see completion for a certain sequence of prefix keys.
 #+BEGIN_SRC emacs-lisp
@@ -2728,9 +2745,9 @@ I manage deadlines with Org Agenda.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c a" #'org-agenda)
 #+END_SRC
-I've never used this command on purpose.
+I've never used these commands on purpose.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(unbind-key "C-c [")
+(unbind-key "C-c [" org-mode-map)
 #+END_SRC
 The default is =week=, which gives the current week (starting on Monday by
 default). I prefer to see a larger view.
@@ -2792,51 +2809,67 @@ A wonderfully featured framework for maintaining bibliographies and writing
 academic papers in Org Mode by Org-guru John Kitchin.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package org-ref
-  :commands (org-ref-bibtex-new-entry/body)
+  :commands (org-ref-bibtex-new-entry/body org-ref-insert-link)
+  :init
+  (autoload 'org-ref-insert-link "org-ref")
   :config
   (require 'doi-utils)
-  (key-chord-define-global "jj" 'org-ref-bibtex-hydra/body)
-  (add-hook 'bibtex-mode-hook
-            (lambda () (require 'org-ref)))
-  :custom
-  <<org-ref>>
+  (key-chord-define bibtex-mode-map "jj" 'org-ref-bibtex-hydra/body)
+  (add-hook 'bibtex-mode-hook (lambda () (require 'org-ref)))
   :bind (:map bibtex-mode-map
-              ("C-c b" . org-ref-bibtex-new-entry/body)))
+              ("C-c b" org-ref-bibtex-new-entry/body)))
+(after! org-ref
+    <<org-ref>>)
+#+END_SRC
+For humanities essays.
+#+BEGIN_SRC emacs-lisp
+(defun gm/org-ref-cite-with-page ()
+  (interactive)
+  (insert "[[")
+  (call-interactively #'org-ref-insert-link)
+  (insert "][")
+  (insert (read-string "Page number: "))
+  (insert "]] "))
+#+END_SRC
+Bind this in Org Mode.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(bind-key "C-c ]" #'org-ref-insert-link org-mode-map)
 #+END_SRC
 Keep everything in my org directory.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
-(org-ref-bibliography-notes (expand-file-name "ref/notes.org" org-directory))
-(org-ref-default-bibliography (expand-file-name "ref/references.bib" org-directory))
-(org-ref-pdf-directory (expand-file-name "ref/pdf/" org-directory))
+(setq org-ref-bibliography-notes (expand-file-name "ref/notes.org" org-directory)
+      org-ref-default-bibliography (expand-file-name "ref/references.bib" org-directory)
+      org-ref-pdf-directory (expand-file-name "ref/pdf/" org-directory))
 #+END_SRC
 Use =ivy= instead of =helm= for =org-ref= completion. It makes everything more
 cohesive, as I use =ivy= everywhere else.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
-(org-ref-completion-library 'org-ref-ivy-cite)
+(org-ref-ivy-cite-completion)
+(setq org-ref-completion-library 'org-ref-ivy-cite)
 #+END_SRC
 Whether it's side citations or footnotes, I almost always use the =\footcite=
 macro in LaTeX.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
-(org-ref-default-citation-link "footcite")
+(setq org-ref-default-citation-link "footcite")
 #+END_SRC
 It's >=2019. BibTeX is a thing of the past.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
-(bibtex-dialect 'biblatex)
+(setq bibtex-dialect 'biblatex)
 #+END_SRC
 Format the automatically generated keys.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
-(bibtex-autokey-year-length 4)
-(bibtex-autokey-name-year-separator "-")
-(bibtex-autokey-year-title-separator "-")
-(bibtex-autokey-titleword-separator "-")
-(bibtex-autokey-titlewords 2)
-(bibtex-autokey-titlewords-stretch 1)
-(bibtex-autokey-titleword-length 5)
+(setq bibtex-autokey-year-length 4
+      bibtex-autokey-name-year-separator "-"
+      bibtex-autokey-year-title-separator "-"
+      bibtex-autokey-titleword-separator "-"
+      bibtex-autokey-titlewords 2
+      bibtex-autokey-titlewords-stretch 1
+      bibtex-autokey-titleword-length 5)
 #+END_SRC
 I'm not entirely sure what this file does or how useful it is, but I didn't want
 it cluttering up my home directory.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
-(orhc-bibtex-cache-file (expand-file-name ".orhc-bibtex-cache" gmacs-cache-dir))
+(setq orhc-bibtex-cache-file (expand-file-name ".orhc-bibtex-cache" gmacs-cache-dir))
 #+END_SRC
 Small modification to how files are attached to bib entries. I want the default
 directory to be my downloads folder.
@@ -3311,8 +3344,15 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
   (interactive)
   (require 'ox-tufte-latex)
   (save-excursion
-    (search-backward "EXPORT_FILE_NAME")
-    (org-latex-export-to-latex nil t)))
+    (while (and (not (org-entry-get (point) "EXPORT_FILE_NAME"))
+                (not (string= (buffer-substring-no-properties
+                               (line-beginning-position)
+                               (+ 2 (line-beginning-position)))
+                              "* ")))
+      (outline-up-heading 1 t))
+    (if (org-entry-get (point) "EXPORT_FILE_NAME")
+        (org-latex-export-to-latex nil t)
+      (error "Not in valid export location!"))))
 #+END_SRC
 Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
@@ -3406,7 +3446,6 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
                            (format "\\cref{%s}" label)))
 #+END_SRC
 **** Export Classes
-***** Tufte-LaTeX
 #+BEGIN_SRC emacs-lisp
 (after! ox-latex
   (add-to-list 'org-latex-classes
@@ -4291,7 +4330,8 @@ makes for some awkward timing for activating previews.
   (interactive)
   (if (gm/in-math-p)
       (gm/reformat-fragment)
-    (unless (org-in-src-block-p)
+    (if (org-in-src-block-p)
+        (insert "$")
       (insert "\\(")
       (save-excursion (insert "\\)")))))
 #+END_SRC
@@ -4312,14 +4352,20 @@ expand into =\hat{f}=. However, we cannot just act on the last letter, because
 #+BEGIN_SRC emacs-lisp
 (defun gm/last-letter ()
   (when (string-match "[a-zA-Z]" (gm/last-n-chars 1))
-    (if (looking-back (regexp-opt
-                       (--map (concat "\\" (car it))
-                              (append gm/math-greek-lower
-                                      gm/math-greek-upper)))
-                      (- (point) 8) t)
-        (buffer-substring-no-properties (match-beginning 0)
-                                        (match-end 0)))
-    (char-to-string (char-before))))
+    (let ((match
+            (if (looking-back (regexp-opt
+                               (--map (concat "\\" (car it))
+                                      (append gm/math-greek-lower
+                                              gm/math-greek-upper)))
+                              (- (point) 8) t)
+                (buffer-substring-no-properties (match-beginning 0)
+                                                (match-end 0))
+              (char-to-string (char-before)))))
+      (save-excursion
+        (backward-char (length match))
+        (when (string= (gm/last-n-chars 5) "\\vec ")
+          (setq match (concat "\\vec " match))))
+      match)))
 #+END_SRC
 **** Test if LaTeX Needs to Be Wrapped in Brackets
 #+BEGIN_SRC emacs-lisp

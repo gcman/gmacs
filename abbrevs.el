@@ -13,9 +13,7 @@
 
 (define-abbrev-table 'apropos-mode-abbrev-table '())
 
-(define-abbrev-table 'awk-mode-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'awk-mode-abbrev-table '())
 
 (define-abbrev-table 'backtrace-mode-abbrev-table '())
 
@@ -31,13 +29,9 @@
 
 (define-abbrev-table 'browse-kill-ring-mode-abbrev-table '())
 
-(define-abbrev-table 'c++-mode-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'c++-mode-abbrev-table '())
 
-(define-abbrev-table 'c-mode-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'c-mode-abbrev-table '())
 
 (define-abbrev-table 'calc-trail-mode-abbrev-table '())
 
@@ -165,9 +159,7 @@
 
 (define-abbrev-table 'ivy-occur-mode-abbrev-table '())
 
-(define-abbrev-table 'java-mode-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'java-mode-abbrev-table '())
 
 (define-abbrev-table 'js-jsx-mode-abbrev-table '())
 
@@ -217,6 +209,18 @@
 
 (define-abbrev-table 'magit-submodule-list-mode-abbrev-table '())
 
+(define-abbrev-table 'makefile-automake-mode-abbrev-table '())
+
+(define-abbrev-table 'makefile-bsdmake-mode-abbrev-table '())
+
+(define-abbrev-table 'makefile-gmake-mode-abbrev-table '())
+
+(define-abbrev-table 'makefile-imake-mode-abbrev-table '())
+
+(define-abbrev-table 'makefile-makepp-mode-abbrev-table '())
+
+(define-abbrev-table 'makefile-mode-abbrev-table '())
+
 (define-abbrev-table 'message-mode-abbrev-table '())
 
 (define-abbrev-table 'messages-buffer-mode-abbrev-table '())
@@ -237,9 +241,7 @@
 
 (define-abbrev-table 'nxml-mode-abbrev-table '())
 
-(define-abbrev-table 'objc-mode-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'objc-mode-abbrev-table '())
 
 (define-abbrev-table 'occur-edit-mode-abbrev-table '())
 
@@ -282,14 +284,17 @@
     ("intrface" "interface" nil 0)
     ("ip" "in particular" nil 1)
     ("jsut" #("just" 0 4 (face frog-menu-candidates-face)) nil 0)
+    ("lauch" #("launch" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("lindep" "linearly dependent" nil 0)
     ("linind" "linearly independent" nil 0)
     ("massachusets" #("Massachusetts" 0 13 (face frog-menu-candidates-face)) nil 0)
+    ("mathcamp" #("Mathcamp" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("netowrk" #("network" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("onwards" #("onward" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("parastiic" #("parasitic" 0 9 (face frog-menu-candidates-face)) nil 0)
     ("practicing" #("practising" 0 10 (face frog-menu-candidates-face)) nil 1)
     ("proerty" "property" nil 0)
+    ("quanities" #("quantities" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("reluctancy" #("reluctance" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("remmeber" #("remember" 0 8 (face frog-menu-candidates-face)) nil 1)
     ("sherrif" #("sheriff" 0 7 (face frog-menu-candidates-face)) nil 0)
@@ -297,12 +302,12 @@
     ("supress" #("suppress" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("sur" "surjective" nil 0)
     ("teh" "the" nil 0)
-    ("this" #("This" 0 4 (face frog-menu-candidates-face)) nil 0)
     ("threaad" #("thread" 0 6 (face frog-menu-candidates-face)) nil 1)
     ("tralfamadorian" #("Tralfamadorian" 0 14 (face frog-menu-candidates-face)) nil 2)
     ("tralfamadorians" #("Tralfamadorians" 0 15 (face frog-menu-candidates-face)) nil 0)
     ("trivialties" #("trivialities" 0 12 (face frog-menu-candidates-face)) nil 0)
     ("underfilling" "under filling" nil 4)
+    ("unforseen" #("unforeseen" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("vecotr" #("vector" 0 6 (face frog-menu-candidates-face)) nil 1)
     ("vs" "vector space" nil 0)
     ("vss" "vector spaces" nil 0)
@@ -323,9 +328,7 @@
 
 (define-abbrev-table 'pdf-outline-buffer-mode-abbrev-table '())
 
-(define-abbrev-table 'pike-mode-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'pike-mode-abbrev-table '())
 
 (define-abbrev-table 'plain-tex-mode-abbrev-table '())
 
@@ -380,6 +383,8 @@
 (define-abbrev-table 'special-mode-abbrev-table '())
 
 (define-abbrev-table 'speedbar-mode-abbrev-table '())
+
+(define-abbrev-table 'systemd-mode-abbrev-table '())
 
 (define-abbrev-table 'tablist-mode-abbrev-table '())
 
