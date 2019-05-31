@@ -2825,11 +2825,13 @@ For humanities essays.
 #+BEGIN_SRC emacs-lisp
 (defun gm/org-ref-cite-with-page ()
   (interactive)
-  (insert "[[")
-  (call-interactively #'org-ref-insert-link)
-  (insert "][")
-  (insert (read-string "Page number: "))
-  (insert "]] "))
+  (if current-prefix-arg
+      (call-interactively #'org-ref-insert-link)
+    (insert "[[")
+    (call-interactively #'org-ref-insert-link)
+    (insert "][")
+    (insert (read-string "Page number: "))
+    (insert "]] ")))
 #+END_SRC
 Bind this in Org Mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -3382,10 +3384,10 @@ graphics correctly; =latexmk= handles all of that.
   (let ((texcmd))
     (setq texcmd "latexmk -pdf -quiet %f")
     (if (string-match "LATEX_CMD: xelatex" (buffer-string))
-        (setq texcmd "latexmk -pdflatex=xelatex -pdf -quiet %f"))
-    (setq org-latex-to-pdf-process (list texcmd))))
+        (setq texcmd "latexmk -xelatex -pdf -quiet %f"))
+    (setq org-latex-pdf-process (list texcmd))))
 
-(add-hook 'org-export-latex-after-initial-vars-hook 'gm/auto-tex-cmd)
+(add-hook 'org-mode-hook 'gm/auto-tex-cmd)
 #+END_SRC
 **** Command Links
 :PROPERTIES:
@@ -4135,6 +4137,7 @@ don't require the use of =yasnippets=.
     ("iso" "\\Iso ")
     ("ker" "\\Ker ")
     ("lap" "laplacian" t)
+    ("lb" "label" t)
     ("le" "\\le ")
     ("lim" "limit" t)
     ("list" "list" t)
