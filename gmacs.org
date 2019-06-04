@@ -2437,6 +2437,17 @@ We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
              <<org-keys>>))
 #+END_SRC
 ** Configuration
+*** Speed Keys
+This mode binds Org Mode commands to single character sequences, as long as you
+are at the beginning of an Org headline.
+#+BEGIN_SRC emacs-lisp
+(setq org-use-speed-commands t)
+#+END_SRC
+We customize the commands a bit.
+#+BEGIN_SRC emacs-lisp
+(setq org-speed-commands-user
+      '(("j" counsel-org-goto)))
+#+END_SRC
 *** Invisible Edits
 When text is entered near a hidden area (...), it is hard to see what is
 changed.
@@ -2841,7 +2852,8 @@ Bind this in Org Mode.
 Keep everything in my org directory.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
 (setq org-ref-bibliography-notes (expand-file-name "ref/notes.org" org-directory)
-      org-ref-default-bibliography (expand-file-name "ref/references.bib" org-directory)
+      org-ref-default-bibliography (list (expand-file-name "ref/references.bib" org-directory)
+                                         (expand-file-name "ref/zotero.bib" org-directory))
       org-ref-pdf-directory (expand-file-name "ref/pdf/" org-directory))
 #+END_SRC
 Use =ivy= instead of =helm= for =org-ref= completion. It makes everything more
@@ -2873,7 +2885,7 @@ it cluttering up my home directory.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
 (setq orhc-bibtex-cache-file (expand-file-name ".orhc-bibtex-cache" gmacs-cache-dir))
 #+END_SRC
-Small modification to how files are attached to bib entries. I want the default
+Redefine: Small modification to how files are attached to bib entries. I want the default
 directory to be my downloads folder.
 #+BEGIN_SRC emacs-lisp
 (after! org-ref
@@ -2899,6 +2911,27 @@ name '[bibtexkey].pdf'. If the file does not exist, rename it to
           (progn
             (funcall file-move-func file pdf)
             (message (format "Created file %s" pdf))))))))
+#+END_SRC
+Redefine to also check the file given in the bib entry.
+#+BEGIN_SRC emacs-lisp
+(after! org-ref
+  (defun org-ref-open-bibtex-pdf ()
+  "Open pdf for a bibtex entry, if it exists.
+assumes point is in
+the entry of interest in the bibfile.  but does not check that."
+  (interactive)
+  (save-excursion
+    (bibtex-beginning-of-entry)
+    (let* ((bibtex-expand-strings t)
+           (entry (bibtex-parse-entry t))
+           (key (reftex-get-bib-field "=key=" entry))
+           (pdf (funcall org-ref-get-pdf-filename-function key))
+           (pdf2 (reftex-get-bib-field "file" entry)))
+      (if (file-exists-p pdf)
+          (org-open-link-from-string (format "[[file:%s]]" pdf))
+        (if (file-exists-p pdf2)
+            (org-open-link-from-string (format "[[file:%s]]" pdf2))
+          (ding)))))))
 #+END_SRC
 ** Prettifying
 *** Headlines

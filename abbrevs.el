@@ -312,6 +312,7 @@
     ("vs" "vector space" nil 0)
     ("vss" "vector spaces" nil 0)
     ("wrok" #("work" 0 4 (face frog-menu-candidates-face)) nil 2)
+    ("illumations" #("illuminations" 0 13 (face frog-menu-candidates-face)) nil 0)
    ))
 
 (define-abbrev-table 'outline-mode-abbrev-table '())
@@ -417,4 +418,3 @@
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
 
 (define-abbrev-table 'youtube-dl-list-mode-abbrev-table '())
-
