@@ -940,7 +940,8 @@ make.
 If I introduce a new feature that increases my startup time, I can test things
 out quantitatively with =esup=, a built-in feature.
 #+BEGIN_SRC emacs-lisp
-(autoload 'esup "esup")
+(use-package esup
+  :commands esup)
 #+END_SRC
 *** UTF-8
 From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][Mastering Emacs]].
@@ -1698,7 +1699,8 @@ But I don't want to permanently delete things. Not yet, anyway.
 We might as well perform file operations asynchronously.
 #+BEGIN_SRC emacs-lisp
 (autoload 'dired-async-mode "dired-async" nil t)
-(dired-async-mode 1)
+(after! dired
+  (dired-async-mode 1))
 #+END_SRC
 When you open, say, an audio or video file from Dired, Emacs displays the raw
 data in that file in a text buffer. We want to open files with the appropriate
@@ -1947,7 +1949,7 @@ Basic configuration.
   :hook
   (pdf-view-mode . pdf-view-midnight-minor-mode)
   (pdf-view-mode . pdf-view-fit-width-to-window))
-(eval-when-compile (pdf-tools-install))
+;; (eval-when-compile (pdf-tools-install))
 #+END_SRC
 Allow rotation.
 #+BEGIN_SRC emacs-lisp
@@ -3635,7 +3637,7 @@ Looking at the =rights= field makes it clear that the permissions were off.
 
 Now for the Emacs setup. This library converts Org into HTML.
 #+BEGIN_SRC emacs-lisp
-(require 'org-mime)
+(autoload 'org-mime-htmlize "org-mime")
 #+END_SRC
 Then we give ourselves a way to activate Org Mode mail.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
@@ -3838,7 +3840,7 @@ by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
 #+END_SRC
 By default, =elfeed= stores the feeds it should compile in an elisp file. But Org
 is easier.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
 (autoload 'elfeed-org "elfeed-org")
 (elfeed-org)
 (setq rmh-elfeed-org-files
@@ -4551,7 +4553,7 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
     (gm/reformat-fragment)))
 #+END_SRC
 Bind to tab.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map (kbd "<tab>") #'math-tab (gm/in-math-p))
 #+END_SRC
 **** Subscripts/Indices
