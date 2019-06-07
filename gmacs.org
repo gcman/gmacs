@@ -1118,8 +1118,14 @@ GhostText method syncs your edits live between the browser and Emacs, while with
 Edit with Emacs, your edits only show up once you "commit" them with =C-c C-c=.
 #+BEGIN_SRC emacs-lisp
 (use-package edit-server
-  :defer 2
-  :config (edit-server-start))
+  :defer 5
+  :config (edit-server-start)
+  :custom
+  (edit-server-default-major-mode 'org-mode)
+  (edit-server-start-hook
+   (lambda ()
+     (visual-fill-column-mode 1)
+     (auto-fill-mode -1))))
 #+END_SRC
 **** Easier Regexp
 #+BEGIN_SRC emacs-lisp
@@ -1854,7 +1860,7 @@ I want to ignore certain file extensions when searching for a file, so I add
 them to the regexp in =counsel-find-file-ignore-regexp=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref ivy
 (defconst gm/find-file-ignore-extensions
-  '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc" "xdv" "fdx"
+  '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc" "xdv" "fdx" "bcf" "run.xml"
     "synctex.gz" "fdb_latexmk"
     "desktop" "elc"
     "pyc"))
@@ -2363,17 +2369,17 @@ A better version of the built-in =comment-dwim= from [[https://github.com/remyfe
 I have started to use =eshell= as my primary shell. This command ensures that
 =eshell= is opened next to, not instead of, my current buffer.
 #+BEGIN_SRC emacs-lisp
-(defun eshell-other-window ()
-  "Open a `eshell' in a new window."
+(defun eshell-other-frame ()
+  "Open a `eshell' in a new frame."
   (interactive)
   (let ((buf (eshell)))
     (switch-to-buffer (other-buffer buf))
-    (switch-to-buffer-other-window buf)))
+    (switch-to-buffer-other-frame buf)))
 #+END_SRC
 I rebind the redundant help binding (there is already a more convenient prefix
 map at =C-h=).
 #+BEGIN_SRC emacs-lisp
-(bind-key "<f1>" #'eshell-other-window)
+(bind-key "<f1>" #'eshell-other-frame)
 #+END_SRC
 We also make some aliases.
 #+BEGIN_SRC emacs-lisp
@@ -2448,7 +2454,8 @@ are at the beginning of an Org headline.
 We customize the commands a bit.
 #+BEGIN_SRC emacs-lisp
 (setq org-speed-commands-user
-      '(("j" counsel-org-goto)))
+      '(("j" counsel-org-goto)
+        ("a" org-archive-subtree)))
 #+END_SRC
 *** Invisible Edits
 When text is entered near a hidden area (...), it is hard to see what is
@@ -2563,7 +2570,7 @@ todo list, take note of ideas I think of, and kickstart blog posts.
 (bind-key "C-c c" #'org-capture)
 #+END_SRC
 Here are my capture templates.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb yes :noweb-ref org-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-capture-templates
       `(("a" "Appointment" entry
          (file ,(expand-file-name "gcal.org" org-directory))
@@ -4140,6 +4147,7 @@ don't require the use of =yasnippets=.
     ("bigop" "big-operator" t)
     ("binom" "choose" t)
     ("bol" "bol" t)
+    ("box" "box" t)
     ("cases" "cases" t)
     ("cb" "^3")
     ("cc" "\\subset ")
