@@ -2395,14 +2395,14 @@ My current workflow is to spawn =eshell= in a new frame, so I "advise" =exit= to
 also kill the frame. However, I also don't want errors when there is only one
 frame.
 #+BEGIN_SRC emacs-lisp
-(defun eshell/exit ()
-  (let ((buf (current-buffer)))
-    (with-current-buffer (get-buffer-create "*eshell messages*"))
-    (if (= 1 (length (frame-list)))
-        (bury-buffer)
-      (kill-buffer buf)
-      (delete-frame)
-      )))
+(after! eshell
+  (defun eshell/exit ()
+    (let ((buf (current-buffer)))
+      (with-current-buffer (get-buffer-create "*eshell messages*"))
+      (if (= 1 (length (frame-list)))
+          (bury-buffer)
+        (kill-buffer buf)
+        (delete-frame)))))
 #+END_SRC
 ** Find Inbox
 #+BEGIN_SRC emacs-lisp
@@ -2547,7 +2547,22 @@ use. and we just set our "proper places."
 (setq org-refile-targets `((,(expand-file-name "todo.org" org-directory) :maxlevel . 3)
                            (,(expand-file-name "notes.org" org-directory) :maxlevel . 3)))
 #+END_SRC
-*** Archival
+*** Refile and Archival
+Log refiling.
+#+BEGIN_SRC emacs-lisp
+(setq org-log-refile 'time)
+#+END_SRC
+Don't refile to DONE tasks.
+#+BEGIN_SRC emacs-lisp
+(defun gm/verify-refile-target ()
+  (not (member (nth 2 (org-heading-components)) org-done-keywords)))
+
+(setq org-refile-target-verify-function 'gm/verify-refile-target)
+#+END_SRC
+Cache the refile targets. It can be refreshed with =C-u C-u C-u C-u C-w=.
+#+BEGIN_SRC emacs-lisp
+(setq org-refile-use-cache t)
+#+END_SRC
 [[https://orgmode.org/worg/org-hacks.html#org0344577][Worg]] gives a way to avoid messing up the heading hierarchy of an archive file
 after archiving lower level items.
 #+BEGIN_SRC emacs-lisp
@@ -4086,9 +4101,9 @@ I use a prefix map to compactify this set of keybindings.
   ^
   ^EMMS^            ^Track^             ^MPD (daemon)^
   ^────────^──────────^──────^────────────^───────^─────
-  _q_uit            _p_revious          _c_reate
-  _e_mms            _n_ext              _k_ill
-  _b_rowse          _P_ause             _r_eload
+  _q_uit            _p_ause             _c_reate
+  _e_mms            _P_revious          _k_ill
+  _b_rowse          _N_ext              _r_eload
   ^^                _B_back (10s)       ^^
   ^^                _F_orward (10s)     ^^
   ^^                ^^                  ^^
@@ -4096,9 +4111,9 @@ I use a prefix map to compactify this set of keybindings.
   ("q" nil)
   ("e" emms :color blue)
   ("b" emms-smart-browse :color blue)
-  ("p" emms-previous)
-  ("n" emms-next)
-  ("P" emms-pause)
+  ("P" emms-previous)
+  ("N" emms-next)
+  ("p" emms-pause)
   ("B" emms-seek-backward)
   ("F" emms-seek-forward)
   ("k" mpd/kill-music-daemon)
