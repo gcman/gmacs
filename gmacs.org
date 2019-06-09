@@ -248,10 +248,8 @@ We load some packages that I use throughout my configuration.
 #+END_SRC
 * General Configuration
 ** User Interface
-*** Fullscreen
-Start GMACS in glorious fullscreen.
+Show off the title.
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
 (setq frame-title-format "GMACS")
 #+END_SRC
 *** Cursor
@@ -653,13 +651,16 @@ Authorize actions.
 (use-package pinentry
   :demand t
   :config (pinentry-start))
-(require 'epa-file)
-(epa-file-enable)
-(setenv "GPG_AGENT_INFO" nil)
-(setq epg-gpg-program "/usr/bin/gpg2")
-(setq epa-file-cache-passphrase-for-symmetric-encryption t)
-(setq epa-file-select-keys nil)
-(setq epa-pinentry-mode 'loopback)
+
+(use-package epa-file
+  :ensure nil
+  :init (epa-file-enable)
+  :config (setenv "GPG_AGENT_INFO" nil)
+  :custom
+  (epg-gpg-program "/usr/bin/gpg2")
+  (epa-file-cache-passphrase-for-symmetric-encryption t)
+  (epa-file-select-keys nil)
+  (epa-pinentry-mode 'loopback))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -1654,13 +1655,16 @@ screen, and once we're done, we can get right back to where we left off.
 #+END_SRC
 *** Dired
 Great for renaming files in bulk.
-#+BEGIN_SRC emacs-lisp
-(after! dired
-  (require 'visual-regexp))
+#+BEGIN_SRC emacs-lisp :noweb yes
+(use-package dired
+  :ensure nil
+  :config
+  (require 'visual-regexp)
+  <<dired-settings>>)
 #+END_SRC
 Easily sort based on a lot of options such as name, time, size, and
 extension. Use ~S~ to use in a Dired buffer.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (use-package dired-quick-sort
   :config (dired-quick-sort-setup))
 #+END_SRC
@@ -1672,10 +1676,8 @@ This is excellent for editing files owned by root.
 #+END_SRC
 I don't have much of a use for just listing the contents of a directory, and I
 sometimes accidentally use this command instead of =dired=.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (bind-key "C-x C-d" #'dired)
-(after! dired
-  <<dired-keys>>)
 #+END_SRC
 Have the most up-to-date version of the buffer when using Dired.
 #+BEGIN_SRC emacs-lisp
@@ -1686,24 +1688,34 @@ Don't show details by default.
 (add-hook 'dired-mode-hook #'dired-hide-details-mode)
 #+END_SRC
 Show recursive folder sizes.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-keys
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (use-package dired-du
-  :commands (dired-du-mode))
-(bind-key "C-x M-r" #'dired-du-mode dired-mode-map)
+  :commands (dired-du-mode)
+  :bind (:map dired-mode-map
+              ("C-x M-r" . dired-du-mode)))
 #+END_SRC
 Allow Dired to recursively copy and delete directories. The option ~always~
 ensures that no confirmation dialog comes up; ~top~ would do it only one layer
 deep.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (setq dired-recursive-copies 'always)
 (setq dired-recursive-deletes 'always)
 #+END_SRC
 But I don't want to permanently delete things. Not yet, anyway.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (setq delete-by-moving-to-trash t)
 #+END_SRC
+Even then, I sometimes want to actually delete files.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
+(defun gm/really-delete ()
+  (interactive)
+  (let ((delete-by-moving-to-trash nil))
+    (dired-do-delete)))
+
+(bind-key "F" #'gm/really-delete dired-mode-map)
+#+END_SRC
 We might as well perform file operations asynchronously.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (autoload 'dired-async-mode "dired-async" nil t)
 (after! dired
   (dired-async-mode 1))
@@ -1711,22 +1723,23 @@ We might as well perform file operations asynchronously.
 When you open, say, an audio or video file from Dired, Emacs displays the raw
 data in that file in a text buffer. We want to open files with the appropriate
 application.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-keys
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (autoload 'dired-open-xdg "dired-open")
 (bind-key "O" #'dired-open-xdg dired-mode-map)
 #+END_SRC
 Condense unique subtrees like GitHub does.
-#+BEGIN_SRC emacs-lisp
-(require 'dired-collapse)
-(add-hook 'dired-mode-hook #'dired-collapse-mode)
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
+(use-package dired-collapse
+  :ensure nil
+  :hook (dired-mode . dired-collapse-mode))
 #+END_SRC
 Always follow symlinks to their source if the source is version
 controlled.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (setq vc-follow-symlinks t)
 #+END_SRC
 For really big files, =rsync= is nice.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (defun gm/dired-rsync (dest)
   (interactive
    (list
@@ -1756,7 +1769,7 @@ For really big files, =rsync= is nice.
     ;; finally, switch to that window
     (other-window 1)))
 #+END_SRC
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-keys
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (bind-key "C" #'gm/dired-rsync dired-mode-map)
 #+END_SRC
 I often find the commands in Dired hard to remember.
@@ -1810,7 +1823,7 @@ T - tag prefix
   ("q" nil)
   ("." nil :color blue))
 #+END_SRC
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-keys
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (bind-key "." 'hydra-dired/body dired-mode-map)
 #+END_SRC
 *** Ivy
@@ -1915,9 +1928,8 @@ buffer.
  :commands (god-local-mode god-mode-all))
 #+END_SRC
 Easily enter God Mode.
-#+BEGIN_SRC emacs-lisp
-(after! key-chord
-  (key-chord-define-global "jk" 'god-mode-all))
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref keychord
+(key-chord-define-global "jk" 'god-mode-all)
 #+END_SRC
 Indicate whether we're in God mode with the cursor colour. I've seen other
 people do this by having a bar cursor in "insert mode" (to borrow some
@@ -2005,11 +2017,13 @@ Open PDFs to where they were last opened.
 #+END_SRC
 *** Epub reading
 We use =nov.el=.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package nov
   :commands (nov-mode)
   :init (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
-  :hook (nov-mode . gm/nov-font-setup))
+  :hook (nov-mode . gm/nov-font-setup)
+  :config
+  <<nov-settings>>)
 #+END_SRC
 Change default reading font from Source Sans Pro (my default variable pitch
 font) to Minion Pro.
@@ -2019,7 +2033,7 @@ font) to Minion Pro.
                                            :height 2.0))
 #+END_SRC
 Justifying e-book text. This code was taken from [[https://github.com/wasamasa/nov.el][wasamasa/nov.el]].
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref nov-settings
 (require 'justify-kp)
 (setq nov-text-width most-positive-fixnum)
 
@@ -2409,14 +2423,18 @@ frame.
 (bind-key "C-c o" (lambda! (find-file "~/org/inbox.org")))
 #+END_SRC
 ** Keychord
-#+BEGIN_SRC emacs-lisp
-(require 'key-chord)
-(key-chord-mode 1)
+#+BEGIN_SRC emacs-lisp :noweb yes
+(use-package key-chord
+  :ensure nil
+  :demand t
+  :config
+  (key-chord-mode 1)
+  <<keychord>>)
 #+END_SRC
 *** Number Symbols
 Eliminate the shift key for inputting symbols. The dollar sign ($) keychord is
 especially useful when typing LaTeX.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref keychord
 (key-chord-define-global "1q" "!")
 (key-chord-define-global "2w" "@")
 (key-chord-define-global "3e" "#")
@@ -2866,11 +2884,12 @@ academic papers in Org Mode by Org-guru John Kitchin.
 (add-hook 'bibtex-mode-hook (lambda () (require 'org-ref)))
 
 (after! org-ref
-    (require 'doi-utils)
-    (require 'org-ref-pdf)
-    (bind-key "C-c b" #'org-ref-bibtex-new-entry/body bibtex-mode-map)
-    (key-chord-define bibtex-mode-map "jj" 'org-ref-bibtex-hydra/body)
-    <<org-ref>>)
+  (require 'doi-utils)
+  (require 'org-ref-pdf)
+  (bind-key "C-c b" #'org-ref-bibtex-new-entry/body bibtex-mode-map)
+  (after! key-chord
+    (key-chord-define bibtex-mode-map "jj" 'org-ref-bibtex-hydra/body))
+  <<org-ref>>)
 #+END_SRC
 For humanities essays.
 #+BEGIN_SRC emacs-lisp
@@ -3156,13 +3175,14 @@ Highlight LateX inline math in org mode.
 Define a keychord to enter inline math mode. This allows me to get around
 messing with making =$= an electrically paired delimiter.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(key-chord-define org-mode-map "r4" #'gm/create-or-exit-math-fragment)
+(after! key-chord
+  (key-chord-define org-mode-map "r4" #'gm/create-or-exit-math-fragment))
 #+END_SRC
 **** Pretty Math Symbols
 I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-symbols.el][mortiferus]]. The file I use is not the one from
 their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 #+BEGIN_SRC emacs-lisp
-(require 'gm-pretty-math)
+(autoload #'gm/prettify-math "gm-pretty-math")
 #+END_SRC
 *** Don't Break Paragraph on Comments'
 [[https://emacs.stackexchange.com/questions/22574/orgmode-export-how-to-prevent-a-new-line-for-comment-lines][John Kitchin]] tells us how to remove comments from an Org document when exporting
@@ -4048,6 +4068,7 @@ I got the setup information from [[https://www.reddit.com/r/emacs/comments/981kh
   (require 'emms-setup)
   (require 'emms-player-mpd)
   (emms-all)
+  (emms-player-mpd-connect)
   (require 'emms-mode-line)
   (emms-mode-line 1)
   (require 'emms-playing-time)
@@ -4122,7 +4143,6 @@ I use a prefix map to compactify this set of keybindings.
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (bind-key "M-m" #'hydra-emms/body)
-(bind-key "<pause>" #'emms-pause)
 #+END_SRC
 * Snippets
 I use =SPC= instead of the default =TAB= to expand snippets. I find this more
@@ -4182,6 +4202,7 @@ don't require the use of =yasnippets=.
     ("cb" "^3")
     ("cc" "\\subset ")
     ("ceil" "ceiling" t)
+    ("comp" "comp" t)
     ("cong" "\\equiv")
     ("cos" "\\cos ")
     ("cot" "\\cot ")
@@ -4642,9 +4663,14 @@ results in =\frac{\sin x}{|}=.
       (delete-region begin end)
       (gm/math-insert-frac-match match))))
 
-(defun gm/math-frac ()
-  (interactive)
+(defun gm/math-frac (begin end)
+  (interactive "r")
   (cond
+   ((region-active-p)
+     (let ((match (buffer-substring-no-properties
+                   begin end)))
+       (delete-region begin end)
+       (gm/math-insert-frac-match match)))
    ((string-match "[\])]" (char-to-string (char-before)))
     (let ((end (point))
           match)

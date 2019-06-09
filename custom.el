@@ -12,7 +12,7 @@
     ("/home/gautam/org/inbox.org" "/home/gautam/org/todo.org" "/home/gautam/org/notes.org" "/home/gautam/org/gcal.org")))
  '(package-selected-packages
    (quote
-    (esup el-patch systemd anzu which-key web-mode visual-fill-column use-package unfill sudo-edit solarized-theme smex smart-mode-line restart-emacs rainbow-mode py-autopep8 pinentry persistent-scratch pdf-view-restore paradox ox-hugo org-wc org-ref org-gcal org-download org-cliplink org-bullets olivetti nov notmuch nlinum-relative magit keyfreq hungry-delete helpful god-mode gcmh fountain-mode flyspell-correct flycheck flx expand-region elpy elfeed edit-server dired-quick-sort dired-du diminish counsel-projectile comment-dwim-2 browse-kill-ring beacon auctex ace-window ace-link)))
+    (exwm esup el-patch systemd anzu which-key web-mode visual-fill-column use-package unfill sudo-edit solarized-theme smex smart-mode-line restart-emacs rainbow-mode py-autopep8 pinentry persistent-scratch pdf-view-restore paradox ox-hugo org-wc org-ref org-gcal org-download org-cliplink org-bullets olivetti nov notmuch nlinum-relative magit keyfreq hungry-delete helpful god-mode gcmh fountain-mode flyspell-correct flycheck flx expand-region elpy elfeed edit-server dired-quick-sort dired-du diminish counsel-projectile comment-dwim-2 browse-kill-ring beacon auctex ace-window ace-link)))
  '(safe-local-variable-values
    (quote
     ((eval bind-key "C-c ]"
