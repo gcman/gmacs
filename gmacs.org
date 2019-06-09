@@ -3182,7 +3182,7 @@ messing with making =$= an electrically paired delimiter.
 I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-symbols.el][mortiferus]]. The file I use is not the one from
 their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 #+BEGIN_SRC emacs-lisp
-(autoload #'gm/prettify-math "gm-pretty-math")
+(require 'gm-pretty-math)
 #+END_SRC
 *** Don't Break Paragraph on Comments'
 [[https://emacs.stackexchange.com/questions/22574/orgmode-export-how-to-prevent-a-new-line-for-comment-lines][John Kitchin]] tells us how to remove comments from an Org document when exporting
@@ -4408,15 +4408,24 @@ be in math. The one subtlety is that we also look at the starred versions of
   (let* ((fr (org-element-context))
          (fr-type (car fr))
          (begin (org-element-property :begin fr)))
-    (cond ((eq fr-type 'latex-fragment)
-           (and
-            (>= loc begin)
-            (<= loc (1- (- (org-element-property :end fr)
-                           (org-element-property :post-blank fr))))))
-          ((eq fr-type 'latex-environment)
-           (let ((env-open (how-many (gm/--in-math-p "\\\\begin{") begin loc))
-                 (env-close (how-many (gm/--in-math-p "\\\\end{") begin loc)))
-             (> (- env-open env-close) 0))))))
+    (save-excursion
+      (if (condition-case nil
+              (progn
+                (re-search-backward "\\text{" begin)
+                (forward-word)
+                (forward-sexp)
+                (> (point) loc))
+            (error nil))
+          nil
+        (cond ((eq fr-type 'latex-fragment)
+               (and
+                (>= loc begin)
+                (<= loc (1- (- (org-element-property :end fr)
+                               (org-element-property :post-blank fr))))))
+              ((eq fr-type 'latex-environment)
+               (let ((env-open (how-many (gm/--in-math-p "\\\\begin{") begin loc))
+                     (env-close (how-many (gm/--in-math-p "\\\\end{") begin loc)))
+                 (> (- env-open env-close) 0))))))))
 #+END_SRC
 **** Enter Math Mode
 Enter a math fragment if inside one, exit otherwise. We keep track of the number
@@ -4433,6 +4442,7 @@ makes for some awkward timing for activating previews.
       (insert "\\(")
       (save-excursion (insert "\\)")))))
 #+END_SRC
+\text
 **** Last n Characters Before Point
 Return the last n characters before the point, or =loc= if provided.
 #+BEGIN_SRC emacs-lisp
