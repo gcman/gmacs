@@ -645,6 +645,31 @@ contents to the kill ring.
 #+BEGIN_SRC emacs-lisp
 (setq save-interprogram-paste-before-kill t)
 #+END_SRC
+**** Create Necessary Directories
+I find it annoying to answer the prompt to make a new directory when making a
+file in a nonexistent directory. And so we advise =find-file= to transparently
+create necessary directories (from this [[https://superuser.com/questions/131538/can-i-create-directories-that-dont-exist-while-creating-a-new-file-in-emacs][SE post]]).
+#+BEGIN_SRC emacs-lisp
+(defadvice find-file (before make-directory-maybe (filename &optional wildcards) activate)
+  "Create parent directory if not exists while visiting file."
+  (unless (file-exists-p filename)
+    (let ((dir (file-name-directory filename)))
+      (unless (file-exists-p dir)
+        (make-directory dir)))))
+#+END_SRC
+**** Keep =custom.el= Clean
+Don't let =package.el= [[http://www.holgerschurig.de/en/emacs-dont-let-packages-pollute-custom-el/][pollute]] your custom file.
+#+BEGIN_SRC emacs-lisp
+(defun package--save-selected-packages (&optional VALUE opt)
+  nil)
+#+END_SRC
+
+**** Auto =chmod +x=
+Make files that start with a =#!= shebang executable.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
+#+END_SRC
+
 *** Work with Protected Files
 Authorize actions.
 #+BEGIN_SRC emacs-lisp
@@ -661,6 +686,12 @@ Authorize actions.
   (epa-file-cache-passphrase-for-symmetric-encryption t)
   (epa-file-select-keys nil)
   (epa-pinentry-mode 'loopback))
+#+END_SRC
+This is excellent for editing files owned by root.
+#+BEGIN_SRC emacs-lisp
+(use-package sudo-edit
+  :commands sudo-edit
+  :bind (("C-c C-x r" . sudo-edit)))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -960,11 +991,6 @@ From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][
 ;; Treat clipboard input as UTF-8 string first; compound text next, etc.
 (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
 #+END_SRC
-*** Visual Regexp
-#+BEGIN_SRC emacs-lisp
-(autoload 'vr/replace "visual-regexp")
-(autoload 'vr/query-replace "visual-regexp")
-#+END_SRC
 *** Faster Scroll Down
 I found this snippet on [[https://emacs.stackexchange.com/questions/28736/emacs-pointcursor-movement-lag/28746][StackExchange]]. To summarize, =next-line= called
 =line-move-partial=, which is expensive. The function =previous-line= does not do
@@ -972,29 +998,6 @@ this, so scrolling forward can sometimes feel jumpy, even when scrolling up is
 smooth.
 #+BEGIN_SRC emacs-lisp
 (setq auto-window-vscroll nil)
-#+END_SRC
-*** Create Necessary Directories
-I find it annoying to answer the prompt to make a new directory when making a
-file in a nonexistent directory. And so we advise =find-file= to transparently
-create necessary directories (from this [[https://superuser.com/questions/131538/can-i-create-directories-that-dont-exist-while-creating-a-new-file-in-emacs][SE post]]).
-#+BEGIN_SRC emacs-lisp
-(defadvice find-file (before make-directory-maybe (filename &optional wildcards) activate)
-  "Create parent directory if not exists while visiting file."
-  (unless (file-exists-p filename)
-    (let ((dir (file-name-directory filename)))
-      (unless (file-exists-p dir)
-        (make-directory dir)))))
-#+END_SRC
-*** Auto =chmod +x=
-Make files that start with a =#!= shebang executable.
-#+BEGIN_SRC emacs-lisp
-(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
-#+END_SRC
-*** Keep =custom.el= Clean
-Don't let =package.el= [[http://www.holgerschurig.de/en/emacs-dont-let-packages-pollute-custom-el/][pollute]] your custom file.
-#+BEGIN_SRC emacs-lisp
-(defun package--save-selected-packages (&optional VALUE opt)
-  nil)
 #+END_SRC
 ** Wordsmithing
 *** Basic Configuration
@@ -1570,7 +1573,8 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 (bind-key "M-0" #'forward-sexp)
 #+END_SRC
 ** Packages
-*** Initialize During Emacs
+*** Package Management
+**** Initialize During Emacs
 Although we load and initialize all packages at startup, it is sometimes useful
 for the user to be able to interact with this process after it has taken place.
 For example, packages must be initialized to evaluate code blocks with
@@ -1582,7 +1586,7 @@ For example, packages must be initialized to evaluate code blocks with
   (package-initialize)
   (package-refresh-contents))
 #+END_SRC
-*** Helpful
+**** Helpful
 This package is a more informative alternative to the default Emacs
 documentation/help feature. The [[https://github.com/Wilfred/helpful][author's pictures]] explain it better than I
 could.
@@ -1601,57 +1605,190 @@ could.
              helpful-function
              helpful-command))
 #+END_SRC
-*** Paradox
+**** Paradox
 #+BEGIN_SRC emacs-lisp
 (use-package paradox
   :commands (package-initialize)
   :config (paradox-enable))
 #+END_SRC
-*** Key Frequency
+*** Special Modes
+**** PDF Tools
+Basic configuration.
 #+BEGIN_SRC emacs-lisp
-(use-package keyfreq
-  :defer 2
+(use-package pdf-tools
+  :mode (("\\.pdf\\'" . pdf-view-mode))
+  :commands pdf-view-mode
   :config
-  (keyfreq-mode 1)
-  (keyfreq-autosave-mode 1)
+  (setq pdf-annot-activate-created-annotations t)
+  (after! counsel
+    (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
+  :diminish pdf-view-midnight-minor-mode
+  :bind (:map pdf-view-mode-map
+              ("h" . pdf-annot-add-highlight-markup-annotation)
+              ("t" . pdf-annot-add-text-annotation)
+              ("D". pdf-annot-delete)
+              ("r" . pdf-view--rotate)
+              ("n" . pdf-view-next-line-or-next-page)
+              ("C-n" . pdf-view-next-page-command)
+              ("p" . pdf-view-previous-line-or-previous-page)
+              ("C-p" . pdf-view-previous-page-command))
+  :hook
+  (pdf-view-mode . pdf-view-midnight-minor-mode)
+  (pdf-view-mode . pdf-view-fit-width-to-window))
+;; (eval-when-compile (pdf-tools-install))
+#+END_SRC
+Allow rotation.
+#+BEGIN_SRC emacs-lisp
+(defun pdf-view--rotate (&optional counterclockwise-p page-p)
+  "Rotate PDF 90 degrees.  Requires pdftk to work.\n
+Clockwise rotation is the default; set COUNTERCLOCKWISE-P to
+non-nil for the other direction.  Rotate the whole document by
+default; set PAGE-P to non-nil to rotate only the current page.
+\nWARNING: overwrites the original file, so be careful!"
+  (interactive)
+  ;; error out when pdftk is not installed
+  (if (null (executable-find "pdftk"))
+      (error "Rotation requires pdftk")
+    ;; only rotate in pdf-view-mode
+    (when (eq major-mode 'pdf-view-mode)
+      (let* ((rotate (if counterclockwise-p "left" "right"))
+             (file   (format "\"%s\"" (pdf-view-buffer-file-name)))
+             (page   (pdf-view-current-page))
+             (pages  (cond ((not page-p)                        ; whole doc?
+                            (format "1-end%s" rotate))
+                           ((= page 1)                          ; first page?
+                            (format "%d%s %d-end"
+                                    page rotate (1+ page)))
+                           ((= page (pdf-info-number-of-pages)) ; last page?
+                            (format "1-%d %d%s"
+                                    (1- page) page rotate))
+                           (t                                   ; interior page?
+                            (format "1-%d %d%s %d-end"
+                                    (1- page) page rotate (1+ page))))))
+        ;; empty string if it worked
+        (if (string= "" (shell-command-to-string
+                         (format (concat "pdftk %s cat %s "
+                                         "output %s.NEW "
+                                         "&& mv %s.NEW %s")
+                                 file pages file file file)))
+            (pdf-view-revert-buffer nil t)
+          (error "Rotation error!"))))))
+#+END_SRC
+Open PDFs to where they were last opened.
+#+BEGIN_SRC emacs-lisp
+(use-package pdf-view-restore
+  :after pdf-tools
+  :config
+  (add-hook 'pdf-view-mode-hook #'pdf-view-restore-mode)
   :custom
-  (keyfreq-file "~/emacs-keyfreq"))
+  (pdf-view-restore-filename "~/.emacs.d/cache/.pdf-view-restore"))
 #+END_SRC
-*** Tramp
-Make sure to keep backups locally and not remotely.
-#+BEGIN_SRC emacs-lisp
-(setq tramp-backup-directory-alist backup-directory-alist)
-#+END_SRC
-Set tramp connection history location.
-#+BEGIN_SRC emacs-lisp
-(after! tramp-cache
-  (setq tramp-persistency-file (expand-file-name "tramp" gmacs-cache-dir)))
-#+END_SRC
-*** Magit
-Magit, the magical Git client, is an amazing porcelain for Git inside of Emacs.
-Seriously, I've forgotten how tedious using Git on the command line is, and
-every time I have to is a pain. Emacs is worth using for this package alone. We
-only load it from the entry points given in =:commands=. We also define a
-quick-bind to quit the current Magit session and return to the previous window
-configuration. This way, we can let Magit take up the full real estate on the
-screen, and once we're done, we can get right back to where we left off.
-#+BEGIN_SRC emacs-lisp
-(use-package magit
-  :commands (magit-status magit-blame magit-log-buffer-file magit-log-all)
-  :init
-  (defun magit-quit-session ()
-    "Restores the previous window configuration and kills the magit buffer"
-    (interactive)
-    (kill-buffer)
-    (jump-to-register :magit-fullscreen))
+**** Epub reading
+We use =nov.el=.
+#+BEGIN_SRC emacs-lisp :noweb yes
+(use-package nov
+  :commands (nov-mode)
+  :init (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+  :hook (nov-mode . gm/nov-font-setup)
   :config
-  (defadvice magit-status (around magit-fullscreen activate)
-    (window-configuration-to-register :magit-fullscreen)
-    ad-do-it
-    (delete-other-windows))
-  :bind (("C-x g" . magit-status)
-         :map magit-status-mode-map
-              ("q" . magit-quit-session)))
+  <<nov-settings>>)
+#+END_SRC
+Change default reading font from Source Sans Pro (my default variable pitch
+font) to Minion Pro.
+#+BEGIN_SRC emacs-lisp
+(defun gm/nov-font-setup ()
+  (face-remap-add-relative 'variable-pitch :family "Minion Pro"
+                                           :height 2.0))
+#+END_SRC
+Justifying e-book text. This code was taken from [[https://github.com/wasamasa/nov.el][wasamasa/nov.el]].
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref nov-settings
+(require 'justify-kp)
+(setq nov-text-width most-positive-fixnum)
+
+(defun my-nov-window-configuration-change-hook ()
+  (my-nov-post-html-render-hook)
+  (remove-hook 'window-configuration-change-hook
+               'my-nov-window-configuration-change-hook
+               t))
+
+(defun my-nov-post-html-render-hook ()
+  (if (get-buffer-window)
+      (let ((max-width (pj-line-width))
+            buffer-read-only)
+        (save-excursion
+          (goto-char (point-min))
+          (while (not (eobp))
+            (when (not (looking-at "^[[:space:]]*$"))
+              (goto-char (line-end-position))
+              (when (> (shr-pixel-column) max-width)
+                (goto-char (line-beginning-position))
+                (pj-justify)))
+            (forward-line 1))))
+    (add-hook 'window-configuration-change-hook
+              'my-nov-window-configuration-change-hook
+              nil t)))
+
+(add-hook 'nov-post-html-render-hook 'my-nov-post-html-render-hook)
+#+END_SRC
+**** TeX
+#+BEGIN_SRC emacs-lisp
+(use-package auctex)
+#+END_SRC
+**** Webmode
+#+BEGIN_SRC emacs-lisp
+(use-package web-mode
+  :mode ("\\.scss\\'" . web-mode)
+  :custom
+  (web-mode-markup-indent-offset 2)
+  (web-mode-css-indent-offset 2)
+  (web-mode-code-indent-offset 2))
+#+END_SRC
+*** Eshell
+I have started to use =eshell= as my primary shell. This command ensures that
+=eshell= is opened next to, not instead of, my current buffer.
+#+BEGIN_SRC emacs-lisp :noweb yes
+(use-package eshell
+  :ensure nil
+  :commands eshell
+  :init
+  <<eshell-init>>
+  :config
+  <<eshell>>)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref eshell-init
+(defun eshell-other-frame (arg)
+  "Open `eshell' in a new frame."
+  (interactive "P")
+  (let ((buf
+         (let ((current-prefix-arg arg))
+           (call-interactively 'eshell))))
+    (switch-to-buffer (other-buffer buf))
+    (switch-to-buffer-other-frame buf)))
+#+END_SRC
+I rebind the redundant help binding (there is already a more convenient prefix
+map at =C-h=).
+#+BEGIN_SRC emacs-lisp
+(bind-key "<f1>" #'eshell-other-frame)
+#+END_SRC
+We also make some aliases.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref eshell
+(defun eshell/ff (&rest args)
+  (apply #'find-file args))
+
+(defun eshell/d (&rest args)
+  (apply #'dired args))
+#+END_SRC
+My current workflow is to spawn =eshell= in a new frame, so I "advise" =exit= to
+also kill the frame. However, I also don't want errors when there is only one
+frame.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref eshell
+(defun eshell/exit ()
+  (let ((buf (current-buffer)))
+    (with-current-buffer (get-buffer-create "*eshell messages*")
+      (if (= 1 (length (frame-list)))
+          (bury-buffer)
+        (kill-buffer buf)
+        (delete-frame)))))
 #+END_SRC
 *** Dired
 Great for renaming files in bulk.
@@ -1659,7 +1796,6 @@ Great for renaming files in bulk.
 (use-package dired
   :ensure nil
   :config
-  (require 'visual-regexp)
   <<dired-settings>>)
 #+END_SRC
 Easily sort based on a lot of options such as name, time, size, and
@@ -1667,12 +1803,6 @@ extension. Use ~S~ to use in a Dired buffer.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (use-package dired-quick-sort
   :config (dired-quick-sort-setup))
-#+END_SRC
-This is excellent for editing files owned by root.
-#+BEGIN_SRC emacs-lisp
-(use-package sudo-edit
-  :commands sudo-edit
-  :bind (("C-c C-x r" . sudo-edit)))
 #+END_SRC
 I don't have much of a use for just listing the contents of a directory, and I
 sometimes accidentally use this command instead of =dired=.
@@ -1826,6 +1956,42 @@ T - tag prefix
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (bind-key "." 'hydra-dired/body dired-mode-map)
 #+END_SRC
+*** Magit
+Magit, the magical Git client, is an amazing porcelain for Git inside of Emacs.
+Seriously, I've forgotten how tedious using Git on the command line is, and
+every time I have to is a pain. Emacs is worth using for this package alone. We
+only load it from the entry points given in =:commands=. We also define a
+quick-bind to quit the current Magit session and return to the previous window
+configuration. This way, we can let Magit take up the full real estate on the
+screen, and once we're done, we can get right back to where we left off.
+#+BEGIN_SRC emacs-lisp
+(use-package magit
+  :commands (magit-status magit-blame magit-log-buffer-file magit-log-all)
+  :init
+  (defun magit-quit-session ()
+    "Restores the previous window configuration and kills the magit buffer"
+    (interactive)
+    (kill-buffer)
+    (jump-to-register :magit-fullscreen))
+  :config
+  (defadvice magit-status (around magit-fullscreen activate)
+    (window-configuration-to-register :magit-fullscreen)
+    ad-do-it
+    (delete-other-windows))
+  :bind (("C-x g" . magit-status)
+         :map magit-status-mode-map
+              ("q" . magit-quit-session)))
+#+END_SRC
+*** Tramp
+Make sure to keep backups locally and not remotely.
+#+BEGIN_SRC emacs-lisp
+(setq tramp-backup-directory-alist backup-directory-alist)
+#+END_SRC
+Set tramp connection history location.
+#+BEGIN_SRC emacs-lisp
+(after! tramp-cache
+  (setq tramp-persistency-file (expand-file-name "tramp" gmacs-cache-dir)))
+#+END_SRC
 *** Ivy
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package ivy
@@ -1944,161 +2110,41 @@ Mode).
 (add-hook 'god-mode-enabled-hook #'gm/god-mode-indicator)
 (add-hook 'god-mode-disabled-hook #'gm/god-mode-indicator)
 #+END_SRC
-*** PDF Tools
-Basic configuration.
-#+BEGIN_SRC emacs-lisp
-(use-package pdf-tools
-  :mode (("\\.pdf\\'" . pdf-view-mode))
-  :commands pdf-view-mode
-  :config
-  (setq pdf-annot-activate-created-annotations t)
-  (after! counsel
-    (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
-  :diminish pdf-view-midnight-minor-mode
-  :bind (:map pdf-view-mode-map
-              ("h" . pdf-annot-add-highlight-markup-annotation)
-              ("t" . pdf-annot-add-text-annotation)
-              ("D". pdf-annot-delete)
-              ("r" . pdf-view--rotate)
-              ("n" . pdf-view-next-line-or-next-page)
-              ("C-n" . pdf-view-next-page-command)
-              ("p" . pdf-view-previous-line-or-previous-page)
-              ("C-p" . pdf-view-previous-page-command))
-  :hook
-  (pdf-view-mode . pdf-view-midnight-minor-mode)
-  (pdf-view-mode . pdf-view-fit-width-to-window))
-;; (eval-when-compile (pdf-tools-install))
-#+END_SRC
-Allow rotation.
-#+BEGIN_SRC emacs-lisp
-(defun pdf-view--rotate (&optional counterclockwise-p page-p)
-  "Rotate PDF 90 degrees.  Requires pdftk to work.\n
-Clockwise rotation is the default; set COUNTERCLOCKWISE-P to
-non-nil for the other direction.  Rotate the whole document by
-default; set PAGE-P to non-nil to rotate only the current page.
-\nWARNING: overwrites the original file, so be careful!"
-  (interactive)
-  ;; error out when pdftk is not installed
-  (if (null (executable-find "pdftk"))
-      (error "Rotation requires pdftk")
-    ;; only rotate in pdf-view-mode
-    (when (eq major-mode 'pdf-view-mode)
-      (let* ((rotate (if counterclockwise-p "left" "right"))
-             (file   (format "\"%s\"" (pdf-view-buffer-file-name)))
-             (page   (pdf-view-current-page))
-             (pages  (cond ((not page-p)                        ; whole doc?
-                            (format "1-end%s" rotate))
-                           ((= page 1)                          ; first page?
-                            (format "%d%s %d-end"
-                                    page rotate (1+ page)))
-                           ((= page (pdf-info-number-of-pages)) ; last page?
-                            (format "1-%d %d%s"
-                                    (1- page) page rotate))
-                           (t                                   ; interior page?
-                            (format "1-%d %d%s %d-end"
-                                    (1- page) page rotate (1+ page))))))
-        ;; empty string if it worked
-        (if (string= "" (shell-command-to-string
-                         (format (concat "pdftk %s cat %s "
-                                         "output %s.NEW "
-                                         "&& mv %s.NEW %s")
-                                 file pages file file file)))
-            (pdf-view-revert-buffer nil t)
-          (error "Rotation error!"))))))
-#+END_SRC
-Open PDFs to where they were last opened.
-#+BEGIN_SRC emacs-lisp
-(use-package pdf-view-restore
-  :after pdf-tools
-  :config
-  (add-hook 'pdf-view-mode-hook #'pdf-view-restore-mode)
-  :custom
-  (pdf-view-restore-filename "~/.emacs.d/cache/.pdf-view-restore"))
-#+END_SRC
-*** Epub reading
-We use =nov.el=.
-#+BEGIN_SRC emacs-lisp :noweb yes
-(use-package nov
-  :commands (nov-mode)
-  :init (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
-  :hook (nov-mode . gm/nov-font-setup)
-  :config
-  <<nov-settings>>)
-#+END_SRC
-Change default reading font from Source Sans Pro (my default variable pitch
-font) to Minion Pro.
-#+BEGIN_SRC emacs-lisp
-(defun gm/nov-font-setup ()
-  (face-remap-add-relative 'variable-pitch :family "Minion Pro"
-                                           :height 2.0))
-#+END_SRC
-Justifying e-book text. This code was taken from [[https://github.com/wasamasa/nov.el][wasamasa/nov.el]].
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref nov-settings
-(require 'justify-kp)
-(setq nov-text-width most-positive-fixnum)
-
-(defun my-nov-window-configuration-change-hook ()
-  (my-nov-post-html-render-hook)
-  (remove-hook 'window-configuration-change-hook
-               'my-nov-window-configuration-change-hook
-               t))
-
-(defun my-nov-post-html-render-hook ()
-  (if (get-buffer-window)
-      (let ((max-width (pj-line-width))
-            buffer-read-only)
-        (save-excursion
-          (goto-char (point-min))
-          (while (not (eobp))
-            (when (not (looking-at "^[[:space:]]*$"))
-              (goto-char (line-end-position))
-              (when (> (shr-pixel-column) max-width)
-                (goto-char (line-beginning-position))
-                (pj-justify)))
-            (forward-line 1))))
-    (add-hook 'window-configuration-change-hook
-              'my-nov-window-configuration-change-hook
-              nil t)))
-
-(add-hook 'nov-post-html-render-hook 'my-nov-post-html-render-hook)
-#+END_SRC
-*** TeX
-#+BEGIN_SRC emacs-lisp
-(use-package auctex)
-#+END_SRC
-*** Webmode
-#+BEGIN_SRC emacs-lisp
-(use-package web-mode
-  :mode ("\\.scss\\'" . web-mode)
-  :custom
-  (web-mode-markup-indent-offset 2)
-  (web-mode-css-indent-offset 2)
-  (web-mode-code-indent-offset 2))
-#+END_SRC
-*** Screencast
-#+BEGIN_SRC emacs-lisp
-(autoload 'gif-screencast "gif-screencast" "Start GIF Screencast" t)
-(autoload 'keycast-mode "keycast" "Start `keycast-mode'" t)
-
-(defun gm/begin-screencast ()
-  (interactive)
-  (gif-screencast)
-  (unless (bound-and-true-p keycast-mode) (keycast-mode)))
-
-(defun gm/end-screencast ()
-  (interactive)
-  (gif-screencast-stop)
-  (when (bound-and-true-p keycast-mode) (keycast-mode)))
-
-(bind-key "<f8>" #'gm/begin-screencast)
-(bind-key "<f9>" #'gm/end-screencast)
-#+END_SRC
 *** Hydra
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package hydra
   :defer 2
   :config
   <<hydra>>)
+#+END_SRC
+*** Which Key Mode
+Helpful when you want to see completion for a certain sequence of prefix keys.
+#+BEGIN_SRC emacs-lisp
+(use-package which-key
+  :defer 10
+  :diminish
+  :config (which-key-mode))
+#+END_SRC
+*** Avy
+#+BEGIN_SRC emacs-lisp
+(use-package avy
+  :bind (("M-g" . avy-goto-word-1)))
+#+END_SRC
+Similarly, we use =ace-link= to open links quickly.
+#+BEGIN_SRC emacs-lisp
+(use-package ace-link
+  :config
+  (ace-link-setup-default))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(after! org
+  (bind-key "M-o" #'ace-link-org org-mode-map))
+#+END_SRC
+We set up some easier to read faces.
+#+BEGIN_SRC emacs-lisp
+(custom-set-faces
+ '(avy-lead-face ((t (:inherit isearch-fail))))
+ '(avy-lead-face-0 ((t (:inherit org-todo :background "#002b36")))))
 #+END_SRC
 *** Window Management
 I don't like the default Emacs functionality of splitting windows but not
@@ -2130,35 +2176,6 @@ the "other one" is. Instead, you select the window with a number.
          ("M-1" . delete-other-windows)
          ("M-3" . gm/split-window-right-and-switch)
          ("M-4" . gm/split-window-below-and-switch)))
-#+END_SRC
-*** Avy
-#+BEGIN_SRC emacs-lisp
-(use-package avy
-  :bind (("M-g" . avy-goto-word-1)))
-#+END_SRC
-Similarly, we use =ace-link= to open links quickly.
-#+BEGIN_SRC emacs-lisp
-(use-package ace-link
-  :config
-  (ace-link-setup-default))
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(after! org
-  (bind-key "M-o" #'ace-link-org org-mode-map))
-#+END_SRC
-We set up some easier to read faces.
-#+BEGIN_SRC emacs-lisp
-(custom-set-faces
- '(avy-lead-face ((t (:inherit isearch-fail))))
- '(avy-lead-face-0 ((t (:inherit org-todo :background "#002b36")))))
-#+END_SRC
-*** Which Key Mode
-Helpful when you want to see completion for a certain sequence of prefix keys.
-#+BEGIN_SRC emacs-lisp
-(use-package which-key
-  :defer 10
-  :diminish
-  :config (which-key-mode))
 #+END_SRC
 *** Projectile
 A neat package to perform operations with respect to the active "project,"
@@ -2206,6 +2223,41 @@ I use a hydra to manage its many keybindings.
 
 (bind-key "C-c p" #'hydra-projectile/body)
 #+END_SRC
+*** Visual Regexp
+#+BEGIN_SRC emacs-lisp
+(use-package visual-regexp
+  :ensure nil
+  :commands (vr/replace vr/query-replace))
+#+END_SRC
+*** Screencast
+#+BEGIN_SRC emacs-lisp
+(autoload 'gif-screencast "gif-screencast" "Start GIF Screencast" t)
+(autoload 'keycast-mode "keycast" "Start `keycast-mode'" t)
+
+(defun gm/begin-screencast ()
+  (interactive)
+  (gif-screencast)
+  (unless (bound-and-true-p keycast-mode) (keycast-mode)))
+
+(defun gm/end-screencast ()
+  (interactive)
+  (gif-screencast-stop)
+  (when (bound-and-true-p keycast-mode) (keycast-mode)))
+
+(bind-key "<f8>" #'gm/begin-screencast)
+(bind-key "<f9>" #'gm/end-screencast)
+#+END_SRC
+*** Key Frequency
+#+BEGIN_SRC emacs-lisp
+(use-package keyfreq
+  :defer 2
+  :config
+  (keyfreq-mode 1)
+  (keyfreq-autosave-mode 1)
+  :custom
+  (keyfreq-file "~/emacs-keyfreq"))
+#+END_SRC
+
 * Keybindings
 ** Better Defaults
 These are what I think are better bindings for or better versions of the default
@@ -2378,45 +2430,6 @@ A better version of the built-in =comment-dwim= from [[https://github.com/remyfe
 (use-package comment-dwim-2
   :commands comment-dwim-2
   :bind (("M-;" . comment-dwim-2)))
-#+END_SRC
-** Eshell
-I have started to use =eshell= as my primary shell. This command ensures that
-=eshell= is opened next to, not instead of, my current buffer.
-#+BEGIN_SRC emacs-lisp
-(defun eshell-other-frame (arg)
-  "Open `eshell' in a new frame."
-  (interactive "P")
-  (let ((buf
-         (let ((current-prefix-arg arg))
-           (call-interactively 'eshell))))
-    (switch-to-buffer (other-buffer buf))
-    (switch-to-buffer-other-frame buf)))
-#+END_SRC
-I rebind the redundant help binding (there is already a more convenient prefix
-map at =C-h=).
-#+BEGIN_SRC emacs-lisp
-(bind-key "<f1>" #'eshell-other-frame)
-#+END_SRC
-We also make some aliases.
-#+BEGIN_SRC emacs-lisp
-(defun eshell/ff (&rest args)
-  (apply #'find-file args))
-
-(defun eshell/d (&rest args)
-  (apply #'dired args))
-#+END_SRC
-My current workflow is to spawn =eshell= in a new frame, so I "advise" =exit= to
-also kill the frame. However, I also don't want errors when there is only one
-frame.
-#+BEGIN_SRC emacs-lisp
-(after! eshell
-  (defun eshell/exit ()
-    (let ((buf (current-buffer)))
-      (with-current-buffer (get-buffer-create "*eshell messages*"))
-      (if (= 1 (length (frame-list)))
-          (bury-buffer)
-        (kill-buffer buf)
-        (delete-frame)))))
 #+END_SRC
 ** Find Inbox
 #+BEGIN_SRC emacs-lisp
@@ -2991,6 +3004,11 @@ the entry of interest in the bibfile.  but does not check that."
             (org-open-link-from-string (format "[[file:%s]]" pdf2))
           (ding)))))))
 #+END_SRC
+Use the label names I make, which allows me to access them before export, at the
+risk of them not being unique.
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-prefer-user-labels t)
+#+END_SRC
 ** Prettifying
 *** Headlines
 Let's make our headings look a bit nicer. The package =org-bullet-mode= replaces the
@@ -3434,9 +3452,11 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
+(require 'ox-tufte-latex)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
 (defun gm/org-latex-export ()
   (interactive)
-  (require 'ox-tufte-latex)
   (save-excursion
     (while (and (not (org-entry-get (point) "EXPORT_FILE_NAME"))
                 (not (string= (buffer-substring-no-properties
@@ -3444,9 +3464,18 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
                                (+ 2 (line-beginning-position)))
                               "* ")))
       (outline-up-heading 1 t))
-    (if (org-entry-get (point) "EXPORT_FILE_NAME")
-        (org-latex-export-to-latex nil t)
-      (error "Not in valid export location!"))))
+    (let* ((filebase (org-entry-get (point) "EXPORT_FILE_NAME"))
+           (file (replace-regexp-in-string "\\(\\.[^\\.]+\\)*$" ".tex" filebase)))
+      (if filebase
+          (progn
+            (org-latex-export-to-latex nil t)
+            (async-start-process "latex-export"
+                                 "latexmk"
+                                 (lambda () (message (format "Exported %s" file)))
+                                 "-xelatex"
+                                 "-interaction=nonstopmode"
+                                 file))
+        (error "Not in valid export location!")))))
 #+END_SRC
 Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
@@ -3534,10 +3563,11 @@ Todo link.
 By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 =cleveref= package, which uses the =\cref= macro.
 #+BEGIN_SRC emacs-lisp
-(org-link-set-parameters "ref"
-                         :export
-                         (lambda (label desc format)
-                           (format "\\cref{%s}" label)))
+(after! org-ref
+  (org-link-set-parameters "ref"
+                           :export
+                           (lambda (label desc format)
+                             (format "\\cref{%s}" label))))
 #+END_SRC
 **** Export Classes
 #+BEGIN_SRC emacs-lisp
@@ -4497,7 +4527,7 @@ expand into =\hat{f}=. However, we cannot just act on the last letter, because
 :END:
 I wrote this to reduce the amount of redundant code needed to set up the
 snippets. First, we create a suffix tree of all the math snippets.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (defvar gm/longest-snippet)
 
 (defun gm/math-setup ()
@@ -4646,7 +4676,7 @@ creating them.
          (insert  "\}"))))
 #+END_SRC
 Add subscript bindings to each of the ten digits.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (cl-loop for i from 0 to 9
          collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
                 (number-to-string ,i)
@@ -4673,11 +4703,13 @@ results in =\frac{\sin x}{|}=.
       (delete-region begin end)
       (gm/math-insert-frac-match match))))
 
-(defun gm/math-frac (begin end)
-  (interactive "r")
+(defun gm/math-frac ()
+  (interactive)
   (cond
-   ((region-active-p)
-     (let ((match (buffer-substring-no-properties
+   ((use-region-p)
+     (let* ((begin (region-beginning))
+            (end (region-end))
+            (match (buffer-substring-no-properties
                    begin end)))
        (delete-region begin end)
        (gm/math-insert-frac-match match)))
@@ -4693,7 +4725,8 @@ results in =\frac{\sin x}{|}=.
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
     (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*"))
    (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
-
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map "/" #'gm/math-frac (gm/in-math-p))
 #+END_SRC
 **** Easy Split Environments
@@ -4734,6 +4767,27 @@ to make LaTeX happy.
           (when (equal (substring (s-trim current-line) 0 2) "&=")
             (insert "&= ")))
       (forward-line)))))
-
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
+#+END_SRC
+**** Inkscape Figures
+#+BEGIN_SRC emacs-lisp
+(define-derived-mode inkmath-mode org-mode "Ink" ()
+  :after-hook (flyspell-mode -1)
+  (quick-math-mode)
+  (gm/prettify-math)
+  (setq mode-line-format nil)
+  (when (= (point) (point-min))
+    (funcall-interactively 'forward-char 2)))
+
+(defun gm/inkmath-end ()
+  (interactive)
+  (save-buffer)
+  (delete-frame))
+
+(bind-key [remap org-ctrl-c-ctrl-c] #'gm/inkmath-end inkmath-mode-map)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.inkmath\\'" . inkmath-mode))
 #+END_SRC
