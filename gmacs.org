@@ -3452,11 +3452,9 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
-(require 'ox-tufte-latex)
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
 (defun gm/org-latex-export ()
   (interactive)
+  (require 'ox-tufte-latex)
   (save-excursion
     (while (and (not (org-entry-get (point) "EXPORT_FILE_NAME"))
                 (not (string= (buffer-substring-no-properties
@@ -3464,15 +3462,20 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
                                (+ 2 (line-beginning-position)))
                               "* ")))
       (outline-up-heading 1 t))
-    (let* ((filebase (org-entry-get (point) "EXPORT_FILE_NAME"))
+    (let* ((class (org-entry-get (point) "EXPORT_LATEX_CLASS"))
+           (cmd (org-entry-get (point) "EXPORT_LATEX_CMD"))
+           (filebase (org-entry-get (point) "EXPORT_FILE_NAME"))
            (file (replace-regexp-in-string "\\(\\.[^\\.]+\\)*$" ".tex" filebase)))
       (if filebase
           (progn
-            (org-latex-export-to-latex nil t)
-            (async-start-process "latex-export"
+            (if (and class
+                     (not (string= class "gm-notes")))
+                (org-latex-export-to-latex nil t)
+              (org-tufte-latex-export-to-latex nil t))
+            (async-start-process (format "latex-export-%s" file)
                                  "latexmk"
-                                 (lambda () (message (format "Exported %s" file)))
-                                 "-xelatex"
+                                 (lambda (file) (message (format "Exported %s" file)))
+                                 (if (string= cmd "PDF") "-pdf" "-xelatex")
                                  "-interaction=nonstopmode"
                                  file))
         (error "Not in valid export location!")))))
@@ -4771,7 +4774,8 @@ to make LaTeX happy.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
 #+END_SRC
-**** Inkscape Figures
+*** Inkscape Figures
+This is the mode we will load in Inkscape when we insert math.
 #+BEGIN_SRC emacs-lisp
 (define-derived-mode inkmath-mode org-mode "Ink" ()
   :after-hook (flyspell-mode -1)
@@ -4790,4 +4794,18 @@ to make LaTeX happy.
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'auto-mode-alist '("\\.inkmath\\'" . inkmath-mode))
+#+END_SRC
+We need a way to make Inkscape figures from Emacs. The =org-inkscape-figure=
+snippet calls this function.
+#+BEGIN_SRC emacs-lisp
+(defun gm/inkscape-figure ()
+  (interactive)
+  (let ((default-directory (expand-file-name "figures/" default-directory))
+        (name (read-string "Figure name: ")))
+    (shell-command (format "inkscape-figures create %s" name))
+    (shell-command "i3-msg \"fullscreen\"")
+    (shell-command "i3-msg \"fullscreen\"")
+    (setf (buffer-substring
+           (line-beginning-position) (line-end-position)) "")
+    (yas-expand-snippet (format "#+name: fig:%s\n #+caption: $2\n #+attr_latex: :vertical-alignment b\n [[file:figures/%s.pdf_tex]]\n$0" name name))))
 #+END_SRC
