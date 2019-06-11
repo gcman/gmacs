@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
 # name: org-figure-margin
-# key: <fig-m
+# key: <figm
 # --
 #+caption: $1
 #+attr_latex: :float margin :width 2in :offset $2in
