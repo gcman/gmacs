@@ -221,7 +221,7 @@ been expanded, so the package is not needed anymore. As such, we can do all the
 expensive and time-consuming work of getting the packages ready before Emacs has
 even started, during byte-compilation. If this config has not been manually
 byte-compiled, Emacs will initialize packages on startup as usual.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (eval-when-compile
   (require 'package)
   <<pack-arch>>
@@ -1056,7 +1056,7 @@ environment for writing.
   :commands olivetti-mode)
 #+END_SRC
 A major mode for writing screenplays in the =.fountain= format.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package fountain-mode
   :commands fountain-mode
   :init
@@ -1152,7 +1152,7 @@ my own Emacs configuration.
 
 We automatically spellcheck text buffers using =flyspell=. The only mode I write
 prose in is Org Mode.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package flyspell
   :diminish
   :commands flyspell-mode
@@ -1498,7 +1498,7 @@ Make =TAB= indent first then perform completion, if any.
 (setq-default tab-always-indent 'complete)
 #+END_SRC
 Set up =flycheck=.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package flycheck
   :commands flycheck-mode
   :diminish (flycheck-mode " Ψ")
@@ -1581,7 +1581,7 @@ Although we load and initialize all packages at startup, it is sometimes useful
 for the user to be able to interact with this process after it has taken place.
 For example, packages must be initialized to evaluate code blocks with
 =use-package= declarations in them.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (defun gm/package-intiialize ()
   (interactive)
   <<pack-arch>>
@@ -1687,7 +1687,7 @@ Open PDFs to where they were last opened.
 #+END_SRC
 **** Epub reading
 We use =nov.el=.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package nov
   :commands (nov-mode)
   :init (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
@@ -1748,7 +1748,7 @@ Justifying e-book text. This code was taken from [[https://github.com/wasamasa/n
 *** Eshell
 I have started to use =eshell= as my primary shell. This command ensures that
 =eshell= is opened next to, not instead of, my current buffer.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package eshell
   :ensure nil
   :commands eshell
@@ -1794,7 +1794,7 @@ frame.
 #+END_SRC
 *** Dired
 Great for renaming files in bulk.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package dired
   :ensure nil
   :config
@@ -1995,7 +1995,7 @@ Set tramp connection history location.
   (setq tramp-persistency-file (expand-file-name "tramp" gmacs-cache-dir)))
 #+END_SRC
 *** Ivy
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package ivy
   :diminish
   :demand t
@@ -2113,7 +2113,7 @@ Mode).
 (add-hook 'god-mode-disabled-hook #'gm/god-mode-indicator)
 #+END_SRC
 *** Hydra
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package hydra
   :defer 2
   :config
@@ -2443,7 +2443,7 @@ A better version of the built-in =comment-dwim= from [[https://github.com/remyfe
 (bind-key "C-c o" (lambda! (find-file "~/org/inbox.org")))
 #+END_SRC
 ** Keychord
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package key-chord
   :ensure nil
   :demand t
@@ -2491,7 +2491,7 @@ _D_ dubcaps-mode:      %`gm/dubcaps-mode
 #+END_SRC
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (after! org
   <<org-settings>>
   (bind-keys :map org-mode-map
@@ -2896,7 +2896,7 @@ the file is (usually) unnecessary and (always) too slow.
 *** Org Ref
 A wonderfully featured framework for maintaining bibliographies and writing
 academic papers in Org Mode by Org-guru John Kitchin.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package org-ref)
 (setq org-ref-completion-library 'org-ref-ivy-cite)
 (autoload #'org-ref-insert-link "org-ref")
@@ -3635,7 +3635,7 @@ my RSS reader (in fact, =elfeed= was inspired by =notmuch=). Also, I found that 
 was too complicated and tried to do too much. As the name suggests, =notmuch=
 doesn't have much. It's simple, transparent, and it works. That makes it perfect
 for me.
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package notmuch
   :commands (notmuch notmuch-refresh-all-buffers)
   :config
@@ -3924,7 +3924,7 @@ Elfeed is a feed manager for Emacs. It lets me manage YouTube subscriptions and
 other forms of media, such as blogs. I plan to also use it for academic articles
 when the need arises. Many of the snippets (tagged =bjm/=) I use here was written
 by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (autoload 'elfeed "elfeed")
 (autoload 'elfeed-db-load "elfeed")
 (setq elfeed-db-directory "~/.emacs.d/.elfeed")
@@ -4104,7 +4104,7 @@ I use a hydra to easily navigate between groups of feeds.
 #+END_SRC
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (defun gm/emms-setup ()
   (add-to-list 'load-path (expand-file-name "emms/lisp/" gmacs-custom-dir))
   (require 'emms-setup)
@@ -4404,7 +4404,7 @@ Then we bind this to semicolon.
 #+END_SRC
 *** Helper Functions
 **** QuickMath Minor Mode
-#+BEGIN_SRC emacs-lisp :noweb yes
+#+BEGIN_SRC emacs-lisp :noweb no-export
 (after! org
   (defvar gm/math-mode-map
     (let ((map (make-sparse-keymap)))
