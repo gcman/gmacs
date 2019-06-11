@@ -3691,7 +3691,8 @@ paragraph not at the window edge but at =fill-column=.
   :hook (notmuch-message-mode . visual-fill-column-mode)
   :config (advice-add 'text-scale-adjust :after
                       #'visual-fill-column-adjust)
-  (add-hook 'notmuch-message-mode-hook (lambda () (auto-fill-mode -1))))
+  (add-hook 'notmuch-message-mode-hook (lambda () (auto-fill-mode -1)))
+  (add-hook 'notmuch-show-mode-hook (lambda () (auto-fill-mode -1))))
 #+END_SRC
 Accessing mail. When we first open up =notmuch=, I want to start a system script
 that checks for new mail periodically.
@@ -4357,7 +4358,7 @@ don't require the use of =yasnippets=.
   ("s" (insert "\\sigma") "σ")
   ("t" (insert "\\tau") "τ")
   ("u" (insert "\\upsilon") "υ")
-  ("U" (insert " \\cup ") "∪")
+  ("U" (insert "\\cup ") "∪")
   ("v" (insert "\\vec ") "v")
   ("w" (insert "\\xi") "ξ")
   ("W" (insert "\\Xi") "Ξ")
