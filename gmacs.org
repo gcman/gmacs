@@ -230,6 +230,8 @@ byte-compiled, Emacs will initialize packages on startup as usual.
     (package-install 'use-package)
     (package-refresh-contents))
   (require 'use-package))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref pack-arch
 (setq use-package-always-ensure t)
 #+END_SRC
 We also require =diminish= and =bind= because I often use these keywords within
@@ -2257,7 +2259,12 @@ I use a hydra to manage its many keybindings.
   :custom
   (keyfreq-file "~/emacs-keyfreq"))
 #+END_SRC
-
+*** El-patch
+Properly patch functions.
+#+BEGIN_SRC emacs-lisp
+(use-package el-patch
+  :commands (el-patch-defun))
+#+END_SRC
 * Keybindings
 ** Better Defaults
 These are what I think are better bindings for or better versions of the default
@@ -3452,6 +3459,7 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path (expand-file-name "tufte-org-latex/" gmacs-custom-dir))
 (defun gm/org-latex-export ()
   (interactive)
   (require 'ox-tufte-latex)
@@ -4098,7 +4106,7 @@ I use a hydra to easily navigate between groups of feeds.
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
 #+BEGIN_SRC emacs-lisp :noweb yes
 (defun gm/emms-setup ()
-  (add-to-list 'load-path "~/.emacs.d/elisp/emms/lisp/")
+  (add-to-list 'load-path (expand-file-name "emms/lisp/" gmacs-custom-dir))
   (require 'emms-setup)
   (require 'emms-player-mpd)
   (emms-all)
@@ -4801,7 +4809,7 @@ snippet calls this function.
 #+BEGIN_SRC emacs-lisp
 (defun gm/inkscape-figure ()
   (interactive)
-  (let ((default-directory (expand-file-name "figures/" default-directory))
+  (let ((default-directory (expand-file-name "img/" default-directory))
         (name (read-string "Figure name: ")))
     (shell-command (format "inkscape-figures create %s" name))
     (shell-command "i3-msg \"fullscreen\"")
