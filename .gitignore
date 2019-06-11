@@ -1,6 +1,6 @@
 *
-!snippets/*
-!elisp/*
+!snippets/
+!elisp/
 !README.org
 !.gitmodules
 !.gitignore
