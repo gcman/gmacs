@@ -1410,7 +1410,9 @@ word.
     (delete-region beg end)
     (if (string= word (capitalize word))
         (insert (downcase word))
-    (insert (capitalize word)))))
+    (insert (capitalize word))))
+  (forward-word))
+
 (bind-key "M-c" #'gm/capitalize-word)
 #+END_SRC
 **** Expand Region
@@ -2063,7 +2065,7 @@ We do something similar for =ivy-switch-buffer=.
   '("*elfeed-org*"
     ".org-gcal-token"))
 
-(push (regexp-opt gm/find-file-ignore-names) ivy-ignore-buffers)
+(add-to-list 'ivy-ignore-buffers (regexp-opt gm/find-file-ignore-names))
 #+END_SRC
 [[http://pragmaticemacs.com/page/6/][This post]] explains the pitfalls of the default behaviour of =ivy-yank-word= and
 how to fix them. Now we can easily search for the word at point using =swiper=.
