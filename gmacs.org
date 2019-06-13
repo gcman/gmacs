@@ -1489,6 +1489,10 @@ Version 2017-01-11"
            strPairs))))))
 #+END_SRC
 Note that one of the characters we skip is ="=.
+**** Replace String
+#+BEGIN_SRC emacs-lisp
+(defalias 'rs 'replace-string)
+#+END_SRC
 ** Programming
 The age old debate: tabs or spaces? I say spaces.
 #+BEGIN_SRC emacs-lisp
@@ -2800,9 +2804,23 @@ Automatically archive cancelled tasks.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-todo-state-tags-triggers '(("CANCELLED" ("ARCHIVE" . t))))
 #+END_SRC
+Track when a heading is added already in TODO state.
+#+BEGIN_SRC emacs-lisp
+(setq org-trest-insert-todo-heading-as-state-change t)
+#+END_SRC
 Track the time when a TODO item is marked DONE.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-log-done 'time)
+(setq org-log-done 'note)
+#+END_SRC
+Do something similar for other properties.
+#+BEGIN_SRC emacs-lisp
+(setq org-log-reschedule 'note
+      org-log-redeadline 'note
+      org-log-clock-out 'note)
+#+END_SRC
+Because I make a lot of logs, I want to file them away into the LOGBOOK drawer.
+#+BEGIN_SRC emacs-lisp
+(setq org-log-into-drawer t)
 #+END_SRC
 I would rather the progress in a todo list (for example, [4/5]) be automatically
 updated when I archive a subtree.

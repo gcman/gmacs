@@ -281,18 +281,18 @@
     ("diffeq" "differential equation" nil 0)
     ("dumbells" #("dumbbells" 0 9 (face frog-menu-candidates-face)) nil 0)
     ("eleusisian" #("Eleusinian" 0 10 (face frog-menu-candidates-face)) nil 0)
-    ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 4)
+    ("emacs" #("Emacs" 0 5 (face frog-menu-candidates-face)) nil 9)
     ("engrained" #("ingrained" 0 9 (face frog-menu-candidates-face)) nil 0)
     ("eveyr" "every" nil 0)
     ("fd" "finite dimensional" nil 0)
     ("fdvs" "finite-dimensional vector space" nil 0)
     ("fo" #("f" 0 1 (face frog-menu-candidates-face)) nil 2)
     ("forsee" #("foresee" 0 7 (face frog-menu-candidates-face)) nil 0)
-    ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
+    ("hangg" #("hang" 0 4 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
     ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 2)
     ("iff" "if and only if" nil 2)
     ("illumations" #("illuminations" 0 13 (face frog-menu-candidates-face)) nil 0)
-    ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
+    ("imediately" #("immediately" 0 11 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
     ("inadvertantly" #("inadvertently" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("inj" "injective" nil 0)
@@ -303,6 +303,7 @@
     ("lauch" #("launch" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("lindep" "linearly dependent" nil 0)
     ("linind" "linearly independent" nil 0)
+    ("mangement" #("Management" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("massachusets" #("Massachusetts" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("mathcamp" #("Mathcamp" 0 8 (face frog-menu-candidates-face)) nil 3)
     ("netowrk" #("network" 0 7 (face frog-menu-candidates-face)) nil 0)
@@ -359,7 +360,9 @@
 
 (define-abbrev-table 'python-mode-abbrev-table '())
 
-(define-abbrev-table 'python-mode-skeleton-abbrev-table '())
+(define-abbrev-table 'python-mode-skeleton-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'quick-math-mode-abbrev-table
   '(
