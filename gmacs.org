@@ -494,12 +494,6 @@ experience. That means fewer annoyingly long pauses while you are using Emacs.
   :diminish
   :config (gcmh-mode 1))
 #+END_SRC
-*** No Menu Bar
-Although this should be disabled in my =.Xresources=, it seems to not work with
-some new frames.
-#+BEGIN_SRC emacs-lisp
-(menu-bar-mode -1)
-#+END_SRC
 *** Macros
 Now for the Elisp macros. =after!= and =lambda!= are from the popular DOOM! Emacs
 configuration. The documentation on these will be sparse, because the docstrings
@@ -1803,6 +1797,39 @@ frame.
           (bury-buffer)
         (kill-buffer buf)
         (delete-frame)))))
+#+END_SRC
+For command-line aliases, we don't need to read and write the file each time,
+because we're not defining anything new, so we can write manually.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref eshell
+(after! em-alias
+  (dolist
+      (alias
+       '(("l" "ls -1A $*")
+         ("la" "ls -lAh $*")
+         ("ll" "ls -lh $*")
+         ("cpv" "cp -iv $*")
+         ("mvv" "mv -iv $*")
+         ("rmv" "rm -v $*")
+         ("md" "eshell/mkdir -p $*")
+         ("mkcd" "eshell/mkdir -p $* ; cd $1")))
+    (add-to-list 'eshell-command-aliases-list alias))
+(eshell-write-aliases-list))
+#+END_SRC
+Use TRAMP to use Eshell as root.
+#+BEGIN_SRC emacs-lisp
+(require 'em-tramp)
+(setq password-cache t)
+(setq password-cache-expiry 3600)
+#+END_SRC
+Don't load the banner, and load TRAMP.
+#+BEGIN_SRC emacs-lisp
+(after! esh-module
+  (delq 'eshell-banner eshell-modules-list)
+  (push 'eshell-tramp eshell-modules-list))
+#+END_SRC
+Increase default history size.
+#+BEGIN_SRC emacs-lisp
+(setq eshell-history-size 1024)
 #+END_SRC
 *** Dired
 Great for renaming files in bulk.
