@@ -494,6 +494,12 @@ experience. That means fewer annoyingly long pauses while you are using Emacs.
   :diminish
   :config (gcmh-mode 1))
 #+END_SRC
+*** No Menu Bar
+Although this should be disabled in my =.Xresources=, it seems to not work with
+some new frames.
+#+BEGIN_SRC emacs-lisp
+(menu-bar-mode -1)
+#+END_SRC
 *** Macros
 Now for the Elisp macros. =after!= and =lambda!= are from the popular DOOM! Emacs
 configuration. The documentation on these will be sparse, because the docstrings
@@ -2651,6 +2657,10 @@ Org Capture is one of the best features of Org Mode. I use it to organize my
 todo list, take note of ideas I think of, and kickstart blog posts.
 #+BEGIN_SRC emacs-lisp
 (bind-key "C-c c" #'org-capture)
+#+END_SRC
+I want to start captures in new frames.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(require 'org-capture-pop-frame)
 #+END_SRC
 Here are my capture templates.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
