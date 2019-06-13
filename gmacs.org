@@ -1821,6 +1821,14 @@ Don't show details by default.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'dired-mode-hook #'dired-hide-details-mode)
 #+END_SRC
+Allow the user to copy the full file path.
+#+BEGIN_SRC emacs-lisp
+(defun gm/dired-copy-path-at-point ()
+    (interactive)
+    (dired-copy-filename-as-kill 0))
+
+(bind-key "W" #'gm/dired-copy-path-at-point dired-mode-map)
+#+END_SRC
 Show recursive folder sizes.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (use-package dired-du
@@ -2585,7 +2593,8 @@ use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp
 (setq org-refile-targets `((,(expand-file-name "todo.org" org-directory) :maxlevel . 3)
-                           (,(expand-file-name "notes.org" org-directory) :maxlevel . 3)))
+                           (,(expand-file-name "notes.org" org-directory) :maxlevel . 3)
+                           (,(expand-file-name "reading.org" org-directory) :maxlevel . 3)))
 #+END_SRC
 *** Refile and Archival
 Log refiling.
@@ -3935,6 +3944,7 @@ by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
              ("q" . bjm/elfeed-save-db-and-bury)
              ("f" . gm/elfeed-hydra/body)
              ("*" . gm/elfeed-toggle-star)
+             ("u" . elfeed-search-untag-all-unread)
              ([remap elfeed-search-live-filter]
               . bjm/elfeed-search-live-filter-space))
   <<elfeed-settings>>)
@@ -3965,6 +3975,7 @@ our =.elfeed= easier to synchronize across machines.
   (quit-window))
 
 (bind-key "C-c e" #'bjm/elfeed-load-db-and-open)
+(bind-key "C-c C-e" #'bjm/elfeed-load-db-and-open)
 #+END_SRC
 *** Improvements
 It's nice to have a way to star content for future reference.
@@ -4112,7 +4123,9 @@ I got the setup information from [[https://www.reddit.com/r/emacs/comments/981kh
   (require 'emms-setup)
   (require 'emms-player-mpd)
   (emms-all)
-  (emms-player-mpd-connect)
+  (condition-case nil
+      (emms-player-mpd-connect)
+    (error nil))
   (require 'emms-mode-line)
   (emms-mode-line 1)
   (require 'emms-playing-time)
