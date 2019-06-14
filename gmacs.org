@@ -4173,19 +4173,27 @@ I use a hydra to easily navigate between groups of feeds.
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
 #+BEGIN_SRC emacs-lisp :noweb no-export
+(defvar gm/emms-started nil)
+
 (defun gm/emms-setup ()
   (add-to-list 'load-path (expand-file-name "emms/lisp/" gmacs-custom-dir))
   (require 'emms-setup)
   (require 'emms-player-mpd)
   (emms-all)
-  (condition-case nil
-      (emms-player-mpd-connect)
-    (error nil))
   (require 'emms-mode-line)
   (emms-mode-line 1)
   (require 'emms-playing-time)
   (emms-playing-time 1)
-  <<emms>>)
+  (unless gm/emms-started
+    (setq gm/emms-started t)
+    (condition-case nil
+        (emms-player-mpd-connect)
+      (error nil)))))
+#+END_SRC
+We'll run our customizations once =emms= starts.
+#+BEGIN_SRC emacs-lisp
+(after! emms
+    <<emms>>)
 #+END_SRC
 Now for the settings. I use =mpd=, which I find is minimal and causes no bloat.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref emms
