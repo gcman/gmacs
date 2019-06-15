@@ -7,8 +7,7 @@
 :END:
 Emacs ships with a set of pretty strange defaults. The UI is the first thing we
 see when we open Emacs, so it better not look ugly. We're going to configure
-part of t
-he UI outside Emacs entirely, by editing the =~/.Xresources=.
+part of the UI outside Emacs entirely, by editing the =~/.Xresources=.
 
 This kills the ugly parts of the UI before they are born. This is slightly
 faster than disabling them within Emacs, but it offers less flexibility. For
@@ -1018,7 +1017,18 @@ smooth.
         (print (list 'setq var (list 'quote (symbol-value var)))
                buffer)))
 #+END_SRC
-
+*** Add Package to Dotfiles
+#+BEGIN_SRC emacs-lisp
+(defun gm/add-package (&optional package)
+  (interactive)
+  (let ((file "~/dotfiles/packages.txt")
+        (package (if package package (read-string "Package name: "))))
+  (with-temp-file file
+    (insert (concat package "\n"))
+    (insert-file-contents file)
+    (sort-lines nil (point-min) (point-max))
+  (buffer-string))))
+#+END_SRC
 ** Wordsmithing
 *** Basic Configuration
 **** Sentences End With a Single Space
