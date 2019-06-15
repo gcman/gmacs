@@ -1,5 +1,5 @@
 #+TITLE: My Emacs Configuration
-#+PROPERTY: header-args :results silent
+#+PROPERTY: header-args :results silent :tangle gmacs.el
 * Starting Up
 ** Fixing the UI
 :PROPERTIES:
@@ -1864,7 +1864,7 @@ Don't show details by default.
 (add-hook 'dired-mode-hook #'dired-hide-details-mode)
 #+END_SRC
 Allow the user to copy the full file path.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (defun gm/dired-copy-path-at-point ()
     (interactive)
     (dired-copy-filename-as-kill 0))
@@ -3471,7 +3471,8 @@ introducing too many spaces in the earlier regexps.
   "Alist of (REGEXP TO DOCSTRING) parsed by `gm/reformat-fragment'.
 Upon reformatting, each REGEXP is replaced with TO. DOCSTRING
 simply explains what the regexp does."
-  :type ivy)
+  :type 'alist
+  :group 'quick-math)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (defun gm/reformat-fragment (&optional fr)
@@ -4570,6 +4571,7 @@ don't require the use of =yasnippets=.
   will be replaced with EXPANSION. If SNIPPET is non-nil,
   EXPANSION is taken to be a loaded yasnippet. Otherwise, it is
   considered the replacement string."
+  :type 'alist
   :group 'quick-math)
 #+END_SRC
 **** Hydras
