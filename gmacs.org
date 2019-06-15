@@ -188,7 +188,7 @@ Get =use-package= to always defer loading packages until they are actually neede
 This reduces startup time significantly. We're doing this now, before
 =use-package= is even loaded, because otherwise it won't help us when the code
 that loads =use-package= is evaluated upon byte-compilation.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRc emacs-lisp
 (setq use-package-always-defer t
       use-package-verbose t)
 #+END_SRC
@@ -662,10 +662,8 @@ create necessary directories (from this [[https://superuser.com/questions/131538
 **** Keep =custom.el= Clean
 Don't let =package.el= [[http://www.holgerschurig.de/en/emacs-dont-let-packages-pollute-custom-el/][pollute]] your custom file.
 #+BEGIN_SRC emacs-lisp
-(defun package--save-selected-packages (&optional VALUE opt)
-  nil)
+(defun package--save-selected-packages () nil)
 #+END_SRC
-
 **** Auto =chmod +x=
 Make files that start with a =#!= shebang executable.
 #+BEGIN_SRC emacs-lisp
@@ -900,13 +898,13 @@ Will work on both org-mode and any mode that accepts plain html."
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
 ("C-c k" . endless/insert-key)
 #+END_SRC
-*** Transpose Windows
+*** Swap Windows
 Every now and then, you'll want to switch the order of the buffers in Emacs.
 This usually happens to me if I have something I'm reading in one buffer (code
 reference, PDF) and something I'm writing in the other. I got this from
 [[https://github.com/bbatsov/crux][bbatsov/crux]].
 #+BEGIN_SRC emacs-lisp
-(defun gm/transpose-windows (arg)
+(defun gm/swap-windows (arg)
   "Transpose the buffers shown in two windows.
 Prefix ARG determines if the current windows buffer is swapped
 with the next or previous window, and the number of
@@ -921,7 +919,7 @@ transpositions to execute in sequence."
         (select-window (funcall selector)))
       (setq arg (if (> arg 0) (1- arg) (1+ arg))))))
 
-(bind-key "C-x 4 t" #'gm/transpose-windows)
+(bind-key "C-x 4 t" #'gm/swap-windows)
 #+END_SRC
 *** Tangle Config File
 :PROPERTIES:
@@ -1516,6 +1514,10 @@ Relative line numbers, useful for Vim-like navigation with God Mode.
 (use-package nlinum-relative
   :hook (prog-mode . nlinum-relative-mode))
 #+END_SRC
+Emacs treats camelCase strings as a single word by default. Not anymore.
+#+BEGIN_SRC emacs-lisp
+(global-subword-mode 1)
+#+END_SRC
 *** Flycheck Hydra
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (defhydra hydra-flycheck (:color blue)
@@ -1591,6 +1593,7 @@ For example, packages must be initialized to evaluate code blocks with
 (defun gm/package-intiialize ()
   (interactive)
   <<pack-arch>>
+  (require 'use-package)
   (package-initialize)
   (package-refresh-contents))
 #+END_SRC
@@ -1791,12 +1794,14 @@ also kill the frame. However, I also don't want errors when there is only one
 frame.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref eshell
 (defun eshell/exit ()
-  (let ((buf (current-buffer)))
-    (with-current-buffer (get-buffer-create "*eshell messages*")
-      (if (= 1 (length (frame-list)))
-          (bury-buffer)
-        (kill-buffer buf)
-        (delete-frame)))))
+  (condition-case nil
+      (let ((buf (current-buffer)))
+        (with-current-buffer (get-buffer-create "*eshell messages*")
+          (if (= 1 (length (frame-list)))
+              (bury-buffer)
+            (kill-buffer buf)
+            (delete-frame))))
+    (error nil)))
 #+END_SRC
 For command-line aliases, we don't need to read and write the file each time,
 because we're not defining anything new, so we can write manually.
@@ -1872,6 +1877,12 @@ Show recursive folder sizes.
   :commands (dired-du-mode)
   :bind (:map dired-mode-map
               ("C-x M-r" . dired-du-mode)))
+#+END_SRC
+For more involved needs, there is also a dedicated package for analyzing disk
+usage.
+#+BEGIN_SRC emacs-lisp
+(use-package disk-usage
+  :commands (disk-usage))
 #+END_SRC
 Allow Dired to recursively copy and delete directories. The option ~always~
 ensures that no confirmation dialog comes up; ~top~ would do it only one layer
@@ -2090,7 +2101,7 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
 (defconst gm/find-file-ignore-extensions
   '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc" "xdv" "fdx" "bcf" "run.xml"
     "synctex.gz" "fdb_latexmk"
-    "desktop" "elc"
+    "elc"
     "pyc"))
 
 (defconst gm/find-file-ignore-dirs
@@ -2132,7 +2143,7 @@ how to fix them. Now we can easily search for the word at point using =swiper=.
     (when amend
       (insert (replace-regexp-in-string "  +" " " amend)))))
 
-(bind-key "M-j" #'bjm/ivy-yank-whole-word ivy-minibuffer-map)
+(bind-key "M-w" #'bjm/ivy-yank-whole-word ivy-minibuffer-map)
 #+END_SRC
 *** God Mode
 In =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
@@ -2140,7 +2151,7 @@ In =god-mode=, all keypresses are interpreted as if preceded by =C-= (as in
 buffer.
 #+BEGIN_SRC emacs-lisp
 (use-package god-mode
- :commands (god-local-mode god-mode-all))
+  :commands (god-local-mode god-mode-all))
 #+END_SRC
 Easily enter God Mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref keychord
@@ -2350,11 +2361,10 @@ This used to be a feature of Emacs.
   :config (browse-kill-ring-default-keybindings))
 #+END_SRC
 *** Unfill Paragraph
-I used to =[remap fill-paragraph]= to =gm/fill-unfill=, a function that used the
-=unfill= package to toggle the paragraph from filled to unfilled with a single
-key. It turned out this was not best for my use case, as I usually double-tapped
-=M-q= because I just wanted to refill the paragraph. However, unfilling is
-sometimes useful, so I kept the package around.
+I used to =[remap fill-paragraph]= to a function that toggled the paragraph from
+filled to unfilled with a single key. It turned out this was not best for my use
+case, as I usually double-tapped =M-q= because I just wanted to refill the
+paragraph. However, unfilling is sometimes useful, so I kept the package around.
 #+BEGIN_SRC emacs-lisp
 (use-package unfill
   :commands unfill-paragraph
@@ -2517,7 +2527,8 @@ especially useful when typing LaTeX.
 (key-chord-define-global "[=" "{")
 #+END_SRC
 ** Toggles
-We use a hydra to toggle various features in our setup.
+We use a hydra to toggle various features in our setup. I bind the keys in my
+section for the [[*Context-dependent Hydra][Context-dependent Hydra]].
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (defhydra hydra-toggle (:color pink)
   "
@@ -2526,15 +2537,72 @@ _m_ quick-math-mode:   %`quick-math-mode
 _p_ equation-preview:  %`gm/eq-preview-mode
 _e_ pretty-math:
 _D_ dubcaps-mode:      %`gm/dubcaps-mode
+_W_ Window management
 "
   ("t" gm/switch-theme nil)
   ("m" quick-math-mode nil)
   ("p" gm/eq-preview-mode nil)
   ("e" gm/prettify-math nil)
   ("D" gm/dubcaps-mode nil)
+  ("W" hydra-window-mngm/body :color blue)
   ("q" nil "cancel"))
+#+END_SRC
+I also link to window management here.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
+(defun shrink-frame-horizontally (&optional increment)
+  (interactive "p")
+  (let ((frame (window-frame)))
+    (set-frame-width frame (- (frame-width frame) increment))))
+(defun enlarge-frame-horizontally (&optional increment)
+  (interactive "p")
+  (let ((frame (window-frame)))
+    (set-frame-width frame (+ (frame-width frame) increment))))
+(defun shrink-frame-vertically (&optional increment)
+  (interactive "p")
+  (let ((frame (window-frame)))
+    (set-frame-height frame (- (frame-height frame) increment))))
+(defun enlarge-frame-vertically (&optional increment)
+  (interactive "p")
+  (let ((frame (window-frame)))
+    (set-frame-height frame (+ (frame-height frame) increment))))
 
-(bind-key "C-c t" #'hydra-toggle/body)
+(defun shift-frame-right (&optional increment)
+  (interactive "P")
+  (unless increment (setq increment 20))
+  (set-frame-parameter nil 'left (+ (frame-parameter nil 'left) increment)))
+(defun shift-frame-left (&optional increment)
+  (interactive "P")
+  (unless increment (setq increment 20))
+  (message "user-pos:" (frame-parameter nil 'user-position))
+  (set-frame-parameter nil 'left (- (frame-parameter nil 'left) increment)))
+(defun shift-frame-up (&optional increment)
+  (interactive "P")
+  (unless increment (setq increment 20))
+  (set-frame-parameter nil 'top (- (frame-parameter nil 'top) increment)))
+(defun shift-frame-down (&optional increment)
+  (interactive "P")
+  (unless increment (setq increment 20))
+  (set-frame-parameter nil 'top (+ (frame-parameter nil 'top) increment)))
+
+(defhydra hydra-window-mngm (:color pink :hint nil)
+  "
+frame    ^ ^ _i_ ^ ^    frame   ^ ^ _z_ ^ ^    window   ^ ^ _w_
+sizing:  _j_ ^ ^ _l_    moving: _g_ ^ ^ _h_    sizing:  _a_ ^ ^ _s_
+         ^ ^ _k_ ^ ^            ^ ^ _b_ ^ ^             ^ ^ _y_
+"
+  ("a" shrink-window-horizontally)
+  ("s" enlarge-window-horizontally)
+  ("y" enlarge-window)
+  ("w" shrink-window)
+  ("j" shrink-frame-horizontally)
+  ("l" enlarge-frame-horizontally)
+  ("k" shrink-frame-vertically)
+  ("i" enlarge-frame-vertically)
+  ("g" shift-frame-left)
+  ("h" shift-frame-right)
+  ("z" shift-frame-up)
+  ("b" shift-frame-down)
+  ("q" nil "quit" :color blue))
 #+END_SRC
 * Org Mode
 We have to require the entire =org.el= file to get ~ox-hugo~ to work properly.
@@ -2734,7 +2802,7 @@ So how do we actually get data from Firefox to Emacs? The [[https://orgmode.org/
 basics. The meat of the following snippet is in the function that turns the
 browser selection into HTML (after =&body==). It was sourced from [[https://stackoverflow.com/questions/5643635/how-to-get-selected-html-text-with-javascript/6668159#6668159][StackOverflow]].
 #+BEGIN_SRC js :tangle no
-javascript:location.href = 'org-protocol://capture-html?template=p&url=' + encodeURIComponent(location.href) + '&title=' + encodeURIComponent(document.title || "[untitled page]") + '&body=' + encodeURIComponent(function () {var html = ""; if (typeof document.getSelection != "undefined") {var sel = document.getSelection(); if (sel.rangeCount) {var container = document.createElement("div"); for (var i = 0, len = sel.rangeCount; i < len; ++i) {container.appendChild(sel.getRangeAt(i).cloneContents());} html = container.innerHTML;}} else if (typeof document.selection != "undefined") {if (document.selection.type == "Text") {html = document.selection.createRange().htmlText;}} var relToAbs = function (href) {var a = document.createElement("a"); a.href = href; var abs = a.protocol + "//" + a.host + a.pathname + a.search + a.hash; a.remove(); return abs;}; var elementTypes = [['a', 'href'], ['img', 'src']]; var div = document.createElement('div'); div.innerHTML = html; elementTypes.map(function(elementType) {var elements = div.getElementsByTagName(elementType[0]); for (var i = 0; i < elements.length; i++) {elements[i].setAttribute(elementType[1], relToAbs(elements[i].getAttribute(elementType[1])));}}); return div.innerHTML;}());
+javascript:location.href='org-protocol://capture-html?template=p&url=' + encodeURIComponent(location.href) + '&title=' + encodeURIComponent(document.title || '[untitled page]') + '&body=' + encodeURIComponent(function () {var html = ''; if (typeof document.getSelection != 'undefined') {var sel = document.getSelection(); if (sel.rangeCount) {var container = document.createElement('div'); for (var i = 0, len = sel.rangeCount; i < len; ++i) {container.appendChild(sel.getRangeAt(i).cloneContents());} html = container.innerHTML;}} else if (typeof document.selection != 'undefined') {if (document.selection.type == 'Text') {html = document.selection.createRange().htmlText;}} var relToAbs = function (href) {var a = document.createElement('a'); a.href = href; var abs = a.protocol + '//' + a.host + a.pathname + a.search + a.hash; a.remove(); return abs;}; var elementTypes = [['a', 'href'], ['img', 'src']]; var div = document.createElement('div'); div.innerHTML = html; elementTypes.map(function(elementType) {var elements = div.getElementsByTagName(elementType[0]); for (var i = 0; i < elements.length; i++) {elements[i].setAttribute(elementType[1], relToAbs(elements[i].getAttribute(elementType[1])));}}); return div.innerHTML;}());
 #+END_SRC
 A convenient way to activate this from Firefox is to use the extension
 [[https://github.com/mikecrittenden/shortkeys][ShortKeys]]. With it, I bind the above to =c b=, for "capture bookmark." One thing to
@@ -2745,11 +2813,11 @@ for next and previous tab, but that's another story.
 
 We send the data from =org-protocol= into the following template.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(push
+(add-to-list
+ 'org-capture-templates
  '("p" "Org Protocol" entry
    (file org-default-notes-file)
-   "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")")
- org-capture-templates)
+   "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")"))
 #+END_SRC
 Because Org links are constructed with square brackets, any URL whose title
 contains square brackets (I'm looking at you, arXiv) would break a normal
@@ -2973,8 +3041,6 @@ academic papers in Org Mode by Org-guru John Kitchin.
   (require 'doi-utils)
   (require 'org-ref-pdf)
   (bind-key "C-c b" #'org-ref-bibtex-new-entry/body bibtex-mode-map)
-  (after! key-chord
-    (key-chord-define bibtex-mode-map "jj" 'org-ref-bibtex-hydra/body))
   <<org-ref>>)
 #+END_SRC
 For humanities essays.
@@ -3081,6 +3147,103 @@ Use the label names I make, which allows me to access them before export, at the
 risk of them not being unique.
 #+BEGIN_SRC emacs-lisp
 (setq org-latex-prefer-user-labels t)
+#+END_SRC
+*** Context-dependent Hydra
+#+BEGIN_SRC emacs-lisp
+(defun gm/context-hydra-launcher ()
+  "A launcher for hydras based on the current context."
+  (interactive)
+  (if current-prefix-arg
+      (hydra-toggle/body)
+    (cl-case major-mode
+      ('org-mode (let* ((elem (org-element-context))
+                        (etype (car elem))
+                        (type (org-element-property :type elem)))
+                   (cl-case etype
+                     (src-block (hydra-babel-helper/body))
+                     (link (hydra-org-link-helper/body))
+                     ((table-row table-cell) (hydra-org-table-helper/body) )
+                     (t (message "No specific hydra for %s/%s" etype type)
+                        (hydra-toggle/body)))))
+      ('bibtex-mode (org-ref-bibtex-hydra/body))
+      (t (message "No hydra for this major mode: %s" major-mode)))))
+
+(bind-key "C-c t" 'gm/context-hydra-launcher)
+(after! key-chord
+    (key-chord-define-global "jj" 'gm/context-hydra-launcher))
+#+END_SRC
+**** Links
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-org-link-helper (:color pink :hint nil)
+  "
+org link helper
+_i_ backward slurp     _o_ forward slurp    _n_ next link
+_j_ backward barf      _k_ forward barf     _p_ previous link
+
+_q_ quit
+"
+  ("i" org-link-edit-backward-slurp)
+  ("o" org-link-edit-forward-slurp)
+  ("j" org-link-edit-backward-barf)
+  ("k" org-link-edit-forward-barf)
+  ("n" org-next-link)
+  ("p" org-previous-link)
+  ("q" nil :color blue))
+#+END_SRC
+**** Tables
+#+BEGIN_SRC emacs-lisp
+(defhydra hydra-org-table-helper (:color pink :hint nil)
+  "
+org table helper
+_r_ recalculate     _w_ wrap region      _c_ toggle coordinates
+_i_ iterate table   _t_ transpose        _D_ toggle debugger
+_B_ iterate buffer  _E_ export table
+_e_ eval formula    _s_ sort lines       _d_ edit field
+
+_q_ quit
+"
+  ("E" org-table-export :color blue)
+  ("s" org-table-sort-lines)
+  ("d" org-table-edit-field)
+  ("e" org-table-eval-formula)
+  ("r" org-table-recalculate)
+  ("i" org-table-iterate)
+  ("B" org-table-iterate-buffer-tables)
+  ("w" org-table-wrap-region)
+  ("D" org-table-toggle-formula-debugger)
+  ("t" org-table-transpose-table-at-point)
+  ("c" org-table-toggle-coordinate-overlays :color blue)
+  ("q" nil :color blue))
+#+END_SRC
+**** Source Blocks
+#+BEGIN_SRC emacs-lisp
+(defun gm/org-babel-src-block-info ()
+  (interactive)
+  (if (get-buffer-window "*Help*")
+      (delete-other-windows)
+    (org-babel-view-src-block-info)))
+
+(defhydra hydra-babel-helper (:color pink :hint nil)
+  "
+org babel src block helper functions
+_n_ next       _i_ info           _h_ insert header
+_p_ prev       _c_ check
+_H_ goto head  _E_ expand
+^ ^            _s_ split
+_q_ quit       _r_ remove result  _e_ examplify region
+
+"
+  ("i" gm/org-babel-toggle-src-block-info)
+  ("h" org-babel-insert-header-arg)
+  ("c" org-babel-check-src-block :color blue)
+  ("s" org-babel-demarcate-block :color blue)
+  ("n" org-babel-next-src-block)
+  ("p" org-babel-previous-src-block)
+  ("E" org-babel-expand-src-block :color blue)
+  ("e" org-babel-examplify-region :color blue)
+  ("r" org-babel-remove-result :color blue)
+  ("H" org-babel-goto-src-block-head)
+  ("q" nil :color blue))
 #+END_SRC
 ** Prettifying
 *** Headlines
@@ -3307,7 +3470,8 @@ introducing too many spaces in the earlier regexps.
     (" \\(\\\\)\\)" "\\1" "no space at end of fragment"))
   "Alist of (REGEXP TO DOCSTRING) parsed by `gm/reformat-fragment'.
 Upon reformatting, each REGEXP is replaced with TO. DOCSTRING
-simply explains what the regexp does.")
+simply explains what the regexp does."
+  :type ivy)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (defun gm/reformat-fragment (&optional fr)
@@ -4045,7 +4209,6 @@ Then we add a visual indicator.
   '((t :foreground "#f77"))
   "Marks a starred Elfeed entry.")
 #+END_SRC
-
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
 (push '(starred elfeed-search-starred-title-face) elfeed-search-face-alist)
 #+END_SRC
@@ -4188,7 +4351,7 @@ I got the setup information from [[https://www.reddit.com/r/emacs/comments/981kh
     (setq gm/emms-started t)
     (condition-case nil
         (emms-player-mpd-connect)
-      (error nil)))))
+      (error nil))))
 #+END_SRC
 We'll run our customizations once =emms= starts.
 #+BEGIN_SRC emacs-lisp
