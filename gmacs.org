@@ -2653,7 +2653,8 @@ We customize the commands a bit.
 #+BEGIN_SRC emacs-lisp
 (setq org-speed-commands-user
       '(("j" counsel-org-goto)
-        ("a" org-archive-subtree)))
+        ("a" org-archive-subtree)
+        ("d" (lambda! () (org-todo 'done)))))
 #+END_SRC
 *** Invisible Edits
 When text is entered near a hidden area (...), it is hard to see what is
@@ -2945,13 +2946,13 @@ Track when a heading is added already in TODO state.
 #+END_SRC
 Track the time when a TODO item is marked DONE.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-log-done 'note)
+(setq org-log-done 'time)
 #+END_SRC
 Do something similar for other properties.
 #+BEGIN_SRC emacs-lisp
-(setq org-log-reschedule 'note
-      org-log-redeadline 'note
-      org-log-clock-out 'note)
+(setq org-log-reschedule 'time
+      org-log-redeadline 'time
+      org-log-clock-out 'time)
 #+END_SRC
 Because I make a lot of logs, I want to file them away into the LOGBOOK drawer.
 #+BEGIN_SRC emacs-lisp
@@ -3850,6 +3851,7 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
    [NO-DEFAULT-PACKAGES]"
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}")))
+
   (add-to-list 'org-latex-classes
                '("assignment"
                  "\\documentclass[12pt]{article}
@@ -3874,6 +3876,7 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}")
                  ("\\subsubsection{%s}" . "\\subsubection*{%s}")))
+
   (add-to-list 'org-latex-classes
                '("gm-notes"
                  "\\documentclass{gm-notes}
@@ -3972,6 +3975,28 @@ that checks for new mail periodically.
   (notmuch-refresh-this-buffer))
 
 (bind-key "C-c m" #'gm/open-mail)
+#+END_SRC
+*** See Last Unread in Thread
+Notmuch doesn't take you to the latest unread message in a thread. Usually, you
+can work around this by going to the end of the buffer, but this doesn't work if
+the thread is non-linear and the message of interest is somewhere in the middle.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
+(defun gm/next-unread ()
+  (interactive)
+  (let ((init (point)))
+    (catch 'break
+      (while t
+        (when (member "unread" (notmuch-show-get-tags))
+          (let ((props (notmuch-show-get-message-properties)))
+            (notmuch-show-message-visible props t)
+            (notmuch-show-mark-read)
+            (throw 'break t)))
+        (when (not (notmuch-show-goto-message-next))
+          (message "No more unread messages.")
+          (goto-char init)
+          (throw 'break t))))))
+
+(bind-key "U" #'gm/next-unread notmuch-show-mode-map)
 #+END_SRC
 *** HTML Mail
 This code from [[http://kitchingroup.cheme.cmu.edu/blog/category/orgmode/4/][John Kitchin]] lets you write mail in Org Mode and send it
@@ -4251,6 +4276,20 @@ Then we add a visual indicator.
   (let ((elfeed-search-filter (concat elfeed-search-filter " ")))
     (elfeed-search-live-filter)))
 #+END_SRC
+Add thumbnails (from [[https://www.reddit.com/r/emacs/comments/ao2oud/how_to_add_more_data_to_elfeed_about_youtube/][Reddit]]).
+#+BEGIN_SRC emacs-lisp
+(defvar gm/yt-regexp "youtu\\.?be")
+
+(defun youtube-url-p (url)
+  (string-match url gm/yt-regexp))
+
+(defun youtube-get-thumbnail (_ xml entry)
+  (when (youtube-url-p (elfeed-entry-link entry))
+    (setf (elfeed-meta entry :my/thumbnail)
+          (xml-query* '(group thumbnail :url) xml))))
+
+(add-hook 'elfeed-new-entry-parse-hook #'youtube-get-thumbnail)
+#+END_SRC
 *** Consuming Media
 When reading articles in =elfeed-show-mode=, the content spans the entire buffer.
 I like to read my content hard-wrapped at 80 chars, so I customize the built-in
@@ -4261,7 +4300,7 @@ I like to read my content hard-wrapped at 80 chars, so I customize the built-in
 For YouTube videos, I like to play them right from Emacs with =mpv=.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/elfeed-mpv-patterns
-  '("youtu\\.?be")
+  '(gm/yt-regexp)
   "List of regexp to match against elfeed entry link to know
 whether to use mpv to visit the link.")
 
