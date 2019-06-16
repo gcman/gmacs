@@ -269,7 +269,6 @@ screen/cursor position is refactored. It's much more useful than it sounds.
 #+BEGIN_SRC emacs-lisp
 (use-package beacon
   :defer 2
-  :diminish (beacon-mode " ☀")
   :config (beacon-mode 1)
   :custom (beacon-color "#b58900"))
 #+END_SRC
@@ -3382,7 +3381,8 @@ default execution commands.
                                   (shell . t)))
 
 (setq org-babel-python-command "python3.7"
-      org-babel-latex-command "pdflatex")
+      org-babel-latex-command "pdflatex"
+      org-babel-sh-command "sh")
 #+END_SRC
 Make Org Mode source blocks act normally with respect to indentation and syntax
 highlighting.
@@ -4286,7 +4286,7 @@ Add thumbnails (from [[https://www.reddit.com/r/emacs/comments/ao2oud/how_to_add
 (defun youtube-get-thumbnail (_ xml entry)
   (when (youtube-url-p (elfeed-entry-link entry))
     (setf (elfeed-meta entry :my/thumbnail)
-          (xml-query* '(group thumbnail :url) xml))))
+          (xml-query '(group thumbnail :url) xml))))
 
 (add-hook 'elfeed-new-entry-parse-hook #'youtube-get-thumbnail)
 #+END_SRC
@@ -4299,11 +4299,6 @@ I like to read my content hard-wrapped at 80 chars, so I customize the built-in
 #+END_SRC
 For YouTube videos, I like to play them right from Emacs with =mpv=.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/elfeed-mpv-patterns
-  '(gm/yt-regexp)
-  "List of regexp to match against elfeed entry link to know
-whether to use mpv to visit the link.")
-
 (defvar gm/youtube-dl-dir "videos/YouTube")
 
 (defun gm/search-local-yt-video (id dir)
@@ -4349,13 +4344,8 @@ See `gm/elfeed-play-with-mpv'."
   (interactive)
   (let ((entry (if (eq major-mode 'elfeed-show-mode)
                    elfeed-show-entry
-                 (elfeed-search-selected :single)))
-        (patterns gm/elfeed-mpv-patterns))
-    (while (and patterns
-                (not (string-match (car gm/elfeed-mpv-patterns)
-                                   (elfeed-entry-link entry))))
-      (setq patterns (cdr patterns)))
-    (if patterns
+                 (elfeed-search-selected :single))))
+    (if (string-match gm/yt-regexp (elfeed-entry-link entry))
         (gm/elfeed-play-with-mpv)
       (if (eq major-mode 'elfeed-search-mode)
           (elfeed-search-browse-url)
