@@ -4219,7 +4219,7 @@ by the author of [[http://pragmaticemacs.com][Pragmatic Emacs]].
              ("q" . bjm/elfeed-save-db-and-bury)
              ("f" . gm/elfeed-hydra/body)
              ("*" . gm/elfeed-toggle-star)
-             ("u" . elfeed-search-untag-all-unread)
+             ("u" . gm/elfeed-toggle-unread)
              ([remap elfeed-search-live-filter]
               . bjm/elfeed-search-live-filter-space))
   <<elfeed-settings>>)
@@ -4308,43 +4308,47 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
        (format "find . -regextype sed -regex '.*\\[%s\\].mkv'" id)
        (current-buffer))
       (unless (string= (buffer-string) "")
-        (expand-file-name (buffer-substring-no-properties (+ 2 (line-beginning-position)) (line-end-position)) default-directory)))))
+        (expand-file-name (buffer-substring-no-properties
+                           (+ 2 (line-beginning-position))
+                           (line-end-position))
+                          default-directory)))))
 
 (defun gm/elfeed-play-with-mpv ()
   "Play entry link with mpv."
   (interactive)
-  (let (entry title link)
-    (if (eq major-mode 'elfeed-show-mode)
-        (setq entry elfeed-show-entry)
-      (setq entry (elfeed-search-selected :single))
-      (elfeed-search-untag-all-unread))
-    (setq title (elfeed-entry-title entry))
-    (setq link (elfeed-entry-link entry))
-    (let*
-        ((id (nth 1 (s-split "watch\\?v=" link)))
+  (let* ((entry (gm/elfeed-get-entry))
+         (title (elfeed-entry-title entry))
+         (link (elfeed-entry-link entry))
+         (id (nth 1 (s-split "watch\\?v=" link)))
          (video (gm/search-local-yt-video id (concat "~/" gm/youtube-dl-dir)))
-         (drive-video-path (expand-file-name gm/youtube-dl-dir gm--drive-path))
-         drive-video)
-      (when (and (not video) (file-directory-p drive-video-path))
-        (when-let ((drive-video (gm/search-local-yt-video id drive-video-path)))
-          (setq video drive-video)))
-      (if video
-          (progn
-            (message "Playing \"%s\" from local copy..." title)
-            (setq link video))
-        (message "Streaming \"%s\"..." title)))
-    (start-process "elfeed-mpv" nil "mpv" "--fs" link)))
+         (drive-video-path (expand-file-name gm/youtube-dl-dir gm--drive-path)))
+    (condition-case nil
+        (elfeed-search-untag-all-unread)
+      (error nil))
+    (when (and (not video) (file-directory-p drive-video-path))
+      (when-let ((drive-video (gm/search-local-yt-video id drive-video-path)))
+        (setq video drive-video)))
+    (if video
+        (progn
+          (message "Playing \"%s\" from local copy..." title)
+          (setq link video))
+      (message "Streaming \"%s\"..." title))
+  (start-process "elfeed-mpv" nil "mpv" "--fs" link)))
 #+END_SRC
 We make a multi-purpose function to open the link with =mpv= if it is a video,
 otherwise with the browser.
 #+BEGIN_SRC emacs-lisp
+(defun gm/elfeed-get-entry ()
+  (interactive)
+  (if (eq major-mode 'elfeed-show-mode)
+      elfeed-show-entry
+    (elfeed-search-selected :single)))
+
 (defun gm/elfeed-visit-or-play-with-mpv ()
   "Play in mpv if entry link matches `gm/elfeed-mpv-patterns', visit otherwise.
 See `gm/elfeed-play-with-mpv'."
   (interactive)
-  (let ((entry (if (eq major-mode 'elfeed-show-mode)
-                   elfeed-show-entry
-                 (elfeed-search-selected :single))))
+  (let ((entry (gm/elfeed-get-entry)))
     (if (string-match gm/yt-regexp (elfeed-entry-link entry))
         (gm/elfeed-play-with-mpv)
       (if (eq major-mode 'elfeed-search-mode)
@@ -4369,15 +4373,18 @@ I wrap it for use in =elfeed=.
 #+BEGIN_SRC emacs-lisp
 (defun gm/youtube-dl ()
   (interactive)
-  (let* ((entry-full (if (eq major-mode 'elfeed-show-mode)
-                   elfeed-show-entry
-                 (elfeed-search-selected :single)))
-         (entry (elfeed-entry-link entry-full)))
+  (let ((entry (elfeed-entry-link (gm/elfeed-get-entry))))
     (youtube-dl entry)))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
 (bind-key "d" #'gm/youtube-dl elfeed-show-mode-map)
 (bind-key "d" #'gm/youtube-dl elfeed-search-mode-map)
+#+END_SRC
+Toggle the unread tag.
+#+BEGIN_SRC emacs-lisp
+(defun gm/elfeed-toggle-unread ()
+  (let ((entry (gm/elfeed-get-entry)))
+    (if (member 'unread (elfeed-entry-tags entry)))))
 #+END_SRC
 *** Hydra
 I use a hydra to easily navigate between groups of feeds.
@@ -4513,6 +4520,7 @@ I use a hydra for snippets that just insert/replace text in math mode and thus
 don't require the use of =yasnippets=.
 *** Math Symbols
 **** Main Math Snippets
+Snippets go in [[file:math-snippets.el]].
 #+BEGIN_SRC emacs-lisp
 (defcustom gm/math-snippets nil
   "Contains lists (KEY EXPANSION SNIPPET). When KEY is typed, it
@@ -4521,6 +4529,8 @@ don't require the use of =yasnippets=.
   considered the replacement string."
   :type 'alist
   :group 'quick-math)
+
+(defvar gm/math-snippet-loc (expand-file-name "math-snippets.el" gmacs-emacs-dir))
 #+END_SRC
 **** Hydras
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -4675,7 +4685,6 @@ makes for some awkward timing for activating previews.
       (insert "\\(")
       (save-excursion (insert "\\)")))))
 #+END_SRC
-\text
 **** Last n Characters Before Point
 Return the last n characters before the point, or =loc= if provided.
 #+BEGIN_SRC emacs-lisp
@@ -4732,7 +4741,6 @@ I wrote this to reduce the amount of redundant code needed to set up the
 snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (defvar gm/longest-snippet)
-(defvar gm/math-snippet-loc (expand-file-name "math-snippets.el" gmacs-emacs-dir))
 
 (defun gm/math-setup ()
   (load gm/math-snippet-loc)
@@ -4774,7 +4782,7 @@ function).
           (yas-expand-snippet (yas-lookup-snippet expand))
         (insert expand)))))
 #+END_SRC
-**** New Snippet
+**** Add and View Snippet
 Now we give the user a way to easily add snippets.
 #+BEGIN_SRC emacs-lisp
 (defun gm/new-math-snippet ()
