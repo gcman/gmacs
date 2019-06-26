@@ -3748,7 +3748,7 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
                 (org-latex-export-to-latex nil t)
               (org-tufte-latex-export-to-latex nil t))
             (let ((processname (format "latex-export-%s" file)))
-              (when processp processname
+              (when (processp processname)
                     (kill-process processname))
               (async-start-process processname
                                    "latexmk"

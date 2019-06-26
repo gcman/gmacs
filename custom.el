@@ -7,7 +7,7 @@
  '(counsel-grep-base-command "rg -i -M 120 --color auto --line-number %s %s")
  '(custom-safe-themes
    (quote
-    ("0598c6a29e13e7112cfbc2f523e31927ab7dce56ebb2016b567e1eff6dc1fd4f" default)))
+    ("d91ef4e714f05fff2070da7ca452980999f5361209e679ee988e3c432df24347" "0598c6a29e13e7112cfbc2f523e31927ab7dce56ebb2016b567e1eff6dc1fd4f" default)))
  '(edit-server-default-major-mode (quote org-mode))
  '(edit-server-start-hook
    (quote
