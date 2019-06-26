@@ -2,6 +2,7 @@
 !/snippets/
 !/elisp/
 !README.org
+!math-snippets.el
 !.gitmodules
 !.gitignore
 !abbrevs.el

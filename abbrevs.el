@@ -271,6 +271,7 @@
     ("algenra" #("algebra" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("aluminium" #("aluminum" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("anwyay" #("anyway" 0 6 (face frog-menu-candidates-face)) nil 0)
+    ("apporpriate" #("appropriate" 0 11 (face frog-menu-candidates-face)) nil 0)
     ("atreus" #("Atreus" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("becuase" "because" nil 1)
     ("bij" "bijective" nil 0)
@@ -292,12 +293,12 @@
     ("forsee" #("foresee" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("funcamental" #("fundamental" 0 11 (face frog-menu-candidates-face)) nil 0)
     ("gried" #("grief" 0 5 (face frog-menu-candidates-face)) nil 0)
-    ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
+    ("hangg" #("hang" 0 4 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
     ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 3)
     ("identifer" #("Identifier" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("iff" "if and only if" nil 3)
     ("illumations" #("illuminations" 0 13 (face frog-menu-candidates-face)) nil 0)
-    ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
+    ("imediately" #("immediately" 0 11 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
     ("inadvertantly" #("inadvertently" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("inj" "injective" nil 0)
@@ -311,6 +312,8 @@
     ("mangement" #("Management" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("massachusets" #("Massachusetts" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("mathcamp" #("Mathcamp" 0 8 (face frog-menu-candidates-face)) nil 3)
+    ("minumum" #("minimum" 0 7 (face frog-menu-candidates-face)) nil 0)
+    ("mulriplicity" #("multiplicity" 0 12 (face frog-menu-candidates-face)) nil 0)
     ("netowrk" #("network" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("onwards" #("onward" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("ootes" #("notes" 0 5 (face frog-menu-candidates-face)) nil 0)
@@ -318,6 +321,7 @@
     ("parastiic" #("parasitic" 0 9 (face frog-menu-candidates-face)) nil 0)
     ("practicing" #("practising" 0 10 (face frog-menu-candidates-face)) nil 1)
     ("proerty" "property" nil 0)
+    ("projective" #("Projective" 0 10 (face frog-menu-candidates-face)) nil 6)
     ("quanities" #("quantities" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("reluctancy" #("reluctance" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("remmeber" #("remember" 0 8 (face frog-menu-candidates-face)) nil 1)
@@ -369,9 +373,7 @@
 
 (define-abbrev-table 'python-mode-abbrev-table '())
 
-(define-abbrev-table 'python-mode-skeleton-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'python-mode-skeleton-abbrev-table '())
 
 (define-abbrev-table 'quick-math-mode-abbrev-table
   '(
@@ -450,3 +452,4 @@
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
 
 (define-abbrev-table 'youtube-dl-list-mode-abbrev-table '())
+
