@@ -1018,7 +1018,7 @@ smooth.
 #+END_SRC
 *** Add Package to Dotfiles
 #+BEGIN_SRC emacs-lisp
-(defun gm/add-package (&optional package)
+(defun gm/package-add (&optional package)
   (interactive)
   (let ((file "~/dotfiles/packages.txt")
         (package (if package package (read-string "Package name: "))))
@@ -1794,6 +1794,11 @@ I have started to use =eshell= as my primary shell. This command ensures that
   <<eshell-init>>
   :config
   <<eshell>>)
+#+END_SRC
+Use =counsel= to load history.
+#+BEGIN_SRC emacs-lisp
+(after! counsel
+  (bind-key [remap eshell-previous-matching-input] #'counsel-esh-history))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref eshell-init
 (defun eshell-other-frame (arg)
@@ -3721,7 +3726,7 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
 #+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path (expand-file-name "tufte-org-latex/" gmacs-custom-dir))
+(add-to-list 'load-path (expand-file-name "tufte-org-mode/" gmacs-custom-dir))
 (defun gm/org-latex-export ()
   (interactive)
   (require 'ox-tufte-latex)
@@ -3729,7 +3734,7 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
     (while (and (not (org-entry-get (point) "EXPORT_FILE_NAME"))
                 (not (string= (buffer-substring-no-properties
                                (line-beginning-position)
-                               (+ 2 (line-beginning-position)))
+                               (min (point-max) (+ 2 (line-beginning-position))))
                               "* ")))
       (outline-up-heading 1 t))
     (let* ((class (org-entry-get (point) "EXPORT_LATEX_CLASS"))
@@ -3742,12 +3747,15 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
                      (not (string= class "gm-notes")))
                 (org-latex-export-to-latex nil t)
               (org-tufte-latex-export-to-latex nil t))
-            (async-start-process (format "latex-export-%s" file)
-                                 "latexmk"
-                                 (lambda (file) (message (format "Exported %s" file)))
-                                 (if (string= cmd "PDF") "-pdf" "-xelatex")
-                                 "-interaction=nonstopmode"
-                                 file))
+            (let ((processname (format "latex-export-%s" file)))
+              (when processp processname
+                    (kill-process processname))
+              (async-start-process processname
+                                   "latexmk"
+                                   (lambda (file) (message (format "Exported %s" file)))
+                                   (if (string= cmd "PDF") "-pdf" "-xelatex")
+                                   "-interaction=nonstopmode"
+                                   file)))
         (error "Not in valid export location!")))))
 #+END_SRC
 Bind this in Org mode.
@@ -4383,8 +4391,8 @@ I wrap it for use in =elfeed=.
 Toggle the unread tag.
 #+BEGIN_SRC emacs-lisp
 (defun gm/elfeed-toggle-unread ()
-  (let ((entry (gm/elfeed-get-entry)))
-    (if (member 'unread (elfeed-entry-tags entry)))))
+  (interactive)
+  (elfeed-search-toggle-all 'unread))
 #+END_SRC
 *** Hydra
 I use a hydra to easily navigate between groups of feeds.
@@ -4540,6 +4548,7 @@ Snippets go in [[file:math-snippets.el]].
   ("a" (insert "\\alpha") "α")
   ("A" (insert "\\forall ") "∀")
   ("b" (insert "\\beta") "β")
+  ("C" (yas-expand-snippet (yas-lookup-snippet "mathcal")) "ℂ")
   ("C" (insert "\\mathbb{C}") "ℂ")
   ("d" (insert "\\delta") "δ")
   ("D" (insert "\\Delta") "Δ")
@@ -4793,10 +4802,10 @@ created. The user can then write the code into which te snippet
 should expand."
   (interactive)
   (let* ((key (read-string "Snippet key: "))
-         (name (read-string "Snippet name: "))
-         (text (read-string "Snippet text (leave blank if using yasnippet): ")))
-    (unless (or (s-blank-str? key)
-                (s-blank-str? name))
+         (text (read-string "Snippet text (leave blank if using yasnippet): "))
+         (name (when (s-blank-str? text)
+                 (read-string "Snippet name: "))))
+    (when name
       (setq file-cand (expand-file-name
                        (format "%s/latex-mode/%s" (car (yas-snippet-dirs)) name)))
       (find-file file-cand)

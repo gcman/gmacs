@@ -13,7 +13,9 @@
 
 (define-abbrev-table 'apropos-mode-abbrev-table '())
 
-(define-abbrev-table 'awk-mode-abbrev-table '())
+(define-abbrev-table 'awk-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'backtrace-mode-abbrev-table '())
 
@@ -29,9 +31,13 @@
 
 (define-abbrev-table 'browse-kill-ring-mode-abbrev-table '())
 
-(define-abbrev-table 'c++-mode-abbrev-table '())
+(define-abbrev-table 'c++-mode-abbrev-table
+  '(
+   ))
 
-(define-abbrev-table 'c-mode-abbrev-table '())
+(define-abbrev-table 'c-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'calc-trail-mode-abbrev-table '())
 
@@ -161,7 +167,9 @@
 
 (define-abbrev-table 'ivy-occur-mode-abbrev-table '())
 
-(define-abbrev-table 'java-mode-abbrev-table '())
+(define-abbrev-table 'java-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'js-jsx-mode-abbrev-table '())
 
@@ -243,7 +251,9 @@
 
 (define-abbrev-table 'nxml-mode-abbrev-table '())
 
-(define-abbrev-table 'objc-mode-abbrev-table '())
+(define-abbrev-table 'objc-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'occur-edit-mode-abbrev-table '())
 
@@ -258,15 +268,15 @@
     ("admionister" #("administer" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("admittely" "admittedly" nil 0)
     ("adn" #("and" 0 3 (face frog-menu-candidates-face)) nil 0)
+    ("algenra" #("algebra" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("aluminium" #("aluminum" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("anwyay" #("anyway" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("atreus" #("Atreus" 0 6 (face frog-menu-candidates-face)) nil 0)
-    ("becuase" "because" nil 0)
+    ("becuase" "because" nil 1)
     ("bij" "bijective" nil 0)
     ("colemak" #("Colemak" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("constrast" #("contrast" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("cpas" #("caps" 0 4 (face frog-menu-candidates-face)) nil 0)
-    ("cufflinks" "cuff links" nil 4)
     ("delimieter" "delimiter" nil 0)
     ("didnt" #("didn't" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("diffeq" "differential equation" nil 0)
@@ -277,11 +287,15 @@
     ("eveyr" "every" nil 0)
     ("fd" "finite dimensional" nil 0)
     ("fdvs" "finite-dimensional vector space" nil 0)
-    ("fo" #("f" 0 1 (face frog-menu-candidates-face)) nil 2)
+    ("fintite" #("finite" 0 6 (face frog-menu-candidates-face)) nil 0)
+    ("fo" #("f" 0 1 (face frog-menu-candidates-face)) nil 3)
     ("forsee" #("foresee" 0 7 (face frog-menu-candidates-face)) nil 0)
+    ("funcamental" #("fundamental" 0 11 (face frog-menu-candidates-face)) nil 0)
+    ("gried" #("grief" 0 5 (face frog-menu-candidates-face)) nil 0)
     ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
-    ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 2)
-    ("iff" "if and only if" nil 2)
+    ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 3)
+    ("identifer" #("Identifier" 0 10 (face frog-menu-candidates-face)) nil 0)
+    ("iff" "if and only if" nil 3)
     ("illumations" #("illuminations" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("inadvertantly" #("inadvertently" 0 13 (face frog-menu-candidates-face)) nil 0)
@@ -307,20 +321,24 @@
     ("quanities" #("quantities" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("reluctancy" #("reluctance" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("remmeber" #("remember" 0 8 (face frog-menu-candidates-face)) nil 1)
+    ("sapces" #("spaces" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("sherrif" #("sheriff" 0 7 (face frog-menu-candidates-face)) nil 0)
-    ("st" "such that" nil 0)
+    ("st" "such that" nil 1)
     ("supposesly" #("supposedly" 0 10 (face frog-menu-candidates-face)) nil 1)
     ("supress" #("suppress" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("sur" "surjective" nil 0)
     ("teh" "the" nil 0)
     ("threaad" #("thread" 0 6 (face frog-menu-candidates-face)) nil 1)
+    ("tiananmen" #("Tiananmen" 0 9 (face frog-menu-candidates-face)) nil 2)
+    ("tngent" #("tangent" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("tralfamadorian" #("Tralfamadorian" 0 14 (face frog-menu-candidates-face)) nil 2)
     ("tralfamadorians" #("Tralfamadorians" 0 15 (face frog-menu-candidates-face)) nil 0)
+    ("tranforms" #("transforms" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("trivialties" #("trivialities" 0 12 (face frog-menu-candidates-face)) nil 0)
     ("underfilling" "under filling" nil 4)
     ("unforseen" #("unforeseen" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("vecotr" #("vector" 0 6 (face frog-menu-candidates-face)) nil 1)
-    ("vs" "vector space" nil 0)
+    ("vs" "vector space" nil 1)
     ("vss" "vector spaces" nil 0)
     ("wrok" #("work" 0 4 (face frog-menu-candidates-face)) nil 2)
    ))
@@ -339,7 +357,9 @@
 
 (define-abbrev-table 'pdf-outline-buffer-mode-abbrev-table '())
 
-(define-abbrev-table 'pike-mode-abbrev-table '())
+(define-abbrev-table 'pike-mode-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'plain-tex-mode-abbrev-table '())
 
@@ -349,7 +369,9 @@
 
 (define-abbrev-table 'python-mode-abbrev-table '())
 
-(define-abbrev-table 'python-mode-skeleton-abbrev-table '())
+(define-abbrev-table 'python-mode-skeleton-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'quick-math-mode-abbrev-table
   '(
@@ -428,4 +450,3 @@
 (define-abbrev-table 'xref--xref-buffer-mode-abbrev-table '())
 
 (define-abbrev-table 'youtube-dl-list-mode-abbrev-table '())
-
