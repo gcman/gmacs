@@ -355,7 +355,7 @@ comes back when I switch themes, for some reason), I refresh all open buffers.
     (load-theme 'solarized-dark)
     (setq pdf-view-midnight-colors '("#839496" . "#002b36"))
     (setq gm/theme 'dark))
-  (modi/revert-all-file-buffers))
+  (modi/revert-buffers))
 #+END_SRC
 **** Font Face
 I change my fonts a lot, so I made it easier to set a font.
@@ -784,26 +784,26 @@ The type of file I most often revert is PDFs, because I want to check the output
 of =.tex= files exported from Org Mode. And so I don't need to double check before
 I revert.
 #+BEGIN_SRC emacs-lisp
-(setq revert-without-query '("\\.pdf"))
+;; (setq revert-without-query '("\\.pdf"))
 #+END_SRC
-Sometimes, however, there are other cases
-in which we want to reload a buffer. The change have been not in the file's
-contents, but in an Emacs setting, such as the colours of the theme. Or the
-buffer might not have been representing a file at all. In these cases, it's
-usually easiest to revert every open buffer. This might be a problem for you if
-you're one of those people who keeps hundreds of buffers open at a time, but I
-like to close my buffers liberally with the knowledge that =recentf= will remember
-where I've been for me. I obtained the following function from [[https://emacs.stackexchange.com/questions/24459/revert-all-open-buffers-and-ignore-errors][Emacs Stack
-Exchange]].
+Sometimes, however, there are other cases in which we want to reload a buffer.
+The change have been not in the file's contents, but in an Emacs setting, such
+as the colours of the theme. Or the buffer might not have been representing a
+file at all. In these cases, it's usually easiest to revert every open buffer.
+This might be a problem for you if you're one of those people who keeps hundreds
+of buffers open at a time, but I like to close my buffers liberally with the
+knowledge that =recentf= will remember where I've been for me. I obtained the
+following function from [[https://emacs.stackexchange.com/questions/24459/revert-all-open-buffers-and-ignore-errors][Emacs Stack Exchange]].
 #+BEGIN_SRC emacs-lisp
-(defun modi/revert-all-file-buffers ()
-  "Refresh all open file buffers without confirmation.
+(defun modi/revert-buffers (&optional buffers)
+  "Refresh all open file buffers without confirmation. If BUFFERS is given, revert all elements of BUFFERS instead.
 Buffers in modified (not yet saved) state in emacs will not be reverted. They
 will be reverted though if they were modified outside emacs.
 Buffers visiting files which do not exist any more or are no longer readable
 will be killed."
   (interactive)
-  (dolist (buf (buffer-list))
+  (unless buffers (setq buffers (buffer-list)))
+  (dolist (buf buffers)
     (let ((filename (buffer-file-name buf)))
       ;; Revert only buffers containing files, which are not modified;
       ;; do not try to revert non-file buffers like *Messages*.
@@ -3727,6 +3727,9 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
 *** Export
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path (expand-file-name "tufte-org-mode/" gmacs-custom-dir))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
 (defun gm/org-latex-export ()
   (interactive)
   (require 'ox-tufte-latex)
@@ -4545,45 +4548,45 @@ Snippets go in [[file:math-snippets.el]].
 (defhydra hydra-semicolon-a (:color blue :idle 1.0 :columns 8)
   (";" hydra-semicolon-b/body "Level 2")
   ("SPC" (insert "; ") ";")
-  ("a" (insert "\\alpha n") "α")
+  ("a" (insert "\\alpha") "α")
   ("A" (insert "\\forall ") "∀")
-  ("b" (insert "\\beta ") "β")
+  ("b" (insert "\\beta") "β")
   ("C" (yas-expand-snippet (yas-lookup-snippet "mathcal")) "ℂ")
   ("C" (insert "\\mathbb{C}") "ℂ")
-  ("d" (insert "\\delta n") "δ")
-  ("D" (insert "\\Delta ") "Δ")
-  ("e" (insert "\\epsilon n") "ε")
+  ("d" (insert "\\delta") "δ")
+  ("D" (insert "\\Delta") "Δ")
+  ("e" (insert "\\epsilon") "ε")
   ("E" (insert "\\exists ") "∃")
-  ("f" (insert "\\varphi ") "φ")
-  ("F" (insert "\\Phi ") "Φ")
-  ("g" (insert "\\gamma ") "γ")
-  ("G" (insert "\\Gamma ") "Γ")
-  ("h" (insert "\\eta ") "η")
-  ("k" (insert "\\kappa ") "κ")
-  ("l" (insert "\\lambda ") "λ")
-  ("L" (insert "\\Lambda ") "Λ")
-  ("m" (insert "\\mu ") "µ")
-  ("n" (insert "\\nu ") "ν")
-  ("N" (insert "\\nabla ") "∇")
-  ("o" (insert "\\omega ") "ω")
-  ("O" (insert "\\Omega ") "Ω")
-  ("p" (insert "\\pi ") "π")
-  ("P" (insert "\\P ") "Π")
-  ("q" (insert "\\theta ") "θ")
+  ("f" (insert "\\varphi") "φ")
+  ("F" (insert "\\Phi") "Φ")
+  ("g" (insert "\\gamma") "γ")
+  ("G" (insert "\\Gamma") "Γ")
+  ("h" (insert "\\eta") "η")
+  ("k" (insert "\\kappa") "κ")
+  ("l" (insert "\\lambda") "λ")
+  ("L" (insert "\\Lambda") "Λ")
+  ("m" (insert "\\mu") "µ")
+  ("n" (insert "\\nu") "ν")
+  ("N" (insert "\\nabla") "∇")
+  ("o" (insert "\\omega") "ω")
+  ("O" (insert "\\Omega") "Ω")
+  ("p" (insert "\\pi") "π")
+  ("P" (insert "\\Pi") "Π")
+  ("q" (insert "\\theta") "θ")
   ("Q" (insert "\\mathbb{Q}") "ℚ")
-  ("r" (insert "\\rho ") "ρ")
+  ("r" (insert "\\rho") "ρ")
   ("R" (insert "\\mathbb{R}") "ℝ")
-  ("s" (insert "\\sigma ") "σ")
-  ("t" (insert "\\tau ") "τ")
-  ("u" (insert "\\upsilon ") "υ")
+  ("s" (insert "\\sigma") "σ")
+  ("t" (insert "\\tau") "τ")
+  ("u" (insert "\\upsilon") "υ")
   ("U" (insert "\\cup ") "∪")
   ("v" (insert "\\vec ") "v")
-  ("w" (insert "\\xi ") "ξ")
-  ("W" (insert "\\Xi ") "Ξ")
-  ("x" (insert "\\chi ") "χ")
-  ("y" (insert "\\psi ") "ψ")
-  ("Y" (insert "\\Psi ") "Ψ")
-  ("z" (insert "\\zeta ") "ζ")
+  ("w" (insert "\\xi") "ξ")
+  ("W" (insert "\\Xi") "Ξ")
+  ("x" (insert "\\chi") "χ")
+  ("y" (insert "\\psi") "ψ")
+  ("Y" (insert "\\Psi") "Ψ")
+  ("z" (insert "\\zeta") "ζ")
   ("Z" (insert "\\mathbb{Z}") "ℤ")
   ("0" (insert " \\emptyset") "∅")
   ("8" (insert "\\infinity") "∞")
@@ -4599,11 +4602,12 @@ Snippets go in [[file:math-snippets.el]].
   (" " (insert "; " "semicolon"))
   ("A" (insert "\\aleph ") "")
   ("e" (insert "\\varepsilon ") "ε")
-  ("f" (insert "\\phi ") "φ")
+  ("f" (insert "\\phi") "φ")
   ("F" (insert "\\mathbb{F}") "𝔽")
   ("l" (insert "\\ell") "ℓ")
-  ("q" (insert "\\Theta ") "Θ")
+  ("q" (insert "\\Theta") "Θ")
   ("r" (insert "\\varrho ") "ρ")
+  ("u" (insert "\\sqcup ") "∩")
   ("U" (insert "\\cap ") "∩")
   ("x" (insert " \\times ") "×")
   ("." (insert " \\cdots ") "···"))
