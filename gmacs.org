@@ -2884,6 +2884,17 @@ thoughts that come to me while browsing.
 #+BEGIN_SRC js :tangle no
 javascript:location.href='org-protocol://capture?template=n'
 #+END_SRC
+#+BEGIN_SRC emacs-lisp
+(defun gm/find-qutebrowser-download (file)
+  (expand-file-name file (expand-file-name (car (--filter (string-match "qutebrowser-downloads" it) (directory-files "/tmp/"))) "/tmp")))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(add-to-list
+ 'org-capture-templates
+ '("q" "Org Protocol Qutebrowser pdf" entry
+   (file org-default-notes-file)
+   "* %^{Title}%(let ((dir \"~/org/data\")) (setq org-attach-directory dir) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n"))
+#+END_SRC
 *** Org Download
 Now we can easily move images into Org Mode buffers.
 #+BEGIN_SRC emacs-lisp
@@ -4631,7 +4642,14 @@ Then we bind this to semicolon.
     :init-value nil
     :keymap gm/math-mode-map
     (when quick-math-mode
-      (gm/math-setup))))
+      (gm/math-setup)
+      (gm/prettify-math)
+      (gm/eq-preview-mode))))
+#+END_SRC
+We need shift-tabbing in snippets to override =org-shift-tab=, but only in math
+mode.
+#+BEGIN_SRC emacs-lisp
+(define-conditional-key gm/math-mode-map (kbd "<S-iso-lefttab>") (lambda! (yas-next-field -1)) (gm/in-math-p))
 #+END_SRC
 **** Simpler =texmathp=
 The default =texmathp= function assumes that you are writing valid LaTeX code.
