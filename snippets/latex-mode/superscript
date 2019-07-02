@@ -2,4 +2,4 @@
 # name: superscript
 # key: math-superscript
 # --
-^${1:$(when (and (not (string-match-p "\\`[0-9]*\\'" yas-text)) (> (length yas-text) 1)) "{")}${1:n}${1:$(when (and (not (string-match-p "\\`[0-9]*\\'" yas-text)) (> (length yas-text) 1)) "}")}
+^${1:$(unless (or (gm/math-expression-p yas-text) (< (length yas-text) 2)) "{")}${1:n}${1:$(unless (or (gm/math-expression-p yas-text) (< (length yas-text) 2)) "}")}
