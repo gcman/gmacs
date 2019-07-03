@@ -2,6 +2,6 @@
 # name: new-math-definition
 # key: <def
 # --
-#+begin_definition
-$0
+${1:$(when (> (length (yas-field-value 1)) 0)) "#+ATTR_LATEX: :options [")}$1${1:$(when (> (length (yas-field-value 1)) 0) "]\\n")} #+begin_definition
+$2
 #+end_definition

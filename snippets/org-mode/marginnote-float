@@ -2,4 +2,4 @@
 # name: margin-note-float
 # key: <m*
 # --
-[[latex-opt-after:marginnote][$0;0ex]]
+[[latex-opt:marginnote][$1;${2:0}ex]]$0

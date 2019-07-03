@@ -3544,6 +3544,10 @@ simply explains what the regexp does."
 :PROPERTIES:
 :ORDERED:  t
 :END:
+Use =imagemagick=.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(setq org-preview-latex-default-process 'imagemagick)
+#+END_SRC
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
@@ -5024,6 +5028,30 @@ to make LaTeX happy.
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
+#+END_SRC
+**** Convert Inline Math to Equation
+Turns an inline math snippet into an equation.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-inline-to-equation ()
+  (interactive)
+  (let* ((fr (org-element-context))
+         (fr-begin (org-element-property :begin fr))
+         (fr-end (org-element-property :end fr))
+         (match (buffer-substring-no-properties
+                 (+ fr-begin 2)
+                 (- fr-end 2)))
+         (char (char-to-string (char-after fr-end))))
+    (delete-region fr-begin (if (string-match "\\.\\|," char)
+                                (1+ fr-end)
+                              fr-end))
+    (newline)
+    (insert "\\begin{equation}\n")
+    (insert match)
+    (when (string-match "\\.\\|," char) (insert char))
+    (save-excursion
+      (insert "\n\\end{equation}\n")
+      (when (eq (char-after) ? )
+        (hungry-delete-forward 0)))))
 #+END_SRC
 *** Inkscape Figures
 This is the mode we will load in Inkscape when we insert math.
