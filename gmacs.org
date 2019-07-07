@@ -2893,7 +2893,7 @@ javascript:location.href='org-protocol://capture?template=n'
  'org-capture-templates
  '("q" "Org Protocol Qutebrowser pdf" entry
    (file org-default-notes-file)
-   "* %^{Title}%(let ((dir \"~/org/data\")) (setq org-attach-directory dir) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n"))
+   "* %^{Title}%(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n"))
 #+END_SRC
 *** Org Download
 Now we can easily move images into Org Mode buffers.
@@ -4577,6 +4577,7 @@ Snippets go in [[file:math-snippets.el]].
   ("g" (insert "\\gamma") "γ")
   ("G" (insert "\\Gamma") "Γ")
   ("h" (insert "\\eta") "η")
+  ("i" (insert "\\iota") "ι")
   ("k" (insert "\\kappa") "κ")
   ("l" (insert "\\lambda") "λ")
   ("L" (insert "\\Lambda") "Λ")
@@ -4610,7 +4611,7 @@ Snippets go in [[file:math-snippets.el]].
   ("\\" (insert "\\setminus ") "∖")
   ("'" (insert "\\prime ") "′")
   ("," (insert ",\\ldots,") ".")
-  ("." (insert " \\cdot ") "·"))
+  ("." (insert "\\cdot ") "·"))
 
 (defhydra hydra-semicolon-b (:color blue :idle 1.0 :columns 8)
   (";" hydra-semicolon-a/body "base")
@@ -4625,7 +4626,7 @@ Snippets go in [[file:math-snippets.el]].
   ("u" (insert "\\sqcup ") "∩")
   ("U" (insert "\\cap ") "∩")
   ("x" (insert " \\times ") "×")
-  ("." (insert " \\cdots ") "···"))
+  ("." (insert "\\cdots ") "···"))
 #+END_SRC
 Then we bind this to semicolon.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode

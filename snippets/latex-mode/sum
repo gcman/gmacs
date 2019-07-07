@@ -2,4 +2,4 @@
 # name: sum
 # key: math-sum
 # --
-\sum_{${1:k}=${2:0}}^{${3:\infty}}
+\sum_{${1:n}=${2:0}}^{${3:\infty}}
