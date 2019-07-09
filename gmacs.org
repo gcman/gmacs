@@ -1313,7 +1313,7 @@ Single Capitals as you type."
   :init-value nil
   (if gm/dubcaps-mode
       (add-hook 'post-self-insert-hook #'gm/dcaps-to-scaps nil 'local)
-    (remove-hook 'post-self-insert-hook #'g/dcaps-to-scaps 'local)))
+    (remove-hook 'post-self-insert-hook #'gm/dcaps-to-scaps 'local)))
 
 (add-hook 'text-mode-hook #'gm/dubcaps-mode)
 #+END_SRC
@@ -2886,7 +2886,13 @@ javascript:location.href='org-protocol://capture?template=n'
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (defun gm/find-qutebrowser-download (file)
-  (expand-file-name file (expand-file-name (car (--filter (string-match "qutebrowser-downloads" it) (directory-files "/tmp/"))) "/tmp")))
+  (let* ((qutedir (expand-file-name (car
+                                    (--filter (string-match "qutebrowser-downloads" it)
+                                              (directory-files "/tmp/"))) "/tmp"))
+        (filecands (split-string file " - "))
+        (filename (car (--filter (string-match "tmp" it) filecands))))
+    (expand-file-name filename qutedir)))
+
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (add-to-list
@@ -5080,12 +5086,16 @@ snippet calls this function.
 #+BEGIN_SRC emacs-lisp
 (defun gm/inkscape-figure ()
   (interactive)
-  (let ((default-directory (expand-file-name "img/" default-directory))
-        (name (read-string "Figure name: ")))
-    (shell-command (format "inkscape-figures create %s" name))
-    (shell-command "i3-msg \"fullscreen\"")
-    (shell-command "i3-msg \"fullscreen\"")
-    (setf (buffer-substring
-           (line-beginning-position) (line-end-position)) "")
-    (yas-expand-snippet (format "#+name: fig:%s\n #+caption: $2\n #+attr_latex: :vertical-alignment b\n [[file:figures/%s.pdf_tex]]\n$0" name name))))
+  (let ((imgdir (expand-file-name "figures/" default-directory)))
+    (unless (file-directory-p imgdir)
+      (mkdir imgdir))
+    (let ((default-directory imgdir)
+          (name (read-string "Figure name: ")))
+      (call-process "inkscape-figures" nil 0 nil nil
+                    "create" name)
+      (shell-command "i3-msg \"fullscreen\"")
+      (shell-command "i3-msg \"fullscreen\"")
+      (setf (buffer-substring
+             (line-beginning-position) (line-end-position)) "")
+      (yas-expand-snippet (format "#+name: fig:%s\n #+caption: $2\n #+attr_latex: :vertical-alignment b\n [[file:figures/%s.pdf_tex]]\n$0" name name)))))
 #+END_SRC
