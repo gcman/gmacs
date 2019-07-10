@@ -262,6 +262,7 @@
     ("aluminium" #("aluminum" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("anwyay" #("anyway" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("apporpriate" #("appropriate" 0 11 (face frog-menu-candidates-face)) nil 0)
+    ("approxximate" #("approximate" 0 11 (face frog-menu-candidates-face)) nil 0)
     ("arked" #("marked" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("atreus" #("Atreus" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("becuase" "because" nil 1)
@@ -270,6 +271,7 @@
     ("casewokr" #("casework" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("colemak" #("Colemak" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("constrast" #("contrast" 0 8 (face frog-menu-candidates-face)) nil 0)
+    ("coutnalbe" #("countable" 0 9 (face frog-menu-candidates-face)) nil 0)
     ("cpas" #("caps" 0 4 (face frog-menu-candidates-face)) nil 0)
     ("degre" #("degree" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("delimieter" "delimiter" nil 0)
@@ -284,13 +286,13 @@
     ("fd" "finite dimensional" nil 0)
     ("fdvs" "finite-dimensional vector space" nil 0)
     ("findamentally" #("fundamentally" 0 13 (face frog-menu-candidates-face)) nil 0)
-    ("finite" #("Finite" 0 6 (face frog-menu-candidates-face)) nil 0)
+    ("finite" #("Finite" 0 6 (face frog-menu-candidates-face)) nil 3)
     ("fintite" #("finite" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("fo" #("f" 0 1 (face frog-menu-candidates-face)) nil 5)
     ("forsee" #("foresee" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("funcamental" #("fundamental" 0 11 (face frog-menu-candidates-face)) nil 0)
     ("gried" #("grief" 0 5 (face frog-menu-candidates-face)) nil 0)
-    ("hangg" #("hang" 0 4 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
+    ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("hom" "homomorphism" nil 3)
     ("homogenous" #("homogeneous" 0 11 (face frog-menu-candidates-face)) nil 6)
     ("homs" "homomorphisms" nil 0)
@@ -298,9 +300,9 @@
     ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 4)
     ("ideaal" #("ideal" 0 5 (face frog-menu-candidates-face)) nil 0)
     ("identifer" #("Identifier" 0 10 (face frog-menu-candidates-face)) nil 0)
-    ("iff" "if and only if" nil 14)
+    ("iff" "if and only if" nil 15)
     ("illumations" #("illuminations" 0 13 (face frog-menu-candidates-face)) nil 0)
-    ("imediately" #("immediately" 0 11 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
+    ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
     ("inadvertantly" #("inadvertently" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("infact" #("in fact" 0 7 (face frog-menu-candidates-face)) nil 0)
@@ -321,6 +323,7 @@
     ("massachusets" #("Massachusetts" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("mathcamp" #("Mathcamp" 0 8 (face frog-menu-candidates-face)) nil 3)
     ("minumum" #("minimum" 0 7 (face frog-menu-candidates-face)) nil 0)
+    ("mormphism" #("morphism" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("mulriplicity" #("multiplicity" 0 12 (face frog-menu-candidates-face)) nil 0)
     ("multiplciation" #("multiplication" 0 14 (face frog-menu-candidates-face)) nil 0)
     ("multiplicyt" #("multiplicity" 0 12 (face frog-menu-candidates-face)) nil 0)
@@ -345,7 +348,7 @@
     ("sherrif" #("sheriff" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("shiuld" #("should" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("sparce" #("sparse" 0 6 (face frog-menu-candidates-face)) nil 0)
-    ("st" "such that" nil 2)
+    ("st" "such that" nil 3)
     ("sucessors" #("successors" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("supposesly" #("supposedly" 0 10 (face frog-menu-candidates-face)) nil 1)
     ("supress" #("suppress" 0 8 (face frog-menu-candidates-face)) nil 0)
@@ -397,9 +400,7 @@
 
 (define-abbrev-table 'python-mode-abbrev-table '())
 
-(define-abbrev-table 'python-mode-skeleton-abbrev-table
-  '(
-   ))
+(define-abbrev-table 'python-mode-skeleton-abbrev-table '())
 
 (define-abbrev-table 'quick-math-mode-abbrev-table
   '(

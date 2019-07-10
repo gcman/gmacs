@@ -5091,7 +5091,7 @@ snippet calls this function.
       (mkdir imgdir))
     (let ((default-directory imgdir)
           (name (read-string "Figure name: ")))
-      (call-process "inkscape-figures" nil 0 nil nil
+      (call-process "inkscape-figures" nil 0 nil
                     "create" name)
       (shell-command "i3-msg \"fullscreen\"")
       (shell-command "i3-msg \"fullscreen\"")
