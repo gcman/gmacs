@@ -83,7 +83,7 @@ Symbol can be the symbol directly, no lookup needed."
    gm/math-vectors
    '(("aleph" "ℵ")
      ("hbar" "ℏ")
-     ("ell" "ℓ")
+     ("ell" "𝓁")
      ("wp" "℘")
      ("Re" "ℜ")
      ("Im" "ℑ")
@@ -92,7 +92,8 @@ Symbol can be the symbol directly, no lookup needed."
      ("Z" "𝗭")
      ("Q" "𝗤")
      ("R" "𝗥")
-     ("C" "𝗖"))))
+     ("C" "𝗖")
+     ("F" "𝗙"))))
 
 (defvar gm/math-arrows
   '(("rightarrow" "→")        ; Directions
@@ -264,7 +265,8 @@ Symbol can be the symbol directly, no lookup needed."
     ("int" [?\s (Bc . Bc) ?\s (Bc . Br) ?∫])))
 
 (defvar gm/math-commands
-  '(("dd" [?\s (Br . Bl) ?𝖽] "")))
+  '(("dd" [?\s (Br . Bl) ?𝖽] "")
+    ("pd" [?\s (Br . Bl) ?∂] "")))
 
 (defun gm/math-regexp-unspaced (name symbol)
   (list (cons (format "\\(\\\\%s{}\\)" name) symbol)

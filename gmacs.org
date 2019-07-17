@@ -2736,6 +2736,10 @@ use. and we just set our "proper places."
                            (,(expand-file-name "notes.org" org-directory) :maxlevel . 3)
                            (,(expand-file-name "reading.org" org-directory) :maxlevel . 3)))
 #+END_SRC
+This abbreviation lets us easily include attached files as inline images.
+#+BEGIN_SRC emacs-lisp
+(setq org-link-abbrev-alist '(("att" . org-attach-expand-link)))
+#+END_SRC
 *** Refile and Archival
 Log refiling.
 #+BEGIN_SRC emacs-lisp
@@ -3977,6 +3981,10 @@ Some commonly used searches.
         (:name "flagged" :query "tag:flagged" :key "f")
         (:name "sent" :query "tag:sent" :key "s" :sort-order newest-first)
         (:name "drafts" :query "tag:draft" :key "d")))
+#+END_SRC
+Show newest mail first.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
+(setq notmuch-search-oldest-first nil)
 #+END_SRC
 Nice stuff to have for sending mail.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
