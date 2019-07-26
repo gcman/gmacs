@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: neq
-# key: math-not-equals
-# --
-\neq $0

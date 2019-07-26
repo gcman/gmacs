@@ -4611,6 +4611,7 @@ Snippets go in [[file:math-snippets.el]].
   ("u" (insert "\\upsilon") "υ")
   ("U" (insert "\\cup ") "∪")
   ("v" (insert "\\vec ") "v")
+  ("V" (insert "\\vee{}") "V")
   ("w" (insert "\\xi") "ξ")
   ("W" (insert "\\Xi") "Ξ")
   ("x" (insert "\\chi") "χ")
@@ -4640,7 +4641,7 @@ Snippets go in [[file:math-snippets.el]].
   ("u" (insert "\\sqcup ") "∩")
   ("U" (insert "\\cap ") "∩")
   ("x" (insert " \\times ") "×")
-  ("." (insert "\\cdots ") "···"))
+  ("." (insert "\\cdots{}") "···"))
 #+END_SRC
 Then we bind this to semicolon.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
