@@ -1007,8 +1007,7 @@ smooth.
       (set-buffer buf)
       (erase-buffer)
       (dump varlist buf)
-      (save-buffer)
-      (kill-buffer))))
+      (save-buffer))))
 
 (defun dump (varlist buffer)
   "insert into buffer the setq statement to recreate the variables in VARLIST"
@@ -1298,14 +1297,15 @@ a row, I almost never want a lowercase letter to follow.
 (defun gm/dcaps-to-scaps ()
   "Convert word in DOuble CApitals to Single Capitals."
   (interactive)
-  (and (= ?w (char-syntax (char-before)))
-       (save-excursion
-         (and (if (called-interactively-p 'interactive)
-                  (skip-syntax-backward "w")
-                (= -3 (skip-syntax-backward "w")))
-              (let (case-fold-search)
-                (looking-at "\\b[[:upper:]]\\{2\\}[[:lower:]]"))
-              (capitalize-word 1)))))
+  (when (and (= ?w (char-syntax (char-before)))
+             (save-excursion
+               (and (if (called-interactively-p 'interactive)
+                        (skip-syntax-backward "w")
+                      (= -3 (skip-syntax-backward "w")))
+                    (let (case-fold-search)
+                      (looking-at "\\b[[:upper:]]\\{2\\}[[:lower:]]"))
+                    (gm/capitalize-word))))
+    (forward-word)))
 
 (define-minor-mode gm/dubcaps-mode
   "Toggle `gm/dubcaps-mode'.  Converts words in DOuble CApitals to
