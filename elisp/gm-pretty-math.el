@@ -218,7 +218,11 @@ Symbol can be the symbol directly, no lookup needed."
     ("models" "⊧")
     ("Vert" "∥")
     ("cong" "≅")
-    ("doteq" "≐"))))
+    ("doteq" "≐")
+    ("triangleleft" "◁")
+    ("triangleright" "▷")
+    ("bigtriangleup" "△")
+    ("bigtriangledown" "▽"))))
 
 (defvar gm/math-unspaced
   (append
@@ -240,10 +244,6 @@ Symbol can be the symbol directly, no lookup needed."
      ("dag" "†")
      ("ddag" "‡")
      ("S" "§")
-     ("triangleleft" "◁")
-     ("triangleright" "▷")
-     ("bigtriangleup" "△")
-     ("bigtriangledown" "▽")
      ("star" "★")
      ("vDash" "⊨")
      ("circ" "∘")
