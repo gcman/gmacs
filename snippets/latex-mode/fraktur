@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: fraktur
+# key: math-fraktur
+# --
+\mathfrak{$1}

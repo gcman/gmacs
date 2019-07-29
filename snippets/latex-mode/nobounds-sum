@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: nobounds-sum
+# key: math-nobounds-sum
+# --
+\sum_{$1} $0

@@ -4841,11 +4841,12 @@ function).
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet-expand (key)
   (insert key)
-  (-when-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet)))
+  (-if-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet)))
                (completions (--keep (assoc it gm/math-snippets) buff-cand))
                (snippet (--max-by (> (length (car it)) (length (car other)))
                                   completions)))
-    ;; this has to be negative, we're deleting back
+    (progn
+      ;; this has to be negative, we're deleting back
     (delete-char (- 0 (length (car snippet))))
     ;; this is so we don't have two backslashes after something like \sim
     (when (= (char-before) ?\\) (delete-char -1))
@@ -4853,7 +4854,9 @@ function).
     (let ((expand (cadr snippet)))
       (if (cddr snippet)
           (yas-expand-snippet (yas-lookup-snippet expand))
-        (insert expand)))))
+        (insert expand))))
+    (when (equal key "/")
+      (gm/math-frac))))
 #+END_SRC
 **** Add and View Snippet
 Now we give the user a way to easily add snippets.
@@ -5006,30 +5009,35 @@ results in =\frac{\sin x}{|}=.
 
 (defun gm/math-frac ()
   (interactive)
+  (when (eq (char-before) ?/) ;; remove /
+    (delete-char -1))
   (cond
    ((use-region-p)
-     (let* ((begin (region-beginning))
-            (end (region-end))
-            (match (buffer-substring-no-properties
+    (let* ((begin (region-beginning))
+           (end (region-end))
+           (match (buffer-substring-no-properties
                    begin end)))
-       (delete-region begin end)
-       (gm/math-insert-frac-match match)))
+      (delete-region begin end)
+      (gm/math-insert-frac-match match)))
    ((string-match "[\])]" (char-to-string (char-before)))
     (let ((end (point))
+          (sqbracket (eq (char-before) 93)) ;; last char is sqbracket
           match)
+      (when sqbracket
+        (backward-sexp))
       (backward-sexp)
       (setq match (buffer-substring-no-properties (point) end))
       (delete-region (point) end)
-      (gm/math-insert-frac-match (substring match 1 -1))))
-   ((string-match "}" (char-to-string (char-before)))
+      (unless sqbracket
+        (setq match (substring match 1 -1)))
+      (gm/math-insert-frac-match match)))
+   ((eq (char-before) 125) ;; match closing curly braces
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]"))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
     (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*"))
    (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
 #+END_SRC
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(define-conditional-key gm/math-mode-map "/" #'gm/math-frac (gm/in-math-p))
-#+END_SRC
+The binding is given in [[*Generate Snippets][Generate Snippets]].
 **** Easy Split Environments
 I wanted to make writing environments like =split= and =align= easier, so that I
 wouldn't have to manually add the newline (=\\=) at the end of each line required

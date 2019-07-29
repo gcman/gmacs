@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: box
+# key: math-box
+# --
+\boxed{$1}

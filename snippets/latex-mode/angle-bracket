@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: angle-bracket
+# key: math-angle-bracket
+# --
+\langle{}$1\rangle $0

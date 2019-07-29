@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: automorphism-group
+# key: math-automorphism-group
+# --
+\Aut($1)

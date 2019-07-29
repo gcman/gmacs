@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: vector
+# key: math-vector
+# --
+(${1:x}_1, $1_2, $1_3)

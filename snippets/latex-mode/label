@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: label
+# key: math-label
+# type: command
+# --
+(insert (format "\\label{%s}" (read-string "Label: ")))
