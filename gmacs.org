@@ -1317,6 +1317,24 @@ Single Capitals as you type."
 
 (add-hook 'text-mode-hook #'gm/dubcaps-mode)
 #+END_SRC
+**** Remove Words
+Sometimes we accidentally add a word to our personal list and want to remove it.
+#+BEGIN_SRC emacs-lisp
+(defun gm/remove-personal-word ()
+  (interactive)
+  (let ((file (format "~/.hunspell_%s" ispell-local-dictionary))
+        wordlist)
+    (progn
+      (find-file "~/.hunspell_en_CA")
+      (setq wordlist (buffer-string))
+      (kill-buffer))
+    (let* ((words (nreverse (split-string wordlist "\n")))
+           (word (ivy-read "Word to delete: " words))))
+    (with-temp-file file
+      (setq words (delete word words))
+      (dolist (w words)
+        (insert (format "%s\n" w))))))
+#+END_SRC
 *** Text Manipulation
 **** Cut/Paste
 From the infamous Xah Lee.
@@ -2658,7 +2676,7 @@ We customize the commands a bit.
 (setq org-speed-commands-user
       '(("j" counsel-org-goto)
         ("a" org-archive-subtree)
-        ("d" (lambda! () (org-todo 'done)))))
+        ("d" (lambda () (interactive) (org-todo 'done)))))
 #+END_SRC
 *** Invisible Edits
 When text is entered near a hidden area (...), it is hard to see what is
@@ -2891,19 +2909,21 @@ javascript:location.href='org-protocol://capture?template=n'
 #+BEGIN_SRC emacs-lisp
 (defun gm/find-qutebrowser-download (file)
   (let* ((qutedir (expand-file-name (car
-                                    (--filter (string-match "qutebrowser-downloads" it)
-                                              (directory-files "/tmp/"))) "/tmp"))
-        (filecands (split-string file " - "))
-        (filename (car (--filter (string-match "tmp" it) filecands))))
+                                     (--filter (string-match "qutebrowser-downloads" it)
+                                               (directory-files "/tmp/"))) "/tmp"))
+         (filecands (split-string file " - "))
+         (filenamecand (car filecands))
+         (filename (expand-file-name
+                    (car (--filter (string-match filenamecand it) (directory-files qutedir)))
+                    qutedir)))
     (expand-file-name filename qutedir)))
-
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (add-to-list
  'org-capture-templates
  '("q" "Org Protocol Qutebrowser pdf" entry
    (file org-default-notes-file)
-   "* %^{Title}%(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n"))
+   "* %^{Title}%(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U\n:Author: %^{Author}\n:END:\n%?\n"))
 #+END_SRC
 *** Org Download
 Now we can easily move images into Org Mode buffers.
@@ -3977,7 +3997,7 @@ more rigorous system of encryption.
 Some commonly used searches.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq notmuch-saved-searches
-      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order oldest-first)
+      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order newest-first)
         (:name "flagged" :query "tag:flagged" :key "f")
         (:name "sent" :query "tag:sent" :key "s" :sort-order newest-first)
         (:name "drafts" :query "tag:draft" :key "d")))
@@ -4731,6 +4751,8 @@ makes for some awkward timing for activating previews.
   (interactive)
   (if (gm/in-math-p)
       (gm/reformat-fragment)
+    (when (yas-active-snippets)
+        (yas-exit-all-snippets))
     (if (org-in-src-block-p)
         (insert "$")
       (insert "\\(")
@@ -4851,11 +4873,16 @@ should expand."
                      (format "%s/latex-mode/%s" (car (yas-snippet-dirs)) name)))
          (snippet (if (s-blank-str? text)
                       (list key name t)
-                    (list key text))))
+                    (list key text)))
+         (snippet-keys (--map (car it) gm/math-snippets))
+         (snippet-list (--map (cons (car it) it) gm/math-snippets)))
     (unless (s-blank-str? name)
       (find-file file-cand)
       (unless (file-exists-p file-cand)
         (yas-expand-snippet (yas-lookup-snippet "new-math-snippet"))))
+    (when (and (member (car snippet) snippet-keys)
+               (y-or-n-p (format "Snippet %s is already defined. Overwrite?" key)))
+      (setq gm/math-snippets (delete (cdr (assoc key snippet-list)) gm/math-snippets)))
     (push snippet gm/math-snippets)
     (dump-vars-to-file '(gm/math-snippets) gm/math-snippet-loc)
     (gm/math-setup)))
