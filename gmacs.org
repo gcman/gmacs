@@ -3229,6 +3229,7 @@ risk of them not being unique.
 (defun gm/context-hydra-launcher ()
   "A launcher for hydras based on the current context."
   (interactive)
+  (require 'org-link-edit)
   (if current-prefix-arg
       (hydra-toggle/body)
     (cl-case major-mode
@@ -3250,14 +3251,17 @@ risk of them not being unique.
 #+END_SRC
 **** Links
 #+BEGIN_SRC emacs-lisp
-(defhydra hydra-org-link-helper (:color pink :hint nil)
-  "
+(setq hydra-org-link-helper-hint-base
+      "
 org link helper
 _i_ backward slurp     _o_ forward slurp    _n_ next link
 _j_ backward barf      _k_ forward barf     _p_ previous link
 
 _q_ quit
-"
+")
+
+(defhydra hydra-org-link-helper (:color pink)
+  hydra-org-link-helper-hint-base
   ("i" org-link-edit-backward-slurp)
   ("o" org-link-edit-forward-slurp)
   ("j" org-link-edit-backward-barf)
@@ -3265,6 +3269,27 @@ _q_ quit
   ("n" org-next-link)
   ("p" org-previous-link)
   ("q" nil :color blue))
+
+(setq hydra-org-link-helper/hint
+      '(if (equal (org-element-property :path (org-element-context)) "marginnote")
+           (prog1
+               (let* ((lines (split-string hydra-org-link-helper-hint-base "\n"))
+                      (newhint "        _e_ shift margin note")
+                      hint)
+                 (setf (nth 2 lines) (concat (nth 2 lines) newhint))
+                 (setq hint (mapconcat 'identity lines "\n"))
+                 (eval
+                  (hydra--format nil '(nil nil :hint nil)
+                                 hint hydra-org-link-helper/heads)))
+             (define-key hydra-org-link-helper/keymap "e"
+               (lambda! ()
+                        (gm/math-make-marginnote-float)
+                        (hydra-org-link-helper/nil))))
+         (prog1
+             (eval
+              (hydra--format nil '(nil nil :hint nil)
+                             hydra-org-link-helper-hint-base hydra-org-link-helper/heads))
+           (define-key hydra-org-link-helper/keymap "e" nil))))
 #+END_SRC
 **** Tables
 #+BEGIN_SRC emacs-lisp
@@ -4752,7 +4777,7 @@ makes for some awkward timing for activating previews.
   (if (gm/in-math-p)
       (gm/reformat-fragment)
     (when (yas-active-snippets)
-        (yas-exit-all-snippets))
+      (yas-exit-all-snippets))
     (if (org-in-src-block-p)
         (insert "$")
       (insert "\\(")
@@ -4776,14 +4801,14 @@ expand into =\hat{f}=. However, we cannot just act on the last letter, because
 (defun gm/last-letter ()
   (when (string-match "[a-zA-Z]" (gm/last-n-chars 1))
     (let ((match
-            (if (looking-back (regexp-opt
-                               (--map (concat "\\" (car it))
-                                      (append gm/math-greek-lower
-                                              gm/math-greek-upper)))
-                              (- (point) 8) t)
-                (buffer-substring-no-properties (match-beginning 0)
-                                                (match-end 0))
-              (char-to-string (char-before)))))
+           (if (looking-back (regexp-opt
+                              (--map (concat "\\" (car it))
+                                     (append gm/math-greek-lower
+                                             gm/math-greek-upper)))
+                             (- (point) 8) t)
+               (buffer-substring-no-properties (match-beginning 0)
+                                               (match-end 0))
+             (char-to-string (char-before)))))
       (save-excursion
         (backward-char (length match))
         (when (string= (gm/last-n-chars 5) "\\vec ")
@@ -4824,7 +4849,7 @@ snippets. First, we create a suffix tree of all the math snippets.
          (delete-dups (--map (s-right 1 (car it)) gm/math-snippets))))
     (seq-do (lambda (key)
               (eval `(define-conditional-key gm/math-mode-map
-                       ,key (lambda! () (gm/math-snippet-expand ,key))
+                         ,key (lambda! () (gm/math-snippet-expand ,key))
                        (gm/in-math-p))))
             unique-suffixes)))
 #+END_SRC
@@ -4842,19 +4867,19 @@ function).
 (defun gm/math-snippet-expand (key)
   (insert key)
   (-if-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet)))
-               (completions (--keep (assoc it gm/math-snippets) buff-cand))
-               (snippet (--max-by (> (length (car it)) (length (car other)))
-                                  completions)))
-    (progn
-      ;; this has to be negative, we're deleting back
-    (delete-char (- 0 (length (car snippet))))
-    ;; this is so we don't have two backslashes after something like \sim
-    (when (= (char-before) ?\\) (delete-char -1))
-    ;; is this a snippet expansion or just a text insertion?
-    (let ((expand (cadr snippet)))
-      (if (cddr snippet)
-          (yas-expand-snippet (yas-lookup-snippet expand))
-        (insert expand))))
+             (completions (--keep (assoc it gm/math-snippets) buff-cand))
+             (snippet (--max-by (> (length (car it)) (length (car other)))
+                                completions)))
+      (progn
+        ;; this has to be negative, we're deleting back
+        (delete-char (- 0 (length (car snippet))))
+        ;; this is so we don't have two backslashes after something like \sim
+        (when (= (char-before) ?\\) (delete-char -1))
+        ;; is this a snippet expansion or just a text insertion?
+        (let ((expand (cadr snippet)))
+          (if (cddr snippet)
+              (yas-expand-snippet (yas-lookup-snippet expand))
+            (insert expand))))
     (when (equal key "/")
       (gm/math-frac))))
 #+END_SRC
@@ -4983,9 +5008,9 @@ Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (cl-loop for i from 0 to 9
          collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
-                (number-to-string ,i)
-                (lambda! () (gm/math-number-subscript (number-to-string ,i)))
-              (gm/in-math-p)))))
+                                         (number-to-string ,i)
+                                         (lambda! () (gm/math-number-subscript (number-to-string ,i)))
+                                       (gm/in-math-p)))))
 #+END_SRC
 **** Fraction
 Typing =/= after an appropriate block (a number or a balanced set of parentheses)
@@ -5058,24 +5083,24 @@ to make LaTeX happy.
 (defun gm/tex-newline ()
   (interactive)
   (let ((current-line (buffer-substring-no-properties
-              (line-beginning-position)
-              (line-end-position))))
-  (if (equal current-line "\\begin{split}")
-      (newline)
-    (end-of-line)
-    (unless (equal (gm/last-n-chars 2) "\\\\")
-      (insert " \\\\"))
-    (if (save-excursion
-          (forward-line)
-          (equal (buffer-substring-no-properties
-                  (line-beginning-position)
-                  (line-end-position))
-                 "\\end{split}"))
-        (progn
-          (newline)
-          (when (equal (substring (s-trim current-line) 0 2) "&=")
-            (insert "&= ")))
-      (forward-line)))))
+                       (line-beginning-position)
+                       (line-end-position))))
+    (if (equal current-line "\\begin{split}")
+        (newline)
+      (end-of-line)
+      (unless (equal (gm/last-n-chars 2) "\\\\")
+        (insert " \\\\"))
+      (if (save-excursion
+            (forward-line)
+            (equal (buffer-substring-no-properties
+                    (line-beginning-position)
+                    (line-end-position))
+                   "\\end{split}"))
+          (progn
+            (newline)
+            (when (equal (substring (s-trim current-line) 0 2) "&=")
+              (insert "&= ")))
+        (forward-line)))))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
@@ -5103,6 +5128,26 @@ Turns an inline math snippet into an equation.
       (insert "\n\\end{equation}\n")
       (when (eq (char-after) ? )
         (hungry-delete-forward 0)))))
+#+END_SRC
+**** Add Float to Marginnote
+I often add a margin note then decide to shift it down. However, margin notes
+and shifted notes use different link types.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-make-marginnote-float ()
+  (interactive)
+  (if (org-in-regexp org-bracket-link-regexp 1)
+      (let* ((remove (list (match-beginning 0) (match-end 0)))
+             (description (org-match-string-no-properties 3))
+             (shift-regexp ";[0-9]*ex")
+             (shift (if (string-match-p shift-regexp description)
+                        (s-replace "ex" "" (nth 1 (split-string description ";")))
+                      "0"))
+             (element (org-element-context))
+             (path (org-element-property :path element))
+             (raw (org-element-property :raw-link element)))
+        (when (equal path "marginnote")
+          (apply 'delete-region remove)
+          (yas-expand-snippet (format "[[latex-opt:marginnote][%s;${1:%s}ex]]" (replace-regexp-in-string shift-regexp "" description) shift))))))
 #+END_SRC
 *** Inkscape Figures
 This is the mode we will load in Inkscape when we insert math.
