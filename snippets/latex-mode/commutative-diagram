@@ -3,6 +3,6 @@
 # key: math-commutative-diagram
 # --
 \begin{tikzcd}
-   A \ar[r,"f"] \ar[swap,dr,"g\\circ{}f"] & B \ar[d,"g"] \\\\
-   & C
+A \ar[r,"f"] \ar[swap,dr,"g\\circ{}f"] & B \ar[d,"g"] \\\\
+& C
 \end{tikzcd}

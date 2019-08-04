@@ -4596,6 +4596,7 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
     (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
   :custom
   (yas-triggers-in-field t) ; expand snippets within snippets
+  (yas-wrap-around-region t)
   (yas-snippet-dirs '("~/.emacs.d/snippets")))
 (yas-global-mode 1)
 (diminish 'yas-minor-mode " ✂")
