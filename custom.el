@@ -43,7 +43,7 @@
  '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
  '(package-selected-packages
    (quote
-    (google-this pdf-tools minions disk-usage which-key web-mode visual-fill-column use-package unfill transmission systemd sudo-edit solarized-theme smex smart-mode-line shut-up restart-emacs rainbow-mode py-autopep8 pinentry persistent-scratch pdf-view-restore paradox ox-hugo org-wc org-ref org-gcal org-download org-cliplink org-bullets olivetti nov notmuch nlinum-relative magit keyfreq hungry-delete helpful god-mode gcmh fountain-mode flyspell-correct flycheck flx exwm expand-region esup elpy elfeed el-patch edit-server dired-quick-sort dired-du diminish counsel-projectile comment-dwim-2 browse-kill-ring beacon auctex anzu ace-window ace-link)))
+    (mentor google-this pdf-tools minions disk-usage which-key web-mode visual-fill-column use-package unfill transmission systemd sudo-edit solarized-theme smex smart-mode-line shut-up restart-emacs rainbow-mode py-autopep8 pinentry persistent-scratch pdf-view-restore paradox ox-hugo org-wc org-ref org-gcal org-download org-cliplink org-bullets olivetti nov notmuch nlinum-relative magit keyfreq hungry-delete helpful god-mode gcmh fountain-mode flyspell-correct flycheck flx exwm expand-region esup elpy elfeed el-patch edit-server dired-quick-sort dired-du diminish counsel-projectile comment-dwim-2 browse-kill-ring beacon auctex anzu ace-window ace-link)))
  '(paradox-github-token t)
  '(pdf-view-restore-filename "~/.emacs.d/cache/.pdf-view-restore")
  '(safe-local-variable-values

@@ -257,7 +257,8 @@ Show off the title.
 *** Cursor
 I prefer a box cursor to a bar cursor. Setting =x-stretch-cursor= means that this
 bar will stretch to the full width of the character it is on. For example, on a
-tab (evil tabs!), the cursor will look as wide as a tab.
+tab (evil tabs!), the cursor will look as
+wide as a tab.
 #+BEGIN_SRC emacs-lisp
 (when (display-graphic-p)
   (setq-default cursor-type 'box))
@@ -1027,6 +1028,19 @@ smooth.
     (sort-lines nil (point-min) (point-max))
   (buffer-string))))
 #+END_SRC
+*** Convert Hex to String
+This comes in handy sometimes. I currently use it to decode information sent
+from qutebrowser.
+#+BEGIN_SRC emacs-lisp
+(defun hex-to-string (s)
+  (concat (--map (string-to-number (concat it) 16) (-partition 2 (string-to-list s)))))
+#+END_SRC
+*** Alias
+Make commands easier.
+#+BEGIN_SRC emacs-lisp
+(defalias 'md 'mkdir)
+(defalias 'mk 'mkdir)
+#+END_SRC
 ** Wordsmithing
 *** Basic Configuration
 **** Sentences End With a Single Space
@@ -1484,8 +1498,7 @@ Version 2017-01-11"
   (interactive
    (if (use-region-p)
        (list (region-beginning) (region-end))
-     (let (
-           p1
+     (let (p1
            p2
            (skipChars gm/title-case-skip-chars))
        (progn
@@ -1494,35 +1507,33 @@ Version 2017-01-11"
          (skip-chars-forward skipChars (line-end-position))
          (setq p2 (point)))
        (list p1 p2))))
-  (let* (
-         (strPairs [
-                     [" A " " a "]
-                     [" And " " and "]
-                     [" At " " at "]
-                     [" As " " as "]
-                     [" By " " by "]
-                     [" Be " " be "]
-                     [" Into " " into "]
-                     [" In " " in "]
-                     [" Is " " is "]
-                     [" It " " it "]
-                     [" For " " for "]
-                     [" Of " " of "]
-                     [" Or " " or "]
-                     [" On " " on "]
-                     [" Via " " via "]
-                     [" The " " the "]
-                     [" That " " that "]
-                     [" To " " to "]
-                     [" Vs " " vs "]
-                     [" With " " with "]
-                     [" From " " from "]
-                     ["'S " "'s "]
-                     ["'T " "'t "]
-                     ]))
+  (let* ((strPairs [[" A " " a "]
+                    [" And " " and "]
+                    [" At " " at "]
+                    [" As " " as "]
+                    [" By " " by "]
+                    [" Be " " be "]
+                    [" Into " " into "]
+                    [" In " " in "]
+                    [" Is " " is "]
+                    [" It " " it "]
+                    [" For " " for "]
+                    [" Of " " of "]
+                    [" Or " " or "]
+                    [" On " " on "]
+                    [" Via " " via "]
+                    [" The " " the "]
+                    [" That " " that "]
+                    [" To " " to "]
+                    [" Vs " " vs "]
+                    [" With " " with "]
+                    [" From " " from "]
+                    ["'S " "'s "]
+                    ["'T " "'t "]]))
     (save-excursion
       (save-restriction
         (narrow-to-region @begin @end)
+        (downcase-region @begin @end)
         (upcase-initials-region (point-min) (point-max))
         (let ((case-fold-search nil))
           (mapc
@@ -1861,14 +1872,15 @@ because we're not defining anything new, so we can write manually.
 (after! em-alias
   (dolist
       (alias
-       '(("l" "ls -1A $*")
+       '(("x" "exit")
+         ("l" "ls -1A $*")
          ("la" "ls -lAh $*")
          ("ll" "ls -lh $*")
          ("cpv" "cp -iv $*")
          ("mvv" "mv -iv $*")
          ("rmv" "rm -v $*")
          ("md" "eshell/mkdir -p $*")
-         ("mkcd" "eshell/mkdir -p $* ; cd $1")))
+         ("mdc" "eshell/mkdir -p $* ; cd $1")))
     (add-to-list 'eshell-command-aliases-list alias))
 (eshell-write-aliases-list))
 #+END_SRC
@@ -1890,7 +1902,7 @@ Increase default history size.
 #+END_SRC
 *** Dired
 Great for renaming files in bulk.
-#+BEGIN_SRC emacs-lisp :noweb no-export
+#+BEGIN_SRC emacs-lisp :noweb yes
 (use-package dired
   :ensure nil
   :config
@@ -1927,6 +1939,7 @@ Show recursive folder sizes.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (use-package dired-du
   :commands (dired-du-mode)
+  :hook (dired-du-mode . dired-du--toggle-human-readable)
   :bind (:map dired-mode-map
               ("C-x M-r" . dired-du-mode)))
 #+END_SRC
@@ -2158,7 +2171,8 @@ them to the regexp in =counsel-find-file-ignore-regexp=.
 
 (defconst gm/find-file-ignore-dirs
   '("cache/" "auto/" "ltximg/"
-    ".git/"))
+    ".git/"
+    "VideoDecodeStats/"))
 
 (setq counsel-find-file-ignore-regexp
       (s-join "\\|" (list (concat (regexp-opt
@@ -2295,7 +2309,9 @@ usually a git repo. The most useful function for me is =projectile-find-file=.
 #+BEGIN_SRC emacs-lisp
 (use-package projectile
   :defer 5
-  :config (use-package counsel-projectile :demand t))
+  :config
+  (use-package counsel-projectile :demand t)
+  (projectile-load-known-projects))
 #+END_SRC
 I use a hydra to manage its many keybindings.
 #+BEGIN_SRC emacs-lisp :noweb-ref hydra
@@ -2326,7 +2342,7 @@ I use a hydra to manage its many keybindings.
   ("s-k" projectile-kill-buffers)
   ("m"   projectile-multi-occur)
   ("o"   projectile-multi-occur)
-  ("p"   projectile-switch-project)
+  ("p"   counsel-projectile-switch-project)
   ("r"   projectile-recentf)
   ("x"   projectile-remove-known-project)
   ("X"   projectile-cleanup-known-projects)
@@ -2874,7 +2890,15 @@ We send the data from =org-protocol= into the following template.
  'org-capture-templates
  '("p" "Org Protocol" entry
    (file org-default-notes-file)
-   "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")"))
+   "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%"))
+#+END_SRC
+I have a similar template for capturing code snippets.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(add-to-list
+ 'org-capture-templates
+ '("c" "Org Protocol Code" entry
+   (file org-default-notes-file)
+   "* %^{Title} :snippet:\n:PROPERTIES:\n:SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]] \n:CREATED: %U\n:END:\n%?\n#+BEGIN_SRC %^{Language}\n%(hex-to-string \"%i\")\n#+END_SRC"))
 #+END_SRC
 Because Org links are constructed with square brackets, any URL whose title
 contains square brackets (I'm looking at you, arXiv) would break a normal
@@ -2907,23 +2931,20 @@ thoughts that come to me while browsing.
 javascript:location.href='org-protocol://capture?template=n'
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(defun gm/find-qutebrowser-download (file)
+(defun gm/find-qutebrowser-download (url)
   (let* ((qutedir (expand-file-name (car
                                      (--filter (string-match "qutebrowser-downloads" it)
                                                (directory-files "/tmp/"))) "/tmp"))
-         (filecands (split-string file " - "))
-         (filenamecand (car filecands))
-         (filename (expand-file-name
-                    (car (--filter (string-match filenamecand it) (directory-files qutedir)))
-                    qutedir)))
-    (expand-file-name filename qutedir)))
+         (file (progn (string-match "\\(tmp.*\\.pdf\\)" url)
+                      (substring url (match-beginning 1) (match-end 1)))))
+    (expand-file-name file qutedir)))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (add-to-list
  'org-capture-templates
  '("q" "Org Protocol Qutebrowser pdf" entry
    (file org-default-notes-file)
-   "* %^{Title}%(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U\n:Author: %^{Author}\n:END:\n%?\n"))
+   "* %^{Title} %(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U\n:Author: %^{Author}\n:END:\n%?\n"))
 #+END_SRC
 *** Org Download
 Now we can easily move images into Org Mode buffers.
@@ -5188,4 +5209,4 @@ snippet calls this function.
       (setf (buffer-substring
              (line-beginning-position) (line-end-position)) "")
       (yas-expand-snippet (format "#+name: fig:%s\n #+caption: $2\n #+attr_latex: :vertical-alignment b\n [[file:figures/%s.pdf_tex]]\n$0" name name)))))
-#+END_SRC
+      #+END_SRC
