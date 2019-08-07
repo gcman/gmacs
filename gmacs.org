@@ -1034,6 +1034,21 @@ from qutebrowser.
 (defun hex-to-string (s)
   (concat (--map (string-to-number (concat it) 16) (-partition 2 (string-to-list s)))))
 #+END_SRC
+*** Get Matches in Buffer
+#+BEGIN_SRC emacs-lisp
+(defun matches-in-buffer (regexp &optional buffer)
+  "return a list of matches of REGEXP in BUFFER or the current buffer if not given."
+  (let ((matches))
+    (save-match-data
+      (save-excursion
+        (with-current-buffer (or buffer (current-buffer))
+          (save-restriction
+            (widen)
+            (goto-char 1)
+            (while (search-forward-regexp regexp nil t 1)
+              (push (match-string-no-properties 0) matches)))))
+      matches)))
+#+END_SRC
 *** Alias
 Make commands easier.
 #+BEGIN_SRC emacs-lisp
@@ -1289,15 +1304,16 @@ a row, I almost never want a lowercase letter to follow.
 (defun gm/dcaps-to-scaps ()
   "Convert word in DOuble CApitals to Single Capitals."
   (interactive)
-  (when (and (= ?w (char-syntax (char-before)))
-             (save-excursion
-               (and (if (called-interactively-p 'interactive)
-                        (skip-syntax-backward "w")
-                      (= -3 (skip-syntax-backward "w")))
-                    (let (case-fold-search)
-                      (looking-at "\\b[[:upper:]]\\{2\\}[[:lower:]]"))
-                    (gm/capitalize-word))))
-    (forward-word)))
+  (let ((point (point)))
+    (when (and (= ?w (char-syntax (char-before)))
+               (save-excursion
+                 (and (if (called-interactively-p 'interactive)
+                          (skip-syntax-backward "w")
+                        (= -3 (skip-syntax-backward "w")))
+                      (let (case-fold-search)
+                        (looking-at "\\b[[:upper:]]\\{2\\}[[:lower:]]"))
+                      (gm/capitalize-word))))
+      (goto-char point))))
 
 (define-minor-mode gm/dubcaps-mode
   "Toggle `gm/dubcaps-mode'.  Converts words in DOuble CApitals to
@@ -1438,17 +1454,23 @@ word.
 #+BEGIN_SRC emacs-lisp
 (defun gm/capitalize-word ()
   (interactive)
-  (when (eq (char-before) ? )
-    (backward-char))
-  (let* ((bounds (bounds-of-thing-at-point 'symbol))
-         (beg (car bounds))
-         (end (cdr bounds))
-         (word (buffer-substring-no-properties beg end)))
-    (delete-region beg end)
-    (if (string= word (capitalize word))
-        (insert (downcase word))
-    (insert (capitalize word))))
-  (forward-word))
+  (let ((eol (eolp)))
+    (when (and (eq (char-before) ? )
+               (or (eq (char-after) ? )
+                   (eolp)))
+      (backward-char))
+    (let* ((bounds (bounds-of-thing-at-point 'symbol))
+           (beg (car bounds))
+           (end (cdr bounds))
+           (word (buffer-substring-no-properties beg end)))
+      (delete-region beg end)
+      (if (string= word (capitalize word))
+          (insert (downcase word))
+        (insert (capitalize word))))
+    (if eol
+        (forward-char)
+      (forward-word)
+      (backward-word))))
 
 (bind-key "M-c" #'gm/capitalize-word)
 #+END_SRC
@@ -1883,6 +1905,7 @@ Great for renaming files in bulk.
 #+BEGIN_SRC emacs-lisp :noweb yes
 (use-package dired
   :ensure nil
+  :commands dired
   :config
   <<dired-settings>>)
 #+END_SRC
@@ -1916,8 +1939,9 @@ Allow the user to copy the full file path.
 Show recursive folder sizes.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (use-package dired-du
-  :commands (dired-du-mode)
-  :hook (dired-du-mode . dired-du--toggle-human-readable)
+  :commands dired-du-mode
+  :hook (dired-du-mode . (lambda! () (dired-du--toggle-human-readable)
+                                  (dired-du--toggle-human-readable)))
   :bind (:map dired-mode-map
               ("C-x M-r" . dired-du-mode)))
 #+END_SRC
@@ -1943,15 +1967,15 @@ Even then, I sometimes want to actually delete files.
 (defun gm/really-delete ()
   (interactive)
   (let ((delete-by-moving-to-trash nil))
-    (dired-do-delete)))
+    (dired-do-delete))
+  (revert-buffer))
 
 (bind-key "F" #'gm/really-delete dired-mode-map)
 #+END_SRC
 We might as well perform file operations asynchronously.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (autoload 'dired-async-mode "dired-async" nil t)
-(after! dired
-  (dired-async-mode 1))
+(add-hook 'dired-mode-hook dired-async-mode)
 #+END_SRC
 When you open, say, an audio or video file from Dired, Emacs displays the raw
 data in that file in a text buffer. We want to open files with the appropriate
@@ -2368,6 +2392,11 @@ Properly patch functions.
 #+BEGIN_SRC emacs-lisp
 (use-package el-patch
   :commands (el-patch-defun))
+#+END_SRC
+*** Transmission
+Simple client for =transmission-cli=.
+#+BEGIN_SRC emacs-lisp
+(autoload 'transmission "transmission")
 #+END_SRC
 * Keybindings
 ** Better Defaults
@@ -2870,7 +2899,7 @@ I have a similar template for capturing code snippets.
  'org-capture-templates
  '("c" "Org Protocol Code" entry
    (file org-default-notes-file)
-   "* %^{Title} :snippet:\n:PROPERTIES:\n:SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]] \n:CREATED: %U\n:END:\n%?\n#+BEGIN_SRC %^{Language}\n%(hex-to-string \"%i\")\n#+END_SRC"))
+   "* %^{Title} :snippet:\n:PROPERTIES:\n:SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]] \n:CREATED: %U\n:END:\n%?\n#+BEGIN_SRC %^{Language|emacs-lisp|python|sh|conf}\n%(hex-to-string \"%i\")\n#+END_SRC"))
 #+END_SRC
 Because Org links are constructed with square brackets, any URL whose title
 contains square brackets (I'm looking at you, arXiv) would break a normal
@@ -2919,7 +2948,7 @@ This template attaches the file for future reference.
  'org-capture-templates
  '("q" "Org Protocol Qutebrowser pdf" entry
    (file org-default-notes-file)
-   "* %^{Title} %(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U\n:Author: %^{Author}\n:END:\n%?\n"))
+   "* %^{Title} %(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U %^{Author}p\n:END:\n%?\n"))
 #+END_SRC
 *** Org Download
 Now we can easily move images into Org Mode buffers.
@@ -4372,6 +4401,10 @@ Add thumbnails (from [[https://www.reddit.com/r/emacs/comments/ao2oud/how_to_add
 (add-hook 'elfeed-new-entry-parse-hook #'youtube-get-thumbnail)
 #+END_SRC
 *** Consuming Media
+We refresh the feed every ten minutes, starting ten seconds after Emacs opens.
+#+BEGIN_SRC emacs-lisp
+(run-at-time 10 (* 60 10) 'elfeed-update)
+#+END_SRC
 When reading articles in =elfeed-show-mode=, the content spans the entire buffer.
 I like to read my content hard-wrapped at 80 chars, so I customize the built-in
 =shr-width= ("Simple HTML Renderer," which is what Elfeed uses).
@@ -4450,16 +4483,20 @@ For this I use skeeto's =youtube-dl=.
 (autoload #'youtube-dl "youtube-dl")
 (setq youtube-dl-directory (concat "~/" gm/youtube-dl-dir))
 #+END_SRC
-I wrap it for use in =elfeed=.
+I wrap it for use in =elfeed=, but torrent if appropriate.
 #+BEGIN_SRC emacs-lisp
-(defun gm/youtube-dl ()
+(defun gm/dl-or-torrent ()
   (interactive)
   (let ((entry (elfeed-entry-link (gm/elfeed-get-entry))))
-    (youtube-dl entry)))
+    (if (s-prefix-p "magnet:" entry)
+        (progn
+          (transmission-add entry)
+          (elfeed-search-untag-all-unread))
+      (youtube-dl entry))))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
-(bind-key "d" #'gm/youtube-dl elfeed-show-mode-map)
-(bind-key "d" #'gm/youtube-dl elfeed-search-mode-map)
+(bind-key "d" #'gm/dl-or-torrent elfeed-show-mode-map)
+(bind-key "d" #'gm/dl-or-torrent elfeed-search-mode-map)
 #+END_SRC
 Toggle the unread tag.
 #+BEGIN_SRC emacs-lisp
