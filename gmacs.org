@@ -1964,18 +1964,19 @@ But I don't want to permanently delete things. Not yet, anyway.
 #+END_SRC
 Even then, I sometimes want to actually delete files.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
-(defun gm/really-delete ()
-  (interactive)
-  (let ((delete-by-moving-to-trash nil))
-    (dired-do-delete))
-  (revert-buffer))
+(after! dired
+  (defun gm/really-delete ()
+    (interactive)
+    (let ((delete-by-moving-to-trash nil))
+      (dired-do-delete))
+    (revert-buffer)))
 
-(bind-key "F" #'gm/really-delete dired-mode-map)
+(add-hook 'dired-mode-hook (lambda () (bind-key "F" #'gm/really-delete dired-mode-map)))
 #+END_SRC
 We might as well perform file operations asynchronously.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (autoload 'dired-async-mode "dired-async" nil t)
-(add-hook 'dired-mode-hook dired-async-mode)
+(add-hook 'dired-mode-hook 'dired-async-mode)
 #+END_SRC
 When you open, say, an audio or video file from Dired, Emacs displays the raw
 data in that file in a text buffer. We want to open files with the appropriate
@@ -2266,7 +2267,7 @@ Similarly, we use =ace-link= to open links quickly.
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (after! org
-  (bind-key "M-o" #'ace-link-org org-mode-map))
+  (bind-key "M-O" #'ace-link-org org-mode-map))
 #+END_SRC
 We set up some easier to read faces.
 #+BEGIN_SRC emacs-lisp
@@ -2300,6 +2301,7 @@ the "other one" is. Instead, you select the window with a number.
              gm/split-window-right-and-switch
              gm/split-window-below-and-switch)
   :bind (("C-x o" . ace-window)
+         ("M-o" . ace-window)
          ("C-x 0" . delete-window)
          ("M-1" . delete-other-windows)
          ("M-3" . gm/split-window-right-and-switch)
@@ -2396,7 +2398,19 @@ Properly patch functions.
 *** Transmission
 Simple client for =transmission-cli=.
 #+BEGIN_SRC emacs-lisp
-(autoload 'transmission "transmission")
+(use-package transmission
+  :ensure nil
+  :commands (transmission transmission-add)
+  :config (add-to-list 'transmission-refresh-modes 'transmission-mode)
+  :bind (:map transmission-mode-map
+              ("T" . transmission-toggle-limits)))
+#+END_SRC
+I often want to download large torrents to my external drive if possible.
+#+BEGIN_SRC emacs-lisp
+(defun gm/transmission-add (url)
+  (let* ((torrent-dir-cand (expand-file-name "download" gm--drive-path))
+         (torrent-dir (when (file-directory-p torrent-dir-cand) torrent-dir-cand)))
+  (transmission-add url torrent-dir)))
 #+END_SRC
 * Keybindings
 ** Better Defaults
@@ -4402,7 +4416,7 @@ Add thumbnails (from [[https://www.reddit.com/r/emacs/comments/ao2oud/how_to_add
 #+END_SRC
 *** Consuming Media
 We refresh the feed every ten minutes, starting ten seconds after Emacs opens.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
 (run-at-time 10 (* 60 10) 'elfeed-update)
 #+END_SRC
 When reading articles in =elfeed-show-mode=, the content spans the entire buffer.
