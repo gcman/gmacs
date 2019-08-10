@@ -2629,9 +2629,9 @@ _D_ dubcaps-mode:      %`gm/dubcaps-mode
 _W_ Window management
 "
   ("t" gm/switch-theme nil)
-  ("m" quick-math-mode nil)
+  ("m" quick-math-mode nil :color blue)
   ("p" gm/eq-preview-mode nil)
-  ("e" gm/prettify-math nil)
+  ("e" pretty-math-mode nil)
   ("D" gm/dubcaps-mode nil)
   ("W" hydra-window-mngm/body :color blue)
   ("q" nil "cancel"))
@@ -2905,7 +2905,12 @@ I bind this to =c b=, for "capture bookmark." The data goes to the following tem
  'org-capture-templates
  '("p" "Org Protocol" entry
    (file org-default-notes-file)
-   "* [[%:link][%(gm/square-to-round-brackets \"%:description\")]]\n:PROPERTIES:\n:CREATED: %U\n:END:\n%?\n%(gm/quote-if-non-empty \"%i\")"))
+   "* %^{Title|%(gm/square-to-round-brackets \"%:description\")}
+:PROPERTIES:
+:CREATED: %U
+:SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]]
+:END:
+%?\n%(gm/quote-if-non-empty \"%i\")"))
 #+END_SRC
 I have a similar template for capturing code snippets.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -2930,10 +2935,13 @@ Also, I want to wrap the excerpt in an Org quote block, but not if there is no
 excerpt.
 #+BEGIN_SRC emacs-lisp
 (defun gm/quote-if-non-empty (str)
-  (unless (or (string-blank-p str)
-              ; dont quote things with headings or org blocks
+  (setq str (with-temp-buffer
+              (insert (s-trim str))
+              (fill-region (point-min) (point-max))
+              (buffer-string)))
+  (unless (or (string-blank-p str) ;; dont quote things with headings or org blocks
               (string-match "^\\(\*+\\)\\|\\(#\+BEGIN\_\\)" str))
-    (setq str (format "#+BEGIN_QUOTE\n%s\n#+END_QUOTE" (s-trim str))))
+    (setq str (format "#+BEGIN_QUOTE\n%s\n#+END_QUOTE" str)))
   (s-trim str))
 #+END_SRC
 I also bind =c l= to store the URL of the current page as an Org link.
@@ -4377,6 +4385,10 @@ our =.elfeed= easier to synchronize across machines.
 (bind-key "C-c C-e" #'bjm/elfeed-load-db-and-open)
 #+END_SRC
 *** Improvements
+Take out junk entries.
+#+BEGIN_SRC emacs-lisp
+(setq-default elfeed-search-filter "@6-months-ago +unread -junk")
+#+END_SRC
 It's nice to have a way to star content for future reference.
 #+BEGIN_SRC emacs-lisp
 (defun gm/elfeed-toggle-star ()
@@ -4417,7 +4429,7 @@ Add thumbnails (from [[https://www.reddit.com/r/emacs/comments/ao2oud/how_to_add
 *** Consuming Media
 We refresh the feed every ten minutes, starting ten seconds after Emacs opens.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
-(run-at-time 10 (* 60 10) 'elfeed-update)
+(run-at-time 10 (* 60 30) 'elfeed-update)
 #+END_SRC
 When reading articles in =elfeed-show-mode=, the content spans the entire buffer.
 I like to read my content hard-wrapped at 80 chars, so I customize the built-in
@@ -4756,7 +4768,7 @@ Then we bind this to semicolon.
     :keymap gm/math-mode-map
     (when quick-math-mode
       (gm/math-setup)
-      (gm/prettify-math)
+      (pretty-math-mode)
       (gm/eq-preview-mode))))
 #+END_SRC
 We need shift-tabbing in snippets to override =org-shift-tab=, but only in math
@@ -4859,8 +4871,10 @@ expand into =\hat{f}=. However, we cannot just act on the last letter, because
              (char-to-string (char-before)))))
       (save-excursion
         (backward-char (length match))
-        (when (string= (gm/last-n-chars 5) "\\vec ")
-          (setq match (concat "\\vec " match))))
+        (cond ((string= (gm/last-n-chars 5) "\\vec ")
+               (setq match (format "\\vec %s" match)))
+              ((eq (char-before) ?\\)
+               (setq match (format "\\%s" match)))))
       match)))
 #+END_SRC
 **** Test if LaTeX Needs to Be Wrapped in Brackets
@@ -5066,21 +5080,22 @@ creates a fraction with this block in the numerator and the point in the
 denominator. The outside parentheses will be removed; for example, =(\sin x)/=
 results in =\frac{\sin x}{|}=.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-insert-frac-match (match)
+(defun gm/math-insert-frac-match (match &optional env)
+  (unless env (setq env "frac"))
   (when match
-    (yas-expand-snippet (yas-lookup-snippet "frac"))
+    (yas-expand-snippet (yas-lookup-snippet env))
     (insert match)
     (yas-next-field)))
 
-(defun gm/math-frac-helper (regexp)
+(defun gm/math-frac-helper (regexp &optional env)
   (when (looking-back regexp (line-beginning-position) t)
     (let* ((begin (match-beginning 0))
            (end (match-end 0))
            (match (buffer-substring-no-properties begin end)))
       (delete-region begin end)
-      (gm/math-insert-frac-match match))))
+      (gm/math-insert-frac-match match env))))
 
-(defun gm/math-frac ()
+(defun gm/math-frac (&optional env)
   (interactive)
   (when (eq (char-before) ?/) ;; remove /
     (delete-char -1))
@@ -5091,7 +5106,7 @@ results in =\frac{\sin x}{|}=.
            (match (buffer-substring-no-properties
                    begin end)))
       (delete-region begin end)
-      (gm/math-insert-frac-match match)))
+      (gm/math-insert-frac-match match env)))
    ((string-match "[\])]" (char-to-string (char-before)))
     (let ((end (point))
           (sqbracket (eq (char-before) 93)) ;; last char is sqbracket
@@ -5101,14 +5116,14 @@ results in =\frac{\sin x}{|}=.
       (backward-sexp)
       (setq match (buffer-substring-no-properties (point) end))
       (delete-region (point) end)
-      (unless sqbracket
+       (unless sqbracket
         (setq match (substring match 1 -1)))
-      (gm/math-insert-frac-match match)))
+      (gm/math-insert-frac-match match "quotient")))
    ((eq (char-before) 125) ;; match closing curly braces
-    (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]"))
+    (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
-    (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*"))
-   (t (yas-expand-snippet (yas-lookup-snippet "frac")))))
+    (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*" env))
+   (t (yas-expand-snippet (yas-lookup-snippet (if env env "frac"))))))
 #+END_SRC
 The binding is given in [[*Generate Snippets][Generate Snippets]].
 **** Easy Split Environments
@@ -5116,7 +5131,7 @@ I wanted to make writing environments like =split= and =align= easier, so that I
 wouldn't have to manually add the newline (=\\=) at the end of each line required
 to make LaTeX happy.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-split-p ()
+(defun gm/math-in-env-p (env)
   (when (gm/in-math-p)
     (save-excursion
       (if (eq major-mode 'org-mode)
@@ -5126,7 +5141,7 @@ to make LaTeX happy.
       (equal (buffer-substring-no-properties
               (line-beginning-position)
               (line-end-position))
-             "\\begin{split}"))))
+             (format "\\begin{%s}" env)))))
 
 (defun gm/tex-newline ()
   (interactive)
@@ -5151,7 +5166,7 @@ to make LaTeX happy.
         (forward-line)))))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-split-p))
+(define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-in-env-p "split"))
 #+END_SRC
 **** Convert Inline Math to Equation
 Turns an inline math snippet into an equation.
@@ -5203,7 +5218,7 @@ This is the mode we will load in Inkscape when we insert math.
 (define-derived-mode inkmath-mode org-mode "Ink" ()
   :after-hook (flyspell-mode -1)
   (quick-math-mode)
-  (gm/prettify-math)
+  (pretty-math-mode)
   (setq mode-line-format nil)
   (when (= (point) (point-min))
     (funcall-interactively 'forward-char 2)))

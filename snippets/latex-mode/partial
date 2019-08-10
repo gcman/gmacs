@@ -2,4 +2,4 @@
 # name: partial
 # key: math-partial
 # --
-\pd{${1:x}}$0
+\pd{$1}$0

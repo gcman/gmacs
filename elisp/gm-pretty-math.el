@@ -1,25 +1,40 @@
 (require 'cl-lib)
 (require 'dash)
 
-(defun substitute-pattern-with-unicode-symbol (pattern symbol)
+(define-minor-mode pretty-math-mode
+  "Minor mode for math"
+  :init-value nil
+  (when pretty-math-mode
+      (pretty-math)))
+
+(defun pretty-math (&optional reverse)
+    (substitute-patterns-with-unicode-symbol
+     (append
+      (--map (gm/math-regexp-spaced-after (car it) (cadr it)) gm/spaced-after)
+      (-flatten-n 1 (--map (gm/math-regexp-spaced (car it) (cadr it)) gm/math-spaced))
+      (-flatten-n 1 (--map (gm/math-regexp-unspaced (car it) (cadr it)) gm/math-unspaced))
+      (-flatten-n 1 (--map (gm/math-regexp-commands (car it) (nth 1 it) (nth 2 it)) gm/math-commands)))
+     reverse))
+
+(defun substitute-pattern-with-unicode-symbol (pattern symbol &optional reverse)
   "Add a font lock hook to replace the matched part of PATTERN with the Unicode
 symbol SYMBOL.
 Symbol can be the symbol directly, no lookup needed."
   (interactive)
-  (font-lock-add-keywords
-   nil
-   `((,pattern
-      (0 (progn
-	         (compose-region (match-beginning 1) (match-end 1)
-	   		                   ,symbol
-	   		                   'decompose-region)
-	         nil))))))
+  (let ((func (if reverse
+                  'font-lock-remove-keywords
+                'font-lock-add-keywords)))
+    (funcall func nil `((,pattern
+                         (0 (progn
+                              (compose-region (match-beginning 1) (match-end 1)
+                                              ,symbol
+                                              'decompose-region)
+                              nil)))))))
 
-(defun substitute-patterns-with-unicode-symbol (patterns)
+(defun substitute-patterns-with-unicode-symbol (patterns &optional reverse)
   "Mapping over PATTERNS, calling SUBSTITUTE-PATTERN-WITH-UNICODE for each of the patterns."
   (mapcar (lambda (x)
-            (substitute-pattern-with-unicode-symbol (car x)
-						                                        (cdr x)))
+            (substitute-pattern-with-unicode-symbol (car x) (cdr x) reverse))
           patterns))
 
 (defvar gm/math-greek-upper
@@ -266,7 +281,7 @@ Symbol can be the symbol directly, no lookup needed."
 
 (defvar gm/math-commands
   '(("dd" [?\s (Br . Bl) ?𝖽] "")
-    ("pd" [?\s (Br . Bl) ?∂] "")))
+    ("pd" ?∂ "")))
 
 (defun gm/math-regexp-unspaced (name symbol)
   (list (cons (format "\\(\\\\%s{}\\)" name) symbol)
@@ -283,15 +298,5 @@ Symbol can be the symbol directly, no lookup needed."
 (defun gm/math-regexp-commands (command open-delim close-delim)
   (list (cons (format "\\([ ]?\\\\%s{\\)" command) open-delim)
         (cons (format "\\\\%s{[^}]*\\(}\\)" command) close-delim)))
-
-(defun gm/prettify-math ()
-  (interactive)
-  (substitute-patterns-with-unicode-symbol
-   (append
-    (--map (gm/math-regexp-spaced-after (car it) (cadr it)) gm/spaced-after)
-    (-flatten-n 1 (--map (gm/math-regexp-spaced (car it) (cadr it)) gm/math-spaced))
-    (-flatten-n 1 (--map (gm/math-regexp-unspaced (car it) (cadr it)) gm/math-unspaced))
-    (-flatten-n 1 (--map (gm/math-regexp-commands (car it) (nth 1 it) (nth 2 it)) gm/math-commands))))
-  (message "Math prettified."))
 
 (provide 'gm-pretty-math)
