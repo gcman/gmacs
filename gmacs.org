@@ -4231,6 +4231,19 @@ through `notmuch-message-attach-regex'."""
 
 (add-hook 'message-send-hook #'notmuch-message-check-attach)
 #+END_SRC
+*** Unsubscribe
+#+BEGIN_SRC emacs-lisp
+(defun gm/notmuch-show-unsubscribe ()
+   "When in a notmuch show mail, try to find an unsubscribe link and
+click it. This will be the link nearest the end of the message which
+either contains or follows the word unsubscribe."
+(interactive)
+(notmuch-show-move-to-message-bottom)
+(when (search-backward "unsubscribe" (notmuch-show-message-top))
+  (if (ffap-url-at-point)
+      (goto-char (car ffap-string-at-point-region)))
+  (ffap-next-url)))
+#+END_SRC
 *** Better Hello Screen
 From [[http://www.holgerschurig.de/en/emacs-notmuch-hello/][Holger Schurig]].
 #+BEGIN_SRC emacs-lisp
@@ -4453,18 +4466,12 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
                            (line-end-position))
                           default-directory)))))
 
-(defun gm/elfeed-play-with-mpv ()
+(defun gm/play-with-mpv (link title)
   "Play entry link with mpv."
   (interactive)
-  (let* ((entry (gm/elfeed-get-entry))
-         (title (elfeed-entry-title entry))
-         (link (elfeed-entry-link entry))
-         (id (nth 1 (s-split "watch\\?v=" link)))
+  (let* ((id (nth 1 (s-split "watch\\?v=" link)))
          (video (gm/search-local-yt-video id (concat "~/" gm/youtube-dl-dir)))
          (drive-video-path (expand-file-name gm/youtube-dl-dir gm--drive-path)))
-    (condition-case nil
-        (elfeed-search-untag-all-unread)
-      (error nil))
     (when (and (not video) (file-directory-p drive-video-path))
       (when-let ((drive-video (gm/search-local-yt-video id drive-video-path)))
         (setq video drive-video)))
@@ -4473,7 +4480,18 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
           (message "Playing \"%s\" from local copy..." title)
           (setq link video))
       (message "Streaming \"%s\"..." title))
-  (start-process "elfeed-mpv" nil "mpv" "--fs" link)))
+  (start-process "mpv" nil "umpv" link)))
+
+(defun gm/elfeed-play-with-mpv ()
+  "Play entry link with mpv."
+  (interactive)
+  (let* ((entry (gm/elfeed-get-entry))
+         (link (elfeed-entry-link entry))
+         (title (elfeed-entry-title entry)))
+    (condition-case nil
+        (elfeed-search-untag-all-unread)
+      (error nil))
+    (gm/play-with-mpv link title)))
 #+END_SRC
 We make a multi-purpose function to open the link with =mpv= if it is a video,
 otherwise with the browser.
