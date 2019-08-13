@@ -925,8 +925,8 @@ transpositions to execute in sequence."
 :CUSTOM_ID: tangle-async
 :END:
 I used to have my =init.el= set up so that, if =gmacs.elc= did not exist, it would
-tangle =gmacs.org=. This unfortunately means that Emacs takes a long time to start up (about 6 seconds). To
-solve this, I tangle this very file on save.
+tangle =gmacs.org=. This unfortunately means that Emacs takes a long time to start
+up (about 6 seconds). To solve this, I tangle this very file on save.
 
 First, we set up a function to do the tangling. We have to, for example, refer
 to =user-emacs-directory= and not =gmacs-emacs-directory=, and run =(require
@@ -940,15 +940,24 @@ allows it to be asynchronous).
     (org-babel-tangle-file src dst)
     (byte-compile-file dst)))
 #+END_SRC
-Then, we wrap this in an asynchronous process. I only really want to know about
-this process if it failed.
+Then, we wrap this in an asynchronous process. If the config file is already
+being tangled, we kill that process and start a new one. I only really want to
+know about this process if it failed.
 #+BEGIN_SRC emacs-lisp
+(defvar gm--tangle-process nil)
+
 (defun gm/tangle-gmacs ()
   (interactive)
-  (async-start (symbol-function #'gm/tangle-gmacs-helper)
+  (let ((proc gm--tangle-process)
+        (kill-buffer-query-functions nil))
+    (when (process-live-p proc)
+      (kill-process proc)
+      (kill-buffer (process-buffer proc))))
+  (let ((proc (async-start (symbol-function #'gm/tangle-gmacs-helper)
                (lambda (result)
                  (unless result
-                   (message "GMACS unsuccessfully tangled: %s" result)))))
+                   (message "GMACS unsuccessfully tangled: %s" result))))))
+    (setq gm--tangle-process proc)))
 #+END_SRC
 Finally. we wrap this in a function that checks whether we're in the right file.
 It would be inefficient to tangle the configuration file every time a different
@@ -1970,7 +1979,7 @@ Even then, I sometimes want to actually delete files.
     (let ((delete-by-moving-to-trash nil))
       (dired-do-delete))
     (revert-buffer)))
-
+(bind-key "F" #'gm/really-delete dired-mode-map)
 (add-hook 'dired-mode-hook (lambda () (bind-key "F" #'gm/really-delete dired-mode-map)))
 #+END_SRC
 We might as well perform file operations asynchronously.
@@ -2313,8 +2322,10 @@ usually a git repo. The most useful function for me is =projectile-find-file=.
 #+BEGIN_SRC emacs-lisp
 (use-package projectile
   :defer 5
+  :diminish projectile-mode
   :config
   (use-package counsel-projectile :demand t)
+  (projectile-mode)
   (projectile-load-known-projects))
 #+END_SRC
 I use a hydra to manage its many keybindings.
@@ -4466,8 +4477,8 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
                            (line-end-position))
                           default-directory)))))
 
-(defun gm/play-with-mpv (link title)
-  "Play entry link with mpv."
+(defun gm/play-with-mpv (link &optional title)
+  "Play file or link with mpv."
   (interactive)
   (let* ((id (nth 1 (s-split "watch\\?v=" link)))
          (video (gm/search-local-yt-video id (concat "~/" gm/youtube-dl-dir)))
@@ -4475,15 +4486,18 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
     (when (and (not video) (file-directory-p drive-video-path))
       (when-let ((drive-video (gm/search-local-yt-video id drive-video-path)))
         (setq video drive-video)))
+    (unless title (setq title link))
     (if video
         (progn
           (message "Playing \"%s\" from local copy..." title)
           (setq link video))
       (message "Streaming \"%s\"..." title))
-  (start-process "mpv" nil "umpv" link)))
-
+    (start-process
+     "mpv" nil shell-file-name
+     shell-command-switch
+     (format "nohup 1>/dev/null 2>/dev/null %s \"%s\"" "umpv" link))))
 (defun gm/elfeed-play-with-mpv ()
-  "Play entry link with mpv."
+  "Play elfeed entry link with mpv."
   (interactive)
   (let* ((entry (gm/elfeed-get-entry))
          (link (elfeed-entry-link entry))
