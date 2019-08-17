@@ -742,6 +742,10 @@ Without this, =*table--cell-backward-kill-paragraph= is the default command,
 because they are sorted alphabetically. If this has ever been the first command
 you wanted to execute after opening Emacs, please let me know.
 #+BEGIN_SRC emacs-lisp
+(use-package recentf
+  :ensure nil
+  :defer 2)
+
 (setq-default savehist-file (expand-file-name "savehist" gmacs-cache-dir)
       save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
       recentf-save-file (expand-file-name "recentf" gmacs-cache-dir)
@@ -1652,6 +1656,10 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 ** Packages
 *** Package Management
 **** Initialize During Emacs
+Fix loading the GNU archive.
+#+BEGIN_SRC emacs-lisp
+(setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
+#+END_SRC
 Although we load and initialize all packages at startup, it is sometimes useful
 for the user to be able to interact with this process after it has taken place.
 For example, packages must be initialized to evaluate code blocks with
@@ -2916,7 +2924,7 @@ I bind this to =c b=, for "capture bookmark." The data goes to the following tem
  'org-capture-templates
  '("p" "Org Protocol" entry
    (file org-default-notes-file)
-   "* %^{Title|%(gm/square-to-round-brackets \"%:description\")}
+   "* %^{Title|%(gm/square-to-round-brackets \"%:description\")} :web:
 :PROPERTIES:
 :CREATED: %U
 :SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]]
@@ -4496,6 +4504,7 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
      "mpv" nil shell-file-name
      shell-command-switch
      (format "nohup 1>/dev/null 2>/dev/null %s \"%s\"" "umpv" link))))
+
 (defun gm/elfeed-play-with-mpv ()
   "Play elfeed entry link with mpv."
   (interactive)
@@ -4505,7 +4514,8 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
     (condition-case nil
         (elfeed-search-untag-all-unread)
       (error nil))
-    (gm/play-with-mpv link title)))
+    (gm/play-with-mpv link title)
+    (shell-command "i3-msg workspace 3")))
 #+END_SRC
 We make a multi-purpose function to open the link with =mpv= if it is a video,
 otherwise with the browser.
@@ -5264,6 +5274,11 @@ This is the mode we will load in Inkscape when we insert math.
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'auto-mode-alist '("\\.inkmath\\'" . inkmath-mode))
+#+END_SRC
+I don't want to mark these files as recently visited.
+#+BEGIN_SRC emacs-lisp
+(after! recentf
+  (push ".*inkmath$" recentf-exclude))
 #+END_SRC
 We need a way to make Inkscape figures from Emacs. The =org-inkscape-figure=
 snippet calls this function.
