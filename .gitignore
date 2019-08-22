@@ -5,7 +5,5 @@
 !math-snippets.el
 !.gitmodules
 !.gitignore
-!abbrevs.el
-!custom.el
 !init.el
 !gmacs.org
