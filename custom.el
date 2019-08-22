@@ -18,7 +18,7 @@
  '(epa-file-select-keys nil)
  '(epa-pinentry-mode (quote loopback))
  '(epg-gpg-program "/usr/bin/gpg2")
- '(flycheck-display-errors-delay 0.3)
+ '(flycheck-display-errors-delay 0.3 t)
  '(flyspell-correct-interface (quote frog-menu-flyspell-correct) t)
  '(fountain-export-font "Courier New" t)
  '(fountain-export-scene-heading-format (quote (bold)) t)
@@ -43,12 +43,27 @@
  '(org-gcal-dir "/home/gautam/.emacs.d/cache/" t)
  '(package-selected-packages
    (quote
-    (mentor google-this pdf-tools minions disk-usage which-key web-mode visual-fill-column use-package unfill transmission systemd sudo-edit solarized-theme smex smart-mode-line shut-up restart-emacs rainbow-mode py-autopep8 pinentry persistent-scratch pdf-view-restore paradox ox-hugo org-wc org-ref org-gcal org-download org-cliplink org-bullets olivetti nov notmuch nlinum-relative magit keyfreq hungry-delete helpful god-mode gcmh fountain-mode flyspell-correct flycheck flx exwm expand-region esup elpy elfeed el-patch edit-server dired-quick-sort dired-du diminish counsel-projectile comment-dwim-2 browse-kill-ring beacon auctex anzu ace-window ace-link)))
+    (fzf mentor google-this pdf-tools minions disk-usage which-key web-mode visual-fill-column use-package unfill transmission systemd sudo-edit solarized-theme smex smart-mode-line shut-up restart-emacs rainbow-mode py-autopep8 pinentry persistent-scratch pdf-view-restore paradox ox-hugo org-wc org-ref org-gcal org-download org-cliplink org-bullets olivetti nov notmuch nlinum-relative magit keyfreq hungry-delete helpful god-mode gcmh fountain-mode flyspell-correct flycheck flx exwm expand-region esup elpy elfeed el-patch edit-server dired-quick-sort dired-du diminish counsel-projectile comment-dwim-2 browse-kill-ring beacon auctex anzu ace-window ace-link)))
  '(paradox-github-token t)
  '(pdf-view-restore-filename "~/.emacs.d/cache/.pdf-view-restore")
  '(safe-local-variable-values
    (quote
-    ((eval bind-key "C-c ]"
+    ((eval add-hook
+           (quote after-save-hook)
+           (lambda nil
+             (when
+                 (string-match-p "^~/dotfiles" default-directory)
+               (shell-command "stow .")))
+           nil t)
+     (eval add-hook
+           (quote after-save-hook)
+           (quote org-babel-tangle)
+           nil t)
+     (eval add-hook
+           (quote after-save-hook)
+           (quote gm/org-latex-export)
+           nil t)
+     (eval bind-key "C-c ]"
            (function gm/org-ref-cite-with-page)
            org-mode-map))))
  '(smex-history-length 50)

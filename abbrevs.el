@@ -278,6 +278,7 @@
     ("continous" #("continuous" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("cosider" #("Consider" 0 8 (face frog-menu-candidates-face)) nil 0)
     ("coutnalbe" #("countable" 0 9 (face frog-menu-candidates-face)) nil 0)
+    ("coutnry" #("Country" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("cpas" #("caps" 0 4 (face frog-menu-candidates-face)) nil 0)
     ("defintiions" #("Definitions" 0 11 (face frog-menu-candidates-face)) nil 0)
     ("degre" #("degree" 0 6 (face frog-menu-candidates-face)) nil 0)
@@ -308,18 +309,18 @@
     ("futher" #("further" 0 7 (face frog-menu-candidates-face)) nil 0)
     ("futhermore" #("Furthermore" 0 11 (face frog-menu-candidates-face)) nil 0)
     ("gried" #("grief" 0 5 (face frog-menu-candidates-face)) nil 0)
-    ("hangg" #("hang" 0 4 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
+    ("hangg" #("hang" 0 4 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
     ("hom" "homomorphism" nil 3)
     ("homogenous" #("homogeneous" 0 11 (face frog-menu-candidates-face)) nil 6)
     ("homs" "homomorphisms" nil 0)
     ("homto" "homomorphic to" nil 0)
     ("homtoopy" #("homotopy" 0 8 (face frog-menu-candidates-face)) nil 0)
-    ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 9)
+    ("hte" #("the" 0 3 (face frog-menu-candidates-face)) nil 10)
     ("ideaal" #("ideal" 0 5 (face frog-menu-candidates-face)) nil 0)
     ("identifer" #("Identifier" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("iff" "if and only if" nil 23)
     ("illumations" #("illuminations" 0 13 (face frog-menu-candidates-face)) nil 0)
-    ("imediately" #("immediately" 0 11 (face frog-menu-candidates-face fontified t wrap-prefix "")) nil 1)
+    ("imediately" #("immediately" 0 11 (wrap-prefix "" fontified t face frog-menu-candidates-face)) nil 1)
     ("inadvertantly" #("inadvertently" 0 13 (face frog-menu-candidates-face)) nil 0)
     ("incorectly" "incorrectly" nil 0)
     ("infact" #("in fact" 0 7 (face frog-menu-candidates-face)) nil 0)
@@ -337,6 +338,7 @@
     ("lauch" #("launch" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("lindep" "linearly dependent" nil 0)
     ("linind" "linearly independent" nil 1)
+    ("locatios" #("locations" 0 9 (face frog-menu-candidates-face)) nil 0)
     ("maked" #("Marked" 0 6 (face frog-menu-candidates-face)) nil 0)
     ("mangement" #("Management" 0 10 (face frog-menu-candidates-face)) nil 0)
     ("massachusets" #("Massachusetts" 0 13 (face frog-menu-candidates-face)) nil 0)
@@ -433,7 +435,9 @@
 
 (define-abbrev-table 'python-mode-abbrev-table '())
 
-(define-abbrev-table 'python-mode-skeleton-abbrev-table '())
+(define-abbrev-table 'python-mode-skeleton-abbrev-table
+  '(
+   ))
 
 (define-abbrev-table 'quick-math-mode-abbrev-table
   '(
@@ -496,6 +500,14 @@
 (define-abbrev-table 'tex-shell-abbrev-table '())
 
 (define-abbrev-table 'text-mode-abbrev-table '())
+
+(define-abbrev-table 'transmission-files-mode-abbrev-table '())
+
+(define-abbrev-table 'transmission-info-mode-abbrev-table '())
+
+(define-abbrev-table 'transmission-mode-abbrev-table '())
+
+(define-abbrev-table 'transmission-peers-mode-abbrev-table '())
 
 (define-abbrev-table 'url-cookie-mode-abbrev-table '())
 

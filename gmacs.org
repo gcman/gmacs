@@ -2797,18 +2797,39 @@ example, decide where to put the result of an Org Capture.
 We similarly decide other default locations.
 #+BEGIN_SRC emacs-lisp
 (setq org-default-notes-file (expand-file-name "inbox.org" org-directory)
-      org-agenda-files `(,(expand-file-name "inbox.org" org-directory)
+      org-agenda-files `(,org-default-notes-file
                          ,(expand-file-name "todo.org" org-directory)
                          ,(expand-file-name "notes.org" org-directory)
-                         ,(expand-file-name "gcal.org" org-directory)))
+                         ,(expand-file-name "gcal.org" org-directory)
+                         ,@(apply 'append
+                                  (mapcar
+                                   (lambda (directory)
+                                     (directory-files-recursively
+                                      directory org-agenda-file-regexp))
+                                   '("~/school/")))))
+#+END_SRC
+This is particular to my setup, but I want my agenda to include the non-archived portion
+of my school files.
+#+BEGIN_SRC emacs-lisp
+(setq org-agenda-files
+      (append org-agenda-files
+              (apply 'append
+                     (mapcar
+                      (lambda (directory)
+                        (directory-files-recursively
+                         directory org-agenda-file-regexp))
+                      (--filter (not (string-match-p (regexp-opt '("archive" "." "..")) it))
+                                (directory-files "~/school" t))))))
 #+END_SRC
 Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp
-(setq org-refile-targets `((,(expand-file-name "todo.org" org-directory) :maxlevel . 3)
-                           (,(expand-file-name "notes.org" org-directory) :maxlevel . 3)
-                           (,(expand-file-name "reading.org" org-directory) :maxlevel . 3)))
+(setq org-refile-targets '((org-agenda-files :maxlevel . 3)))
+#+END_SRC
+Sometimes we want to refile into a subtree that hasn't yet been created.
+#+BEGIN_SRC emacs-lisp
+(setq org-refile-allow-creating-parent-nodes 'confirm)
 #+END_SRC
 This abbreviation lets us easily include attached files as inline images.
 #+BEGIN_SRC emacs-lisp
@@ -2856,6 +2877,52 @@ after archiving lower level items.
       (save-excursion
         (while (org-up-heading-safe))
         (org-set-tags-to tags)))))
+#+END_SRC
+I often have a bunch of files I need to organize, such as scanned papers or
+documents sitting in my downloads folder. Invoking =org-attach= from each target
+is a lot of tedious work, so I made this snippet that lets me do it all from a
+Dired buffer.
+#+BEGIN_SRC emacs-lisp
+(defun gm--attach-name (file title)
+  (concat (replace-regexp-in-string " " "-" (downcase title)) "." (f-ext file)))
+
+(defun gm--attach-to-subtree (file &optional new-filename rfloc)
+  (unless rfloc (setq rfloc (org-refile-get-location nil nil t)))
+  (unless new-filename (setq new-filename (gm--attach-name file (read-string "Title: "))))
+  (let* ((target (nth 1 rfloc))
+        (mark-maybe (nth 3 rfloc))
+        (mark (if (markerp mark-maybe)
+                  (marker-position mark-maybe)
+                mark-maybe))
+        (new-file (expand-file-name new-filename (f-dirname file)))
+        (old-buff (current-buffer))
+        title)
+    (condition-case nil
+        (rename-file file new-file)
+      (error nil))
+    (find-file target)
+    (goto-char mark)
+    (org-attach-attach new-file)
+    (switch-to-buffer old-buff)))
+
+(defun gm/dired-attach-files ()
+  (interactive)
+  (let ((list (dired-get-marked-files)))
+    (delete-other-windows)
+    (find-file-other-window (dired-file-name-at-point))
+    (other-window 1)
+    (while list
+      (org-refile 0)
+      (other-window 1)
+      (delete-window)
+      (find-file-other-window (dired-file-name-at-point))
+      (when (eq major-mode 'pdf-view-mode)
+        (pdf-view-first-page))
+      (other-window 1)
+      (gm--attach-to-subtree (dired-file-name-at-point))
+      (!cdr list)
+      (when list
+        (dired-next-marked-file 1)))))
 #+END_SRC
 *** Capture
 :PROPERTIES:
@@ -3864,7 +3931,6 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path (expand-file-name "tufte-org-mode/" gmacs-custom-dir))
 #+END_SRC
-
 #+BEGIN_SRC emacs-lisp
 (defun gm/org-latex-export ()
   (interactive)
