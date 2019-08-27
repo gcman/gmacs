@@ -744,13 +744,45 @@ you wanted to execute after opening Emacs, please let me know.
 #+BEGIN_SRC emacs-lisp
 (use-package recentf
   :ensure nil
-  :defer 2)
-
+  :defer 2
+  :config
+  (defun recentf-save-list ()
+    (let ((inhibit-message t))
+      "Save the recent list.
+Write data into the file specified by `recentf-save-file'."
+      (interactive)
+      (condition-case error
+          (with-temp-buffer
+            (erase-buffer)
+            (set-buffer-file-coding-system recentf-save-file-coding-system)
+            (insert (format-message recentf-save-file-header
+                                    (current-time-string)))
+            (recentf-dump-variable 'recentf-list recentf-max-saved-items)
+            (recentf-dump-variable 'recentf-filter-changer-current)
+            (insert "\n\n;; Local Variables:\n"
+                    (format ";; coding: %s\n" recentf-save-file-coding-system)
+                    ";; End:\n")
+            (write-file (expand-file-name recentf-save-file))
+            (when recentf-save-file-modes
+              (set-file-modes recentf-save-file recentf-save-file-modes))
+            nil)
+        (error
+         (warn "recentf mode: %s" (error-message-string error))))))
+  (recentf-mode 1)
+  (run-at-time nil (* 5 60) 'recentf-save-list)
+  :custom
+  (recentf-save-file (expand-file-name "recentf" gmacs-cache-dir))
+  (recentf-max-saved-items 1000)
+  (recentf-max-menu-items 1000)
+  (recentf-exclude '("/elpa/"
+                     "/cache/"
+                     "/tmp/)")))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
 (setq-default savehist-file (expand-file-name "savehist" gmacs-cache-dir)
-      save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
-      recentf-save-file (expand-file-name "recentf" gmacs-cache-dir)
-      transient-history-file (expand-file-name "transient-history.el" gmacs-cache-dir)
-      bookmark-default-file (expand-file-name "bookmarks" gmacs-cache-dir))
+              save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
+              transient-history-file (expand-file-name "transient-history.el" gmacs-cache-dir)
+              bookmark-default-file (expand-file-name "bookmarks" gmacs-cache-dir))
 #+END_SRC
 Now we specify what to save.
 #+BEGIN_SRC emacs-lisp
@@ -2431,6 +2463,16 @@ I often want to download large torrents to my external drive if possible.
          (torrent-dir (when (file-directory-p torrent-dir-cand) torrent-dir-cand)))
   (transmission-add url torrent-dir)))
 #+END_SRC
+*** Spray
+Spray is a speed-reading package for Emacs.
+#+BEGIN_SRC emacs-lisp
+(use-package spray
+  :hook ((spray-mode . (lambda () (beacon-mode -1)))
+         (spray-mode . olivetti-mode))
+  :config
+  (spray-margin-top 5)
+  (spray-margin-left 1.5))
+#+END_SRC
 * Keybindings
 ** Better Defaults
 These are what I think are better bindings for or better versions of the default
@@ -2732,7 +2774,9 @@ We customize the commands a bit.
 (setq org-speed-commands-user
       '(("j" counsel-org-goto)
         ("a" org-archive-subtree)
-        ("d" (lambda () (interactive) (org-todo 'done)))))
+        ("c" org-set-tags-command)
+        ("d" (lambda () (interactive) (org-todo 'done)))
+        ("R" (lambda () (interactive) (org-todo "TOREAD") (gm/refile (expand-file-name "reading.org" org-directory) "Reading")))))
 #+END_SRC
 *** Invisible Edits
 When text is entered near a hidden area (...), it is hard to see what is
@@ -2796,21 +2840,18 @@ example, decide where to put the result of an Org Capture.
 #+END_SRC
 We similarly decide other default locations.
 #+BEGIN_SRC emacs-lisp
-(setq org-default-notes-file (expand-file-name "inbox.org" org-directory)
-      org-agenda-files `(,org-default-notes-file
-                         ,(expand-file-name "todo.org" org-directory)
-                         ,(expand-file-name "notes.org" org-directory)
-                         ,(expand-file-name "gcal.org" org-directory)
-                         ,@(apply 'append
-                                  (mapcar
-                                   (lambda (directory)
-                                     (directory-files-recursively
-                                      directory org-agenda-file-regexp))
-                                   '("~/school/")))))
+(setq gm/agenda-org-files '("todo" "notes" "gcal" "reading")
+      org-default-notes-file (expand-file-name "inbox.org" org-directory)
+      org-agenda-files (append
+                        `(,org-default-notes-file)
+                        (--map (expand-file-name (concat it ".org") org-directory)
+                               gm/agenda-org-files)))
 #+END_SRC
 This is particular to my setup, but I want my agenda to include the non-archived portion
 of my school files.
 #+BEGIN_SRC emacs-lisp
+(require 'org-agenda)
+
 (setq org-agenda-files
       (append org-agenda-files
               (apply 'append
@@ -2825,7 +2866,13 @@ Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp
-(setq org-refile-targets '((org-agenda-files :maxlevel . 3)))
+(setq gm/org-non-refile-targets '("inbox" "gcal")
+      gm/org-refile-targets (--filter
+                              (not (string-match-p
+                                    (concat (regexp-opt gm/org-non-refile-targets) ".org$") it))
+                              org-agenda-files)
+      org-refile-targets '((nil :maxlevel . 5)
+                           (gm/org-refile-targets :maxlevel . 5)))
 #+END_SRC
 Sometimes we want to refile into a subtree that hasn't yet been created.
 #+BEGIN_SRC emacs-lisp
@@ -2851,32 +2898,15 @@ Cache the refile targets. It can be refreshed with =C-u C-u C-u C-u C-w=.
 #+BEGIN_SRC emacs-lisp
 (setq org-refile-use-cache t)
 #+END_SRC
-[[https://orgmode.org/worg/org-hacks.html#org0344577][Worg]] gives a way to avoid messing up the heading hierarchy of an archive file
-after archiving lower level items.
+Refile to a given location.
 #+BEGIN_SRC emacs-lisp
-(defun gm/org-inherited-no-file-tags ()
-  (let ((tags (org-entry-get nil "ALLTAGS" 'selective))
-        (ltags (org-entry-get nil "TAGS")))
-    (mapc (lambda (tag)
-            (setq tags
-                  (replace-regexp-in-string (concat tag ":") "" tags)))
-          (append org-file-tags (when ltags (split-string ltags ":" t))))
-    (if (string= ":" tags) nil tags)))
-
-(defadvice org-archive-subtree (around my-org-archive-subtree-low-level activate)
-  (let ((tags (gm/org-inherited-no-file-tags))
-        (org-archive-location
-         (if (save-excursion (org-back-to-heading)
-                             (> (org-outline-level) 1))
-             (concat (car (split-string org-archive-location "::"))
-                     "::* "
-                     (car (org-get-outline-path)))
-           org-archive-location)))
-    ad-do-it
-    (with-current-buffer (find-file-noselect (org-extract-archive-file))
-      (save-excursion
-        (while (org-up-heading-safe))
-        (org-set-tags-to tags)))))
+(defun gm/refile (file headline)
+  (let ((curr-buff (buffer-name))
+        (pos (save-excursion
+               (find-file file)
+               (org-find-exact-headline-in-buffer headline))))
+    (org-refile nil nil (list headline file nil pos))
+    (switch-to-buffer curr-buff)))
 #+END_SRC
 I often have a bunch of files I need to organize, such as scanned papers or
 documents sitting in my downloads folder. Invoking =org-attach= from each target
@@ -2923,6 +2953,33 @@ Dired buffer.
       (!cdr list)
       (when list
         (dired-next-marked-file 1)))))
+#+END_SRC
+[[https://orgmode.org/worg/org-hacks.html#org0344577][Worg]] gives a way to avoid messing up the heading hierarchy of an archive file
+after archiving lower level items.
+#+BEGIN_SRC emacs-lisp
+(defun gm/org-inherited-no-file-tags ()
+  (let ((tags (org-entry-get nil "ALLTAGS" 'selective))
+        (ltags (org-entry-get nil "TAGS")))
+    (mapc (lambda (tag)
+            (setq tags
+                  (replace-regexp-in-string (concat tag ":") "" tags)))
+          (append org-file-tags (when ltags (split-string ltags ":" t))))
+    (if (string= ":" tags) nil tags)))
+
+(defadvice org-archive-subtree (around my-org-archive-subtree-low-level activate)
+  (let ((tags (gm/org-inherited-no-file-tags))
+        (org-archive-location
+         (if (save-excursion (org-back-to-heading)
+                             (> (org-outline-level) 1))
+             (concat (car (split-string org-archive-location "::"))
+                     "::* "
+                     (car (org-get-outline-path)))
+           org-archive-location)))
+    ad-do-it
+    (with-current-buffer (find-file-noselect (org-extract-archive-file))
+      (save-excursion
+        (while (org-up-heading-safe))
+        (org-set-tags-to tags)))))
 #+END_SRC
 *** Capture
 :PROPERTIES:
@@ -3112,7 +3169,8 @@ I like the following set of =TODO= words. This is what appears
 before an Org headline when a todo state is activated.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-todo-keywords
-      '((sequence "TODO(t!)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+      '((sequence "TODO(t!)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")
+        (sequence "TOREAD(r!)" "READING(R)" "|" "READ(b)")))
 #+END_SRC
 Automatically archive cancelled tasks.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -4183,6 +4241,10 @@ paragraph not at the window edge but at =fill-column=.
   (add-hook 'notmuch-message-mode-hook (lambda () (auto-fill-mode -1)))
   (add-hook 'notmuch-show-mode-hook (lambda () (auto-fill-mode -1))))
 #+END_SRC
+I don't want to manually do this.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
+(advice-add #'notmuch-show-reply-sender :after (lambda! () (open-line 1)))
+#+END_SRC
 Accessing mail. When we first open up =notmuch=, I want to start a system script
 that checks for new mail periodically.
 #+BEGIN_SRC emacs-lisp
@@ -4247,6 +4309,7 @@ Then we give ourselves a way to activate Org Mode mail.
   (interactive)
   (setq *compose-html-org* t)
   (org-mode)
+  (quick-math-mode)
   (auto-fill-mode -1))
 
 (bind-key "M-m" #'gm/compose-html-org notmuch-message-mode-map)
@@ -4256,7 +4319,8 @@ Let's define a function to send the mail.
 (defun gm/org-htmlize-and-send ()
   "When composing an Org HTML message, htmlize and send it."
   (interactive)
-  (when (bound-and-true-p *compose-html-org*)
+  (when (and (not (org-in-src-block-p))
+             (bound-and-true-p *compose-html-org*))
     (setq *compose-html-org* nil)
     (notmuch-message-mode)
     (org-mime-htmlize)
