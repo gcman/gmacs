@@ -97,8 +97,8 @@ Symbol can be the symbol directly, no lookup needed."
    gm/math-greek-upper
    gm/math-vectors
    '(("aleph" "ℵ")
-     ("hbar" "ℏ")
-     ("ell" "𝓁")
+     ("hbar" "ħ")
+     ("ell" "ℓ")
      ("wp" "℘")
      ("Re" "ℜ")
      ("Im" "ℑ")
