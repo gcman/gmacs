@@ -34,10 +34,11 @@ Emacs.cursorBlink: off
 Before a theme is initialized, the default background colour that Emacs displays
 is white. However, my default theme is a dark theme (Solarized Dark). If I were
 to change the background colour after Emacs starts, the screen would flash as it
-changes colour. And so I set the default background colour to be that of
-Solarized Dark.
+changes colour. And so I set the default background and foreground colour to be
+that of Solarized Dark.
 #+BEGIN_SRC conf
 Emacs.background: #002b36
+Emacs.foreground: #839496
 #+END_SRC
 The last thing left that is visible throughout startup is the modeline. It
 took a bit of Internet sleuthing to figure out how to set this, but here it is.
@@ -1762,7 +1763,6 @@ Basic configuration.
   :hook
   (pdf-view-mode . pdf-view-midnight-minor-mode)
   (pdf-view-mode . pdf-view-fit-width-to-window))
-;; (eval-when-compile (pdf-tools-install))
 #+END_SRC
 Allow rotation.
 #+BEGIN_SRC emacs-lisp
@@ -2478,7 +2478,7 @@ Spray is a speed-reading package for Emacs.
 (use-package spray
   :hook ((spray-mode . (lambda () (beacon-mode -1)))
          (spray-mode . olivetti-mode))
-  :config
+  :custom
   (spray-margin-top 5)
   (spray-margin-left 1.5))
 #+END_SRC
@@ -3450,7 +3450,7 @@ risk of them not being unique.
     (key-chord-define-global "jj" 'gm/context-hydra-launcher))
 #+END_SRC
 **** Links
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (setq hydra-org-link-helper-hint-base
       "
 org link helper
@@ -3732,7 +3732,8 @@ Define a keychord to enter inline math mode. This allows me to get around
 messing with making =$= an electrically paired delimiter.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (after! key-chord
-  (key-chord-define org-mode-map "r4" #'gm/create-or-exit-math-fragment))
+  (key-chord-define org-mode-map "r4" #'gm/create-or-exit-math-fragment)
+  (key-chord-define org-mode-map "df" #'gm/create-or-exit-math-fragment))
 #+END_SRC
 **** Pretty Math Symbols
 I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-symbols.el][mortiferus]]. The file I use is not the one from
@@ -4196,9 +4197,9 @@ for me.
 #+END_SRC
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(setq message-directory "~/mail/"
-      message-auto-save-directory "~/mail/draft"
-      message-fcc-dirs "~/mail/mbsyncmail/Sent Items")
+(setq message-directory "~/mail/uni"
+      message-auto-save-directory "Drafts"
+      notmuch-fcc-dirs '((".*" . "\"uni/Sent Items\" +sent -inbox -unread")))
 #+END_SRC
 Provide my email and name.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
@@ -4221,7 +4222,7 @@ more rigorous system of encryption.
 Some commonly used searches.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq notmuch-saved-searches
-      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order newest-first)
+      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order oldest-first)
         (:name "flagged" :query "tag:flagged" :key "f")
         (:name "sent" :query "tag:sent" :key "s" :sort-order newest-first)
         (:name "drafts" :query "tag:draft" :key "d")))
@@ -4264,6 +4265,18 @@ that checks for new mail periodically.
 
 (bind-key "C-c m" #'gm/open-mail)
 #+END_SRC
+*** Hard Delete Mail
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
+(defun gm/notmuch-delete-mail ()
+  (interactive)
+  (notmuch-search-tag (list "+deleted"))
+  (call-process-shell-command
+   "notmuch search --output=files --format=text0 tag:deleted | xargs -0 rm && notmuch new"
+   nil nil nil)
+  (notmuch-search-refresh-view))
+
+(bind-key "D" #'gm/notmuch-delete-mail notmuch-search-mode-map)
+#+END_SRC
 *** See Last Unread in Thread
 Notmuch doesn't take you to the latest unread message in a thread. Usually, you
 can work around this by going to the end of the buffer, but this doesn't work if
@@ -4286,7 +4299,7 @@ the thread is non-linear and the message of interest is somewhere in the middle.
 
 (bind-key "U" #'gm/next-unread notmuch-show-mode-map)
 #+END_SRC
-*** HTML Mail
+*** Send HTML Mail
 This code from [[http://kitchingroup.cheme.cmu.edu/blog/category/orgmode/4/][John Kitchin]] lets you write mail in Org Mode and send it
 formatted as HTML. This is incredibly powerful, because you can include syntax
 highlighted code, LaTeX math images, and even the image output of Babel blocks,
@@ -4352,7 +4365,7 @@ It's an email, not an essay.
                                 :with-author nil
                                 :with-toc nil))
 #+END_SRC
-*** Check for Attachments
+*** Don't Forget Attachments
 From [[https://gitlab.com/ambrevar/dotfiles/blob/master/.emacs.d/lisp/patch-notmuch.el][ambrevar's dotfiles]].
 #+BEGIN_SRC emacs-lisp
 (defcustom notmuch-message-attach-regex
@@ -5381,7 +5394,7 @@ and shifted notes use different link types.
   (interactive)
   (if (org-in-regexp org-bracket-link-regexp 1)
       (let* ((remove (list (match-beginning 0) (match-end 0)))
-             (description (org-match-string-no-properties 3))
+             (description (match-string-no-properties 3))
              (shift-regexp ";[0-9]*ex")
              (shift (if (string-match-p shift-regexp description)
                         (s-replace "ex" "" (nth 1 (split-string description ";")))
