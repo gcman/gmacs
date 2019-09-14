@@ -157,14 +157,13 @@ string as well."
     process))
 
 
-;;; file opening procedures
-(defun dired-open-xdg ()
+O;;; file opening procedures
+(defun dired-open-xdg (&optional filename)
   "Try to run `xdg-open' to open the file under point."
   (interactive)
   (if (executable-find "xdg-open")
-      (let ((file (ignore-errors (dired-get-file-for-visit))))
-        (start-process "dired-open" nil
-                       "xdg-open" (file-truename file)))
+      (let ((file (if filename filename (ignore-errors (dired-get-file-for-visit)))))
+        (dired-open--start-process (file-truename file) "xdg-open"))
     nil))
 
 (defun dired-open-by-extension ()

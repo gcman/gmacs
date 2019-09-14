@@ -1072,7 +1072,7 @@ smooth.
 #+END_SRC
 *** Add Package to Dotfiles
 #+BEGIN_SRC emacs-lisp
-(defun gm/package-add (&optional package)
+(defun gm/package-linux-add (&optional package)
   (interactive)
   (let ((file "~/dotfiles/packages.txt")
         (package (if package package (read-string "Package name: "))))
@@ -1109,6 +1109,25 @@ Make commands easier.
 #+BEGIN_SRC emacs-lisp
 (defalias 'md 'mkdir)
 (defalias 'mk 'mkdir)
+#+END_SRC
+*** Update Environment Variables
+We can reload the environment variables without restarting Emacs by sending this
+command to the client.
+#+BEGIN_SRC emacs-lisp
+(defun gm/update-env (fn)
+  (let ((str
+         (with-temp-buffer
+           (insert-file-contents fn)
+           (buffer-string)))
+        lst)
+    (setq lst (split-string str "\000"))
+    (while lst
+      (setq cur (car lst))
+      (when (string-match "^\\(.*?\\)=\\(.*\\)" cur)
+        (setq var (match-string 1 cur))
+        (setq value (match-string 2 cur))
+        (setenv var value))
+      (setq lst (cdr lst)))))
 #+END_SRC
 ** Wordsmithing
 *** Basic Configuration
@@ -1224,6 +1243,7 @@ otherwise kill destination buffer."
 **** Easier Regexp
 #+BEGIN_SRC emacs-lisp
 (use-package anzu
+  :commands (anzu-query-replace anzu-query-replace-regexp)
   :diminish "杏"
   :bind
   (([remap query-replace] . 'anzu-query-replace)
@@ -1750,6 +1770,12 @@ Basic configuration.
   (setq pdf-annot-activate-created-annotations t)
   (after! counsel
     (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
+  (defun gm-pdf-open-external ()
+    (interactive)
+    (require 'dired-open)
+    (dired-open--start-process (file-truename buffer-file-name) "xdg-open")
+    (kill-buffer))
+  (bind-key "O" #'gm-pdf-open-external pdf-view-mode-map)
   :diminish pdf-view-midnight-minor-mode
   :bind (:map pdf-view-mode-map
               ("h" . pdf-annot-add-highlight-markup-annotation)
@@ -2320,12 +2346,10 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
 Similarly, we use =ace-link= to open links quickly.
 #+BEGIN_SRC emacs-lisp
 (use-package ace-link
-  :config
-  (ace-link-setup-default))
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(after! org
-  (bind-key "M-O" #'ace-link-org org-mode-map))
+  :commands (ace-link-addr)
+  :config (ace-link-setup-default)
+  (after! org
+    (bind-key "M-O" #'ace-link-org org-mode-map)))
 #+END_SRC
 We set up some easier to read faces.
 #+BEGIN_SRC emacs-lisp
@@ -3008,7 +3032,8 @@ Here are my capture templates.
 (setq org-capture-templates
       `(("a" "Appointment" entry
          (file ,(expand-file-name "gcal.org" org-directory))
-         "* %i%? \n%^T\n")
+         "* %^{Title} \n%^T\n"
+         :immediate-finish t)
         ("t" "Todo" entry
          (file org-default-notes-file)
          "* TODO %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i%?")
@@ -3062,7 +3087,7 @@ I bind this to =c b=, for "capture bookmark." The data goes to the following tem
 :CREATED: %U
 :SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]]
 :END:
-%?\n%(gm/quote-if-non-empty \"%i\")"))
+%?\n%(->> \"%i\" gm/fix-mathjax-output gm/quote-if-non-empty)"))
 #+END_SRC
 I have a similar template for capturing code snippets.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -3092,9 +3117,21 @@ excerpt.
               (fill-region (point-min) (point-max))
               (buffer-string)))
   (unless (or (string-blank-p str) ;; dont quote things with headings or org blocks
-              (string-match "^\\(\*+\\)\\|\\(#\+BEGIN\_\\)" str))
+              (string-match-p "\\(^ \\**\\)\\|\\(#\\+BEGIN_\\)" str))
     (setq str (format "#+BEGIN_QUOTE\n%s\n#+END_QUOTE" str)))
   (s-trim str))
+#+END_SRC
+Copying MathJax is a little strange. It pastes in the form =A$B$$B'$=, where =A=
+contains no spaces and is a Unicode representation of the LaTeX string, and =B=
+and =B'= are slight variants of the actual LaTeX string. I'm not quite certain
+what the differences between =B= and =B'= are. They both seem to be functional, but
+=B'= generally seems to be better. For example, =B= might contain =a^{n}= and =\lbrack 0,1
+\rbrack=, while =B'= has =a^n= and =[0,1]=. This function runs a simple regex replace
+for =B'=.
+#+BEGIN_SRC emacs-lisp
+(defun gm/fix-mathjax-output (str)
+  (let ((re "[^ $]*\$[^$]*\$\$\\([^$]*\\)\\$"))
+    (replace-regexp-in-string re "\\\\(\\1\\\\)" str)))
 #+END_SRC
 I also bind =c l= to store the URL of the current page as an Org link.
 #+BEGIN_SRC js :tangle no
@@ -3641,6 +3678,48 @@ as `org-src-fontify-natively' is non-nil."
      start end
      '(font-lock-fontified t fontified t font-lock-multiline t))
     (set-buffer-modified-p modified)))))
+#+END_SRC
+*** Inline Remote Images
+Add the link type.
+#+BEGIN_SRC emacs-lisp
+(org-add-link-type
+ "image-url"
+ (lambda (path)
+   (let ((img (expand-file-name
+           (concat (md5 path) "." (file-name-extension path))
+           temporary-file-directory)))
+     (if (file-exists-p img)
+     (find-file img)
+       (url-copy-file path img)
+       (find-file img)))))
+#+END_SRC
+And the function to activate inlining.
+#+BEGIN_SRC emacs-lisp
+(defun image-url-overlays ()
+  "Put image overlays on remote image urls."
+  (interactive)
+  (loop for image-url in (org-element-map (org-element-parse-buffer) 'link
+               (lambda (link)
+                 (when (string= "image-url" (org-element-property :type link))
+                   link)))
+    do
+    (let* ((path (org-element-property :path image-url))
+           (ov (make-overlay (org-element-property :begin image-url)
+                 (org-element-property :end image-url)))
+           (img (create-image (expand-file-name
+                   (concat (md5 path)
+                       "."
+                       (file-name-extension
+                        path))
+                   temporary-file-directory))))
+      (overlay-put ov 'display img)
+      (overlay-put ov 'image-url t))))
+
+(defun image-url-clear-overlays ()
+  "Reove overlays on image-urls."
+  (interactive)
+  (require 'ov)
+  (ov-clear 'image-url))
 #+END_SRC
 ** Babel
 Set up languages loaded for use in Org source blocks and their respective
@@ -4613,7 +4692,7 @@ Add thumbnails (from [[https://www.reddit.com/r/emacs/comments/ao2oud/how_to_add
 *** Consuming Media
 We refresh the feed every ten minutes, starting ten seconds after Emacs opens.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
-(run-at-time 10 (* 60 30) 'elfeed-update)
+(run-with-timer 10 (* 60 30) 'elfeed-update)
 #+END_SRC
 When reading articles in =elfeed-show-mode=, the content spans the entire buffer.
 I like to read my content hard-wrapped at 80 chars, so I customize the built-in
@@ -4723,20 +4802,6 @@ Toggle the unread tag.
 (defun gm/elfeed-toggle-unread ()
   (interactive)
   (elfeed-search-toggle-all 'unread))
-#+END_SRC
-*** Hydra
-I use a hydra to easily navigate between groups of feeds.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
-(defhydra gm/elfeed-hydra ()
-  "filter"
-  ("a" (elfeed-search-set-filter "@6-months-ago") "All")
-  ("c" (elfeed-search-set-filter "@6-months-ago +cs") "CS")
-  ("e" (elfeed-search-set-filter "@6-months-ago +emacs") "Emacs")
-  ("*" (elfeed-search-set-filter "@6-months-ago +starred") "Starred")
-  ("t" (elfeed-search-set-filter "@1-day-ago") "Today")
-  ("M" gm/elfeed-toggle-star "Mark")
-  ("Q" bjm/elfeed-save-db-and-bury "Quit Elfeed" :color blue)
-  ("q" nil "quit" :color blue))
 #+END_SRC
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
@@ -5400,8 +5465,7 @@ and shifted notes use different link types.
                         (s-replace "ex" "" (nth 1 (split-string description ";")))
                       "0"))
              (element (org-element-context))
-             (path (org-element-property :path element))
-             (raw (org-element-property :raw-link element)))
+             (path (org-element-property :path element)))
         (when (equal path "marginnote")
           (apply 'delete-region remove)
           (yas-expand-snippet (format "[[latex-opt:marginnote][%s;${1:%s}ex]]" (replace-regexp-in-string shift-regexp "" description) shift))))))
