@@ -157,7 +157,7 @@ string as well."
     process))
 
 
-O;;; file opening procedures
+;;; file opening procedures
 (defun dired-open-xdg (&optional filename)
   "Try to run `xdg-open' to open the file under point."
   (interactive)

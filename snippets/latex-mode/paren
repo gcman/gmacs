@@ -2,4 +2,4 @@
 # name: paren
 # key: math-paren
 # --
-($0)
+($1)$0

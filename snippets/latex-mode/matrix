@@ -16,7 +16,7 @@
     (dotimes (j width)
       (setq snippet-text (format "%s ${%d:m%d%d} %s"
                                  snippet-text
-                                 (1+ (+ (* height i) j))
+                                 (1+ (+ (* width i) j))
                                  i
                                  j
                                  (if (= j (1- width))

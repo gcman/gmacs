@@ -1266,6 +1266,8 @@ prose in is Org Mode.
   :commands flyspell-mode
   :init
   (add-hook 'org-mode-hook #'flyspell-mode)
+  (after! notmuch
+    (add-hook 'notmuch-message-mode-hook #'flyspell-mode))
   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
     (add-hook hook (lambda () (flyspell-mode -1))))
   <<flyspell-init>>
@@ -1771,10 +1773,10 @@ Basic configuration.
   (after! counsel
     (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
   (defun gm-pdf-open-external ()
-    (interactive)
     (require 'dired-open)
+    (interactive)
     (dired-open--start-process (file-truename buffer-file-name) "xdg-open")
-    (kill-buffer))
+    (kill-buffer-and-window))
   (bind-key "O" #'gm-pdf-open-external pdf-view-mode-map)
   :diminish pdf-view-midnight-minor-mode
   :bind (:map pdf-view-mode-map
@@ -3166,9 +3168,11 @@ Now we can easily move images into Org Mode buffers.
 #+BEGIN_SRC emacs-lisp
 (use-package org-download
   :commands (org-download-yank)
+  :config
+  (org-download-enable)
   :custom
   (org-download-method 'attach)
-  (org-download-timestamp t))
+  (org-download-timestamp t) (org-download-screenshot-method "scrot -s"))
 #+END_SRC
 **** Add Images to Notes Live
 [[http://pragmaticemacs.com/emacs/a-workflow-to-quickly-add-photos-to-org-mode-notes/][This article]] gives a neat way to add images taken from your phone into an Org
@@ -4074,6 +4078,10 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
 (autoload 'bratex-config "bratex")
 (add-hook 'quick-math-mode-hook #'bratex-config)
 #+END_SRC
+*** Allow Alphabetical List
+#+BEGIN_SRC emacs-lisp
+(setq org-list-allow-alphabetical t)
+#+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path (expand-file-name "tufte-org-mode/" gmacs-custom-dir))
@@ -4100,14 +4108,21 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
                 (org-latex-export-to-latex nil t)
               (org-tufte-latex-export-to-latex nil t))
             (let ((processname (format "latex-export-%s" file)))
-              (when (processp processname)
-                    (kill-process processname))
+              (when (get-process processname)
+                (kill-buffer (process-buffer processname)))
               (async-start-process processname
                                    "latexmk"
                                    (lambda (file) (message (format "Exported %s" file)))
                                    (if (string= cmd "PDF") "-pdf" "-xelatex")
                                    "-interaction=nonstopmode"
-                                   file)))
+                                   file)
+              (when (get-buffer "*latex-cleanup*")
+                (kill-buffer "*latex-cleanup*"))
+              (async-start-process "latex-cleanup"
+                                   "latexmk"
+                                   nil
+                                   "-xelatex"
+                                   "-c")))
         (error "Not in valid export location!")))))
 #+END_SRC
 Bind this in Org mode.
@@ -4145,7 +4160,7 @@ graphics correctly; =latexmk= handles all of that.
 #+END_SRC
 **** Command Links
 :PROPERTIES:
-:header-args: :tangle no :noweb-ref org-settings
+:header-args: :tangle no :noweb-ref org-settings :results silent
 :END:
 No option.
 #+BEGIN_SRC emacs-lisp
@@ -4192,6 +4207,16 @@ Todo link.
  :export (lambda (path desc format)
            (when (eq format 'latex)
              (format "\\marginnote{\\textcolor{red}{\\textbf{TODO:}} %s}" path))))
+#+END_SRC
+Correction link.
+#+BEGIN_SRC emacs-lisp
+(org-link-set-parameters
+ "corr"
+ :follow nil
+ :face '(:foreground "green" :underline t)
+ :export (lambda (path desc format)
+           (when (eq format 'latex)
+             (format "\\textcolor{SeaGreen}{%s}" path))))
 #+END_SRC
 By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 =cleveref= package, which uses the =\cref= macro.
@@ -4277,7 +4302,7 @@ for me.
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq message-directory "~/mail/uni"
-      message-auto-save-directory "Drafts"
+      message-auto-save-directory "~/mail/Uni/Drafts"
       notmuch-fcc-dirs '((".*" . "\"uni/Sent Items\" +sent -inbox -unread")))
 #+END_SRC
 Provide my email and name.
@@ -4329,6 +4354,16 @@ paragraph not at the window edge but at =fill-column=.
                       #'visual-fill-column-adjust)
   (add-hook 'notmuch-message-mode-hook (lambda () (auto-fill-mode -1)))
   (add-hook 'notmuch-show-mode-hook (lambda () (auto-fill-mode -1))))
+#+END_SRC
+On a similar note, I don't want filling the paragraph to do anything, unless I
+really do.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
+(defun gm/maybe-fill-paragraph ()
+  (interactive)
+  (when current-prefix-arg
+      (fill-paragraph)))
+
+(bind-key "M-q" #'gm/maybe-fill-paragraph notmuch-message-mode-map)
 #+END_SRC
 I don't want to manually do this.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
@@ -5369,6 +5404,7 @@ results in =\frac{\sin x}{|}=.
    ((string-match "[\])]" (char-to-string (char-before)))
     (let ((end (point))
           (sqbracket (eq (char-before) 93)) ;; last char is sqbracket
+          (env (if (eq (char-before) 41) "frac" "quotient"))
           match)
       (when sqbracket
         (backward-sexp))
@@ -5377,7 +5413,7 @@ results in =\frac{\sin x}{|}=.
       (delete-region (point) end)
        (unless sqbracket
         (setq match (substring match 1 -1)))
-      (gm/math-insert-frac-match match "quotient")))
+       (gm/math-insert-frac-match match env)))
    ((eq (char-before) 125) ;; match closing curly braces
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
