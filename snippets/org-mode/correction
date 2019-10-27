@@ -2,4 +2,4 @@
 # name: correction-note
 # key: <corr
 # --
-[[correction:$0]]
+[[corr:$0]]

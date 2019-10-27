@@ -27,6 +27,7 @@
 ;;; Code:
 (require 'dash)
 (require 'dash-functional)
+(require 'cl)
 
 (defgroup justify-kp ()
   "Justify paragraphs using Knuth/Plass algorithm."
@@ -110,7 +111,7 @@ smaller) after the function returns."
   (setq p (or p (point)))
   (setq limit (min (or limit (point-max)) (point-max)))
   (goto-char p)
-  (flet ((get-next-font-name
+  (cl-flet ((get-next-font-name
           ()
           (let ((np (or (next-property-change p) limit)))
             (if (>= np limit)
@@ -147,7 +148,7 @@ Respects font changes."
 
 (defun pj--get-string-tokens ()
   "Split the current line in string tokens."
-  (flet ((push-char () (push char token))
+  (cl-flet ((push-char () (push char token))
          (push-tok-char () (push (reverse token) tokens) (setq token (list char))))
     (let ((line (string-to-list (pj-line-at-point)))
           (tokens nil)
