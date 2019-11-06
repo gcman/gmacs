@@ -1768,15 +1768,21 @@ Basic configuration.
 (use-package pdf-tools
   :mode (("\\.pdf\\'" . pdf-view-mode))
   :commands pdf-view-mode
+  :init
+  (defun gm-pdf-open-external (&optional filename)
+    (require 'dired-open)
+    (interactive)
+    (let (close)
+    (unless filename
+      (setq filename (file-truename buffer-file-name))
+      (setq close t))
+    (dired-open--start-process filename "xdg-open")
+    (when close
+      (kill-buffer-and-window))))
   :config
   (setq pdf-annot-activate-created-annotations t)
   (after! counsel
     (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
-  (defun gm-pdf-open-external ()
-    (require 'dired-open)
-    (interactive)
-    (dired-open--start-process (file-truename buffer-file-name) "xdg-open")
-    (kill-buffer-and-window))
   (bind-key "O" #'gm-pdf-open-external pdf-view-mode-map)
   :diminish pdf-view-midnight-minor-mode
   :bind (:map pdf-view-mode-map
@@ -5035,6 +5041,7 @@ Snippets go in [[file:math-snippets.el]].
   ("f" (insert "\\phi{}") "φ")
   ("F" (insert "\\mathbb{F}") "𝔽")
   ("l" (insert "\\ell{}") "ℓ")
+  ("o" (insert "\\circ{}") "∘")
   ("q" (insert "\\Theta{}") "Θ")
   ("r" (insert "\\varrho ") "ρ")
   ("u" (insert "\\sqcup ") "∩")
