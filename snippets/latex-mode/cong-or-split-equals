@@ -6,4 +6,4 @@
 (if (and (gm/in-math-p)
      (eq (car (org-element-context)) 'latex-environment))
 (insert "&= ")
-(insert "\\cong{}"))
+(insert "\\equiv{}"))
