@@ -1,7 +1,6 @@
 # -*- mode: snippet -*-
 # name: split
-# key: sp
-# condition: (not (eq (car (org-element-context)) 'src-block))
+# key: math-split
 # --
 \begin{split}
 $0

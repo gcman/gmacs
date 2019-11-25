@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: new-problem-set
+# key: <pset
+# --
+** TODO Problem Set $1
+:PROPERTIES:
+:EXPORT_TITLE: MATH 61CM - Problem Set $1
+:EXPORT_FILE_NAME: pset$1
+:EXPORT_DATE: $2
+:END:

@@ -1,8 +1,7 @@
 # -*- mode: snippet -*-
 # name: identity-matrix
-# key: mati
+# key: math-identity-matrix
 # type: command
-# condition: (gm/in-math-p)
 # --
 (let* ((width (read-number "Matrix width?" 3))
       (height width)

@@ -1072,7 +1072,7 @@ smooth.
 #+END_SRC
 *** Add Package to Dotfiles
 #+BEGIN_SRC emacs-lisp
-(defun gm/package-add (&optional package)
+(defun gm/package-linux-add (&optional package)
   (interactive)
   (let ((file "~/dotfiles/packages.txt")
         (package (if package package (read-string "Package name: "))))
@@ -1109,6 +1109,25 @@ Make commands easier.
 #+BEGIN_SRC emacs-lisp
 (defalias 'md 'mkdir)
 (defalias 'mk 'mkdir)
+#+END_SRC
+*** Update Environment Variables
+We can reload the environment variables without restarting Emacs by sending this
+command to the client.
+#+BEGIN_SRC emacs-lisp
+(defun gm/update-env (fn)
+  (let ((str
+         (with-temp-buffer
+           (insert-file-contents fn)
+           (buffer-string)))
+        lst)
+    (setq lst (split-string str "\000"))
+    (while lst
+      (setq cur (car lst))
+      (when (string-match "^\\(.*?\\)=\\(.*\\)" cur)
+        (setq var (match-string 1 cur))
+        (setq value (match-string 2 cur))
+        (setenv var value))
+      (setq lst (cdr lst)))))
 #+END_SRC
 ** Wordsmithing
 *** Basic Configuration
@@ -1224,6 +1243,7 @@ otherwise kill destination buffer."
 **** Easier Regexp
 #+BEGIN_SRC emacs-lisp
 (use-package anzu
+  :commands (anzu-query-replace anzu-query-replace-regexp)
   :diminish "杏"
   :bind
   (([remap query-replace] . 'anzu-query-replace)
@@ -1246,6 +1266,8 @@ prose in is Org Mode.
   :commands flyspell-mode
   :init
   (add-hook 'org-mode-hook #'flyspell-mode)
+  (after! notmuch
+    (add-hook 'notmuch-message-mode-hook #'flyspell-mode))
   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
     (add-hook hook (lambda () (flyspell-mode -1))))
   <<flyspell-init>>
@@ -1746,10 +1768,22 @@ Basic configuration.
 (use-package pdf-tools
   :mode (("\\.pdf\\'" . pdf-view-mode))
   :commands pdf-view-mode
+  :init
+  (defun gm-pdf-open-external (&optional filename)
+    (require 'dired-open)
+    (interactive)
+    (let (close)
+    (unless filename
+      (setq filename (file-truename buffer-file-name))
+      (setq close t))
+    (dired-open--start-process filename "xdg-open")
+    (when close
+      (kill-buffer-and-window))))
   :config
   (setq pdf-annot-activate-created-annotations t)
   (after! counsel
     (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
+  (bind-key "O" #'gm-pdf-open-external pdf-view-mode-map)
   :diminish pdf-view-midnight-minor-mode
   :bind (:map pdf-view-mode-map
               ("h" . pdf-annot-add-highlight-markup-annotation)
@@ -2193,12 +2227,7 @@ Set tramp connection history location.
      (t . ivy--regex-fuzzy)))
   (ivy-use-virtual-buffers t)
   (ivy-display-style 'fancy)
-  (ivy-initial-inputs-alist nil)
-  :bind
-  ([remap execute-extended-command] . smex)
-  ("C-s" . swiper)
-  (:map ivy-minibuffer-map
-        ([remap hungry-delete-backward] . nil)))
+  (ivy-initial-inputs-alist nil))
 
 (use-package flx
   :after ivy)
@@ -2220,6 +2249,8 @@ Set tramp connection history location.
   ([remap org-goto] . counsel-org-goto)
   ([remap find-file] . counsel-find-file)
   ("C-s" . counsel-grep-or-swiper)
+  (:map ivy-minibuffer-map
+        ([remap hungry-delete-backward] . nil))
   :custom
   (counsel-grep-base-command
    "rg -i -M 120 --color auto --line-number %s %s"))
@@ -2323,12 +2354,10 @@ Helpful when you want to see completion for a certain sequence of prefix keys.
 Similarly, we use =ace-link= to open links quickly.
 #+BEGIN_SRC emacs-lisp
 (use-package ace-link
-  :config
-  (ace-link-setup-default))
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(after! org
-  (bind-key "M-O" #'ace-link-org org-mode-map))
+  :commands (ace-link-addr)
+  :config (ace-link-setup-default)
+  (after! org
+    (bind-key "M-O" #'ace-link-org org-mode-map)))
 #+END_SRC
 We set up some easier to read faces.
 #+BEGIN_SRC emacs-lisp
@@ -2382,10 +2411,9 @@ usually a git repo. The most useful function for me is =projectile-find-file=.
 #+END_SRC
 I use a hydra to manage its many keybindings.
 #+BEGIN_SRC emacs-lisp :noweb-ref hydra
-(after! projectile
-  (defhydra hydra-projectile
-    (:color teal :hint nil)
-    "
+(defhydra hydra-projectile
+  (:color teal :hint nil)
+  "
   PROJECTILE: %(projectile-project-root)
 
   ^Find File^        ^Search/Tags^        ^Buffers^         ^Cache^                      ^Project^
@@ -2396,26 +2424,26 @@ I use a hydra to manage its many keybindings.
   _r_: recent file   ^ ^                  ^ ^               _z_: cache current
   _d_: dir
 "
-    ("R"   counsel-projectile-rg)
-    ("b"   counsel-projectile-switch-to-buffer)
-    ("c"   projectile-invalidate-cache)
-    ("d"   counsel-projectile-find-dir)
-    ("f"   counsel-projectile-find-file)
-    ("F"   counsel-projectile-find-file-dwim)
-    ("C-f" projectile-find-file-in-directory)
-    ("g"   ggtags-update-tags)
-    ("s-g" ggtags-update-tags)
-    ("i"   projectile-ibuffer)
-    ("K"   projectile-kill-buffers)
-    ("s-k" projectile-kill-buffers)
-    ("m"   projectile-multi-occur)
-    ("o"   projectile-multi-occur)
-    ("p"   counsel-projectile-switch-project)
-    ("r"   projectile-recentf)
-    ("x"   projectile-remove-known-project)
-    ("X"   projectile-cleanup-known-projects)
-    ("z"   projectile-cache-current-file)
-    ("q"   nil "cancel" :color blue)))
+  ("R"   counsel-projectile-rg)
+  ("b"   counsel-projectile-switch-to-buffer)
+  ("c"   projectile-invalidate-cache)
+  ("d"   counsel-projectile-find-dir)
+  ("f"   counsel-projectile-find-file)
+  ("F"   counsel-projectile-find-file-dwim)
+  ("C-f" projectile-find-file-in-directory)
+  ("g"   ggtags-update-tags)
+  ("s-g" ggtags-update-tags)
+  ("i"   projectile-ibuffer)
+  ("K"   projectile-kill-buffers)
+  ("s-k" projectile-kill-buffers)
+  ("m"   projectile-multi-occur)
+  ("o"   projectile-multi-occur)
+  ("p"   counsel-projectile-switch-project)
+  ("r"   projectile-recentf)
+  ("x"   projectile-remove-known-project)
+  ("X"   projectile-cleanup-known-projects)
+  ("z"   projectile-cache-current-file)
+  ("q"   nil "cancel" :color blue))
 
 (bind-key "C-c p" #'hydra-projectile/body)
 #+END_SRC
@@ -3012,7 +3040,8 @@ Here are my capture templates.
 (setq org-capture-templates
       `(("a" "Appointment" entry
          (file ,(expand-file-name "gcal.org" org-directory))
-         "* %i%? \n%^T\n")
+         "* %^{Title} \n%^T\n"
+         :immediate-finish t)
         ("t" "Todo" entry
          (file org-default-notes-file)
          "* TODO %^{Title}\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i%?")
@@ -3066,7 +3095,7 @@ I bind this to =c b=, for "capture bookmark." The data goes to the following tem
 :CREATED: %U
 :SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]]
 :END:
-%?\n%(gm/quote-if-non-empty \"%i\")"))
+%?\n%(->> \"%i\" gm/fix-mathjax-output gm/quote-if-non-empty)"))
 #+END_SRC
 I have a similar template for capturing code snippets.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -3096,9 +3125,21 @@ excerpt.
               (fill-region (point-min) (point-max))
               (buffer-string)))
   (unless (or (string-blank-p str) ;; dont quote things with headings or org blocks
-              (string-match "^\\(\*+\\)\\|\\(#\+BEGIN\_\\)" str))
+              (string-match-p "\\(^ \\**\\)\\|\\(#\\+BEGIN_\\)" str))
     (setq str (format "#+BEGIN_QUOTE\n%s\n#+END_QUOTE" str)))
   (s-trim str))
+#+END_SRC
+Copying MathJax is a little strange. It pastes in the form =A$B$$B'$=, where =A=
+contains no spaces and is a Unicode representation of the LaTeX string, and =B=
+and =B'= are slight variants of the actual LaTeX string. I'm not quite certain
+what the differences between =B= and =B'= are. They both seem to be functional, but
+=B'= generally seems to be better. For example, =B= might contain =a^{n}= and =\lbrack 0,1
+\rbrack=, while =B'= has =a^n= and =[0,1]=. This function runs a simple regex replace
+for =B'=.
+#+BEGIN_SRC emacs-lisp
+(defun gm/fix-mathjax-output (str)
+  (let ((re "[^ $]*\$[^$]*\$\$\\([^$]*\\)\\$"))
+    (replace-regexp-in-string re "\\\\(\\1\\\\)" str)))
 #+END_SRC
 I also bind =c l= to store the URL of the current page as an Org link.
 #+BEGIN_SRC js :tangle no
@@ -3133,9 +3174,11 @@ Now we can easily move images into Org Mode buffers.
 #+BEGIN_SRC emacs-lisp
 (use-package org-download
   :commands (org-download-yank)
+  :config
+  (org-download-enable)
   :custom
   (org-download-method 'attach)
-  (org-download-timestamp t))
+  (org-download-timestamp t) (org-download-screenshot-method "scrot -s"))
 #+END_SRC
 **** Add Images to Notes Live
 [[http://pragmaticemacs.com/emacs/a-workflow-to-quickly-add-photos-to-org-mode-notes/][This article]] gives a neat way to add images taken from your phone into an Org
@@ -3646,6 +3689,48 @@ as `org-src-fontify-natively' is non-nil."
      '(font-lock-fontified t fontified t font-lock-multiline t))
     (set-buffer-modified-p modified)))))
 #+END_SRC
+*** Inline Remote Images
+Add the link type.
+#+BEGIN_SRC emacs-lisp
+(org-add-link-type
+ "image-url"
+ (lambda (path)
+   (let ((img (expand-file-name
+           (concat (md5 path) "." (file-name-extension path))
+           temporary-file-directory)))
+     (if (file-exists-p img)
+     (find-file img)
+       (url-copy-file path img)
+       (find-file img)))))
+#+END_SRC
+And the function to activate inlining.
+#+BEGIN_SRC emacs-lisp
+(defun image-url-overlays ()
+  "Put image overlays on remote image urls."
+  (interactive)
+  (loop for image-url in (org-element-map (org-element-parse-buffer) 'link
+               (lambda (link)
+                 (when (string= "image-url" (org-element-property :type link))
+                   link)))
+    do
+    (let* ((path (org-element-property :path image-url))
+           (ov (make-overlay (org-element-property :begin image-url)
+                 (org-element-property :end image-url)))
+           (img (create-image (expand-file-name
+                   (concat (md5 path)
+                       "."
+                       (file-name-extension
+                        path))
+                   temporary-file-directory))))
+      (overlay-put ov 'display img)
+      (overlay-put ov 'image-url t))))
+
+(defun image-url-clear-overlays ()
+  "Reove overlays on image-urls."
+  (interactive)
+  (require 'ov)
+  (ov-clear 'image-url))
+#+END_SRC
 ** Babel
 Set up languages loaded for use in Org source blocks and their respective
 default execution commands.
@@ -3999,6 +4084,10 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
 (autoload 'bratex-config "bratex")
 (add-hook 'quick-math-mode-hook #'bratex-config)
 #+END_SRC
+*** Allow Alphabetical List
+#+BEGIN_SRC emacs-lisp
+(setq org-list-allow-alphabetical t)
+#+END_SRC
 *** Export
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path (expand-file-name "tufte-org-mode/" gmacs-custom-dir))
@@ -4025,14 +4114,20 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
                 (org-latex-export-to-latex nil t)
               (org-tufte-latex-export-to-latex nil t))
             (let ((processname (format "latex-export-%s" file)))
-              (when (processp processname)
-                    (kill-process processname))
-              (async-start-process processname
+              (when (get-process processname)
+                (kill-buffer (process-buffer processname)))
+p              (async-start-process processname
                                    "latexmk"
                                    (lambda (file) (message (format "Exported %s" file)))
                                    (if (string= cmd "PDF") "-pdf" "-xelatex")
                                    "-interaction=nonstopmode"
-                                   file)))
+                                   file)
+              ;; (async-start-process "latex-cleanup"
+              ;;                      "latexmk"
+              ;;                      nil
+              ;;                      "-xelatex"
+              ;;                      "-c")
+              ))
         (error "Not in valid export location!")))))
 #+END_SRC
 Bind this in Org mode.
@@ -4070,7 +4165,7 @@ graphics correctly; =latexmk= handles all of that.
 #+END_SRC
 **** Command Links
 :PROPERTIES:
-:header-args: :tangle no :noweb-ref org-settings
+:header-args: :tangle no :noweb-ref org-settings :results silent
 :END:
 No option.
 #+BEGIN_SRC emacs-lisp
@@ -4117,6 +4212,16 @@ Todo link.
  :export (lambda (path desc format)
            (when (eq format 'latex)
              (format "\\marginnote{\\textcolor{red}{\\textbf{TODO:}} %s}" path))))
+#+END_SRC
+Correction link.
+#+BEGIN_SRC emacs-lisp
+(org-link-set-parameters
+ "corr"
+ :follow nil
+ :face '(:foreground "green" :underline t)
+ :export (lambda (path desc format)
+           (when (eq format 'latex)
+             (format "\\textcolor{SeaGreen}{%s}" path))))
 #+END_SRC
 By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 =cleveref= package, which uses the =\cref= macro.
@@ -4202,7 +4307,7 @@ for me.
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq message-directory "~/mail/uni"
-      message-auto-save-directory "Drafts"
+      message-auto-save-directory "~/mail/Uni/Drafts"
       notmuch-fcc-dirs '((".*" . "\"uni/Sent Items\" +sent -inbox -unread")))
 #+END_SRC
 Provide my email and name.
@@ -4254,6 +4359,16 @@ paragraph not at the window edge but at =fill-column=.
                       #'visual-fill-column-adjust)
   (add-hook 'notmuch-message-mode-hook (lambda () (auto-fill-mode -1)))
   (add-hook 'notmuch-show-mode-hook (lambda () (auto-fill-mode -1))))
+#+END_SRC
+On a similar note, I don't want filling the paragraph to do anything, unless I
+really do.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
+(defun gm/maybe-fill-paragraph ()
+  (interactive)
+  (when current-prefix-arg
+      (fill-paragraph)))
+
+(bind-key "M-q" #'gm/maybe-fill-paragraph notmuch-message-mode-map)
 #+END_SRC
 I don't want to manually do this.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
@@ -4617,7 +4732,7 @@ Add thumbnails (from [[https://www.reddit.com/r/emacs/comments/ao2oud/how_to_add
 *** Consuming Media
 We refresh the feed every ten minutes, starting ten seconds after Emacs opens.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref elfeed-settings
-(run-at-time 10 (* 60 30) 'elfeed-update)
+(run-with-timer 10 (* 60 30) 'elfeed-update)
 #+END_SRC
 When reading articles in =elfeed-show-mode=, the content spans the entire buffer.
 I like to read my content hard-wrapped at 80 chars, so I customize the built-in
@@ -4727,20 +4842,6 @@ Toggle the unread tag.
 (defun gm/elfeed-toggle-unread ()
   (interactive)
   (elfeed-search-toggle-all 'unread))
-#+END_SRC
-*** Hydra
-I use a hydra to easily navigate between groups of feeds.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
-(defhydra gm/elfeed-hydra ()
-  "filter"
-  ("a" (elfeed-search-set-filter "@6-months-ago") "All")
-  ("c" (elfeed-search-set-filter "@6-months-ago +cs") "CS")
-  ("e" (elfeed-search-set-filter "@6-months-ago +emacs") "Emacs")
-  ("*" (elfeed-search-set-filter "@6-months-ago +starred") "Starred")
-  ("t" (elfeed-search-set-filter "@1-day-ago") "Today")
-  ("M" gm/elfeed-toggle-star "Mark")
-  ("Q" bjm/elfeed-save-db-and-bury "Quit Elfeed" :color blue)
-  ("q" nil "quit" :color blue))
 #+END_SRC
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
@@ -4939,6 +5040,7 @@ Snippets go in [[file:math-snippets.el]].
   ("f" (insert "\\phi{}") "φ")
   ("F" (insert "\\mathbb{F}") "𝔽")
   ("l" (insert "\\ell{}") "ℓ")
+  ("o" (insert "\\circ{}") "∘")
   ("q" (insert "\\Theta{}") "Θ")
   ("r" (insert "\\varrho ") "ρ")
   ("u" (insert "\\sqcup ") "∩")
@@ -5308,6 +5410,7 @@ results in =\frac{\sin x}{|}=.
    ((string-match "[\])]" (char-to-string (char-before)))
     (let ((end (point))
           (sqbracket (eq (char-before) 93)) ;; last char is sqbracket
+          (env (if (eq (char-before) 41) "frac" "quotient"))
           match)
       (when sqbracket
         (backward-sexp))
@@ -5316,7 +5419,7 @@ results in =\frac{\sin x}{|}=.
       (delete-region (point) end)
        (unless sqbracket
         (setq match (substring match 1 -1)))
-      (gm/math-insert-frac-match match "quotient")))
+       (gm/math-insert-frac-match match env)))
    ((eq (char-before) 125) ;; match closing curly braces
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
@@ -5404,8 +5507,7 @@ and shifted notes use different link types.
                         (s-replace "ex" "" (nth 1 (split-string description ";")))
                       "0"))
              (element (org-element-context))
-             (path (org-element-property :path element))
-             (raw (org-element-property :raw-link element)))
+             (path (org-element-property :path element)))
         (when (equal path "marginnote")
           (apply 'delete-region remove)
           (yas-expand-snippet (format "[[latex-opt:marginnote][%s;${1:%s}ex]]" (replace-regexp-in-string shift-regexp "" description) shift))))))

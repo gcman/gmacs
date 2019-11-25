@@ -1,8 +1,7 @@
 # -*- mode: snippet -*-
-# name: n-by-m-matrix
+# name: matrix
 # key: mat
 # type: command
-# condition: (gm/in-math-p)
 # --
 (let ((width (read-number "Matrix width?" 3))
       (height (read-number "Matrix height?" 3))
