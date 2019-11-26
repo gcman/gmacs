@@ -2893,7 +2893,8 @@ of my school files.
 #+BEGIN_SRC emacs-lisp
 (require 'org-agenda)
 
-(setq org-agenda-files
+(when (directory-name-p "~/school")
+  (setq org-agenda-files
       (append org-agenda-files
               (apply 'append
                      (mapcar
@@ -2901,7 +2902,7 @@ of my school files.
                         (directory-files-recursively
                          directory org-agenda-file-regexp))
                       (--filter (not (string-match-p (regexp-opt '("archive" "." "..")) it))
-                                (directory-files "~/school" t))))))
+                                (directory-files "~/school" t)))))))
 #+END_SRC
 Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later

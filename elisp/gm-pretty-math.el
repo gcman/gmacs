@@ -275,6 +275,7 @@ Symbol can be the symbol directly, no lookup needed."
 
 (defvar gm/spaced-after
   '(("Div" [?\s (Br . Bl) ?\s (Bc . Br) ?∇ (Br . Bc) ?\s (Br . Bc) ?\s (Bc . Bl) ?·])
+    ("Lapl" [?\s (Bc . Bc) ?\s (Bc . Br) ?∆])
     ("Grad" [?\s (Bc . Bc) ?\s (Bc . Br) ?∇])
     ("Curl" [?\s (Br . Bl) ?\s (Bc . Br) ?∇ (Br . Bc) ?\s (Br . Bc) ?\s (Bc . Bl) ?×])
     ("int" [?\s (Bc . Bc) ?\s (Bc . Br) ?∫])))
