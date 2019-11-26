@@ -90,6 +90,8 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
           (require 'org)
           (org-babel-load-file orgfile))
       (load-file elfile))))
+
+(load-file (expand-file-name "personal.el" user-emacs-directory))
 #+END_SRC
 ** Initialization Settings
 Enable lexical binding.
