@@ -4119,7 +4119,7 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
             (let ((processname (format "latex-export-%s" file)))
               (when (get-process processname)
                 (kill-buffer (process-buffer processname)))
-p              (async-start-process processname
+              (async-start-process processname
                                    "latexmk"
                                    (lambda (file) (message (format "Exported %s" file)))
                                    (if (string= cmd "PDF") "-pdf" "-xelatex")

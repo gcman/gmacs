@@ -17,3 +17,5 @@
           (require 'org)
           (org-babel-load-file orgfile))
       (load-file elfile))))
+
+(load-file (expand-file-name "personal.el" user-emacs-directory))
