@@ -91,7 +91,9 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
           (org-babel-load-file orgfile))
       (load-file elfile))))
 
-(load-file (expand-file-name "personal.el" user-emacs-directory))
+(let ((file (expand-file-name "personal.el" user-emacs-directory)))
+  (when (file-exists-p file)
+    (load-file file)))
 #+END_SRC
 ** Initialization Settings
 Enable lexical binding.
@@ -2717,7 +2719,7 @@ especially useful when typing LaTeX.
 (key-chord-define-global "9i" "(")
 (key-chord-define-global "0o" ")")
 (key-chord-define-global "-p" "_")
-(key-chord-define-global "[=" "{")
+(key-chord-define-global "[=" "+")
 #+END_SRC
 ** Toggles
 We use a hydra to toggle various features in our setup. I bind the keys in my
@@ -3170,7 +3172,8 @@ This template attaches the file for future reference.
  'org-capture-templates
  '("q" "Org Protocol Qutebrowser pdf" entry
    (file org-default-notes-file)
-   "* %^{Title} %(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach) (org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U %^{Author}p\n:END:\n%?\n"))
+   "* %^{Title} %(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach)
+(org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U %^{Author}p\n:END:\n%?\n"))
 #+END_SRC
 *** Org Download
 Now we can easily move images into Org Mode buffers.
@@ -3743,7 +3746,7 @@ default execution commands.
                                   (latex . t)
                                   (shell . t)))
 
-(setq org-babel-python-command "python3.7"
+(setq org-babel-python-command "python3.8"
       org-babel-latex-command "pdflatex"
       org-babel-sh-command "sh")
 #+END_SRC

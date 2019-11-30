@@ -1,10 +1,20 @@
 # -*- mode: snippet -*-
 # name: new-problem-set
 # key: <pset
+# type: command
 # --
-** TODO Problem Set $1
+(let* ((file (file-name-base))
+(num (replace-regexp-in-string "[a-z]" "" file))
+ (arr (split-string file num))
+(snippet-text
+(format "** TODO Problem Set ${1:1}
 :PROPERTIES:
-:EXPORT_TITLE: MATH 61CM - Problem Set $1
+:EXPORT_TITLE: %s - Problem Set $1
 :EXPORT_FILE_NAME: pset$1
 :EXPORT_DATE: $2
-:END:
+:END:"
+ (format "%s %s%s"
+          (upcase (nth 0 arr))
+          num
+          (upcase (nth 1 arr))))))
+(yas-expand-snippet snippet-text))

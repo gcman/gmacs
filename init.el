@@ -18,4 +18,6 @@
           (org-babel-load-file orgfile))
       (load-file elfile))))
 
-(load-file (expand-file-name "personal.el" user-emacs-directory))
+(let ((file (expand-file-name "personal.el" user-emacs-directory)))
+  (when (file-exists-p file)
+    (load-file file)))
