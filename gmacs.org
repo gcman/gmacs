@@ -5074,6 +5074,7 @@ Then we bind this to semicolon.
     :keymap gm/math-mode-map
     (when quick-math-mode
       (gm/math-setup)
+      (prettify-symbols-mode)
       (pretty-math-mode)
       (gm/eq-preview-mode))))
 #+END_SRC
@@ -5107,30 +5108,34 @@ be in math. The one subtlety is that we also look at the starred versions of
 =ENV=.
 #+BEGIN_SRC emacs-lisp
 (defun gm/in-math-p (&optional loc)
-  (unless loc (setq loc (point)))
-  (defun gm/--in-math-p (begin-delim)
-    (concat begin-delim (regexp-opt gm/math-environments) "[\\*]?}"))
-  (let* ((fr (org-element-context))
-         (fr-type (car fr))
-         (begin (org-element-property :begin fr)))
-    (save-excursion
-      (if (condition-case nil
-              (progn
-                (re-search-backward "\\text{" begin)
-                (forward-word)
-                (forward-sexp)
-                (> (point) loc))
-            (error nil))
-          nil
-        (cond ((eq fr-type 'latex-fragment)
-               (and
-                (>= loc begin)
-                (<= loc (1- (- (org-element-property :end fr)
-                               (org-element-property :post-blank fr))))))
-              ((eq fr-type 'latex-environment)
-               (let ((env-open (how-many (gm/--in-math-p "\\\\begin{") begin loc))
-                     (env-close (how-many (gm/--in-math-p "\\\\end{") begin loc)))
-                 (> (- env-open env-close) 0))))))))
+  (if (boundp 'latex-mode)
+      (when (eq major-mode 'latex-mode)
+        (texmathp))
+    (progn
+      (unless loc (setq loc (point)))
+      (defun gm/--in-math-p (begin-delim)
+        (concat begin-delim (regexp-opt gm/math-environments) "[\\*]?}"))
+      (let* ((fr (org-element-context))
+             (fr-type (car fr))
+             (begin (org-element-property :begin fr)))
+        (save-excursion
+          (if (condition-case nil
+                  (progn
+                    (re-search-backward "\\text{" begin)
+                    (forward-word)
+                    (forward-sexp)
+                    (> (point) loc))
+                (error nil))
+              nil
+            (cond ((eq fr-type 'latex-fragment)
+                   (and
+                    (>= loc begin)
+                    (<= loc (1- (- (org-element-property :end fr)
+                                   (org-element-property :post-blank fr))))))
+                  ((eq fr-type 'latex-environment)
+                   (let ((env-open (how-many (gm/--in-math-p "\\\\begin{") begin loc))
+                         (env-close (how-many (gm/--in-math-p "\\\\end{") begin loc)))
+                     (> (- env-open env-close) 0))))))))))
 #+END_SRC
 **** Enter Math Mode
 Enter a math fragment if inside one, exit otherwise. We keep track of the number
