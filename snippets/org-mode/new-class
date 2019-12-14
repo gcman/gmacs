@@ -1,0 +1,28 @@
+# -*- mode: snippet -*-
+# name: new-class
+# key: <class
+# type: command
+# --
+(let* ((file (file-name-base))
+(num (replace-regexp-in-string "[a-z]" "" file))
+ (arr (split-string file num))
+ (course-name  (format "%s %s%s" (upcase (nth 0 arr)) num (upcase (nth 1 arr))))
+(snippet-text
+(format "* Notes
+:PROPERTIES:
+:EXPORT_FILE_NAME: %s
+:EXPORT_TITLE: %s
+:END:
+* Problem Sets
+* Materials
+* Options :noexport:
+#+LATEX_CLASS_OPTIONS: [notoc,nosubsec]
+# Local variables:
+# eval: (add-hook 'after-save-hook 'gm/org-latex-export nil t)
+# end:
+* Footnotes"
+filep
+course-name
+course-name
+)))
+(yas-expand-snippet snippet-text))

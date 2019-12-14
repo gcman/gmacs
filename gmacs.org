@@ -2897,7 +2897,7 @@ of my school files.
 #+BEGIN_SRC emacs-lisp
 (require 'org-agenda)
 
-(when (directory-name-p "~/school")
+(when (file-exists-p "~/school/")
   (setq org-agenda-files
       (append org-agenda-files
               (apply 'append
@@ -4109,32 +4109,29 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
                                (min (point-max) (+ 2 (line-beginning-position))))
                               "* ")))
       (outline-up-heading 1 t))
-    (let* ((class (org-entry-get (point) "EXPORT_LATEX_CLASS"))
-           (cmd (org-entry-get (point) "EXPORT_LATEX_CMD"))
-           (filebase (org-entry-get (point) "EXPORT_FILE_NAME"))
-           (file (replace-regexp-in-string "\\(\\.[^\\.]+\\)*$" ".tex" filebase)))
-      (if filebase
-          (progn
-            (if (and class
-                     (not (string= class "gm-notes")))
-                (org-latex-export-to-latex nil t)
-              (org-tufte-latex-export-to-latex nil t))
-            (let ((processname (format "latex-export-%s" file)))
-              (when (get-process processname)
-                (kill-buffer (process-buffer processname)))
-              (async-start-process processname
-                                   "latexmk"
-                                   (lambda (file) (message (format "Exported %s" file)))
-                                   (if (string= cmd "PDF") "-pdf" "-xelatex")
-                                   "-interaction=nonstopmode"
-                                   file)
-              ;; (async-start-process "latex-cleanup"
-              ;;                      "latexmk"
-              ;;                      nil
-              ;;                      "-xelatex"
-              ;;                      "-c")
-              ))
-        (error "Not in valid export location!")))))
+    (when-let ((filebase (org-entry-get (point) "EXPORT_FILE_NAME")))
+      (let* ((class (org-entry-get (point) "EXPORT_LATEX_CLASS"))
+             (cmd (org-entry-get (point) "EXPORT_LATEX_CMD"))
+             (file (replace-regexp-in-string "\\(\\.[^\\.]+\\)*$" ".tex" filebase))
+             (processname (format "latex-export-%s" file)))
+        (if (and class
+                 (not (string= class "gm-notes")))
+            (org-latex-export-to-latex nil t)
+          (org-tufte-latex-export-to-latex nil t))
+        (when (get-process processname)
+          (kill-buffer (process-buffer processname)))
+        (async-start-process processname
+                             "latexmk"
+                             (lambda (file) (message (format "Exported %s" file)))
+                             (if (string= cmd "PDF") "-pdf" "-xelatex")
+                             "-interaction=nonstopmode"
+                             file)
+        ;; (async-start-process "latex-cleanup"
+        ;;                      "latexmk"
+        ;;                      nil
+        ;;                      "-xelatex"
+        ;;                      "-c")
+        ))))
 #+END_SRC
 Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
@@ -4980,6 +4977,8 @@ Snippets go in [[file:math-snippets.el]].
   :type 'alist
   :group 'quick-math)
 
+(defvar gm/math-global-snippets nil)
+(defvar-local gm/math-local-snippets nil)
 (defvar gm/math-snippet-loc (expand-file-name "math-snippets.el" gmacs-emacs-dir))
 #+END_SRC
 **** Hydras
@@ -5215,6 +5214,7 @@ snippets. First, we create a suffix tree of all the math snippets.
 
 (defun gm/math-setup ()
   (load gm/math-snippet-loc)
+  (setq gm/math-snippets (append gm/math-global-snippets gm/math-local-snippets))
   (setq gm/longest-snippet
         (cons (-max (--map (length (car it)) gm/math-snippets))
               (-max (--map (length (cadr it)) gm/math-snippets))))
@@ -5275,17 +5275,19 @@ should expand."
          (snippet (if (s-blank-str? text)
                       (list key name t)
                     (list key text)))
-         (snippet-keys (--map (car it) gm/math-snippets))
-         (snippet-list (--map (cons (car it) it) gm/math-snippets)))
+         (snippet-keys (--map (car it) gm/math-global-snippets))
+         (snippet-list (--map (cons (car it) it) gm/math-global-snippets)))
     (unless (s-blank-str? name)
       (find-file file-cand)
       (unless (file-exists-p file-cand)
         (yas-expand-snippet (yas-lookup-snippet "new-math-snippet"))))
     (when (and (member (car snippet) snippet-keys)
                (y-or-n-p (format "Snippet %s is already defined. Overwrite?" key)))
-      (setq gm/math-snippets (delete (cdr (assoc key snippet-list)) gm/math-snippets)))
-    (push snippet gm/math-snippets)
-    (dump-vars-to-file '(gm/math-snippets) gm/math-snippet-loc)
+      (setq gm/math-global-snippets (delete (cdr (assoc key snippet-list)) gm/math-global-snippets)))
+    (push snippet gm/math-global-snippets)
+    (unless current-prefix-arg
+      (setq gm/math-global-snippets gm/math-global-snippets))
+    (dump-vars-to-file '(gm/math-global-snippets) gm/math-snippet-loc)
     (gm/math-setup)))
 #+END_SRC
 A very rudimentary command to see all current snippet keys and expansions.
@@ -5391,6 +5393,10 @@ creates a fraction with this block in the numerator and the point in the
 denominator. The outside parentheses will be removed; for example, =(\sin x)/=
 results in =\frac{\sin x}{|}=.
 #+BEGIN_SRC emacs-lisp
+(defvar gm/math-frac-extras
+  '("\\vec"
+    "\\Delta"))
+
 (defun gm/math-insert-frac-match (match &optional env)
   (unless env (setq env "frac"))
   (when match
@@ -5434,7 +5440,12 @@ results in =\frac{\sin x}{|}=.
    ((eq (char-before) 125) ;; match closing curly braces
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
-    (gm/math-frac-helper "[\\]?[[:alnum:]_^!]*" env))
+    (gm/math-frac-helper
+     (concat
+      (regexp-opt gm/math-frac-extras)
+      "?\\( \\|{}\\)?"
+      "[\\]?[[:alnum:]_^!]*")
+     env))
    (t (yas-expand-snippet (yas-lookup-snippet (if env env "frac"))))))
 #+END_SRC
 The binding is given in [[*Generate Snippets][Generate Snippets]].
