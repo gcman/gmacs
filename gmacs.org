@@ -2202,9 +2202,13 @@ screen, and once we're done, we can get right back to where we left off.
     (window-configuration-to-register :magit-fullscreen)
     ad-do-it
     (delete-other-windows))
+  (add-hook 'magit-process-find-password-functions 'magit-process-password-auth-source)
   :bind (("C-x g" . magit-status)
          :map magit-status-mode-map
               ("q" . magit-quit-session)))
+
+(use-package ssh-agency
+  :after magit)
 #+END_SRC
 *** Tramp
 Make sure to keep backups locally and not remotely.
