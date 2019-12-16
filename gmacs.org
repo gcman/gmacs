@@ -5218,7 +5218,7 @@ snippets. First, we create a suffix tree of all the math snippets.
 
 (defun gm/math-setup ()
   (load gm/math-snippet-loc)
-  (setq gm/math-snippets (append gm/math-global-snippets gm/math-local-snippets))
+  (setq gm/math-snippets (append gm/math-local-snippets gm/math-global-snippets))
   (setq gm/longest-snippet
         (cons (-max (--map (length (car it)) gm/math-snippets))
               (-max (--map (length (cadr it)) gm/math-snippets))))
