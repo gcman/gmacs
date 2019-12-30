@@ -3,6 +3,23 @@
 # key: <class
 # type: command
 # --
+(defun gm/--timestamp-split (timestamp)
+  (split-string (replace-regexp-in-string
+                 "[\]\[<>]" ""
+                 timestamp) " "))
+(defun gm/--timestamp-format (target time)
+  (let* ((days '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))
+         (timestamp (with-temp-buffer (org-time-stamp-inactive '(16)) (buffer-string)))
+         (stamp (gm/--timestamp-split timestamp))
+         (date (nth 0 stamp))
+         (day (-elem-index (nth 1 stamp) days))
+         (increment (cl-gcd (% (- target day) 7)))
+         (newstamp (with-temp-buffer
+                     (insert timestamp)
+                     (org-timestamp-change increment 'day)
+                     (buffer-string))))
+    (setq newstamp (gm/--timestamp-split newstamp))
+    (format "<%s %s %s +1w>" (nth 0 newstamp) (nth 1 newstamp) time)))
 (let* ((file (file-name-base))
 (num (replace-regexp-in-string "[a-z]" "" file))
 (arr (split-string file num))
