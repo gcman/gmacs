@@ -365,7 +365,7 @@ comes back when I switch themes, for some reason), I refresh all open buffers.
 **** Font Face
 I change my fonts a lot, so I made it easier to set a font.
 #+BEGIN_SRC emacs-lisp
-(defun gm/change-font ()
+(defun gm/switch-font ()
   (interactive)
   (let ((font (ivy-completing-read "Choose a font: "
                                    (delete-dups (font-family-list)))))
@@ -382,21 +382,24 @@ set the default font for characters in the "Mathematical Alphanumeric Symbols"
 block in Unicode to Symbola. I got the Symbola font from the =ttf-ancient-fonts=
 package on the AUR.
 #+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) "Symbola")
-(set-fontset-font "fontset-default" '(#x2200 . #x22ff) "Symbola")
+(defvar gm/unicode-font "Symbola")
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) gm/unicode-font)
+(set-fontset-font "fontset-default" '(#x2200 . #x22ff) gm/unicode-font)
 #+END_SRC
 I do something similar for my =org-ellipsis= character (=⬎=); here, though, I just
 prefer how this font draws the character.
 #+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x2b0e . #x2b0e) "Symbola")
+(set-fontset-font "fontset-default" '(#x2b0e . #x2b0e) gm/unicode-font)
 #+END_SRC
 I also include other miscellaneous characters.
 #+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x211c . #x211c) "Symbola") ;; real part ℜ
-(set-fontset-font "fontset-default" '(#x2111 . #x2111) "Symbola") ;; imaginary part ℑ
-(set-fontset-font "fontset-default" '(#x2113 . #x2113) "Symbola") ;; ell ℓ
-(set-fontset-font "fontset-default" '(#x2118 . #x2118) "Symbola") ;; Weierstrass p ℘
-(set-fontset-font "fontset-default" '(#x2135 . #x2135) "Symbola") ;; aleph ℵ
+(set-fontset-font "fontset-default" '(#x211c . #x211c) gm/unicode-font) ;; real part ℜ
+(set-fontset-font "fontset-default" '(#x2111 . #x2111) gm/unicode-font) ;; imaginary part ℑ
+(set-fontset-font "fontset-default" '(#x2113 . #x2113) gm/unicode-font) ;; ell ℓ
+(set-fontset-font "fontset-default" '(#x2118 . #x2118) gm/unicode-font) ;; Weierstrass p ℘
+(set-fontset-font "fontset-default" '(#x2135 . #x2135) gm/unicode-font) ;; aleph ℵ
 #+END_SRC
 **** Syntax Highlighting
 I want syntax highlighting everywhere...
@@ -2734,7 +2737,7 @@ section for the [[*Context-dependent Hydra][Context-dependent Hydra]].
 _t_ theme-colour       %`gm/theme
 _m_ quick-math-mode:   %`quick-math-mode
 _p_ equation-preview:  %`gm/eq-preview-mode
-_e_ pretty-math:
+_e_ pretty-math:       %`pretty-math-mode
 _D_ dubcaps-mode:      %`gm/dubcaps-mode
 _W_ Window management
 "
@@ -5077,9 +5080,8 @@ Then we bind this to semicolon.
     :keymap gm/math-mode-map
     (when quick-math-mode
       (gm/math-setup)
-      (prettify-symbols-mode)
-      (pretty-math-mode)
-      (gm/eq-preview-mode))))
+      (gm/eq-preview-mode)
+      (pretty-math-mode))))
 #+END_SRC
 We need shift-tabbing in snippets to override =org-shift-tab=, but only in math
 mode.

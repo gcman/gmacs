@@ -1,42 +1,6 @@
 (require 'cl-lib)
 (require 'dash)
 
-(define-minor-mode pretty-math-mode
-  "Minor mode for math"
-  :init-value nil
-  (when pretty-math-mode
-      (pretty-math)))
-
-(defun pretty-math (&optional reverse)
-    (substitute-patterns-with-unicode-symbol
-     (append
-      (--map (gm/math-regexp-spaced-after (car it) (cadr it)) gm/spaced-after)
-      (-flatten-n 1 (--map (gm/math-regexp-spaced (car it) (cadr it)) gm/math-spaced))
-      (-flatten-n 1 (--map (gm/math-regexp-unspaced (car it) (cadr it)) gm/math-unspaced))
-      (-flatten-n 1 (--map (gm/math-regexp-commands (car it) (nth 1 it) (nth 2 it)) gm/math-commands)))
-     reverse))
-
-(defun substitute-pattern-with-unicode-symbol (pattern symbol &optional reverse)
-  "Add a font lock hook to replace the matched part of PATTERN with the Unicode
-symbol SYMBOL.
-Symbol can be the symbol directly, no lookup needed."
-  (interactive)
-  (let ((func (if reverse
-                  'font-lock-remove-keywords
-                'font-lock-add-keywords)))
-    (funcall func nil `((,pattern
-                         (0 (progn
-                              (compose-region (match-beginning 1) (match-end 1)
-                                              ,symbol
-                                              'decompose-region)
-                              nil)))))))
-
-(defun substitute-patterns-with-unicode-symbol (patterns &optional reverse)
-  "Mapping over PATTERNS, calling SUBSTITUTE-PATTERN-WITH-UNICODE for each of the patterns."
-  (mapcar (lambda (x)
-            (substitute-pattern-with-unicode-symbol (car x) (cdr x) reverse))
-          patterns))
-
 (defvar gm/math-greek-upper
   '(("Gamma" "Γ")
     ("Delta" "Δ")
@@ -285,13 +249,16 @@ Symbol can be the symbol directly, no lookup needed."
     ("pd" ?∂ "")))
 
 (defun gm/math-regexp-unspaced (name symbol)
-  (list (cons (format "\\(\\\\%s{}\\)" name) symbol)
-        (cons (format "\\(\\\\%s\\)[^[:alnum:]{]" name) symbol)))
+  (cons (regexp-opt
+         `(,(format "\\(\\\\%s\\)" name)
+           ,(format "\\|\\(\\\\%s\\)[^[:alnum:]{" name)))
+        symbol))
 
 (defun gm/math-regexp-spaced (name symbol)
   (setq symbol `[?\s (Br . Bl) ?\s (Bc . Bc) ,(string-to-char symbol)])
-  (list (cons (format "\\(\\\\%s\\( \\|{}\\)\\)" name) symbol)
-        (cons (format "\\([ ]?\\\\%s\\)[^[:alnum:]{ ]" name) symbol)))
+  (list (cons (regexp-opt `(,(format "\\(\\\\%s\\( \\|{}\\)\\)" name)
+                            ,(format "\\([ ]?\\\\%s\\)[^[:alnum:]{ ]" name)))
+               symbol)))
 
 (defun gm/math-regexp-spaced-after (name symbol)
   (cons (format "\\(\\\\%s \\)" name) symbol))
@@ -299,5 +266,28 @@ Symbol can be the symbol directly, no lookup needed."
 (defun gm/math-regexp-commands (command open-delim close-delim)
   (list (cons (format "\\([ ]?\\\\%s{\\)" command) open-delim)
         (cons (format "\\\\%s{[^}]*\\(}\\)" command) close-delim)))
+
+(defvar gm/math-replacements
+  (append
+   (--map (gm/math-regexp-spaced-after (car it) (cadr it)) gm/spaced-after)
+   (--map (gm/math-regexp-spaced (car it) (cadr it)) gm/math-spaced)
+   (--map (gm/math-regexp-unspaced (car it) (cadr it)) gm/math-unspaced)
+   (-flatten-n 1 (--map (gm/math-regexp-commands (car it) (nth 1 it) (nth 2 it)) gm/math-commands))))
+
+(defvar gm/pretty-math-patterns
+      (-flatten-n 1 (cl-loop for pattern in gm/math-replacements
+                             collect `((,(car pattern)
+                                        (0 (progn
+                                             (compose-region (match-beginning 1) (match-end 1)
+                                                             ,(cdr pattern)
+                                                             'decompose-region)
+                                             nil)))))))
+
+(define-minor-mode pretty-math-mode
+  "Minor mode for math"
+  :init-value nil
+  (if pretty-math-mode
+    (font-lock-add-keywords nil gm/pretty-math-patterns)
+    (font-lock-remove-keywords nil gm/pretty-math-patterns)))
 
 (provide 'gm-pretty-math)
