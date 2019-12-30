@@ -5175,23 +5175,28 @@ expand into =\hat{f}=. However, we cannot just act on the last letter, because
 =\betahat= should expand into =\hat{beta}=, not the invalid =\bet\hat{a}=.
 #+BEGIN_SRC emacs-lisp
 (defun gm/last-letter ()
-  (when (string-match "[a-zA-Z]" (gm/last-n-chars 1))
-    (let ((match
-           (if (looking-back (regexp-opt
-                              (--map (concat "\\" (car it))
-                                     (append gm/math-greek-lower
-                                             gm/math-greek-upper)))
-                             (- (point) 8) t)
-               (buffer-substring-no-properties (match-beginning 0)
-                                               (match-end 0))
-             (char-to-string (char-before)))))
-      (save-excursion
+  (defun gm/--last-letter-helper ()
+    (when (string-match "[a-zA-Z]" (gm/last-n-chars 1))
+      (let ((match
+             (if (looking-back (regexp-opt
+                                (--map (concat "\\" (car it))
+                                       (append gm/math-greek-lower
+                                               gm/math-greek-upper)))
+                               (- (point) 8) t)
+                 (buffer-substring-no-properties (match-beginning 0)
+                                                 (match-end 0))
+               (char-to-string (char-before)))))
         (backward-char (length match))
         (cond ((string= (gm/last-n-chars 5) "\\vec ")
                (setq match (format "\\vec %s" match)))
               ((eq (char-before) ?\\)
-               (setq match (format "\\%s" match)))))
-      match)))
+               (setq match (format "\\%s" match))))
+        match)))
+  (save-excursion
+    (if (string-match "}" (gm/last-n-chars 1))
+        (progn (backward-char 2)
+               (concat (gm/--last-letter-helper) "{}"))
+      (gm/--last-letter-helper))))
 #+END_SRC
 **** Test if LaTeX Needs to Be Wrapped in Brackets
 #+BEGIN_SRC emacs-lisp
@@ -5375,7 +5380,13 @@ creating them.
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-number-subscript (n)
   (insert n)
-  (cond ((string-match "[a-zA-Z][0-9]" (gm/last-n-chars 2))
+  (cond ((save-excursion
+           (backward-char)
+           (> (length (gm/last-letter)) 1))
+         (save-excursion
+           (backward-char)
+           (insert "_")))
+        ((string-match "[a-zA-Z][0-9]" (gm/last-n-chars 2))
          (save-excursion
            (backward-char)
            (insert "_")))
