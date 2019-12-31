@@ -498,7 +498,9 @@ for choosing colours, especially when editing CSS files.
 #+END_SRC
 Highlight =.service= files like they are configuration files.
 #+BEGIN_SRC emacs-lisp
-(use-package systemd)
+(use-package systemd
+  :defer 10)
+(add-to-list 'auto-mode-alist '("\\.service\\'" . conf-mode))
 #+END_SRC
 ** Quality of Life
 *** Garbage Collection

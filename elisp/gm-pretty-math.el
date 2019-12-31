@@ -1,6 +1,14 @@
 (require 'cl-lib)
 (require 'dash)
 
+(define-minor-mode pretty-math-mode
+  "Minor mode for math"
+  :init-value nil
+  (font-lock-fontify-buffer)
+  (if pretty-math-mode
+      (font-lock-add-keywords nil gm/pretty-math-keywords)
+    (font-lock-remove-keywords nil gm/pretty-math-keywords)))
+
 (defvar gm/math-greek-upper
   '(("Gamma" . "Γ")
     ("Delta" . "Δ")
@@ -279,12 +287,5 @@
                                                          ,(cdr pattern)
                                                          'decompose-region)
                                          nil)))))))
-
-(define-minor-mode pretty-math-mode
-  "Minor mode for math"
-  :init-value nil
-  (if pretty-math-mode
-      (font-lock-add-keywords nil gm/pretty-math-keywords)
-    (font-lock-remove-keywords nil gm/pretty-math-keywords)))
 
 (provide 'gm-pretty-math)
