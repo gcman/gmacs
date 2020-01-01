@@ -5384,7 +5384,7 @@ creating them.
   (insert n)
   (cond ((save-excursion
            (backward-char)
-           (> (length (gm/last-letter)) 1))
+           (> (length (replace-regexp-in-string "[{}]" "" (gm/last-letter))) 1))
          (save-excursion
            (backward-char)
            (insert "_")))
@@ -5413,8 +5413,8 @@ denominator. The outside parentheses will be removed; for example, =(\sin x)/=
 results in =\frac{\sin x}{|}=.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/math-frac-extras
-  '("\\vec"
-    "\\Delta"))
+  '("\\\\vec"
+    "\\\\Delta"))
 
 (defun gm/math-insert-frac-match (match &optional env)
   (unless env (setq env "frac"))
@@ -5442,6 +5442,9 @@ results in =\frac{\sin x}{|}=.
            (match (buffer-substring-no-properties
                    begin end)))
       (delete-region begin end)
+      ;; remove surrounding parens
+      (when (string-match-p "\\`([^()]*)\\'" match)
+        (setq match (substring match 1 -1)))
       (gm/math-insert-frac-match match env)))
    ((string-match "[\])]" (char-to-string (char-before)))
     (let ((end (point))
@@ -5460,11 +5463,11 @@ results in =\frac{\sin x}{|}=.
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
     (gm/math-frac-helper
-     (concat
-      (regexp-opt gm/math-frac-extras)
-      "?\\( \\|{}\\)?"
-      "[\\]?[[:alnum:]_^!]*")
-     env))
+     (format "%s\\( \\|{}\\)%s"
+             (regexp-opt gm/math-frac-extras t)
+             "\\\\?[[:alnum:]_^!]+")
+     env)
+    (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env)) ;; Bit of a hacky fix
    (t (yas-expand-snippet (yas-lookup-snippet (if env env "frac"))))))
 #+END_SRC
 The binding is given in [[*Generate Snippets][Generate Snippets]].
