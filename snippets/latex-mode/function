@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: function
-# key: math-function
-# --
-${1:f} : ${2:\R}\to{}${3:\R} $0

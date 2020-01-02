@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: z-adjoin
-# key: math-z-adjoin
-# --
-\Z[$1]

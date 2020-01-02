@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: empty-product
-# key: math-empty-product
-# --
-\prod_{$1}

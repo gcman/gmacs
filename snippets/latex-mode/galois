@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: galois
-# key: math-galois
-# --
-\Gal{$1}{$2}

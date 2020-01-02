@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: derivative
-# key: math-derivative
-# --
-\dv{$1}{${2:x}}$0

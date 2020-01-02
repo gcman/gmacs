@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: nth-pdifferential
-# key: math-nth-pdifferential
-# --
-\pdv[${1:n}]{$2}{${3:x}}$0

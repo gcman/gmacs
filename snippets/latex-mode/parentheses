@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: parentheses
-# key: math-parentheses
-# --
-\left($1\right)

@@ -1,4 +1,0 @@
-# -*- mode: snippet -*-
-# name: sqrt
-# --
-\sqrt{$1}$0

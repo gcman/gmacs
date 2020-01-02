@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: group
-# key: math-group
-# --
-\group{$1}{$2}

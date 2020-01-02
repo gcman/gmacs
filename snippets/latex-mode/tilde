@@ -3,11 +3,4 @@
 # key: math-tilde
 # type: command
 # --
-(let ((len (length (gm/last-letter))))
-(if (> len 0)
-(progn
-  (backward-char len)
-  (insert "\\tilde{")
-  (forward-char len)
-  (insert "}"))
- (yas-expand-snippet "\\tilde{$1}")))
+(gm/math-postfix "tilde")

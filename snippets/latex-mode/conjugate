@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: conjugate
-# key: math-conjugate
-# --
-\conj{$1}$0

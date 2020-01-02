@@ -5201,6 +5201,18 @@ expand into =\hat{f}=. However, we cannot just act on the last letter, because
                (concat (gm/--last-letter-helper) "{}"))
       (gm/--last-letter-helper))))
 #+END_SRC
+I use this for postfix snippets, as explained.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-postfix (snippet)
+  (let ((len (length (gm/last-letter))))
+    (if (> len 0)
+        (progn
+          (backward-char len)
+          (insert (format "\\%s{" snippet))
+          (forward-char len)
+          (insert "}"))
+      (yas-expand-snippet (format "\\%s{$1}" snippet)))))
+#+END_SRC
 **** Test if LaTeX Needs to Be Wrapped in Brackets
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-expression-p (math)
@@ -5264,9 +5276,7 @@ function).
         (when (= (char-before) ?\\) (delete-char -1))
         ;; is this a snippet expansion or just a text insertion?
         (let ((expand (cadr snippet)))
-          (if (cddr snippet)
-              (yas-expand-snippet (yas-lookup-snippet expand))
-            (insert expand))))
+          (yas-expand-snippet (if (cddr snippet) (yas-lookup-snippet expand) expand))))
     (when (equal key "/")
       (gm/math-frac))))
 #+END_SRC

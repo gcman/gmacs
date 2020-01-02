@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: ceiling
-# key: math-ceiling
-# --
-\ceil{$1}$0

@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: inner-product
-# key: math-inner-product
-# --
-\inp{${1:\cdot}}{${2:\cdot}}$0
