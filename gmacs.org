@@ -499,8 +499,8 @@ for choosing colours, especially when editing CSS files.
 Highlight =.service= files like they are configuration files.
 #+BEGIN_SRC emacs-lisp
 (use-package systemd
-  :defer 10
-  :config
+  :commands systemd-mode
+  :init
   (add-to-list 'auto-mode-alist '("\\.service\\'" . systemd-mode))
   (add-to-list 'auto-mode-alist '("\\.timer\\'" . systemd-mode)))
 #+END_SRC
@@ -1342,6 +1342,7 @@ for selection.
   :custom
   (flyspell-correct-interface #'frog-menu-flyspell-correct))
 #+END_SRC
+This code is from the =frog-menu= GitHub.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref flyspell-init
 (defun frog-menu-flyspell-correct (candidates word)
   "Run `frog-menu-read' for the given CANDIDATES.
@@ -1379,7 +1380,7 @@ we've subsumed its role with =flyspell-correct= anyway.
 When moving backwards in the document, the correction menu can appear at the top
 of the screen, obscuring the context surrounding the error.
 #+BEGIN_SRC emacs-lisp
-(advice-add 'flyspell-correct-wrapper :before #'recenter-top-bottom)
+;; (advice-add 'flyspell-correct-wrapper :before #'recenter-top-bottom)
 #+END_SRC
 **** Correct Double Capitals
 Taken from [[https://emacs.stackexchange.com/questions/13970/fixing-double-capitals-as-i-type/13975#13975][Stack Exchange]]. It's a piece of code with a great impact to
@@ -4368,10 +4369,11 @@ paragraph not at the window edge but at =fill-column=.
 (use-package visual-fill-column
   :commands visual-fill-column-mode
   :hook (notmuch-message-mode . visual-fill-column-mode)
+  :init
+  (add-hook 'notmuch-message-mode-hook 'turn-off-auto-fill)
+  (add-hook 'notmuch-show-mode-hook 'turn-off-auto-fill))
   :config (advice-add 'text-scale-adjust :after
                       #'visual-fill-column-adjust)
-  (add-hook 'notmuch-message-mode-hook (lambda () (auto-fill-mode -1)))
-  (add-hook 'notmuch-show-mode-hook (lambda () (auto-fill-mode -1))))
 #+END_SRC
 On a similar note, I don't want filling the paragraph to do anything, unless I
 really do.
@@ -4593,8 +4595,6 @@ From [[http://www.holgerschurig.de/en/emacs-notmuch-hello/][Holger Schurig]].
     nil))
 
 (add-to-list 'notmuch-hello-sections #'my-notmuch-hello-insert-recent-searches)
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
 (add-to-list 'notmuch-hello-sections #'notmuch-hello-insert-search)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
@@ -5081,6 +5081,8 @@ Then we bind this to semicolon.
     "Minor mode for math"
     :init-value nil
     :keymap gm/math-mode-map
+    (abbrev-table-put org-mode-abbrev-table
+                  :parents (list quick-math-mode-abbrev-table))
     (when quick-math-mode
       (gm/math-setup)
       (gm/eq-preview-mode)
