@@ -499,8 +499,10 @@ for choosing colours, especially when editing CSS files.
 Highlight =.service= files like they are configuration files.
 #+BEGIN_SRC emacs-lisp
 (use-package systemd
-  :defer 10)
-(add-to-list 'auto-mode-alist '("\\.service\\'" . conf-mode))
+  :defer 10
+  :config
+  (add-to-list 'auto-mode-alist '("\\.service\\'" . systemd-mode))
+  (add-to-list 'auto-mode-alist '("\\.timer\\'" . systemd-mode)))
 #+END_SRC
 ** Quality of Life
 *** Garbage Collection
@@ -687,7 +689,6 @@ Make files that start with a =#!= shebang executable.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 #+END_SRC
-
 *** Work with Protected Files
 Authorize actions.
 #+BEGIN_SRC emacs-lisp
@@ -1064,20 +1065,20 @@ smooth.
 #+END_SRC
 *** Dump Vars to File
 #+BEGIN_SRC emacs-lisp
-(defun dump-vars-to-file (varlist filename)
+(defun dump-vars-to-file (varlist filename &optional lines)
   "simplistic dumping of variables in VARLIST to a file FILENAME"
   (save-excursion
     (let ((buf (find-file-noselect filename)))
       (set-buffer buf)
       (erase-buffer)
-      (dump varlist buf)
+      (dump varlist buf lines)
       (save-buffer))))
 
-(defun dump (varlist buffer)
+(defun dump (varlist buffer &optional lines)
   "insert into buffer the setq statement to recreate the variables in VARLIST"
+  (let ((func (if lines 'pp 'print)))
   (loop for var in varlist do
-        (print (list 'setq var (list 'quote (symbol-value var)))
-               buffer)))
+        (funcall func (list 'setq var (list 'quote (symbol-value var))) buffer))))
 #+END_SRC
 *** Add Package to Dotfiles
 #+BEGIN_SRC emacs-lisp
@@ -3871,7 +3872,7 @@ introducing too many spaces in the earlier regexps.
 #+BEGIN_SRC emacs-lisp
 (defcustom gm/reformat-fragment-alist
   '(("+" " + " "spaces around +")
-    ("[ ]*\\([_^]\\)[ ]*" "\\1" "remove spaces around ^ and _")
+    ("\\( \\|{}\\)*\\([_^]\\)[ ]*" "\\2" "remove spaces and braces around ^ and _")
     (" +" " " "no more than 1 space in a row")
     ("\\(\\\\(\\) " "\\1" "no space at start of fragment")
     (" \\(\\\\)\\)" "\\1" "no space at end of fragment"))
@@ -5300,7 +5301,7 @@ should expand."
     (push snippet gm/math-global-snippets)
     (unless current-prefix-arg
       (setq gm/math-global-snippets gm/math-global-snippets))
-    (dump-vars-to-file '(gm/math-global-snippets) gm/math-snippet-loc)
+    (dump-vars-to-file '(gm/math-global-snippets) gm/math-snippet-loc t)
     (gm/math-setup)))
 #+END_SRC
 A very rudimentary command to see all current snippet keys and expansions.
@@ -5400,7 +5401,7 @@ creating them.
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(cl-loop for i from 0 to 9
+(loop for i from 0 to 9
          collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
                                          (number-to-string ,i)
                                          (lambda! () (gm/math-number-subscript (number-to-string ,i)))

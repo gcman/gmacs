@@ -100,12 +100,15 @@
     ("nwarrow" . "↖")
     ("swarrow" . "↙")
     ("Longrightarrow" . "⟹")  ; Long arrows
+    ("implies" . "⟹")  ; Long arrows
     ("longrightarrow" . "⟶")
     ("longleftarrow" . "⟵")
     ("Longleftarrow" . "⟸")
+    ("impliedby" . "⟸")
     ("longmapsto" . "⟼")
     ("longleftrightarrow" . "⟷")
     ("Longleftrightarrow" . "⟺")
+    ("iff" . "⟺")
     ("leftharpoonup" . "↼")     ; Special Arrows
     ("leftharpoondown" . "↽")
     ("rightharpoonup" . "⇀")
@@ -209,7 +212,8 @@
     ("triangleleft" . "◁")
     ("triangleright" . "▷")
     ("bigtriangleup" . "△")
-    ("bigtriangledown" . "▽"))))
+    ("bigtriangledown" . "▽")
+    ("circ" . "∘"))))
 
 (defvar gm/math-unspaced
   (append
@@ -233,7 +237,6 @@
      ("S" . "§")
      ("star" . "★")
      ("vDash" . "⊨")
-     ("circ" . "∘")
      ("surd" . "√")
      ("angle" . "∠")
      ("triangle" . "△")
