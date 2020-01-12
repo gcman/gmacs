@@ -49,7 +49,7 @@
 # Local variables:
 # eval: (add-hook 'after-save-hook 'gm/org-latex-export nil t)
 # end:
-* Footnote"
+* Footnotes"
 file
 course-name
 course-name

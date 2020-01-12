@@ -3,4 +3,4 @@
 # key: math-bar
 # type: command
 # --
-(gm/math-postfix "bar")
+(gm/math-postfix "conj")

@@ -5397,7 +5397,7 @@ creating them.
   (insert n)
   (cond ((save-excursion
            (backward-char)
-           (> (length (replace-regexp-in-string "[{}]" "" (gm/last-letter))) 1))
+           (> (length (replace-regexp-in-string "[{}]" "" (if (gm/last-letter) (gm/last-letter) ""))) 1))
          (save-excursion
            (backward-char)
            (insert "_")))
