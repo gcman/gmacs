@@ -251,7 +251,7 @@ We load some packages that I use throughout my configuration.
 (use-package async :commands (async-start))
 (use-package s :demand t)
 (use-package dash :demand t :config (dash-enable-font-lock))
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 #+END_SRC
 * General Configuration
 ** User Interface
@@ -798,6 +798,21 @@ Write data into the file specified by `recentf-save-file'."
                      "/cache/"
                      "/tmp/)")))
 #+END_SRC
+Make things quieter.
+#+BEGIN_SRC emacs-lisp
+(defun suppress-messages (func &rest args)
+  "Suppress message output from FUNC."
+  ;; Some packages are too noisy.
+  ;; https://superuser.com/questions/669701/emacs-disable-some-minibuffer-messages
+  (cl-flet ((silence (&rest args1) (ignore)))
+    (advice-add 'message :around #'silence)
+    (unwind-protect
+        (apply func args)
+      (advice-remove 'message #'silence))))
+
+;; Suppress "Cleaning up the recentf...done (0 removed)"
+(advice-add 'recentf-cleanup :around #'suppress-messages)
+#+END_SRC
 #+BEGIN_SRC emacs-lisp
 (setq-default savehist-file (expand-file-name "savehist" gmacs-cache-dir)
               save-place-file (expand-file-name "saveplaces" gmacs-cache-dir)
@@ -1077,7 +1092,7 @@ smooth.
 (defun dump (varlist buffer &optional lines)
   "insert into buffer the setq statement to recreate the variables in VARLIST"
   (let ((func (if lines 'pp 'print)))
-  (loop for var in varlist do
+  (cl-loop for var in varlist do
         (funcall func (list 'setq var (list 'quote (symbol-value var))) buffer))))
 #+END_SRC
 *** Add Package to Dotfiles
@@ -3725,7 +3740,7 @@ And the function to activate inlining.
 (defun image-url-overlays ()
   "Put image overlays on remote image urls."
   (interactive)
-  (loop for image-url in (org-element-map (org-element-parse-buffer) 'link
+  (cl-loop for image-url in (org-element-map (org-element-parse-buffer) 'link
                (lambda (link)
                  (when (string= "image-url" (org-element-property :type link))
                    link)))
@@ -3852,7 +3867,7 @@ their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 to LaTeX.
 #+BEGIN_SRC emacs-lisp
 (defun delete-org-comments (backend)
-  (loop for comment in (reverse (org-element-map (org-element-parse-buffer)
+  (cl-loop for comment in (reverse (org-element-map (org-element-parse-buffer)
                                     'comment 'identity))
         do (setf (buffer-substring (org-element-property :begin comment)
                                 (org-element-property :end comment))
@@ -4561,7 +4576,7 @@ From [[http://www.holgerschurig.de/en/emacs-notmuch-hello/][Holger Schurig]].
     (widget-insert "Recent searches:")
     (widget-insert "\n\n")
     (let ((start (point)))
-      (loop for i from 1 to notmuch-hello-recent-searches-max
+      (cl-loop for i from 1 to notmuch-hello-recent-searches-max
         for search in notmuch-search-history do
         (let ((widget-symbol (intern (format "notmuch-hello-search-%d" i))))
           (set widget-symbol
@@ -5257,7 +5272,7 @@ snippets. First, we create a suffix tree of all the math snippets.
 We make a function to get the possible completion candidates from the buffer.
 #+BEGIN_SRC emacs-lisp
 (defun gm/buff-cand (n)
-  (loop for i from 0 to n
+  (cl-loop for i from 0 to n
         collect (gm/last-n-chars i)))
 #+END_SRC
 Then, we set up the creation of an actual snippet (note that its length is
@@ -5413,7 +5428,7 @@ creating them.
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(loop for i from 0 to 9
+(cl-loop for i from 0 to 9
          collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
                                          (number-to-string ,i)
                                          (lambda! () (gm/math-number-subscript (number-to-string ,i)))

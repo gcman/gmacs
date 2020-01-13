@@ -31,9 +31,8 @@
 
 (require 'async)
 
-
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
 (defun async-test-1 ()
   (interactive)
