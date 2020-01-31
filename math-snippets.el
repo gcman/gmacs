@@ -1,5 +1,9 @@
 (setq gm/math-global-snippets
-      '(("\\sin n" "s\\in{}")
+      '(("op" "_{\\Op}")
+        ("surj" "\\twoheadrightarrow{}")
+        ("Q[" "\\Q[$1]")
+        ("dist" "\\Dist ")
+        ("\\sin n" "s\\in{}")
         ("inj" "\\hookrightarrow{}")
         ("mm" "_m")
         ("loo" "\\ell^{\\infty}")

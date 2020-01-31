@@ -12,7 +12,6 @@
 :EXPORT_TITLE: %s - Problem Set $1
 :EXPORT_FILE_NAME: pset$1
 :EXPORT_DATE: $2
-:EXPORT_LATEX_CLASS_OPTIONS: [nosec,nosubsec,notoc]
 :END:"
  (format "%s %s%s"
           (upcase (nth 0 arr))

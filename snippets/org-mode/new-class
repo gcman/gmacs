@@ -41,6 +41,9 @@
 :EXPORT_TITLE: %s
 :END:
 * Problem Sets
+:PROPERTIES:
+:EXPORT_LATEX_CLASS_OPTIONS: [nosec,nosubsec,notoc]
+:END:
 * Materials
 ** %s @ $1
 %s
