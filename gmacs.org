@@ -5016,7 +5016,8 @@ Snippets go in [[file:math-snippets.el]].
   ("A" (insert "\\forall ") "∀")
   ("b" (insert "\\beta{}") "β")
   ("C" (yas-expand-snippet (yas-lookup-snippet "mathcal")) "ℂ")
-  ("C" (insert "\\mathbb{C}") "ℂ")
+  ("c" (insert "\\xi{}") "ξ")
+  ("C" (insert "\\Xi{}") "Ξ")
   ("d" (insert "\\delta{}") "δ")
   ("D" (insert "\\Delta{}") "Δ")
   ("e" (insert "\\epsilon{}") "ε")
@@ -5047,8 +5048,6 @@ Snippets go in [[file:math-snippets.el]].
   ("U" (insert "\\cup ") "∪")
   ("v" (insert "\\vec ") "v")
   ("V" (insert "\\vee{}") "V")
-  ("w" (insert "\\xi{}") "ξ")
-  ("W" (insert "\\Xi{}") "Ξ")
   ("x" (insert "\\chi{}") "χ")
   ("y" (insert "\\psi{}") "ψ")
   ("Y" (insert "\\Psi{}") "Ψ")
@@ -5485,18 +5484,20 @@ results in =\frac{\sin x}{|}=.
       (backward-sexp)
       (setq match (buffer-substring-no-properties (point) end))
       (delete-region (point) end)
-       (unless sqbracket
+      (unless sqbracket
         (setq match (substring match 1 -1)))
-       (gm/math-insert-frac-match match env)))
+      (gm/math-insert-frac-match match env)))
    ((eq (char-before) 125) ;; match closing curly braces
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
-    (gm/math-frac-helper
-     (format "%s\\( \\|{}\\)%s"
-             (regexp-opt gm/math-frac-extras t)
-             "\\\\?[[:alnum:]_^!]+")
-     env)
-    (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env)) ;; Bit of a hacky fix
+    (if (string-match "\\^" (char-to-string (char-before)))
+        (yas-expand-snippet (yas-lookup-snippet (if env env "frac")))
+      (gm/math-frac-helper
+       (format "%s\\( \\|{}\\)%s"
+               (regexp-opt gm/math-frac-extras t)
+               "\\\\?[[:alnum:]_^!]+")
+       env)
+      (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env))) ;; Bit of a hacky fix
    (t (yas-expand-snippet (yas-lookup-snippet (if env env "frac"))))))
 #+END_SRC
 The binding is given in [[*Generate Snippets][Generate Snippets]].
