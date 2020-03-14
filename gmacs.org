@@ -1825,6 +1825,12 @@ Basic configuration.
   (pdf-view-mode . pdf-view-midnight-minor-mode)
   (pdf-view-mode . pdf-view-fit-width-to-window))
 #+END_SRC
+Open with external viewer by default if wanted.
+#+BEGIN_SRC emacs-lisp
+(require 'openwith)
+(setq openwith-associations '(("\\.pdf\\'" "zathura" (file))
+                              ("\\.djvu\\'" "zathura" (file))))
+#+END_SRC
 Allow rotation.
 #+BEGIN_SRC emacs-lisp
 (defun pdf-view--rotate (&optional counterclockwise-p page-p)
@@ -5048,6 +5054,8 @@ Snippets go in [[file:math-snippets.el]].
   ("U" (insert "\\cup ") "∪")
   ("v" (insert "\\vec ") "v")
   ("V" (insert "\\vee{}") "V")
+  ("w" (insert "\\omega{}") "ω")
+  ("W" (insert "\\Omega{}") "Ω")
   ("x" (insert "\\chi{}") "χ")
   ("y" (insert "\\psi{}") "ψ")
   ("Y" (insert "\\Psi{}") "Ψ")
@@ -5495,7 +5503,7 @@ results in =\frac{\sin x}{|}=.
       (gm/math-frac-helper
        (format "%s\\( \\|{}\\)%s"
                (regexp-opt gm/math-frac-extras t)
-               "\\\\?[[:alnum:]_^!]+")
+               "\\\\?[[:alnum:]_!]+")
        env)
       (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env))) ;; Bit of a hacky fix
    (t (yas-expand-snippet (yas-lookup-snippet (if env env "frac"))))))
