@@ -692,7 +692,7 @@ Authorize actions.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/privacy-packages nil)
 
-(when gm/privacy-packges
+(when gm/privacy-packages
   (use-package pinentry
     :demand t
     :config (pinentry-start))
