@@ -189,14 +189,6 @@ intelligently defer and handle package loading.
         package--init-file-ensured t
         package-enable-at-startup nil))
 #+END_SRC
-Get =use-package= to always defer loading packages until they are actually needed.
-This reduces startup time significantly. We're doing this now, before
-=use-package= is even loaded, because otherwise it won't help us when the code
-that loads =use-package= is evaluated upon byte-compilation.
-#+BEGIN_SRc emacs-lisp
-(setq use-package-always-defer t
-      use-package-verbose t)
-#+END_SRC
 We set the =load-path= ourselves. This will be faster than letting
 =package-intialize= handle it, because we only add directories we know are from
 packages. This way, we don't need to search all third party paths every time we
@@ -232,18 +224,24 @@ byte-compiled, Emacs will initialize packages on startup as usual.
   <<pack-arch>>
   (package-initialize)
   (unless (package-installed-p 'use-package)
-    (package-install 'use-package)
-    (package-refresh-contents))
+    (package-refresh-contents)
+    (package-install 'use-package))
   (require 'use-package))
 #+END_SRC
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref pack-arch
-(setq use-package-always-ensure t)
+Get =use-package= to always defer loading packages until they are actually needed.
+This reduces startup time significantly. We're doing this now, before
+=use-package= is even loaded, because otherwise it won't help us when the code
+that loads =use-package= is evaluated upon byte-compilation.
+#+BEGIN_SRc emacs-lisp
+(setq use-package-always-defer t
+      use-package-verbose t
+      use-package-always-ensure t)
 #+END_SRC
 We also require =diminish= and =bind= because I often use these keywords within
 =use-package= declarations.
 #+BEGIN_SRC emacs-lisp
-(require 'bind-key)
-(require 'diminish)
+(use-package bind-key)
+(use-package diminish)
 #+END_SRC
 *** Common Libraries
 We load some packages that I use throughout my configuration.
@@ -4393,9 +4391,9 @@ paragraph not at the window edge but at =fill-column=.
   :hook (notmuch-message-mode . visual-fill-column-mode)
   :init
   (add-hook 'notmuch-message-mode-hook 'turn-off-auto-fill)
-  (add-hook 'notmuch-show-mode-hook 'turn-off-auto-fill))
+  (add-hook 'notmuch-show-mode-hook 'turn-off-auto-fill)
   :config (advice-add 'text-scale-adjust :after
-                      #'visual-fill-column-adjust)
+                      #'visual-fill-column-adjust))
 #+END_SRC
 On a similar note, I don't want filling the paragraph to do anything, unless I
 really do.
