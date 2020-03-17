@@ -5104,8 +5104,7 @@ Then we bind this to semicolon.
     "Minor mode for math"
     :init-value nil
     :keymap gm/math-mode-map
-    (when (and gm/use-math-abbrevs
-               (boundp quick-math-mode-abbrev-table))
+    (when gm/use-math-abbrevs
           (abbrev-table-put org-mode-abbrev-table
                   :parents (list quick-math-mode-abbrev-table)))
     (when quick-math-mode
