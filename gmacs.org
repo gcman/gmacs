@@ -166,12 +166,12 @@ method makes it easy for to extend to more directories if needed.
 #+END_SRC
 I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
-(defvar custom-file (expand-file-name "custom.el" user-emacs-directory))
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file) (load custom-file))
 #+END_SRC
 I put my personal information in =private.el=.
 #+BEGIN_SRC emacs-lisp
-(defvar private-file (expand-file-name "private.el" user-emacs-directory))
+(setq private-file (expand-file-name "private.el" user-emacs-directory))
 (when (file-exists-p private-file) (load private-file))
 #+END_SRC
 ** Setup Packages
