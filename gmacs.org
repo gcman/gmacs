@@ -690,19 +690,22 @@ Make files that start with a =#!= shebang executable.
 *** Work with Protected Files
 Authorize actions.
 #+BEGIN_SRC emacs-lisp
-(use-package pinentry
-  :demand t
-  :config (pinentry-start))
+(setq gm/privacy-packages nil)
 
-(use-package epa-file
-  :ensure nil
-  :init (epa-file-enable)
-  :config (setenv "GPG_AGENT_INFO" nil)
-  :custom
-  (epg-gpg-program "/usr/bin/gpg2")
-  (epa-file-cache-passphrase-for-symmetric-encryption t)
-  (epa-file-select-keys nil)
-  (epa-pinentry-mode 'loopback))
+(when gm/privacy-packges
+  (use-package pinentry
+    :demand t
+    :config (pinentry-start))
+
+  (use-package epa-file
+    :ensure nil
+    :init (epa-file-enable)
+    :config (setenv "GPG_AGENT_INFO" nil)
+    :custom
+    (epg-gpg-program "/usr/bin/gpg2")
+    (epa-file-cache-passphrase-for-symmetric-encryption t)
+    (epa-file-select-keys nil)
+    (epa-pinentry-mode 'loopback)))
 #+END_SRC
 This is excellent for editing files owned by root.
 #+BEGIN_SRC emacs-lisp
