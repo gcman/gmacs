@@ -148,16 +148,13 @@ We make the directories if they don't exist by iterating over a list. This
 method makes it easy for to extend to more directories if needed.
 #+BEGIN_SRC emacs-lisp
 (eval-and-compile
-  (defvar gmacs-emacs-dir (expand-file-name user-emacs-directory)
-    "The path to the emacs.d directory.")
-
-  (defvar gmacs-packages-dir (concat gmacs-emacs-dir "packages/")
+  (defvar gmacs-packages-dir (concat user-emacs-directory "packages/")
     "Where package.el and elpa plugins (and their caches) are stored.")
 
-  (defvar gmacs-custom-dir (concat gmacs-emacs-dir "elisp/")
+  (defvar gmacs-custom-dir (concat user-emacs-directory "elisp/")
     "Where custom lisp files are stored")
 
-  (defvar gmacs-cache-dir (concat gmacs-emacs-dir "cache/")
+  (defvar gmacs-cache-dir (concat user-emacs-directory "cache/")
     "Where temporary files that could be deleted without anything
     terrible happening are stored.")
 
@@ -169,12 +166,12 @@ method makes it easy for to extend to more directories if needed.
 #+END_SRC
 I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
-(setq custom-file (expand-file-name "custom.el" gmacs-emacs-dir))
+(defvar custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file) (load custom-file))
 #+END_SRC
 I put my personal information in =private.el=.
 #+BEGIN_SRC emacs-lisp
-(setq private-file (expand-file-name "private.el" gmacs-emacs-dir))
+(defvar private-file (expand-file-name "private.el" user-emacs-directory))
 (when (file-exists-p private-file) (load private-file))
 #+END_SRC
 ** Setup Packages
@@ -353,7 +350,7 @@ comes back when I switch themes, for some reason), I refresh all open buffers.
   (if (eq gm/theme 'dark)
       (progn
         (load-theme 'solarized-light)
-        (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3"))
+        (after! pdf-tools (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
         (setq gm/theme 'light))
     (load-theme 'solarized-dark)
     (setq pdf-view-midnight-colors '("#839496" . "#002b36"))
@@ -471,12 +468,12 @@ FACE defaults to inheriting from default and highlight."
 
 (remove-hook 'post-self-insert-hook #'blink-paren-post-self-insert-function)
 
+(show-paren-mode 1)
 (setq show-paren-style 'paren
       show-paren-delay 0.03
       show-paren-highlight-openparen t
       show-paren-when-point-inside-paren nil
       show-paren-when-point-in-periphery t)
-(show-paren-mode 1)
 #+END_SRC
 When I'm doing dedicated editing, it's sometimes nice to have more colours,
 especially for Lisps such as Emacs Lisp. However, it's too distracting in org
@@ -688,7 +685,8 @@ Make files that start with a =#!= shebang executable.
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 #+END_SRC
 *** Work with Protected Files
-Authorize actions.
+Authorize actions. The package =sudo-edit= is excellent for editing files owned by
+root.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/privacy-packages nil)
 
@@ -705,13 +703,11 @@ Authorize actions.
     (epg-gpg-program "/usr/bin/gpg2")
     (epa-file-cache-passphrase-for-symmetric-encryption t)
     (epa-file-select-keys nil)
-    (epa-pinentry-mode 'loopback)))
-#+END_SRC
-This is excellent for editing files owned by root.
-#+BEGIN_SRC emacs-lisp
-(use-package sudo-edit
-  :commands sudo-edit
-  :bind (("C-c C-x r" . sudo-edit)))
+    (epa-pinentry-mode 'loopback))
+
+  (use-package sudo-edit
+    :commands sudo-edit
+    :bind (("C-c C-x r" . sudo-edit))))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -911,10 +907,10 @@ and just loads the existing =.el= file with two prefix arguments.
 (defun gm/reload (p)
   (interactive "P")
   (let ((after-save-hook nil)
-        (org (expand-file-name "gmacs.org" gmacs-emacs-dir))
-        (el (expand-file-name "gmacs.el" gmacs-emacs-dir))
-        (elc (expand-file-name "gmacs.elc" gmacs-emacs-dir))
-        (init (expand-file-name "init.el" gmacs-emacs-dir)))
+        (org (expand-file-name "gmacs.org" user-emacs-directory))
+        (el (expand-file-name "gmacs.el" user-emacs-directory))
+        (elc (expand-file-name "gmacs.elc" user-emacs-directory))
+        (init (expand-file-name "init.el" user-emacs-directory)))
     (cond ((equal p '(4))
            (when (or (not (file-exists-p elc))
                      (file-newer-than-file-p org elc))
@@ -1001,7 +997,7 @@ tangle =gmacs.org=. This unfortunately means that Emacs takes a long time to sta
 up (about 6 seconds). To solve this, I tangle this very file on save.
 
 First, we set up a function to do the tangling. We have to, for example, refer
-to =user-emacs-directory= and not =gmacs-emacs-directory=, and run =(require
+to =user-emacs-directory= and not =user-emacs-directoryectory=, and run =(require
 'ob-tangle)= because the function is run in its own subprocess (this is what
 allows it to be asynchronous).
 #+BEGIN_SRC emacs-lisp
@@ -1927,7 +1923,8 @@ Justifying e-book text. This code was taken from [[https://github.com/wasamasa/n
 #+END_SRC
 **** TeX
 #+BEGIN_SRC emacs-lisp
-(use-package auctex)
+(use-package tex
+  :ensure auctex)
 #+END_SRC
 **** Webmode
 #+BEGIN_SRC emacs-lisp
@@ -2270,12 +2267,6 @@ Set tramp connection history location.
 (use-package flx
   :after ivy)
 
-(use-package smex
-  :after counsel
-  :custom
-  (smex-save-file (expand-file-name "smex" gmacs-cache-dir))
-  (smex-history-length 50))
-
 (use-package swiper
   :after ivy
   :commands (swiper swiper-all))
@@ -2292,6 +2283,12 @@ Set tramp connection history location.
   :custom
   (counsel-grep-base-command
    "rg -i -M 120 --color auto --line-number %s %s"))
+
+(use-package smex
+  :after counsel
+  :custom
+  (smex-save-file (expand-file-name "smex" gmacs-cache-dir))
+  (smex-history-length 50))
 #+END_SRC
 I want to ignore certain file extensions when searching for a file, so I add
 them to the regexp in =counsel-find-file-ignore-regexp=.
@@ -3942,7 +3939,7 @@ fragments (like =x^2=) are never generated more than once and so that we don't
 litter our folders.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-preview-latex-image-directory
-      (expand-file-name "cache/ltximg/" gmacs-emacs-dir))
+      (expand-file-name "cache/ltximg/" user-emacs-directory))
 #+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
@@ -5012,7 +5009,7 @@ Snippets go in [[file:math-snippets.el]].
 
 (defvar gm/math-global-snippets nil)
 (defvar-local gm/math-local-snippets nil)
-(defvar gm/math-snippet-loc (expand-file-name "math-snippets.el" gmacs-emacs-dir))
+(defvar gm/math-snippet-loc (expand-file-name "math-snippets.el" user-emacs-directory))
 #+END_SRC
 **** Hydras
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
