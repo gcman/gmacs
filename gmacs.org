@@ -5094,6 +5094,8 @@ Then we bind this to semicolon.
 *** Helper Functions
 **** QuickMath Minor Mode
 #+BEGIN_SRC emacs-lisp :noweb no-export
+(defvar gm/use-math-abbrevs nil)
+
 (after! org
   (defvar gm/math-mode-map
     (let ((map (make-sparse-keymap)))
@@ -5105,7 +5107,8 @@ Then we bind this to semicolon.
     "Minor mode for math"
     :init-value nil
     :keymap gm/math-mode-map
-    (when (boundp quick-math-mode-abbrev-table)
+    (when (and gm/use-math-abbrevs
+               (boundp quick-math-mode-abbrev-table))
           (abbrev-table-put org-mode-abbrev-table
                   :parents (list quick-math-mode-abbrev-table)))
     (when quick-math-mode
