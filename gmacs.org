@@ -690,7 +690,7 @@ Make files that start with a =#!= shebang executable.
 *** Work with Protected Files
 Authorize actions.
 #+BEGIN_SRC emacs-lisp
-(setq gm/privacy-packages nil)
+(defvar gm/privacy-packages nil)
 
 (when gm/privacy-packges
   (use-package pinentry
