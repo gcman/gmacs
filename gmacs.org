@@ -5506,7 +5506,12 @@ results in =\frac{\sin x}{|}=.
                (regexp-opt gm/math-frac-extras t)
                "\\\\?[[:alnum:]_!]+")
        env)
-      (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env))) ;; Bit of a hacky fix
+      (if (and (yas-active-snippets)
+               (eq (point)
+                   (marker-position (yas--field-end (yas--snippet-active-field (car (yas-active-snippets)))))))  ;; check if snippet end here
+          (gm/math-frac-helper "\\\\?[[:alnum:]_!]+" env)
+        ;; Bit of a hacky fix
+        (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env))))
    (t (yas-expand-snippet (yas-lookup-snippet (if env env "frac"))))))
 #+END_SRC
 The binding is given in [[*Generate Snippets][Generate Snippets]].

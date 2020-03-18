@@ -108,7 +108,7 @@
         ("!>" "\\mapsto ")
         ("==" "cong-or-split-equals" t)
         ("=>" "\\implies ")
-        ("(" "($1)")
+        ("(" "($0)")
         ("CC" "\\C")
         ("LL" "\\mathcal{L}")
         ("NN" "\\N")
