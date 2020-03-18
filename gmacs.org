@@ -5598,7 +5598,7 @@ and shifted notes use different link types.
              (path (org-element-property :path element)))
         (when (equal path "marginnote")
           (apply 'delete-region remove)
-          (yas-expand-snippet (format "[[latex-opt:marginnote][%s;${1:%s}ex]]" (replace-regexp-in-string shift-regexp "" description) shift))))))
+          (insert (format "[[latex-opt:marginnote][%s;0ex]]" (replace-regexp-in-string shift-regexp "" description) shift))))))
 #+END_SRC
 *** Inkscape Figures
 This is the mode we will load in Inkscape when we insert math.
