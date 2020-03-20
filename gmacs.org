@@ -90,10 +90,6 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
           (require 'org)
           (org-babel-load-file orgfile))
       (load-file elfile))))
-
-(let ((file (expand-file-name "personal.el" user-emacs-directory)))
-  (when (file-exists-p file)
-    (load-file file)))
 #+END_SRC
 ** Initialization Settings
 Enable lexical binding.
@@ -171,8 +167,12 @@ I put custom variables outside of my =init.el= file.
 #+END_SRC
 I put my personal information in =private.el=.
 #+BEGIN_SRC emacs-lisp
-(setq private-file (expand-file-name "private.el" user-emacs-directory))
+(setq private-file (expand-file-name "personal.el" user-emacs-directory))
 (when (file-exists-p private-file) (load private-file))
+#+END_SRC
+Make a variable for personal settings.
+#+BEGIN_SRC emacs-lisp
+(defvar gm/user nil)
 #+END_SRC
 ** Setup Packages
 We're going to use a custom package directory, so we need to trick Emacs into
@@ -688,9 +688,7 @@ Make files that start with a =#!= shebang executable.
 Authorize actions. The package =sudo-edit= is excellent for editing files owned by
 root.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/privacy-packages nil)
-
-(when gm/privacy-packages
+(when gm/user
   (use-package pinentry
     :demand t
     :config (pinentry-start))
@@ -1327,7 +1325,7 @@ prose in is Org Mode.
   :diminish
   :commands flyspell-mode
   :init
-  (when gm/spelling (add-hook 'org-mode-hook #'flyspell-mode))
+  (when gm/user (add-hook 'org-mode-hook #'flyspell-mode))
   (after! notmuch
     (add-hook 'notmuch-message-mode-hook #'flyspell-mode))
   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
@@ -3972,7 +3970,7 @@ Use =imagemagick=.
 #+END_SRC
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(when gm/latex (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75)))
+(when gm/user (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75)))
 #+END_SRC
 Where should it be? Let's put them all in the same place, so that common
 fragments (like =x^2=) are never generated more than once and so that we don't
@@ -4221,7 +4219,7 @@ as equation previews.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (defvar gm/latex nil)
 
-(when gm/latex
+(when gm/user
   (setq org-latex-packages-alist
       '(("" "gm-math" t))))
 #+END_SRC
@@ -4355,7 +4353,7 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 #+END_SRC
 We make =gm-notes= our default class.
 #+BEGIN_SRC emacs-lisp
-(when gm/latex (setq org-latex-default-class "gm-notes"))
+(when gm/user (setq org-latex-default-class "gm-notes"))
 #+END_SRC
 * Media
 Here I configure everything for recreation and contact with the outside world:
@@ -5148,7 +5146,7 @@ Then we bind this to semicolon.
     "Minor mode for math"
     :init-value nil
     :keymap gm/math-mode-map
-    (when gm/use-math-abbrevs
+    (when gm/user
           (abbrev-table-put org-mode-abbrev-table
                   :parents (list quick-math-mode-abbrev-table)))
     (when quick-math-mode

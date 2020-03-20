@@ -17,7 +17,3 @@
           (require 'org)
           (org-babel-load-file orgfile))
       (load-file elfile))))
-
-(let ((file (expand-file-name "personal.el" user-emacs-directory)))
-  (when (file-exists-p file)
-    (load-file file)))
