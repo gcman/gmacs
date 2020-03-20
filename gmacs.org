@@ -81,7 +81,8 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
 (let ((file-name-handler-alist nil)
       (orgfile (expand-file-name "gmacs.org" user-emacs-directory))
       (elfile (expand-file-name "gmacs.el" user-emacs-directory))
-      (elcfile (expand-file-name "gmacs.elc" user-emacs-directory)))
+      (elcfile (expand-file-name "gmacs.elc" user-emacs-directory))
+      (personalfile (expand-file-name "personal.el" user-emacs-directory)))
   (if (file-exists-p elcfile)
       (load-file elcfile)
     (if (or (not (file-exists-p elfile))
@@ -89,7 +90,9 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
         (progn
           (require 'org)
           (org-babel-load-file orgfile))
-      (load-file elfile))))
+      (load-file elfile)))
+  (when (file-exists-p personalfile)
+    (load-file personalfile)))
 #+END_SRC
 ** Initialization Settings
 Enable lexical binding.
@@ -164,11 +167,6 @@ I put custom variables outside of my =init.el= file.
 #+BEGIN_SRC emacs-lisp
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file) (load custom-file))
-#+END_SRC
-I put my personal information in =private.el=.
-#+BEGIN_SRC emacs-lisp
-(setq private-file (expand-file-name "personal.el" user-emacs-directory))
-(when (file-exists-p private-file) (load private-file))
 #+END_SRC
 Make a variable for personal settings.
 #+BEGIN_SRC emacs-lisp
