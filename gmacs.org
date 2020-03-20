@@ -4217,8 +4217,6 @@ included in every LaTeX file exported from Org Mode. The optional third argument
 makes sure this package is also loaded when compiling LaTeX image previews, such
 as equation previews.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(defvar gm/latex nil)
-
 (when gm/user
   (setq org-latex-packages-alist
       '(("" "gm-math" t))))
