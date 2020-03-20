@@ -1004,7 +1004,7 @@ allows it to be asynchronous).
 (defun gm/tangle-gmacs-helper ()
   (let ((src (expand-file-name "gmacs.org" user-emacs-directory))
         (dst (expand-file-name "gmacs.el" user-emacs-directory))
-        (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
+        (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local)))
     (require 'ob-tangle)
     (org-babel-tangle-file src dst)
     (byte-compile-file dst)))
@@ -3585,7 +3585,7 @@ _q_ quit
 ")
 
 (defhydra hydra-org-link-helper (:color pink)
-  hydra-org-link-helper-hint-base
+  `hydra-org-link-helper-hint-base
   ("i" org-link-edit-backward-slurp)
   ("o" org-link-edit-forward-slurp)
   ("j" org-link-edit-backward-barf)
@@ -4219,8 +4219,11 @@ included in every LaTeX file exported from Org Mode. The optional third argument
 makes sure this package is also loaded when compiling LaTeX image previews, such
 as equation previews.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-latex-packages-alist
-      '(("" "gm-math" t)))
+(defvar gm/latex nil)
+
+(when gm/latex
+  (setq org-latex-packages-alist
+      '(("" "gm-math" t))))
 #+END_SRC
 **** Latexmk
 The command =gm/auto-tex-cmd= looks at your Org file. If it finds that =xelatex= has
@@ -4352,7 +4355,7 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 #+END_SRC
 We make =gm-notes= our default class.
 #+BEGIN_SRC emacs-lisp
-(setq org-latex-default-class "gm-notes")
+(when gm/latex (setq org-latex-default-class "gm-notes"))
 #+END_SRC
 * Media
 Here I configure everything for recreation and contact with the outside world:
