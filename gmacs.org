@@ -3972,7 +3972,7 @@ Use =imagemagick=.
 #+END_SRC
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75))
+(when gm/latex (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75)))
 #+END_SRC
 Where should it be? Let's put them all in the same place, so that common
 fragments (like =x^2=) are never generated more than once and so that we don't
