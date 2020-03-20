@@ -1321,11 +1321,13 @@ my own Emacs configuration.
 We automatically spellcheck text buffers using =flyspell=. The only mode I write
 prose in is Org Mode.
 #+BEGIN_SRC emacs-lisp :noweb no-export
+(defvar gm/spelling nil)
+
 (use-package flyspell
   :diminish
   :commands flyspell-mode
   :init
-  (add-hook 'org-mode-hook #'flyspell-mode)
+  (when gm/spelling (add-hook 'org-mode-hook #'flyspell-mode))
   (after! notmuch
     (add-hook 'notmuch-message-mode-hook #'flyspell-mode))
   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
