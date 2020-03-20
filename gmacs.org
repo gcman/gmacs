@@ -1003,7 +1003,8 @@ allows it to be asynchronous).
 #+BEGIN_SRC emacs-lisp
 (defun gm/tangle-gmacs-helper ()
   (let ((src (expand-file-name "gmacs.org" user-emacs-directory))
-        (dst (expand-file-name "gmacs.el" user-emacs-directory)))
+        (dst (expand-file-name "gmacs.el" user-emacs-directory))
+        (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
     (require 'ob-tangle)
     (org-babel-tangle-file src dst)
     (byte-compile-file dst)))
@@ -4142,6 +4143,7 @@ line are justified."
 Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hydra]].
 #+BEGIN_SRC emacs-lisp
 (define-minor-mode gm/eq-preview-mode
+  "Preview equations."
   :init-value nil)
 
 (defun gm/eq-toggle ()
