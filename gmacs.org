@@ -2599,6 +2599,11 @@ Spray is a speed-reading package for Emacs.
   (spray-margin-top 5)
   (spray-margin-left 1.5))
 #+END_SRC
+*** Togetherly
+#+BEGIN_SRC emacs-lisp
+(use-package togetherly
+  :commands (togetherly-server-start togetherly-client-start))
+#+END_SRC
 * Keybindings
 ** Better Defaults
 These are what I think are better bindings for or better versions of the default
