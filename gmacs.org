@@ -736,7 +736,7 @@ function with our own silent version.
 (defvar bjm/auto-save-timer nil
   "Timer to run `bjm/auto-save-silent'")
 
-(defvar bjm/auto-save-interval 5
+(defvar bjm/auto-save-interval 15
   "How often in seconds of idle time to auto-save with
 `bjm/auto-save-silent'")
 
@@ -1712,6 +1712,22 @@ Emacs treats camelCase strings as a single word by default. Not anymore.
 #+BEGIN_SRC emacs-lisp
 (global-subword-mode 1)
 #+END_SRC
+We use =lsp-mode= to set up an IDE.
+#+BEGIN_SRC emacs-lisp
+(use-package company
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+
+(use-package lsp-mode
+  ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+  :init (setq lsp-keymap-prefix "s-l")
+  :hook ((c++-mode . lsp))
+  :commands lsp
+  :config
+  (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
+  (use-package company-lsp :commands company-lsp))
+#+END_SRC
 *** Flycheck Hydra
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (defhydra hydra-flycheck (:color blue)
@@ -1775,6 +1791,11 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 #+BEGIN_SRC emacs-lisp
 (bind-key "M-9" #'backward-sexp)
 (bind-key "M-0" #'forward-sexp)
+#+END_SRC
+*** C++
+#+BEGIN_SRC emacs-lisp
+(setq-default c-default-style "linux"
+              c-basic-offset 4)
 #+END_SRC
 ** Packages
 *** Package Management
@@ -2320,11 +2341,14 @@ Set tramp connection history location.
   (counsel-grep-base-command
    "rg -i -M 120 --color auto --line-number %s %s"))
 
-(use-package smex
+(use-package amx
   :after counsel
+  :config
+  (amx-mode 1)
   :custom
-  (smex-save-file (expand-file-name "smex" gmacs-cache-dir))
-  (smex-history-length 50))
+  (amx-save-file (expand-file-name "amx" gmacs-cache-dir))
+  (amx-history-length 50)
+  (amx-show-key-bindings nil))
 #+END_SRC
 I want to ignore certain file extensions when searching for a file, so I add
 them to the regexp in =counsel-find-file-ignore-regexp=.
