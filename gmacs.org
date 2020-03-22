@@ -245,21 +245,11 @@ We load some packages that I use throughout my configuration.
 (eval-when-compile (require 'cl-lib))
 #+END_SRC
 * General Configuration
-** Quality of Life
-*** Garbage Collection
-This package minimizes the interference of garbage collection with the user
-experience. That means fewer annoyingly long pauses while you are using Emacs.
-#+BEGIN_SRC emacs-lisp
-(use-package gcmh
-  :defer 2
-  :diminish
-  :config (gcmh-mode 1))
-#+END_SRC
-*** Macros
-Now for the Elisp macros. =after!= and =lambda!= are from the popular DOOM! Emacs
+** Macros
+Elisp macros. =after!= and =lambda!= are from the popular DOOM! Emacs
 configuration. The documentation on these will be sparse, because the docstrings
 do an excellent job of explaining what's going on.
-**** after!
+*** after!
 #+BEGIN_SRC emacs-lisp
 (defmacro after! (feature &rest forms)
   "A smart wrapper around `with-eval-after-load'. Supresses warnings during
@@ -273,14 +263,14 @@ compilation."
        #'with-no-warnings)
     (with-eval-after-load ',feature ,@forms)))
 #+END_SRC
-**** lambda!
+*** lambda!
 #+BEGIN_SRC emacs-lisp
 (defmacro lambda! (&rest body)
   "A shortcut for inline interactive lambdas."
   (declare (doc-string 1))
   `(lambda () (interactive) ,@body))
 #+END_SRC
-**** Conditional Keybindings
+*** Conditional Keybindings
 Obtained from [[http://endlessparentheses.com/define-context-aware-keys-in-emacs.html][Endless Parentheses]].
 #+BEGIN_SRC emacs-lisp
 (defmacro define-conditional-key (keymap key def &rest body)
@@ -296,6 +286,267 @@ This is like `define-key', except the definition
        :filter (lambda (&optional _)
                  (when ,(macroexp-progn body)
                    ,def)))))
+#+END_SRC
+
+** User Interface
+Show off the title.
+#+BEGIN_SRC emacs-lisp
+(setq frame-title-format "GMACS")
+#+END_SRC
+*** Cursor
+I prefer a box cursor to a bar cursor. Setting =x-stretch-cursor= means that this
+bar will stretch to the full width of the character it is on. For example, on a
+tab (evil tabs!), the cursor will look as wide as a tab.
+#+BEGIN_SRC emacs-lisp
+(when (display-graphic-p)
+  (setq-default cursor-type 'box))
+(setq x-stretch-cursor t)
+#+END_SRC
+**** Beacon Mode
+Never lose your cursor again. This package lights up your cursor when the
+screen/cursor position is refactored. It's much more useful than it sounds.
+#+BEGIN_SRC emacs-lisp
+(use-package beacon
+  :defer 2
+  :config (beacon-mode 1)
+  :custom (beacon-color "#b58900"))
+#+END_SRC
+*** Bells
+Visual, not audible bells.
+#+BEGIN_SRC emacs-lisp
+(setq ring-bell-function 'ignore)
+(setq visible-bell t)
+#+END_SRC
+*** Modeline
+The =smart-mode-line= package comes with some useful items on the modeline, as
+well as colour coding. Some interesting features (which I set in
+=sml/replacer-regexp-list=) is shortening features. Another useful thing is that
+minor modes are displayed.
+#+BEGIN_SRC emacs-lisp
+(use-package smart-mode-line
+  :defer 1
+  :config (sml/setup))
+#+END_SRC
+What time is it, Mr. Emacs?
+#+BEGIN_SRC emacs-lisp
+(display-time-mode 1)
+(setq display-time-format "%l:%M%p")
+#+END_SRC
+=line-number-mode= mode displays the current line number in the modeline. Except
+when there is a line Emacs decides is too long. In that case, all you see in the
+modeline is =??=. See [[https://emacs.stackexchange.com/questions/3824/what-piece-of-code-in-emacs-makes-line-number-mode-print-as-line-number-i][this question]] on Emacs SE for a workaround.
+#+BEGIN_SRC emacs-lisp
+(setq line-number-display-limit-width 10000)
+#+END_SRC
+Given that we're showing the line number in the modeline, it's often nice to
+also have the column number.
+#+BEGIN_SRC emacs-lisp
+(column-number-mode 1)
+#+END_SRC
+*** Scrolling
+There are two types of scrolling in Emacs: keyboard scrolling and mouse
+scrolling. Both of them are quite jarring out of the box and make the screen
+lurch around. Let's fix keyboard scrolling.
+#+BEGIN_SRC emacs-lisp
+(setq scroll-margin 1
+      scroll-step 1
+      scroll-conservatively 10000
+      scroll-preserve-screen-position 1)
+#+END_SRC
+And make mouse scrolling smoother.
+#+BEGIN_SRC emacs-lisp
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+(setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
+(setq mouse-wheel-follow-mouse t) ;; scroll window under mouse
+(setq scroll-step 1) ;; keyboard scroll one line at a time
+(setq scroll-margin 3) ;; give the cursor some buffer room before scrolling window
+#+END_SRC
+*** Theme
+I use the popular Solarized Light/Dark themes.
+#+BEGIN_SRC emacs-lisp
+(use-package solarized-theme
+  :demand t
+  :config (load-theme 'solarized-dark))
+#+END_SRC
+I switch between the light and dark variants depending on my surroundings. If I
+am in a brightly lit room, I prefer to use the light theme, because the dark
+theme allows too much screen glare. At night (really, at most times, but in
+particular at night) I prefer the dark theme, which, unsurprisingly, spits less
+light into my eyes.
+
+The way I switch themes is, admittedly, somewhat hacky. I set a boolean (by
+default true) that is true if the active theme is dark, false if light. What can
+I say? I prefer the dark side. Then my switch function toggles that value and
+changes the theme and the corresponding colours for =pdf-view-mode=. I like to
+view my PDFs not in black and white, but in my theme's colours. To make sure
+everything looks right, including the colours in PDFs and the asterisks
+for headlines in Org Mode (I hide them with =org-bullets-mode= but one of them
+comes back when I switch themes, for some reason), I refresh all open buffers.
+#+BEGIN_SRC emacs-lisp
+(defvar gm/theme 'dark)
+(defun gm/switch-theme ()
+  (interactive)
+  (if (eq gm/theme 'dark)
+      (progn
+        (load-theme 'solarized-light)
+        (after! pdf-tools (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
+        (setq gm/theme 'light))
+    (load-theme 'solarized-dark)
+    (setq pdf-view-midnight-colors '("#839496" . "#002b36"))
+    (setq gm/theme 'dark))
+  (modi/revert-buffers))
+#+END_SRC
+**** Font Face
+I change my fonts a lot, so I made it easier to set a font.
+#+BEGIN_SRC emacs-lisp
+(defun gm/switch-font ()
+  (interactive)
+  (let ((font (ivy-completing-read "Choose a font: "
+                                   (delete-dups (font-family-list)))))
+    (set-face-attribute 'default nil :font font)))
+#+END_SRC
+I also like using Palatino here.
+#+BEGIN_SRC emacs-lisp
+(custom-set-faces
+ '(variable-pitch ((t (:family "Source Sans Pro" :height 115)))))
+#+END_SRC
+I have experienced problems with certain math characters being displayed with a
+font from the TeX Gyre family, which causes the line width to be very high. I
+set the default font for characters in the "Mathematical Alphanumeric Symbols"
+block in Unicode to Symbola. I got the Symbola font from the =ttf-ancient-fonts=
+package on the AUR.
+#+BEGIN_SRC emacs-lisp
+(defvar gm/unicode-font "Symbola")
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) gm/unicode-font)
+(set-fontset-font "fontset-default" '(#x2200 . #x22ff) gm/unicode-font)
+#+END_SRC
+I do something similar for my =org-ellipsis= character (=⬎=); here, though, I just
+prefer how this font draws the character.
+#+BEGIN_SRC emacs-lisp
+(set-fontset-font "fontset-default" '(#x2b0e . #x2b0e) gm/unicode-font)
+#+END_SRC
+I also include other miscellaneous characters.
+#+BEGIN_SRC emacs-lisp
+(set-fontset-font "fontset-default" '(#x211c . #x211c) gm/unicode-font) ;; real part ℜ
+(set-fontset-font "fontset-default" '(#x2111 . #x2111) gm/unicode-font) ;; imaginary part ℑ
+(set-fontset-font "fontset-default" '(#x2113 . #x2113) gm/unicode-font) ;; ell ℓ
+(set-fontset-font "fontset-default" '(#x2118 . #x2118) gm/unicode-font) ;; Weierstrass p ℘
+(set-fontset-font "fontset-default" '(#x2135 . #x2135) gm/unicode-font) ;; aleph ℵ
+#+END_SRC
+**** Syntax Highlighting
+I want syntax highlighting everywhere...
+#+BEGIN_SRC emacs-lisp
+(global-font-lock-mode 1)
+#+END_SRC
+except in massive buffers, where it probably wouldn't be that useful (syntax
+highlighting doesn't help you read a CSV file with thousands of lines) and would
+definitely slow things down. In such buffers I also remove line numbers.
+#+BEGIN_SRC emacs-lisp
+(defun buffer-too-big-p ()
+  (or (> (buffer-size) (* 5000 80))
+      (> (line-number-at-pos (point-max)) 5000)))
+
+(defun gm/big-buffer-setup ()
+  (when (buffer-too-big-p)
+              (nlinum-relative-mode -1)
+              (font-lock-mode -1)))
+
+(add-hook 'prog-mode-hook #'gm/big-buffer-setup)
+#+END_SRC
+Normally, I want the opening and closing parentheses highlighted. I used to set
+=show-paren-style= to =expression=, but all that highlighting was not really
+necessary. A great idea from [[https://with-emacs.com/posts/editing/show-matching-lines-when-parentheses-go-off-screen/][(with-emacs]] is to advise the function that shows
+matching parentheses to display an overlay with the appropriate matching line
+when it is off-screen.
+#+BEGIN_SRC emacs-lisp
+(let ((ov nil)) ; keep track of the overlay
+  (advice-add
+   #'show-paren-function
+   :after
+   (defun show-paren--off-screen+ (&rest _args)
+     "Display matching line for off-screen paren."
+     (when (overlayp ov)
+       (delete-overlay ov))
+     ;; check if it's appropriate to show match info,
+     ;; see `blink-paren-post-self-insert-function'
+     (when (and (overlay-buffer show-paren--overlay)
+                (not (or cursor-in-echo-area
+                         executing-kbd-macro
+                         noninteractive
+                         (minibufferp)
+                         this-command))
+                (and (not (bobp))
+                     (memq (char-syntax (char-before)) '(?\) ?\$)))
+                (= 1 (logand 1 (- (point)
+                                  (save-excursion
+                                    (forward-char -1)
+                                    (skip-syntax-backward "/\\")
+                                    (point))))))
+       ;; rebind `minibuffer-message' called by
+       ;; `blink-matching-open' to handle the overlay display
+       (cl-letf (((symbol-function #'minibuffer-message)
+                  (lambda (msg &rest args)
+                    (let ((msg (apply #'format-message msg args)))
+                      (setq ov (display-line-overlay+
+                                (window-start) msg ))))))
+         (blink-matching-open))))))
+
+(defun display-line-overlay+ (pos str &optional face)
+  "Display line at POS as STR with FACE.
+
+FACE defaults to inheriting from default and highlight."
+  (let ((ol (save-excursion
+              (goto-char pos)
+              (make-overlay (line-beginning-position)
+                            (line-end-position)))))
+    (overlay-put ol 'display str)
+    (overlay-put ol 'face 'bold)
+    ol))
+
+(remove-hook 'post-self-insert-hook #'blink-paren-post-self-insert-function)
+
+(show-paren-mode 1)
+(setq show-paren-style 'paren
+      show-paren-delay 0.03
+      show-paren-highlight-openparen t
+      show-paren-when-point-inside-paren nil
+      show-paren-when-point-in-periphery t)
+#+END_SRC
+When I'm doing dedicated editing, it's sometimes nice to have more colours,
+especially for Lisps such as Emacs Lisp. However, it's too distracting in org
+mode source blocks, and it also slows down the point's movement, so I find it
+best not to enable it globally.
+#+BEGIN_SRC emacs-lisp
+;; (use-package rainbow-delimiters
+;;   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
+#+END_SRC
+Finally, =rainbow-mode= highlights hex-color strings with their colour. Very handy
+for choosing colours, especially when editing CSS files.
+#+BEGIN_SRC emacs-lisp
+(use-package rainbow-mode
+  :defer 2
+  :diminish
+  :config (rainbow-mode 1))
+#+END_SRC
+Highlight =.service= files like they are configuration files.
+#+BEGIN_SRC emacs-lisp
+(use-package systemd
+  :commands systemd-mode
+  :init
+  (add-to-list 'auto-mode-alist '("\\.service\\'" . systemd-mode))
+  (add-to-list 'auto-mode-alist '("\\.timer\\'" . systemd-mode)))
+#+END_SRC
+** Quality of Life
+*** Garbage Collection
+This package minimizes the interference of garbage collection with the user
+experience. That means fewer annoyingly long pauses while you are using Emacs.
+#+BEGIN_SRC emacs-lisp
+(use-package gcmh
+  :defer 2
+  :diminish
+  :config (gcmh-mode 1))
 #+END_SRC
 *** Better Defaults
 All the things (perhaps they seem little) that just make sense to have.
@@ -927,256 +1178,6 @@ behavior added."
            (signal 'quit nil)))))
 
 (global-set-key [remap keyboard-quit] #'keyboard-quit-context+)
-#+END_SRC
-** User Interface
-Show off the title.
-#+BEGIN_SRC emacs-lisp
-(setq frame-title-format "GMACS")
-#+END_SRC
-*** Cursor
-I prefer a box cursor to a bar cursor. Setting =x-stretch-cursor= means that this
-bar will stretch to the full width of the character it is on. For example, on a
-tab (evil tabs!), the cursor will look as wide as a tab.
-#+BEGIN_SRC emacs-lisp
-(when (display-graphic-p)
-  (setq-default cursor-type 'box))
-(setq x-stretch-cursor t)
-#+END_SRC
-**** Beacon Mode
-Never lose your cursor again. This package lights up your cursor when the
-screen/cursor position is refactored. It's much more useful than it sounds.
-#+BEGIN_SRC emacs-lisp
-(use-package beacon
-  :defer 2
-  :config (beacon-mode 1)
-  :custom (beacon-color "#b58900"))
-#+END_SRC
-*** Bells
-Visual, not audible bells.
-#+BEGIN_SRC emacs-lisp
-(setq ring-bell-function 'ignore)
-(setq visible-bell t)
-#+END_SRC
-*** Modeline
-The =smart-mode-line= package comes with some useful items on the modeline, as
-well as colour coding. Some interesting features (which I set in
-=sml/replacer-regexp-list=) is shortening features. Another useful thing is that
-minor modes are displayed.
-#+BEGIN_SRC emacs-lisp
-(use-package smart-mode-line
-  :defer 1
-  :config (sml/setup))
-#+END_SRC
-What time is it, Mr. Emacs?
-#+BEGIN_SRC emacs-lisp
-(display-time-mode 1)
-(setq display-time-format "%l:%M%p")
-#+END_SRC
-=line-number-mode= mode displays the current line number in the modeline. Except
-when there is a line Emacs decides is too long. In that case, all you see in the
-modeline is =??=. See [[https://emacs.stackexchange.com/questions/3824/what-piece-of-code-in-emacs-makes-line-number-mode-print-as-line-number-i][this question]] on Emacs SE for a workaround.
-#+BEGIN_SRC emacs-lisp
-(setq line-number-display-limit-width 10000)
-#+END_SRC
-Given that we're showing the line number in the modeline, it's often nice to
-also have the column number.
-#+BEGIN_SRC emacs-lisp
-(column-number-mode 1)
-#+END_SRC
-*** Scrolling
-There are two types of scrolling in Emacs: keyboard scrolling and mouse
-scrolling. Both of them are quite jarring out of the box and make the screen
-lurch around. Let's fix keyboard scrolling.
-#+BEGIN_SRC emacs-lisp
-(setq scroll-margin 1
-      scroll-step 1
-      scroll-conservatively 10000
-      scroll-preserve-screen-position 1)
-#+END_SRC
-And make mouse scrolling smoother.
-#+BEGIN_SRC emacs-lisp
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
-(setq mouse-wheel-progressive-speed t) ;; don't accelerate scrolling
-(setq mouse-wheel-follow-mouse t) ;; scroll window under mouse
-(setq scroll-step 1) ;; keyboard scroll one line at a time
-(setq scroll-margin 3) ;; give the cursor some buffer room before scrolling window
-#+END_SRC
-*** Theme
-I use the popular Solarized Light/Dark themes.
-#+BEGIN_SRC emacs-lisp
-(use-package solarized-theme
-  :demand t
-  :config (load-theme 'solarized-dark))
-#+END_SRC
-I switch between the light and dark variants depending on my surroundings. If I
-am in a brightly lit room, I prefer to use the light theme, because the dark
-theme allows too much screen glare. At night (really, at most times, but in
-particular at night) I prefer the dark theme, which, unsurprisingly, spits less
-light into my eyes.
-
-The way I switch themes is, admittedly, somewhat hacky. I set a boolean (by
-default true) that is true if the active theme is dark, false if light. What can
-I say? I prefer the dark side. Then my switch function toggles that value and
-changes the theme and the corresponding colours for =pdf-view-mode=. I like to
-view my PDFs not in black and white, but in my theme's colours. To make sure
-everything looks right, including the colours in PDFs and the asterisks
-for headlines in Org Mode (I hide them with =org-bullets-mode= but one of them
-comes back when I switch themes, for some reason), I refresh all open buffers.
-#+BEGIN_SRC emacs-lisp
-(defvar gm/theme 'dark)
-(defun gm/switch-theme ()
-  (interactive)
-  (if (eq gm/theme 'dark)
-      (progn
-        (load-theme 'solarized-light)
-        (after! pdf-tools (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
-        (setq gm/theme 'light))
-    (load-theme 'solarized-dark)
-    (setq pdf-view-midnight-colors '("#839496" . "#002b36"))
-    (setq gm/theme 'dark))
-  (modi/revert-buffers))
-#+END_SRC
-**** Font Face
-I change my fonts a lot, so I made it easier to set a font.
-#+BEGIN_SRC emacs-lisp
-(defun gm/switch-font ()
-  (interactive)
-  (let ((font (ivy-completing-read "Choose a font: "
-                                   (delete-dups (font-family-list)))))
-    (set-face-attribute 'default nil :font font)))
-#+END_SRC
-I also like using Palatino here.
-#+BEGIN_SRC emacs-lisp
-(custom-set-faces
- '(variable-pitch ((t (:family "Source Sans Pro" :height 115)))))
-#+END_SRC
-I have experienced problems with certain math characters being displayed with a
-font from the TeX Gyre family, which causes the line width to be very high. I
-set the default font for characters in the "Mathematical Alphanumeric Symbols"
-block in Unicode to Symbola. I got the Symbola font from the =ttf-ancient-fonts=
-package on the AUR.
-#+BEGIN_SRC emacs-lisp
-(defvar gm/unicode-font "Symbola")
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) gm/unicode-font)
-(set-fontset-font "fontset-default" '(#x2200 . #x22ff) gm/unicode-font)
-#+END_SRC
-I do something similar for my =org-ellipsis= character (=⬎=); here, though, I just
-prefer how this font draws the character.
-#+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x2b0e . #x2b0e) gm/unicode-font)
-#+END_SRC
-I also include other miscellaneous characters.
-#+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x211c . #x211c) gm/unicode-font) ;; real part ℜ
-(set-fontset-font "fontset-default" '(#x2111 . #x2111) gm/unicode-font) ;; imaginary part ℑ
-(set-fontset-font "fontset-default" '(#x2113 . #x2113) gm/unicode-font) ;; ell ℓ
-(set-fontset-font "fontset-default" '(#x2118 . #x2118) gm/unicode-font) ;; Weierstrass p ℘
-(set-fontset-font "fontset-default" '(#x2135 . #x2135) gm/unicode-font) ;; aleph ℵ
-#+END_SRC
-**** Syntax Highlighting
-I want syntax highlighting everywhere...
-#+BEGIN_SRC emacs-lisp
-(global-font-lock-mode 1)
-#+END_SRC
-except in massive buffers, where it probably wouldn't be that useful (syntax
-highlighting doesn't help you read a CSV file with thousands of lines) and would
-definitely slow things down. In such buffers I also remove line numbers.
-#+BEGIN_SRC emacs-lisp
-(defun buffer-too-big-p ()
-  (or (> (buffer-size) (* 5000 80))
-      (> (line-number-at-pos (point-max)) 5000)))
-
-(defun gm/big-buffer-setup ()
-  (when (buffer-too-big-p)
-              (nlinum-relative-mode -1)
-              (font-lock-mode -1)))
-
-(add-hook 'prog-mode-hook #'gm/big-buffer-setup)
-#+END_SRC
-Normally, I want the opening and closing parentheses highlighted. I used to set
-=show-paren-style= to =expression=, but all that highlighting was not really
-necessary. A great idea from [[https://with-emacs.com/posts/editing/show-matching-lines-when-parentheses-go-off-screen/][(with-emacs]] is to advise the function that shows
-matching parentheses to display an overlay with the appropriate matching line
-when it is off-screen.
-#+BEGIN_SRC emacs-lisp
-(let ((ov nil)) ; keep track of the overlay
-  (advice-add
-   #'show-paren-function
-   :after
-   (defun show-paren--off-screen+ (&rest _args)
-     "Display matching line for off-screen paren."
-     (when (overlayp ov)
-       (delete-overlay ov))
-     ;; check if it's appropriate to show match info,
-     ;; see `blink-paren-post-self-insert-function'
-     (when (and (overlay-buffer show-paren--overlay)
-                (not (or cursor-in-echo-area
-                         executing-kbd-macro
-                         noninteractive
-                         (minibufferp)
-                         this-command))
-                (and (not (bobp))
-                     (memq (char-syntax (char-before)) '(?\) ?\$)))
-                (= 1 (logand 1 (- (point)
-                                  (save-excursion
-                                    (forward-char -1)
-                                    (skip-syntax-backward "/\\")
-                                    (point))))))
-       ;; rebind `minibuffer-message' called by
-       ;; `blink-matching-open' to handle the overlay display
-       (cl-letf (((symbol-function #'minibuffer-message)
-                  (lambda (msg &rest args)
-                    (let ((msg (apply #'format-message msg args)))
-                      (setq ov (display-line-overlay+
-                                (window-start) msg ))))))
-         (blink-matching-open))))))
-
-(defun display-line-overlay+ (pos str &optional face)
-  "Display line at POS as STR with FACE.
-
-FACE defaults to inheriting from default and highlight."
-  (let ((ol (save-excursion
-              (goto-char pos)
-              (make-overlay (line-beginning-position)
-                            (line-end-position)))))
-    (overlay-put ol 'display str)
-    (overlay-put ol 'face 'bold)
-    ol))
-
-(remove-hook 'post-self-insert-hook #'blink-paren-post-self-insert-function)
-
-(show-paren-mode 1)
-(setq show-paren-style 'paren
-      show-paren-delay 0.03
-      show-paren-highlight-openparen t
-      show-paren-when-point-inside-paren nil
-      show-paren-when-point-in-periphery t)
-#+END_SRC
-When I'm doing dedicated editing, it's sometimes nice to have more colours,
-especially for Lisps such as Emacs Lisp. However, it's too distracting in org
-mode source blocks, and it also slows down the point's movement, so I find it
-best not to enable it globally.
-#+BEGIN_SRC emacs-lisp
-;; (use-package rainbow-delimiters
-;;   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
-#+END_SRC
-Finally, =rainbow-mode= highlights hex-color strings with their colour. Very handy
-for choosing colours, especially when editing CSS files.
-#+BEGIN_SRC emacs-lisp
-(use-package rainbow-mode
-  :defer 2
-  :diminish
-  :config (rainbow-mode 1))
-#+END_SRC
-Highlight =.service= files like they are configuration files.
-#+BEGIN_SRC emacs-lisp
-(use-package systemd
-  :commands systemd-mode
-  :init
-  (add-to-list 'auto-mode-alist '("\\.service\\'" . systemd-mode))
-  (add-to-list 'auto-mode-alist '("\\.timer\\'" . systemd-mode)))
 #+END_SRC
 ** Wordsmithing
 *** Basic Configuration
@@ -2576,7 +2577,6 @@ Properly patch functions.
 Simple client for =transmission-cli=.
 #+BEGIN_SRC emacs-lisp
 (use-package transmission
-  :ensure nil
   :commands (transmission transmission-add)
   :config (add-to-list 'transmission-refresh-modes 'transmission-mode)
   :bind (:map transmission-mode-map
