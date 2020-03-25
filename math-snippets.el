@@ -30,7 +30,7 @@
         ("mati " "identity-matrix" t)
         ("mat " "matrix" t)
         ("sp " "split" t)
-        ("nmid" "\\nmid ")
+        ("ndiv" "\\nmid ")
         ("adj" "\\Adj ")
         ("rref" "\\rref ")
         ("text" "\\text{$1}")
