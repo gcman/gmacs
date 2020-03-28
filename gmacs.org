@@ -3692,9 +3692,10 @@ Let's make our headings look a bit nicer. The package =org-bullet-mode= replaces
 asterisks that define an Org heading with pretty symbols, like stylized bullet
 points.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(use-package org-bullets
-    :commands org-bullets-mode
-    :hook (org-mode . org-bullets-mode))
+(use-package org-superstar
+    :commands org-superstar-mode
+    :hook (org-mode . org-superstar-mode)
+    :config (setq inhibit-compacting-font-caches t))
 #+END_SRC
 In a similar vein, it helps the visual hierarchy to have text indented in
 accordance with the level of the heading, so I always use =org-indent-mode=.
