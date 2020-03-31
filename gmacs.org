@@ -78,11 +78,17 @@ startup take longer and aren't that useful.
 We either load the byte-compiled GMACS configuration file or tangle and load
 the GMACS literate config file (you're reading it!) written in Org Mode.
 #+BEGIN_SRC emacs-lisp :tangle init.el
+(advice-add #'display-startup-echo-area-message :override #'ignore)
+(setq inhibit-startup-message t
+      inhibit-startup-echo-area-message user-login-name
+      inhibit-default-init t
+      initial-major-mode 'fundamental-mode
+      initial-scratch-message nil)
+
 (let ((file-name-handler-alist nil)
       (orgfile (expand-file-name "gmacs.org" user-emacs-directory))
       (elfile (expand-file-name "gmacs.el" user-emacs-directory))
-      (elcfile (expand-file-name "gmacs.elc" user-emacs-directory))
-      (personalfile (expand-file-name "personal.el" user-emacs-directory)))
+      (elcfile (expand-file-name "gmacs.elc" user-emacs-directory)))
   (if (file-exists-p elcfile)
       (load-file elcfile)
     (if (or (not (file-exists-p elfile))
@@ -90,7 +96,9 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
         (progn
           (require 'org)
           (org-babel-load-file orgfile))
-      (load-file elfile)))
+      (load-file elfile))))
+
+(let ((personalfile (expand-file-name "personal.el" user-emacs-directory)))
   (when (file-exists-p personalfile)
     (load-file personalfile)))
 #+END_SRC
@@ -3695,7 +3703,7 @@ points.
 (use-package org-superstar
     :commands org-superstar-mode
     :hook (org-mode . org-superstar-mode)
-    :config (setq inhibit-compacting-font-caches t))
+    )
 #+END_SRC
 In a similar vein, it helps the visual hierarchy to have text indented in
 accordance with the level of the heading, so I always use =org-indent-mode=.
