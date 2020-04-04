@@ -1187,6 +1187,16 @@ behavior added."
 
 (global-set-key [remap keyboard-quit] #'keyboard-quit-context+)
 #+END_SRC
+*** Undo Keyboard Macro in One Step
+Undoes all parts of keyboard macro at once.
+#+BEGIN_SRC emacs-lisp
+(defun block-undo (fn &rest args) (let ((marker
+  (prepare-change-group))) (unwind-protect (apply fn args)
+  (undo-amalgamate-change-group marker))))
+
+  (dolist (fn '(kmacro-call-macro kmacro-exec-ring-item)) (advice-add fn :around
+    #'block-undo))
+#+END_SRC
 ** Wordsmithing
 *** Basic Configuration
 **** Sentences End With a Single Space
