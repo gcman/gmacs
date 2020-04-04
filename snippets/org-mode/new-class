@@ -3,37 +3,10 @@
 # key: <class
 # type: command
 # --
-(defun gm/--timestamp-split (timestamp)
-  (split-string (replace-regexp-in-string
-                 "[\]\[<>]" ""
-                 timestamp) " "))
-(defun gm/--timestamp-format (target time)
-  (let* ((days '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))
-         (timestamp (with-temp-buffer (org-time-stamp-inactive '(16)) (buffer-string)))
-         (stamp (gm/--timestamp-split timestamp))
-         (date (nth 0 stamp))
-         (day (-elem-index (nth 1 stamp) days))
-         (increment (cl-gcd (% (- target day) 7)))
-         (newstamp (with-temp-buffer
-                     (insert timestamp)
-                     (org-timestamp-change increment 'day)
-                     (buffer-string))))
-    (setq newstamp (gm/--timestamp-split newstamp))
-    (format "<%s %s %s +1w>" (nth 0 newstamp) (nth 1 newstamp) time)))
 (let* ((file (file-name-base))
 (num (replace-regexp-in-string "[a-z]" "" file))
 (arr (split-string file num))
 (course-name  (format "%s %s%s" (upcase (nth 0 arr)) num (upcase (nth 1 arr))))
-(options '("MWF" "TT"))
-(keys '((1 3 5) (2 4)))
-(days (nth (-elem-index (ivy-completing-read "Days of class: " options) options) keys))
-(time (read-string "Time: "))
-(stamps (with-temp-buffer
-  (dolist (day days)
-    (insert (gm/--timestamp-format day time))
-    (insert "\n"))
-  (delete-char -1)
-(buffer-string)))
 (snippet-text
 (format "* Notes
 :PROPERTIES:
@@ -42,11 +15,9 @@
 :END:
 * Problem Sets
 :PROPERTIES:
-:EXPORT_LATEX_CLASS_OPTIONS: [nosec,nosubsec,notoc]
+:EXPORT_LATEX_CLASS_OPTIONS: [pset]
 :END:
-* Materials
-** %s @ $1
-%s
+$0
 * Options :noexport:
 #+LATEX_CLASS_OPTIONS: [notoc,nosubsec]
 # Local variables:
@@ -55,7 +26,5 @@
 * Footnotes"
 file
 course-name
-course-name
-stamps
 )))
 (yas-expand-snippet snippet-text))

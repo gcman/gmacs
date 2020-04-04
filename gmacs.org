@@ -688,24 +688,22 @@ Make files that start with a =#!= shebang executable.
 Authorize actions. The package =sudo-edit= is excellent for editing files owned by
 root.
 #+BEGIN_SRC emacs-lisp
-(when gm/user
-  (use-package pinentry
-    :demand t
-    :config (pinentry-start))
+(use-package pinentry
+  :demand t
+  :config (when gm/user (pinentry-start)))
 
-  (use-package epa-file
-    :ensure nil
-    :init (epa-file-enable)
-    :config (setenv "GPG_AGENT_INFO" nil)
-    :custom
-    (epg-gpg-program "/usr/bin/gpg2")
-    (epa-file-cache-passphrase-for-symmetric-encryption t)
-    (epa-file-select-keys nil)
-    (epa-pinentry-mode 'loopback))
+(use-package epa-file
+  :ensure nil
+  :init (epa-file-enable)
+  :config (setenv "GPG_AGENT_INFO" nil)
+  :custom
+  (epg-gpg-program "/usr/bin/gpg2")
+  (epa-file-cache-passphrase-for-symmetric-encryption t)
+  (epa-file-select-keys nil)
+  (epa-pinentry-mode 'loopback))
 
-  (use-package sudo-edit
-    :commands sudo-edit
-    :bind (("C-c C-x r" . sudo-edit))))
+(use-package sudo-edit
+  :commands sudo-edit)
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -3703,6 +3701,11 @@ _q_ quit       _r_ remove result  _e_ examplify region
   ("r" org-babel-remove-result :color blue)
   ("H" org-babel-goto-src-block-head)
   ("q" nil :color blue))
+#+END_SRC
+*** Property Inheritance
+We want it!
+#+BEGIN_SRC emacs-lisp
+(setq org-use-property-inheritance t)
 #+END_SRC
 ** Prettifying
 *** Headlines
