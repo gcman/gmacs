@@ -1,6 +1,7 @@
 # -*- mode: snippet -*-
 # name: align
-# # key: al
+# key: al
+# condition: (not (eq (car (org-element-context)) 'src-block))
 # --
 \begin{align*}
 $0
