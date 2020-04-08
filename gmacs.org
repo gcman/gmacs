@@ -3705,7 +3705,8 @@ _q_ quit       _r_ remove result  _e_ examplify region
 *** Property Inheritance
 We want it!
 #+BEGIN_SRC emacs-lisp
-(setq org-use-property-inheritance t)
+(setq org-use-property-inheritance t
+      org-attach-use-inheritance t)
 #+END_SRC
 ** Prettifying
 *** Headlines

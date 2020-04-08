@@ -1,5 +1,11 @@
 (setq gm/math-global-snippets
-      '(("Tor" "\\Tor ")
+      '(("cov" "\\Cov")
+        ("var" "\\Var")
+        ("pr" "\\Pr")
+        ("Pr" "\\Pr")
+        ("no" "\\card")
+        ("Li" "\\Li")
+        ("Tor" "\\Tor ")
         ("qqd" "\\qquad ")
         ("qd" "\\quad ")
         ("zsum" "\\sum_{n\\in\\Z} ")
