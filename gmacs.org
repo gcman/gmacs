@@ -1802,7 +1802,7 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 *** C++
 #+BEGIN_SRC emacs-lisp
 (setq-default c-default-style "linux"
-              c-basic-offset 4)
+              c-basic-offset 2)
 #+END_SRC
 ** Packages
 *** Package Management
@@ -2302,9 +2302,9 @@ screen, and once we're done, we can get right back to where we left off.
   :after magit)
 #+END_SRC
 *** Tramp
-Make sure to keep backups locally and not remotely.
+Don't keep backups: this is slow.
 #+BEGIN_SRC emacs-lisp
-(setq tramp-backup-directory-alist backup-directory-alist)
+(setq tramp-auto-save-directory nil)
 #+END_SRC
 Set tramp connection history location.
 #+BEGIN_SRC emacs-lisp
@@ -5246,7 +5246,7 @@ be in math. The one subtlety is that we also look at the starred versions of
               nil
             (cond ((eq fr-type 'latex-fragment)
                    (and
-                    (>= loc begin)
+                    (> loc begin)
                     (<= loc (1- (- (org-element-property :end fr)
                                    (org-element-property :post-blank fr))))))
                   ((eq fr-type 'latex-environment)
