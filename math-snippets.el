@@ -1,5 +1,7 @@
 (setq gm/math-global-snippets
-      '(("Log" "\\Log ")
+      '(("ome" "m_{\\ast{}}")
+        ("vol" "\\Vol ")
+        ("Log" "\\Log ")
         ("sub" "\\substack{$0}")
         ("dst" "^{\\ast{}\\ast{}}")
         ("cov" "\\Cov")
@@ -202,7 +204,6 @@
         ("ox" "\\otimes ")
         ("part" "\\pd{$1}$0")
         ("pd" "\\pd{$1}$0")
-        ("pi" "\\pi")
         ("pm" "\\pm ")
         ("prod" "\\prod_{${1:k}=${2:0}}^{${3:n}} $0")
         ("prop" "\\propto ")
