@@ -1,5 +1,6 @@
 (setq gm/math-global-snippets
-      '(("ome" "m_{\\ast{}}")
+      '(("res" "\\Res ")
+        ("ome" "m_{\\ast{}}")
         ("vol" "\\Vol ")
         ("Log" "\\Log ")
         ("sub" "\\substack{$0}")
