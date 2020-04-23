@@ -1,5 +1,6 @@
 (setq gm/math-global-snippets
-      '(("\\ge ge" "&\\ge ")
+      '(("SP" "equation-to-split" t)
+        ("\\ge ge" "&\\ge ")
         ("\\le le" "&\\le ")
         ("asym" "^{\\Asym}")
         ("sym" "^{\\Sym}")

@@ -5646,23 +5646,60 @@ Turns an inline math snippet into an equation.
 (defun gm/math-inline-to-equation ()
   (interactive)
   (let* ((fr (org-element-context))
+         (fr-type (car fr))
          (fr-begin (org-element-property :begin fr))
          (fr-end (org-element-property :end fr))
          (match (buffer-substring-no-properties
                  (+ fr-begin 2)
                  (- fr-end 2)))
          (char (char-to-string (char-after fr-end))))
-    (delete-region fr-begin (if (string-match "\\.\\|," char)
-                                (1+ fr-end)
-                              fr-end))
-    (newline)
-    (insert "\\begin{equation}\n")
-    (insert match)
-    (when (string-match "\\.\\|," char) (insert char))
-    (save-excursion
-      (insert "\n\\end{equation}\n")
-      (when (eq (char-after) ? )
-        (hungry-delete-forward 0)))))
+    (when (eq fr-type 'latex-fragment)
+      (delete-region fr-begin (if (string-match "\\.\\|," char)
+                                  (1+ fr-end)
+                                fr-end))
+      (newline)
+      (insert "\\begin{equation}\n")
+      (insert match)
+      (when (string-match "\\.\\|," char) (insert char))
+      (save-excursion
+        (insert "\n\\end{equation}\n")
+        (when (eq (char-after) ? )
+          (hungry-delete-forward 0))))))
+#+END_SRC
+**** Convert Equation to Split
+Slightly janky way to turn equation into split. Does idempotence check.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-make-split ()
+  (interactive)
+  (let* ((fr (org-element-context))
+         (fr-type (car fr))
+         (fr-begin (org-element-property :begin fr))
+         (fr-end (org-element-property :end fr))
+         (match (buffer-substring-no-properties fr-begin fr-end)))
+    (when (eq fr-type 'latex-environment)
+      (save-excursion
+        (goto-char fr-begin)
+        (forward-line 1)
+        (unless (string-match-p (regexp-quote "split")
+                                (buffer-substring-no-properties
+                                 (line-beginning-position)
+                                 (line-end-position)))
+          (insert "\\begin{split}\n")
+          (goto-char fr-end)
+          (goto-char (line-beginning-position))
+          (open-line 1)
+          (insert "\\end{split}")
+          (goto-char fr-begin)
+          (forward-line 2)
+          (when (string-match-p (regexp-quote "=")
+                                (buffer-substring-no-properties
+                                 (line-beginning-position)
+                                 (line-end-position)))
+              (search-forward "=" nil nil)
+              (backward-char)
+            (when (and (equal "=" (char-to-string (char-after)))
+                       (not (equal "&" (char-to-string (char-before)))))
+              (insert "&"))))))))
 #+END_SRC
 **** Add Float to Marginnote
 I often add a margin note then decide to shift it down. However, margin notes
