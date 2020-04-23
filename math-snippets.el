@@ -1,5 +1,9 @@
 (setq gm/math-global-snippets
-      '(("res" "\\Res ")
+      '(("\\ge ge" "&\\ge ")
+        ("\\le le" "&\\le ")
+        ("asym" "^{\\Asym}")
+        ("sym" "^{\\Sym}")
+        ("res" "\\Res ")
         ("ome" "m_{\\ast{}}")
         ("vol" "\\Vol ")
         ("Log" "\\Log ")

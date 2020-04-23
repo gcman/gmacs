@@ -1729,7 +1729,6 @@ We use =lsp-mode= to set up an IDE.
 (use-package lsp-mode
   ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
   :init (setq lsp-keymap-prefix "s-l")
-  :hook ((c++-mode . lsp))
   :commands lsp
   :config
   (use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
