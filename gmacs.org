@@ -5669,6 +5669,8 @@ Turns an inline math snippet into an equation.
 **** Convert Equation to Split
 Slightly janky way to turn equation into split. Does idempotence check.
 #+BEGIN_SRC emacs-lisp
+(defvar gm/math-split-delims '("=" "\\le" "\\ge" "\\sim"))
+
 (defun gm/math-make-split ()
   (interactive)
   (let* ((fr (org-element-context))
@@ -5691,14 +5693,12 @@ Slightly janky way to turn equation into split. Does idempotence check.
           (insert "\\end{split}")
           (goto-char fr-begin)
           (forward-line 2)
-          (when (string-match-p (regexp-quote "=")
+          (when (string-match (regexp-opt gm/math-split-delims)
                                 (buffer-substring-no-properties
                                  (line-beginning-position)
                                  (line-end-position)))
-              (search-forward "=" nil nil)
-              (backward-char)
-            (when (and (equal "=" (char-to-string (char-after)))
-                       (not (equal "&" (char-to-string (char-before)))))
+              (goto-char (+ (line-beginning-position) (match-beginning 0)))
+            (when (not (equal "&" (char-to-string (char-before))))
               (insert "&"))))))))
 #+END_SRC
 **** Add Float to Marginnote
