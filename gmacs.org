@@ -1335,7 +1335,7 @@ prose in is Org Mode.
   :diminish
   :commands flyspell-mode
   :init
-  (when gm/user (add-hook 'org-mode-hook #'flyspell-mode))
+  (add-hook 'org-mode-hook #'flyspell-mode)
   (after! notmuch
     (add-hook 'notmuch-message-mode-hook #'flyspell-mode))
   (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
