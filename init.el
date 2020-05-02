@@ -25,6 +25,9 @@
           (org-babel-load-file orgfile))
       (load-file elfile))))
 
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(when (file-exists-p custom-file) (load custom-file))
+
 (let ((personalfile (expand-file-name "personal.el" user-emacs-directory)))
   (when (file-exists-p personalfile)
     (load-file personalfile)))

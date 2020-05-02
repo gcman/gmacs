@@ -98,6 +98,9 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
           (org-babel-load-file orgfile))
       (load-file elfile))))
 
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(when (file-exists-p custom-file) (load custom-file))
+
 (let ((personalfile (expand-file-name "personal.el" user-emacs-directory)))
   (when (file-exists-p personalfile)
     (load-file personalfile)))
@@ -170,14 +173,13 @@ method makes it easy for to extend to more directories if needed.
       (make-directory dir t))))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(defvar gm/user nil)
-#+END_SRC
-I put custom variables outside of my =init.el= file.
-#+BEGIN_SRC emacs-lisp
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file) (load custom-file))
 #+END_SRC
 Make a variable for personal settings.
+#+BEGIN_SRC emacs-lisp
+(defvar gm/user nil)
+#+END_SRC
 ** Setup Packages
 We're going to use a custom package directory, so we need to trick Emacs into
 thinking it has initialized packages by setting =package--init-file-ensured= to =t=.
@@ -1053,8 +1055,11 @@ From [[https://masteringemacs.org/article/working-coding-systems-unicode-emacs][
 #+BEGIN_SRC emacs-lisp
 (prefer-coding-system 'utf-8)
 (set-default-coding-systems 'utf-8)
+(setq locale-coding-system 'utf-8)
+(setq selection-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
+(setq session-save-file-coding-system 'utf-8)
 ;; backwards compatibility as default-buffer-file-coding-system
 ;; is deprecated in 23.2.
 (if (boundp 'buffer-file-coding-system)
@@ -2442,10 +2447,11 @@ Mode).
 *** Which Key Mode
 Helpful when you want to see completion for a certain sequence of prefix keys.
 #+BEGIN_SRC emacs-lisp
-(use-package which-key
-  :defer 10
-  :diminish
-  :config (which-key-mode))
+(unless gm/user
+  (use-package which-key
+    :defer 10
+    :diminish
+    :config (which-key-mode)))
 #+END_SRC
 *** Avy
 #+BEGIN_SRC emacs-lisp
@@ -5141,7 +5147,7 @@ Snippets go in [[file:math-snippets.el]].
   ("Y" (insert "\\Psi{}") "Ψ")
   ("z" (insert "\\zeta{}") "ζ")
   ("Z" (insert "\\mathbb{Z}") "ℤ")
-  ("0" (insert " \\emptyset") "∅")
+  ("0" (insert "\\emptyset") "∅")
   ("8" (insert "\\infinity") "∞")
   ("!" (insert "\\neg") "¬")
   ("*" (insert "\\star") "⋆")
@@ -5187,7 +5193,7 @@ Then we bind this to semicolon.
     "Minor mode for math"
     :init-value nil
     :keymap gm/math-mode-map
-    (when gm/user
+    (when (file-exists-p abbrev-file-name)
           (abbrev-table-put org-mode-abbrev-table
                   :parents (list quick-math-mode-abbrev-table)))
     (when quick-math-mode
@@ -5669,7 +5675,7 @@ Turns an inline math snippet into an equation.
 **** Convert Equation to Split
 Slightly janky way to turn equation into split. Does idempotence check.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-split-delims '("=" "\\le" "\\ge" "\\sim"))
+(defvar gm/math-split-delims '(" =" "\\le " "\\ge " "\\sim "))
 
 (defun gm/math-make-split ()
   (interactive)
@@ -5699,6 +5705,8 @@ Slightly janky way to turn equation into split. Does idempotence check.
                                  (line-end-position)))
               (goto-char (+ (line-beginning-position) (match-beginning 0)))
             (when (not (equal "&" (char-to-string (char-before))))
+              (when (equal " " (char-to-string (char-after)))
+                (forward-char))
               (insert "&"))))))))
 #+END_SRC
 **** Add Float to Marginnote

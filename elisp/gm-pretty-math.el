@@ -213,7 +213,8 @@
     ("bigtriangledown" . "▽")
     ("circ" . "∘")
     ("wedge" . "∧")
-    ("vee" . "∨"))))
+    ("vee" . "∨")
+    ("intprod" . "｣"))))
 
 (defvar gm/math-unspaced
   (append

@@ -1,5 +1,8 @@
 (setq gm/math-global-snippets
-      '(("SP" "equation-to-split" t)
+      '(("^\\ast{}o" "s\\to{}")
+        ("ipr" "\\intprod{}")
+        ("WW" "\\wedge{}")
+        ("SP" "equation-to-split" t)
         ("\\ge ge" "&\\ge ")
         ("\\le le" "&\\le ")
         ("asym" "^{\\Asym}")
@@ -74,7 +77,6 @@
         ("ilim" "\\varprojlim")
         ("dlim" "\\varinjlim")
         ("hk" "hook")
-        ("id" "\\mathrm{id}")
         ("\\Z/" "z-mod-n" t)
         ("Z/" "z-mod-n" t)
         ("rvec" "row-vector" t)
