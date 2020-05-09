@@ -5545,9 +5545,11 @@ results in =\frac{\sin x}{|}=.
 (defun gm/math-insert-frac-match (match &optional env)
   (unless env (setq env "frac"))
   (when match
-    (yas-expand-snippet (yas-lookup-snippet env))
+    (if (equal env "frac")
+        (yas-expand-snippet "\\frac{$1}{}")
+      (yas-expand-snippet (yas-lookup-snippet env)))
     (insert match)
-    (yas-next-field)))
+    (forward-char 2)))
 
 (defun gm/math-frac-helper (regexp &optional env)
   (when (looking-back regexp (line-beginning-position) t)
@@ -5588,19 +5590,21 @@ results in =\frac{\sin x}{|}=.
    ((eq (char-before) 125) ;; match closing curly braces
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
-    (if (string-match "\\^" (char-to-string (char-before)))
-        (yas-expand-snippet (yas-lookup-snippet (if env env "frac")))
-      (gm/math-frac-helper
-       (format "%s\\( \\|{}\\)%s"
-               (regexp-opt gm/math-frac-extras t)
-               "\\\\?[[:alnum:]_!]+")
-       env)
-      (if (and (yas-active-snippets)
-               (eq (point)
-                   (marker-position (yas--field-end (yas--snippet-active-field (car (yas-active-snippets)))))))  ;; check if snippet end here
-          (gm/math-frac-helper "\\\\?[[:alnum:]_!]+" env)
-        ;; Bit of a hacky fix
-        (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env))))
+    (let ((env (if env env "frac")))
+      (if (string-match "\\^" (char-to-string (char-before)))
+          (yas-expand-snippet (yas-lookup-snippet (if env env "frac")))
+        (gm/math-frac-helper
+         (format "%s\\( \\|{}\\)%s"
+                 (regexp-opt gm/math-frac-extras t)
+                 "\\\\?[[:alnum:]_!]+")
+         env)
+        (if (and (yas-active-snippets)
+                 (eq (point)
+                     (marker-position (yas--field-end (yas--snippet-active-field (car (yas-active-snippets)))))))  ;; check if snippet end here
+            (gm/math-frac-helper "\\\\?[[:alnum:]_!]+" env)
+          ;; Bit of a hacky fix
+          (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env))
+        )))
    (t (yas-expand-snippet (yas-lookup-snippet (if env env "frac"))))))
 #+END_SRC
 The binding is given in [[*Generate Snippets][Generate Snippets]].
@@ -5623,25 +5627,29 @@ to make LaTeX happy.
 
 (defun gm/tex-newline ()
   (interactive)
-  (let ((current-line (buffer-substring-no-properties
-                       (line-beginning-position)
-                       (line-end-position))))
-    (if (equal current-line "\\begin{split}")
-        (newline)
-      (end-of-line)
-      (unless (equal (gm/last-n-chars 2) "\\\\")
-        (insert " \\\\"))
-      (if (save-excursion
-            (forward-line)
-            (equal (buffer-substring-no-properties
-                    (line-beginning-position)
-                    (line-end-position))
-                   "\\end{split}"))
-          (progn
-            (newline)
-            (when (equal (substring (s-trim current-line) 0 2) "&=")
-              (insert "&= ")))
-        (forward-line)))))
+  (if current-prefix-arg
+      (progn
+        (insert "\\\\")
+        (newline))
+    (let ((current-line (buffer-substring-no-properties
+                         (line-beginning-position)
+                         (line-end-position))))
+      (if (equal current-line "\\begin{split}")
+          (newline)
+        (end-of-line)
+        (unless (equal (gm/last-n-chars 2) "\\\\")
+          (insert " \\\\"))
+        (if (save-excursion
+              (forward-line)
+              (equal (buffer-substring-no-properties
+                      (line-beginning-position)
+                      (line-end-position))
+                     "\\end{split}"))
+            (progn
+              (newline)
+              (when (equal (substring (s-trim current-line) 0 2) "&=")
+                (insert "&= ")))
+          (forward-line))))))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-in-env-p "split"))

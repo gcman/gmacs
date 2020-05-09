@@ -2,4 +2,4 @@
 # name: quotient
 # key: math-quotient
 # --
-\quot{$1}{$2}$0
+\quot{$1}{$2}

@@ -13,6 +13,7 @@
 :EXPORT_TITLE: %s - Problem Set $1
 :EXPORT_FILE_NAME: pset$1
 :EXPORT_DATE: $2
+:ATTACH_DIR_INHERIT: t
 :END:"
  (format "%s %s%s"
           (upcase (nth 0 arr))
