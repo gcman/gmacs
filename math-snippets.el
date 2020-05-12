@@ -212,7 +212,7 @@
         ("opl" "\\oplus ")
         ("ox" "\\otimes ")
         ("part" "\\pd{$1}$0")
-        ("pd" "\\pd{$1}$0")
+        ("pd" "\\pd{}")
         ("pm" "\\pm ")
         ("prod" "\\prod_{${1:k}=${2:0}}^{${3:n}} $0")
         ("prop" "\\propto ")
