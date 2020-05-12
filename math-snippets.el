@@ -167,7 +167,7 @@
         ("cos" "\\cos ")
         ("cot" "\\cot ")
         ("cu" "\\Curl ")
-        ("dd" "derivative-one-term" t)
+        ("dd" "derivative" t)
         ("del" "partial" t)
         ("det" "\\Det ")
         ("dim" "\\Dim ")

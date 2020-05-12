@@ -4,4 +4,4 @@
 # type: command
 # --
 (yas-expand-snippet
-  (concat "\\int $1 " (gm/increment-snippet-fields (yas--template-content (yas-lookup-snippet "derivative-one-term")))))
+  (concat "\\int $1 " (gm/increment-snippet-fields (yas--template-content (yas-lookup-snippet "integral-derivative")))))
