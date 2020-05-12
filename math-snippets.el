@@ -1,5 +1,8 @@
 (setq gm/math-global-snippets
-      '(("ow" "\\owedge{}")
+      '((">>" "&>")
+        ("<<" "&<")
+        ("DD" "\\D{}")
+        ("ow" "\\owedge{}")
         ("^\\ast{}o" "s\\to{}")
         ("ipr" "\\intprod{}")
         ("WW" "\\wedge{}")

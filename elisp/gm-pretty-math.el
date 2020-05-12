@@ -258,7 +258,8 @@
 
 (defvar gm/math-commands
   '(("dd" [?\s (Br . Bl) ?𝖽] "")
-    ("pd" ?∂ "")))
+    ("pd" ?∂ "")
+    ("DD" ?D "")))
 
 (defun gm/math-regexp-unspaced (name symbol)
   (list (cons (format "\\(\\\\%s{}\\)" name) symbol)
