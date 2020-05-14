@@ -5299,7 +5299,8 @@ expand into =\hat{f}=. However, we cannot just act on the last letter, because
              (if (looking-back (regexp-opt
                                 (--map (concat "\\" (car it))
                                        (append gm/math-greek-lower
-                                               gm/math-greek-upper)))
+                                               gm/math-greek-upper
+                                               '(("ell")))))
                                (- (point) 8) t)
                  (buffer-substring-no-properties (match-beginning 0)
                                                  (match-end 0))
