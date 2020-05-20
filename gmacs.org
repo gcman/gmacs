@@ -5334,10 +5334,9 @@ I use this for postfix snippets, as explained.
 (defun gm/math-expression-p (math)
   (when math
     (or (eq (length math) 1)
-        ;; match one single latex command, with opt-args and args
-        ;; such as \command[1][2]{3}{4}
-        ;; only validate if this is the entire string
-        (string-match "\\`\\\\[[:alpha:]]+\\(\\[[^\\]]*]\\)*\\({[^}]*}\\)*\\'" math))))
+        ;; Match one single latex macro such as \command
+        ;; Only validate if this is the entire string
+        (string-match "\\`\\\\[[:alpha:]]+:\\'" math))))
 #+END_SRC
 **** Increment Snippet Fields
 #+BEGIN_SRC emacs-lisp
