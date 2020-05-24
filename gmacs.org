@@ -5336,7 +5336,7 @@ I use this for postfix snippets, as explained.
     (or (eq (length math) 1)
         ;; Match one single latex macro such as \command
         ;; Only validate if this is the entire string
-        (string-match "\\`\\\\[[:alpha:]]+:\\'" math))))
+        (string-match "\\`\\\\[a-zA-Z]+\\'" math))))
 #+END_SRC
 **** Increment Snippet Fields
 #+BEGIN_SRC emacs-lisp
