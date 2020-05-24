@@ -22,6 +22,7 @@ $0
 #+LATEX_CLASS_OPTIONS: [notoc,nosubsec]
 # Local variables:
 # eval: (add-hook 'after-save-hook 'gm/org-latex-export nil t)
+# eval: (quick-math-mode 1)
 # end:
 * Footnotes"
 file
