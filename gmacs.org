@@ -3338,8 +3338,7 @@ I like the following set of =TODO= words. This is what appears
 before an Org headline when a todo state is activated.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-todo-keywords
-      '((sequence "TODO(t!)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")
-        (sequence "TOREAD(r!)" "READING(R)" "|" "READ(b)")))
+      '((sequence "TODO(t!)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
 #+END_SRC
 Automatically archive cancelled tasks.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -5336,7 +5335,7 @@ I use this for postfix snippets, as explained.
     (or (eq (length math) 1)
         ;; Match one single latex macro such as \command
         ;; Only validate if this is the entire string
-        (string-match "\\`\\\\[a-zA-Z]+\\'" math))))
+        (string-match "\\`\\\\[a-zA-Z]+\\({}\\)?\\'" math))))
 #+END_SRC
 **** Increment Snippet Fields
 #+BEGIN_SRC emacs-lisp

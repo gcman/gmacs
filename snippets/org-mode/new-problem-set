@@ -22,6 +22,6 @@
 (save-excursion
 (insert "\n")
 (cl-loop for i from 1 to numProblems
-do (progn (insert (format "*** Problem %s" i)) (insert "\n\n")))
+do (progn (insert (format "*** TODO Problem %s" i)) (insert "\n\n")))
 (delete-char 1))
 (yas-expand-snippet snippet-text))

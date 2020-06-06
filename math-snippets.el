@@ -1,5 +1,6 @@
 (setq gm/math-global-snippets
-      '((">>" "&>")
+      '(("what" "\\widehat{$0}")
+        (">>" "&>")
         ("<<" "&<")
         ("DD" "\\D{}")
         ("ow" "\\owedge{}")
@@ -168,7 +169,7 @@
         ("cot" "\\cot ")
         ("cu" "\\Curl ")
         ("dd" "derivative" t)
-        ("del" "partial" t)
+        ("del" "\\partial{}")
         ("det" "\\Det ")
         ("dim" "\\Dim ")
         ("dint" "dintegral" t)

@@ -20,6 +20,7 @@
 $0
 * Options :noexport:
 #+LATEX_CLASS_OPTIONS: [notoc,nosubsec]
+#+OPTIONS: todo:nil
 # Local variables:
 # eval: (add-hook 'after-save-hook 'gm/org-latex-export nil t)
 # eval: (quick-math-mode 1)
