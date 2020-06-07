@@ -248,7 +248,11 @@
      ("diamondsuit" . "♢")
      ("heartsuit" . "♡")
      ("spadesuit" . "♠")
-     ("D" . "D"))))
+     ("D" . "D")
+     ("left(" . "(")
+     ("right)" . ")")
+     ("left[" . "[")
+     ("right]" . "]"))))
 
 (defvar gm/spaced-after
   '(("Div" . [?\s (Br . Bl) ?\s (Bc . Br) ?∇ (Br . Bc) ?\s (Br . Bc) ?\s (Bc . Bl) ?·])
