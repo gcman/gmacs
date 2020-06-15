@@ -5587,7 +5587,7 @@ results in =\frac{\sin x}{|}=.
         (setq match (substring match 1 -1)))
       (gm/math-insert-frac-match match env)))
    ((and (eq (char-before) 125)
-         (not (equal "{}" (gm/last-n-chars 2)))) ;; match closing curly braces
+         (not (equal "({}" (gm/last-n-chars 3)))) ;; match closing curly braces
     (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
    ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
     (let ((env (if env env "frac")))
