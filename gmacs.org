@@ -1875,7 +1875,6 @@ Basic configuration.
   (after! counsel
     (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
   (bind-key "O" #'gm-pdf-open-external pdf-view-mode-map)
-  (bind-key "O" #'gm-pdf-open-external doc-view-mode-map)
   :diminish pdf-view-midnight-minor-mode
   :bind (:map pdf-view-mode-map
               ("h" . pdf-annot-add-highlight-markup-annotation)
@@ -1889,6 +1888,7 @@ Basic configuration.
   :hook
   (pdf-view-mode . pdf-view-midnight-minor-mode)
   (pdf-view-mode . pdf-view-fit-width-to-window))
+(bind-key "O" #'gm-pdf-open-external doc-view-mode-map)
 #+END_SRC
 Open with external viewer by default if wanted.
 #+BEGIN_SRC emacs-lisp
@@ -2927,8 +2927,7 @@ We customize the commands a bit.
       '(("j" counsel-org-goto)
         ("a" org-archive-subtree)
         ("c" org-set-tags-command)
-        ("d" (lambda () (interactive) (org-todo 'done)))
-        ("R" (lambda () (interactive) (org-todo "TOREAD") (gm/refile (expand-file-name "reading.org" org-directory) "Reading")))))
+        ("d" (lambda () (interactive) (org-todo 'done)))))
 #+END_SRC
 *** Invisible Edits
 When text is entered near a hidden area (...), it is hard to see what is
@@ -4565,7 +4564,8 @@ Now for the Emacs setup. This library converts Org into HTML.
 #+BEGIN_SRC emacs-lisp
 (autoload 'org-mime-htmlize "org-mime")
 #+END_SRC
-Then we give ourselves a way to activate Org Mode mail.
+Then we give ourselves a way to activate Org Mode mail, and also to send HTML
+mail by default.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (defun gm/compose-html-org ()
   (interactive)
@@ -4575,6 +4575,7 @@ Then we give ourselves a way to activate Org Mode mail.
   (auto-fill-mode -1))
 
 (bind-key "M-m" #'gm/compose-html-org notmuch-message-mode-map)
+(bind-key "C-c C-c" (lambda! () (progn (gm/compose-html-org) (gm/org-htmlize-and-send))) notmuch-message-mode-map)
 #+END_SRC
 Let's define a function to send the mail.
 #+BEGIN_SRC emacs-lisp

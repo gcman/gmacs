@@ -6,7 +6,7 @@
 (let* ((file (file-name-base))
 (num (replace-regexp-in-string "[a-z]" "" file))
 (arr (split-string file num))
-(course-name  (format "%s %s%s" (upcase (nth 0 arr)) num (upcase (nth 1 arr))))
+(course-name (format "%s %s%s" (upcase (nth 0 arr)) num (upcase (nth 1 arr))))
 (snippet-text
 (format "* Notes
 :PROPERTIES:
