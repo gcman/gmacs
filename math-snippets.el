@@ -169,7 +169,7 @@
         ("cot" "\\cot ")
         ("cu" "\\Curl ")
         ("dd" "derivative" t)
-        ("del" "\\partial{}")
+        ("del" "\\pd{}")
         ("det" "\\Det ")
         ("dim" "\\Dim ")
         ("dint" "dintegral" t)

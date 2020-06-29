@@ -1888,7 +1888,8 @@ Basic configuration.
   :hook
   (pdf-view-mode . pdf-view-midnight-minor-mode)
   (pdf-view-mode . pdf-view-fit-width-to-window))
-(bind-key "O" #'gm-pdf-open-external doc-view-mode-map)
+(after! doc-view
+  (bind-key "O" #'gm-pdf-open-external doc-view-mode-map))
 #+END_SRC
 Open with external viewer by default if wanted.
 #+BEGIN_SRC emacs-lisp
