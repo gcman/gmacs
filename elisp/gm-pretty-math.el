@@ -57,10 +57,10 @@
 (defvar gm/math-vectors
   (append
    (cl-loop for i from 65 to 90
-            collect (list (concat "vec " (char-to-string i))
+            collect (cons (concat "vec " (char-to-string i))
                           (char-to-string (+ i 120211))))
    (cl-loop for i from 97 to 122
-            collect (list (concat "vec " (char-to-string i))
+            collect (cons (concat "vec " (char-to-string i))
                           (char-to-string (+ i 120205))))))
 
 (defvar gm/math-letters
