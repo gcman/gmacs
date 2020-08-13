@@ -2090,7 +2090,7 @@ Don't load the banner, and load TRAMP.
 #+END_SRC
 Increase default history size.
 #+BEGIN_SRC emacs-lisp
-(setq eshell-history-size 1024)
+(setq eshell-history-size nil)
 #+END_SRC
 *** Dired
 Great for renaming files in bulk.
