@@ -110,9 +110,29 @@ Enable lexical binding.
 #+BEGIN_SRC emacs-lisp
 ;; -*- lexical-binding: t -*-
 #+END_SRC
-Always load up a server when opening Emacs.
+Always load up a server when opening Emacs, unless one is already running..
 #+BEGIN_SRC emacs-lisp
-(server-start)
+(defun server-already-running-p ()
+  "Is Emacs already running?
+Gets name based on server-force-delete."
+       (let ((file (expand-file-name
+                    server-name
+                    (if server-use-tcp
+                        server-auth-dir
+                      server-socket-dir))))
+         (file-exists-p file)))
+
+(defun server-shunt ()
+  "Shunts to emacsclient"
+       (let ((args (append '("emacsclient" "-a" "\"\"" "-c" "-n")
+                           (cdr command-line-args))))
+         (shell-command (substring (format "%S" args) 1 -1))
+         (kill-emacs)))
+
+(unless (featurep 'server)
+  (unless (boundp 'server-process)
+    (require 'server)
+    (if (server-already-running-p) (server-shunt) (server-start))))
 #+END_SRC
 I was inspired to implement the following optimizations in GMACS thanks to
 [[https://github.com/nilcons/emacs-use-package-fast][nilcons/emacs-use-package-fast]]. During startup, we make the garbage collection
@@ -1773,17 +1793,17 @@ Indent with 4 spaces.
 (setq-default python-indent-offset 4)
 #+END_SRC
 Turn Emacs into basically a Python IDE.
-#+BEGIN_SRC emacs-lisp
-(use-package elpy
-  :config
-  (use-package py-autopep8
-    :hook (elpy-mode . py-autopep8-enable-on-save))
-  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-  :hook
-  (python-mode . elpy-enable)
-  (python-mode . elpy-mode)
-  (elpy-mode . flycheck-mode))
-#+END_SRC
+# #+BEGIN_SRC emacs-lisp
+# (use-package elpy
+#   :config
+#   (use-package py-autopep8
+#     :hook (elpy-mode . py-autopep8-enable-on-save))
+#   (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+#   :hook
+#   (python-mode . elpy-enable)
+#   (python-mode . elpy-mode)
+#   (elpy-mode . flycheck-mode))
+# #+END_SRC
 *** Lisp
 Because =use-package= is never actually evaluated/loaded if we byte-compile
 =gmacs.el=, it is not automatically syntax-highlighted as a macro.
@@ -4028,129 +4048,210 @@ Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
 (require 'ov)
-(defvar gm/org-last-fragment nil
-  "Holds the type and position of last valid fragment we were on.
-  Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
+(defvar org-latex-fragment-last nil
+  "Holds last fragment/environment you were on.")
 
-(defvar gm/org-valid-fragment-type '(latex-fragment latex-environment)
-  "List of types of fragments that will be previewed by `gm/org-preview-fragment'")
+(defun my/org-latex-fragment--get-current-latex-fragment ()
+  "Return the overlay associated with the image under point."
+  (car (--select (eq (overlay-get it 'org-overlay-type) 'org-latex-overlay) (overlays-at (point)))))
 
-(defun gm/org-curr-fragment (&optional location)
-  "Returns the type and position of the current fragment available
-for preview inside org-mode. Returns nil at non-displayable fragments."
-  (let* ((loc (if location location (point)))
-         (fr (if (not (eq loc (point)))
+(defun my/org-in-latex-fragment-p ()
+    "Return the point where the latex fragment begins, if inside
+  a latex fragment. Else return false"
+    (let* ((el (org-element-context))
+           (el-type (car el)))
+      (and (or (eq 'latex-fragment el-type) (eq 'latex-environment el-type))
+          (org-element-property :begin el))))
+
+(defun org-latex-fragment-toggle-auto ()
+  ;; Wait for the s
+  (interactive)
+  (while-no-input
+    (run-with-idle-timer 0.05 nil 'org-latex-fragment-toggle-helper)))
+
+(defun org-latex-fragment-toggle-helper ()
+    "Toggle a latex fragment image "
+    (condition-case nil
+        (and (eq 'org-mode major-mode)
+             (let* ((begin (my/org-in-latex-fragment-p)))
+               (cond
+                ;; were on a fragment and now on a new fragment
+                ((and
+                  ;; fragment we were on
+                  org-latex-fragment-last
+                  ;; and are on a fragment now
+                  begin
+                  ;; but not on the last one this is a little tricky. as you edit the
+                  ;; fragment, it is not equal to the last one. We use the begin
+                  ;; property which is less likely to change for the comparison.
+                  (not (= begin
+                          org-latex-fragment-last)))
+                 ;; go back to last one and put image back
                  (save-excursion
-                   (goto-char loc)
-                   (org-element-context))
-               (org-element-context)))
-         (fr-type (car fr)))
-    (when (memq fr-type gm/org-valid-fragment-type)
-      ;; \(...\)| cursor there should not result in active fragment
-      (let ( ; we only define these things now to optimize
-            (fr-begin (org-element-property :begin fr))
-            (fr-end (org-element-property :end fr))
-            ;; add one for the space after in \end{equation}
-            (fr-post-blank (1+ (org-element-property :post-blank fr))))
-        (when
-            ;; gotta fix some weird behaviour with environments
-            ;; make sure that if you're on the line after
-            ;; \end{equation}, you're considered out of the fragment
-            ;; check if point is between the actual end of the
-            ;; LaTex environment and the "supposed end" extended by blank ;; lines after the environment
-            (and
-             (> loc fr-begin)
-             (<= loc (- fr-end fr-post-blank)))
-          (list fr-type fr-begin))))))
+                   (goto-char org-latex-fragment-last)
+                   (when (my/org-in-latex-fragment-p) (org-toggle-latex-fragment))
+                   ;; now remove current imagea
+                   (goto-char begin)
+                   (let ((ov (my/org-latex-fragment--get-current-latex-fragment)))
+                     (when ov
+                       (delete-overlay ov)))
+                   ;; and save new fragment
+                   (setq org-latex-fragment-last begin)))
 
-(defun gm/org-remove-fragment-overlay (fr)
-  "Remove fragment overlay at fr"
-  (let ((fr-type (nth 0 fr))
-        (fr-begin (nth 1 fr)))
-    (goto-char fr-begin)
-    (when (memq fr-type gm/org-valid-fragment-type)
-      (let ((ov (car (--filter
-                      (and
-                       (<= (overlay-start it) (point))
-                       (>= (overlay-end it) (point)))
-                      (org--list-latex-overlays)))))
-        (when ov
-          (delete-overlay ov))))))
+                ;; were on a fragment and now are not on a fragment
+                ((and
+                  ;; not on a fragment now
+                  (not begin)
+                  ;; but we were on one
+                  org-latex-fragment-last)
+                 ;; put image back on
+                 (save-excursion
+                   (goto-char org-latex-fragment-last)
+                   (when (my/org-in-latex-fragment-p)(org-toggle-latex-fragment)))
 
-(defun gm/org-preview-fragment (fr)
-  "Preview org fragment at fr"
-  (let ((fr-type (nth 0 fr))
-        (fr-begin (nth 1 fr)))
-    (when (memq fr-type gm/org-valid-fragment-type)
-      (goto-char fr-begin)
-      (org-toggle-latex-fragment))))
+                 ;; unset last fragment
+                 (setq org-latex-fragment-last nil))
+
+                ;; were not on a fragment, and now are
+                ((and
+                  ;; we were not one one
+                  (not org-latex-fragment-last)
+                  ;; but now we are
+                  begin)
+                 (save-excursion
+                   (goto-char begin)
+                   ;; remove image
+                   (let ((ov (my/org-latex-fragment--get-current-latex-fragment)))
+                     (when ov
+                       (delete-overlay ov)))
+                   (setq org-latex-fragment-last begin)))
+                ;; else not on a fragment
+                ((not begin)
+                 (setq org-latex-fragment-last nil)))))
+      (error nil)))
+;; (defvar gm/org-last-fragment nil
+;;   "Holds the type and position of last valid fragment we were on.
+;;   Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
+
+;; (defvar gm/org-valid-fragment-type '(latex-fragment latex-environment)
+;;   "List of types of fragments that will be previewed by `gm/org-preview-fragment'")
+
+;; (defun gm/org-curr-fragment (&optional location)
+;;   "Returns the type and position of the current fragment available
+;; for preview inside org-mode. Returns nil at non-displayable fragments."
+;;   (let* ((loc (if location location (point)))
+;;          (fr (if (not (eq loc (point)))
+;;                  (save-excursion
+;;                    (goto-char loc)
+;;                    (org-element-context))
+;;                (org-element-context)))
+;;          (fr-type (car fr)))
+;;     (when (memq fr-type gm/org-valid-fragment-type)
+;;       ;; \(...\)| cursor there should not result in active fragment
+;;       (let ( ; we only define these things now to optimize
+;;             (fr-begin (org-element-property :begin fr))
+;;             (fr-end (org-element-property :end fr))
+;;             ;; add one for the space after in \end{equation}
+;;             (fr-post-blank (1+ (org-element-property :post-blank fr))))
+;;         (when
+;;             ;; gotta fix some weird behaviour with environments
+;;             ;; make sure that if you're on the line after
+;;             ;; \end{equation}, you're considered out of the fragment
+;;             ;; check if point is between the actual end of the
+;;             ;; LaTex environment and the "supposed end" extended by blank ;; lines after the environment
+;;             (and
+;;              (> loc fr-begin)
+;;              (<= loc (- fr-end fr-post-blank)))
+;;           (list fr-type fr-begin))))))
+
+;; (defun gm/org-remove-fragment-overlay (fr)
+;;   "Remove fragment overlay at fr"
+;;   (let ((fr-type (nth 0 fr))
+;;         (fr-begin (nth 1 fr)))
+;;     (goto-char fr-begin)
+;;     (when (memq fr-type gm/org-valid-fragment-type)
+;;       (let ((ov (car (--filter
+;;                       (and
+;;                        (<= (overlay-start it) (point))
+;;                        (>= (overlay-end it) (point)))
+;;                       (org--list-latex-overlays)))))
+;;         (when ov
+;;           (delete-overlay ov))))))
+
+;; (defun gm/org-preview-fragment (fr)
+;;   "Preview org fragment at fr"
+;;   (let ((fr-type (nth 0 fr))
+;;         (fr-begin (nth 1 fr)))
+;;     (when (memq fr-type gm/org-valid-fragment-type)
+;;       (goto-char fr-begin)
+;;       (org-toggle-latex-fragment))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(defun gm/org-auto-toggle-fragment-display ()
-  "Automatically toggle a displayable org mode fragment."
-  (and (eq 'org-mode major-mode)
-       (let ((curr (gm/org-curr-fragment))
-             (next (gm/org-curr-fragment (1+ (point)))))
-         (cond
-          ((and (not curr) next)
-           (gm/org-remove-fragment-overlay next)
-           (setq gm/org-last-fragment next))
-          ;; were on a fragment and now on a new fragment
-          ((and
-            ;; fragment we were on
-            gm/org-last-fragment
-            ;; and are on a fragment now
-            curr
-            ;; but not on the last one this is a little tricky. as you edit the
-            ;; fragment, it is not equal to the last one. We use the begin
-            ;; property which is less likely to change for the comparison.
-            (not (equal curr gm/org-last-fragment)))
-           ;; go back to last one and put image back, provided there is still a fragment there
-           (save-excursion
-             (gm/org-preview-fragment gm/org-last-fragment)
-             ;; now remove current image
-             (gm/org-remove-fragment-overlay curr))
+;; (defun gm/org-auto-toggle-fragment-display ()
+;;   "Automatically toggle a displayable org mode fragment."
+;;   (and (eq 'org-mode major-mode)
+;;        (let ((curr (gm/org-curr-fragment))
+;;              (next (gm/org-curr-fragment (1+ (point)))))
+;;          (cond
+;;           ((and (not curr) next)
+;;            (gm/org-remove-fragment-overlay next)
+;;            (setq gm/org-last-fragment next))
+;;           ;; were on a fragment and now on a new fragment
+;;           ((and
+;;             ;; fragment we were on
+;;             gm/org-last-fragment
+;;             ;; and are on a fragment now
+;;             curr
+;;             ;; but not on the last one this is a little tricky. as you edit the
+;;             ;; fragment, it is not equal to the last one. We use the begin
+;;             ;; property which is less likely to change for the comparison.
+;;             (not (equal curr gm/org-last-fragment)))
+;;            ;; go back to last one and put image back, provided there is still a fragment there
+;;            (save-excursion
+;;              (gm/org-preview-fragment gm/org-last-fragment)
+;;              ;; now remove current image
+;;              (gm/org-remove-fragment-overlay curr))
 
-           ;; and save new fragment
-           (setq gm/org-last-fragment curr))
+;;            ;; and save new fragment
+;;            (setq gm/org-last-fragment curr))
 
-          ;; were on a fragment and now are not on a fragment
-          ((and
-            ;; not on a fragment now
-            (not curr)
-            ;; but we were on one
-            gm/org-last-fragment)
+;;           ;; were on a fragment and now are not on a fragment
+;;           ((and
+;;             ;; not on a fragment now
+;;             (not curr)
+;;             ;; but we were on one
+;;             gm/org-last-fragment)
 
-           ;; put image back on, provided that there is still a fragment here.
-           (save-excursion
-             (gm/org-preview-fragment gm/org-last-fragment))
-           ;; unset last fragment
-           (setq gm/org-last-fragment nil))
+;;            ;; put image back on, provided that there is still a fragment here.
+;;            (save-excursion
+;;              (gm/org-preview-fragment gm/org-last-fragment))
+;;            ;; unset last fragment
+;;            (setq gm/org-last-fragment nil))
 
-          ;; were not on a fragment, and now are
-          ((and
-            ;; we were not one one
-            (not gm/org-last-fragment)
-            ;; but now we are
-            curr)
-           ;; remove image
-           (save-excursion
-             (gm/org-remove-fragment-overlay curr)
-             (setq gm/org-last-fragment curr))
-           ;; there is no point being in on the \( or \) part of the math fragment
-           ;; this code jumps the point into the actual math part of the fragment
-           (when (and (eq (char-before) 92)
-                       (eq (char-after) 41))
-                  (backward-char 1)))
-          ;; for the forward char, we have to do things a little
-          ;; differently, because the point is already in the fragment
-          ((and curr
-                gm/org-last-fragment
-                (eq (char-before) 92)
-                (eq (char-after) 40)
-                (eq last-command 'forward-char))
-           (forward-char 1))))))
+;;           ;; were not on a fragment, and now are
+;;           ((and
+;;             ;; we were not one one
+;;             (not gm/org-last-fragment)
+;;             ;; but now we are
+;;             curr)
+;;            ;; remove image
+;;            (save-excursion
+;;              (gm/org-remove-fragment-overlay curr)
+;;              (setq gm/org-last-fragment curr))
+;;            ;; there is no point being in on the \( or \) part of the math fragment
+;;            ;; this code jumps the point into the actual math part of the fragment
+;;            (when (and (eq (char-before) 92)
+;;                        (eq (char-after) 41))
+;;                   (backward-char 1)))
+;;           ;; for the forward char, we have to do things a little
+;;           ;; differently, because the point is already in the fragment
+;;           ((and curr
+;;                 gm/org-last-fragment
+;;                 (eq (char-before) 92)
+;;                 (eq (char-after) 40)
+;;                 (eq last-command 'forward-char))
+;;            (forward-char 1))))))
 #+END_SRC
 We can also centre equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
@@ -4194,8 +4295,11 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
 (defun gm/eq-toggle ()
   (if gm/eq-preview-mode
       (progn
-        (add-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display t 'local))
-    (remove-hook 'post-command-hook 'gm/org-auto-toggle-fragment-display 'local)))
+        (add-hook 'post-command-hook 'org-latex-fragment-toggle-auto t 'local))
+    (remove-hook 'post-command-hook 'org-latex-fragment-toggle-auto 'local)))
+
+(setq org-latex-fragment-toggle-helper (byte-compile 'org-latex-fragment-toggle-helper))
+(setq org-latex-fragment-toggle-auto (byte-compile 'org-latex-fragment-toggle-auto))
 
 (add-hook 'gm/eq-preview-mode-hook #'gm/eq-toggle)
 #+END_SRC
