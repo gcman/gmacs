@@ -4555,9 +4555,9 @@ more rigorous system of encryption.
 Some commonly used searches.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq notmuch-saved-searches
-      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order oldest-first)
+      '((:name "inbox" :query "tag:inbox" :key "i")
         (:name "flagged" :query "tag:flagged" :key "f")
-        (:name "sent" :query "tag:sent" :key "s" :sort-order newest-first)
+        (:name "sent" :query "tag:sent" :key "s")
         (:name "drafts" :query "tag:draft" :key "d")))
 #+END_SRC
 Show newest mail first.
@@ -4680,7 +4680,7 @@ mail by default.
   (auto-fill-mode -1))
 
 (bind-key "M-m" #'gm/compose-html-org notmuch-message-mode-map)
-(bind-key "C-c C-c" (lambda! () (progn (gm/compose-html-org) (gm/org-htmlize-and-send))) notmuch-message-mode-map)
+;; (bind-key "C-c C-c" (lambda! () (progn (gm/compose-html-org) (gm/org-htmlize-and-send))) notmuch-message-mode-map)
 #+END_SRC
 Let's define a function to send the mail.
 #+BEGIN_SRC emacs-lisp
@@ -4710,6 +4710,59 @@ It's an email, not an essay.
 (setq org-mime-export-options '(:section-numbers nil
                                 :with-author nil
                                 :with-toc nil))
+#+END_SRC
+Mod by John Kitchin.
+#+BEGIN_SRC emacs-lisp
+(defun org-mime-compose (body fmt file &optional to subject headers)
+  (require 'message)
+  (let ((bhook
+         (lambda (body fmt)
+           (let ((hook (intern (concat "org-mime-pre-"
+                                       (symbol-name fmt)
+                                       "-hook"))))
+             (if (> (eval `(length ,hook)) 0)
+                 (with-temp-buffer
+                   (insert body)
+                   (goto-char (point-min))
+                   (eval `(run-hooks ',hook))
+                   (buffer-string))
+               body))))
+        (fmt (if (symbolp fmt) fmt (intern fmt)))
+        (files (org-element-map (org-element-parse-buffer) 'link
+                 (lambda (link)
+                   (when (string= (org-element-property :type link) "file")
+                     (file-truename (org-element-property :path link)))))))
+    (compose-mail to subject headers nil)
+    (message-goto-body)
+    (cond
+     ((eq fmt 'org)
+      (require 'ox-org)
+      (insert (org-export-string-as
+               (org-babel-trim (funcall bhook body 'org)) 'org t)))
+     ((eq fmt 'ascii)
+      (require 'ox-ascii)
+      (insert (org-export-string-as
+               (concat "#+Title:\n" (funcall bhook body 'ascii)) 'ascii t)))
+     ((or (eq fmt 'html) (eq fmt 'html-ascii))
+      (require 'ox-ascii)
+      (require 'ox-org)
+      (let* ((org-link-file-path-type 'absolute)
+             ;; we probably don't want to export a huge style file
+             (org-export-htmlize-output-type 'inline-css)
+             (org-html-with-latex 'dvipng)
+             (html-and-images
+              (org-mime-replace-images
+               (org-export-string-as (funcall bhook body 'html) 'html t)))
+             (images (cdr html-and-images))
+             (html (org-mime-apply-html-hook (car html-and-images))))
+        (insert (org-mime-multipart
+                 (org-export-string-as
+                  (org-babel-trim
+                   (funcall bhook body (if (eq fmt 'html) 'org 'ascii)))
+                  (if (eq fmt 'html) 'org 'ascii) t)
+                 html)
+                (mapconcat 'identity images "\n")))))
+    (mapc #'mml-attach-file files)))
 #+END_SRC
 *** Don't Forget Attachments
 From [[https://gitlab.com/ambrevar/dotfiles/blob/master/.emacs.d/lisp/patch-notmuch.el][ambrevar's dotfiles]].
@@ -4832,10 +4885,7 @@ From [[http://www.holgerschurig.de/en/emacs-notmuch-hello/][Holger Schurig]].
       (let* ((str (format "%s" cnt))
              (widget-push-button-prefix "")
              (widget-push-button-suffix "")
-             (oldest-first (case (plist-get elem :sort-order)
-                             (newest-first nil)
-                             (oldest-first t)
-                             (otherwise notmuch-search-oldest-first))))
+             (oldest-first notmuch-search-oldest-first))
         (widget-create 'push-button
                        :notify #'notmuch-hello-widget-search
                        :notmuch-search-terms query
