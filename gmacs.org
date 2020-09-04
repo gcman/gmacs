@@ -4555,9 +4555,9 @@ more rigorous system of encryption.
 Some commonly used searches.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq notmuch-saved-searches
-      '((:name "inbox" :query "tag:inbox" :key "i")
+      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order 'oldest-first)
         (:name "flagged" :query "tag:flagged" :key "f")
-        (:name "sent" :query "tag:sent" :key "s")
+        (:name "sent" :query "tag:sent" :key "s" :sort-order 'newest-first)
         (:name "drafts" :query "tag:draft" :key "d")))
 #+END_SRC
 Show newest mail first.
