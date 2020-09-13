@@ -1,7 +1,6 @@
 (setq gm/math-global-snippets
-      '(("wto" "\\rightharpoonup ")
-        ("Dn" "\\Dn ")
-        ("Sn" "\\Sn ")
+      '(("\\to iso" "\\xrightarrow{\\sim} ")
+        ("wto" "\\rightharpoonup ")
         ("^pd" "^pd")
         ("\\tan h" "\\tanh ")
         ("\\sec h" "\\sech ")
@@ -115,7 +114,7 @@
         ("obj" "\\Obj")
         ("mst" "m^\\star{}")
         ("circ" "\\circ ")
-        ("min" "\\min ")
+        ("Min" "\\min ")
         ("max" "\\max ")
         ("cneq" "\\subsetneq ")
         ("frak" "\\mathfrak{$0}")

@@ -110,7 +110,7 @@ Enable lexical binding.
 #+BEGIN_SRC emacs-lisp
 ;; -*- lexical-binding: t -*-
 #+END_SRC
-Always load up a server when opening Emacs, unless one is already running..
+Always load up a server when opening Emacs, unless one is already running.
 #+BEGIN_SRC emacs-lisp
 (defun server-already-running-p ()
   "Is Emacs already running?
@@ -1512,62 +1512,13 @@ Sometimes we accidentally add a word to our personal list and want to remove it.
         (insert (format "%s\n" w))))))
 #+END_SRC
 *** Text Manipulation
-**** Cut/Paste
-From the infamous Xah Lee.
+If there is no region active, operate on the current line.
 #+BEGIN_SRC emacs-lisp
-(defun xah-cut-line-or-region ()
-  "Cut current line, or text selection.
-When `universal-argument' is called first, cut whole buffer (respects `narrow-to-region').
-URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
-Version 2015-06-10"
-  (interactive)
-    (progn (if (use-region-p)
-               (kill-region (region-beginning) (region-end) t)
-             (kill-region (line-beginning-position) (line-beginning-position 2)))))
-
-(defun xah-copy-line-or-region ()
-  "Copy current line, or text selection.
-When called repeatedly, append copy subsequent lines.
-When `universal-argument' is called first, copy whole buffer (respects `narrow-to-region').
-
-URL `http://ergoemacs.org/emacs/emacs_copy_cut_current_line.html'
-Version 2018-09-10"
-  (interactive)
-  (if current-prefix-arg
-      (progn
-        (copy-region-as-kill (point-min) (point-max)))
-    (if (use-region-p)
-        (progn
-          (copy-region-as-kill (region-beginning) (region-end)))
-      (if (eq last-command this-command)
-          (if (eobp)
-              (progn )
-            (progn
-              (kill-append "\n" nil)
-              (kill-append
-               (buffer-substring-no-properties (line-beginning-position) (line-end-position))
-               nil)
-              (progn
-                (end-of-line)
-                (forward-char))))
-        (if (eobp)
-            (if (eq (char-before) 10 )
-                (progn )
-              (progn
-                (copy-region-as-kill (line-beginning-position) (line-end-position))
-                (end-of-line)))
-          (progn
-            (copy-region-as-kill (line-beginning-position) (line-end-position))
-            (end-of-line)
-            (forward-char)))))))
-
-(bind-key "C-k" 'xah-cut-line-or-region)
-(bind-key "M-w" 'xah-copy-line-or-region)
-#+END_SRC
-Org Mode rebinds =C-k= to its own kill line function, so we set up another binding
-here.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(bind-key "C-k" #'xah-cut-line-or-region org-mode-map)
+(use-package whole-line-or-region
+  :defer 2
+  :bind (:map org-mode-map
+              ([remap org-kill] . 'whole-line-or-region-kill-region)
+              ([remap org-yank] . 'whole-line-or-region-yank-handler)))
 #+END_SRC
 **** Paragraph Navigation
 Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
@@ -1873,98 +1824,15 @@ could.
   :config (paradox-enable))
 #+END_SRC
 *** Special Modes
-**** PDF Tools
-Basic configuration.
-#+BEGIN_SRC emacs-lisp
-(use-package pdf-tools
-  :mode (("\\.pdf\\'" . pdf-view-mode))
-  :commands pdf-view-mode
-  :init
-  (defun gm-pdf-open-external (&optional filename)
-    (require 'dired-open)
-    (interactive)
-    (let (close)
-    (unless filename
-      (setq filename (file-truename buffer-file-name))
-      (setq close t))
-    (dired-open--start-process filename "xdg-open")
-    (when close
-      (kill-buffer-and-window))))
-  :config
-  (setq pdf-annot-activate-created-annotations t)
-  (after! counsel
-    (bind-key "C-s" #'counsel-grep-or-swiper pdf-view-mode-map))
-  (bind-key "O" #'gm-pdf-open-external pdf-view-mode-map)
-  :diminish pdf-view-midnight-minor-mode
-  :bind (:map pdf-view-mode-map
-              ("h" . pdf-annot-add-highlight-markup-annotation)
-              ("t" . pdf-annot-add-text-annotation)
-              ("D". pdf-annot-delete)
-              ("r" . pdf-view--rotate)
-              ("n" . pdf-view-next-line-or-next-page)
-              ("C-n" . pdf-view-next-page-command)
-              ("p" . pdf-view-previous-line-or-previous-page)
-              ("C-p" . pdf-view-previous-page-command))
-  :hook
-  (pdf-view-mode . pdf-view-midnight-minor-mode)
-  (pdf-view-mode . pdf-view-fit-width-to-window))
-(after! doc-view
-  (bind-key "O" #'gm-pdf-open-external doc-view-mode-map))
-#+END_SRC
+**** PDF Viewing
 Open with external viewer by default if wanted.
 #+BEGIN_SRC emacs-lisp
 (require 'openwith)
+(openwith-mode 1)
 (setq openwith-associations '(("\\.pdf\\'" "zathura" (file))
                               ("\\.djvu\\'" "zathura" (file))))
 #+END_SRC
-Allow rotation.
-#+BEGIN_SRC emacs-lisp
-(after! pdf-tools
-  (defun pdf-view--rotate (&optional counterclockwise-p page-p)
-  "Rotate PDF 90 degrees.  Requires pdftk to work.\n
-Clockwise rotation is the default; set COUNTERCLOCKWISE-P to
-non-nil for the other direction.  Rotate the whole document by
-default; set PAGE-P to non-nil to rotate only the current page.
-\nWARNING: overwrites the original file, so be careful!"
-  (interactive)
-  ;; error out when pdftk is not installed
-  (if (null (executable-find "pdftk"))
-      (error "Rotation requires pdftk")
-    ;; only rotate in pdf-view-mode
-    (when (eq major-mode 'pdf-view-mode)
-      (let* ((rotate (if counterclockwise-p "left" "right"))
-             (file   (format "\"%s\"" (pdf-view-buffer-file-name)))
-             (page   (pdf-view-current-page))
-             (pages  (cond ((not page-p)                        ; whole doc?
-                            (format "1-end%s" rotate))
-                           ((= page 1)                          ; first page?
-                            (format "%d%s %d-end"
-                                    page rotate (1+ page)))
-                           ((= page (pdf-info-number-of-pages)) ; last page?
-                            (format "1-%d %d%s"
-                                    (1- page) page rotate))
-                           (t                                   ; interior page?
-                            (format "1-%d %d%s %d-end"
-                                    (1- page) page rotate (1+ page))))))
-        ;; empty string if it worked
-        (if (string= "" (shell-command-to-string
-                         (format (concat "pdftk %s cat %s "
-                                         "output %s.NEW "
-                                         "&& mv %s.NEW %s")
-                                 file pages file file file)))
-            (pdf-view-revert-buffer nil t)
-          (error "Rotation error!")))))))
-#+END_SRC
-Open PDFs to where they were last opened.
-#+BEGIN_SRC emacs-lisp
-(use-package pdf-view-restore
-  :after pdf-tools
-  :config
-  (add-hook 'pdf-view-mode-hook #'pdf-view-restore-mode)
-  :custom
-  (pdf-view-restore-filename "~/.emacs.d/cache/.pdf-view-restore"))
-#+END_SRC
-**** Epub reading
+**** Epub Reading
 We use =nov.el=. Change default reading font from Source Sans Pro (my default
 variable pitch font) to Minion Pro.
 #+BEGIN_SRC emacs-lisp
@@ -2363,7 +2231,7 @@ Set tramp connection history location.
 (use-package counsel
   :after ivy
   :bind
-  ([remap execute-extended-command] . counsel-M-x)
+  ("C-SPC" . counsel-M-x)
   ([remap org-goto] . counsel-org-goto)
   ([remap find-file] . counsel-find-file)
   ("C-s" . counsel-grep-or-swiper)
@@ -3641,7 +3509,7 @@ _q_ quit
 ")
 
 (defhydra hydra-org-link-helper (:color pink)
-  `hydra-org-link-helper-hint-base
+  hydra-org-link-helper-hint-base
   ("i" org-link-edit-backward-slurp)
   ("o" org-link-edit-forward-slurp)
   ("j" org-link-edit-backward-barf)
@@ -3970,7 +3838,7 @@ their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 #+BEGIN_SRC emacs-lisp
 (require 'gm-pretty-math)
 #+END_SRC
-*** Don't Break Paragraph on Comments'
+*** Don't Break Paragraph on Comments
 [[https://emacs.stackexchange.com/questions/22574/orgmode-export-how-to-prevent-a-new-line-for-comment-lines][John Kitchin]] tells us how to remove comments from an Org document when exporting
 to LaTeX.
 #+BEGIN_SRC emacs-lisp
@@ -4129,129 +3997,6 @@ leaving a math fragment.
                 ((not begin)
                  (setq org-latex-fragment-last nil)))))
       (error nil)))
-;; (defvar gm/org-last-fragment nil
-;;   "Holds the type and position of last valid fragment we were on.
-;;   Format: (FRAGMENT_TYPE FRAGMENT_POINT_BEGIN)")
-
-;; (defvar gm/org-valid-fragment-type '(latex-fragment latex-environment)
-;;   "List of types of fragments that will be previewed by `gm/org-preview-fragment'")
-
-;; (defun gm/org-curr-fragment (&optional location)
-;;   "Returns the type and position of the current fragment available
-;; for preview inside org-mode. Returns nil at non-displayable fragments."
-;;   (let* ((loc (if location location (point)))
-;;          (fr (if (not (eq loc (point)))
-;;                  (save-excursion
-;;                    (goto-char loc)
-;;                    (org-element-context))
-;;                (org-element-context)))
-;;          (fr-type (car fr)))
-;;     (when (memq fr-type gm/org-valid-fragment-type)
-;;       ;; \(...\)| cursor there should not result in active fragment
-;;       (let ( ; we only define these things now to optimize
-;;             (fr-begin (org-element-property :begin fr))
-;;             (fr-end (org-element-property :end fr))
-;;             ;; add one for the space after in \end{equation}
-;;             (fr-post-blank (1+ (org-element-property :post-blank fr))))
-;;         (when
-;;             ;; gotta fix some weird behaviour with environments
-;;             ;; make sure that if you're on the line after
-;;             ;; \end{equation}, you're considered out of the fragment
-;;             ;; check if point is between the actual end of the
-;;             ;; LaTex environment and the "supposed end" extended by blank ;; lines after the environment
-;;             (and
-;;              (> loc fr-begin)
-;;              (<= loc (- fr-end fr-post-blank)))
-;;           (list fr-type fr-begin))))))
-
-;; (defun gm/org-remove-fragment-overlay (fr)
-;;   "Remove fragment overlay at fr"
-;;   (let ((fr-type (nth 0 fr))
-;;         (fr-begin (nth 1 fr)))
-;;     (goto-char fr-begin)
-;;     (when (memq fr-type gm/org-valid-fragment-type)
-;;       (let ((ov (car (--filter
-;;                       (and
-;;                        (<= (overlay-start it) (point))
-;;                        (>= (overlay-end it) (point)))
-;;                       (org--list-latex-overlays)))))
-;;         (when ov
-;;           (delete-overlay ov))))))
-
-;; (defun gm/org-preview-fragment (fr)
-;;   "Preview org fragment at fr"
-;;   (let ((fr-type (nth 0 fr))
-;;         (fr-begin (nth 1 fr)))
-;;     (when (memq fr-type gm/org-valid-fragment-type)
-;;       (goto-char fr-begin)
-;;       (org-toggle-latex-fragment))))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-;; (defun gm/org-auto-toggle-fragment-display ()
-;;   "Automatically toggle a displayable org mode fragment."
-;;   (and (eq 'org-mode major-mode)
-;;        (let ((curr (gm/org-curr-fragment))
-;;              (next (gm/org-curr-fragment (1+ (point)))))
-;;          (cond
-;;           ((and (not curr) next)
-;;            (gm/org-remove-fragment-overlay next)
-;;            (setq gm/org-last-fragment next))
-;;           ;; were on a fragment and now on a new fragment
-;;           ((and
-;;             ;; fragment we were on
-;;             gm/org-last-fragment
-;;             ;; and are on a fragment now
-;;             curr
-;;             ;; but not on the last one this is a little tricky. as you edit the
-;;             ;; fragment, it is not equal to the last one. We use the begin
-;;             ;; property which is less likely to change for the comparison.
-;;             (not (equal curr gm/org-last-fragment)))
-;;            ;; go back to last one and put image back, provided there is still a fragment there
-;;            (save-excursion
-;;              (gm/org-preview-fragment gm/org-last-fragment)
-;;              ;; now remove current image
-;;              (gm/org-remove-fragment-overlay curr))
-
-;;            ;; and save new fragment
-;;            (setq gm/org-last-fragment curr))
-
-;;           ;; were on a fragment and now are not on a fragment
-;;           ((and
-;;             ;; not on a fragment now
-;;             (not curr)
-;;             ;; but we were on one
-;;             gm/org-last-fragment)
-
-;;            ;; put image back on, provided that there is still a fragment here.
-;;            (save-excursion
-;;              (gm/org-preview-fragment gm/org-last-fragment))
-;;            ;; unset last fragment
-;;            (setq gm/org-last-fragment nil))
-
-;;           ;; were not on a fragment, and now are
-;;           ((and
-;;             ;; we were not one one
-;;             (not gm/org-last-fragment)
-;;             ;; but now we are
-;;             curr)
-;;            ;; remove image
-;;            (save-excursion
-;;              (gm/org-remove-fragment-overlay curr)
-;;              (setq gm/org-last-fragment curr))
-;;            ;; there is no point being in on the \( or \) part of the math fragment
-;;            ;; this code jumps the point into the actual math part of the fragment
-;;            (when (and (eq (char-before) 92)
-;;                        (eq (char-after) 41))
-;;                   (backward-char 1)))
-;;           ;; for the forward char, we have to do things a little
-;;           ;; differently, because the point is already in the fragment
-;;           ((and curr
-;;                 gm/org-last-fragment
-;;                 (eq (char-before) 92)
-;;                 (eq (char-after) 40)
-;;                 (eq last-command 'forward-char))
-;;            (forward-char 1))))))
 #+END_SRC
 We can also centre equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
@@ -4345,11 +4090,6 @@ This allows the user to easily change the size of brackets in LaTeX expressions.
                              (if (string= cmd "PDF") "-pdf" "-xelatex")
                              "-interaction=nonstopmode"
                              file)
-        ;; (async-start-process "latex-cleanup"
-        ;;                      "latexmk"
-        ;;                      nil
-        ;;                      "-xelatex"
-        ;;                      "-c")
         ))))
 #+END_SRC
 Bind this in Org mode.
