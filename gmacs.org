@@ -1,5 +1,8 @@
 #+TITLE: My Emacs Configuration
 #+PROPERTY: header-args :results silent :tangle gmacs.el
+# Local variables:
+# eval: (add-hook 'after-save-hook #'gm/tangle-gmacs nil t)
+# end:
 * Starting Up
 ** Fixing the UI
 :PROPERTIES:
@@ -10,8 +13,7 @@ see when we open Emacs, so it better not look ugly. We're going to configure
 part of the UI outside Emacs entirely, by editing the =~/.Xresources=.
 
 This kills the ugly parts of the UI before they are born. This is slightly
-faster than disabling them within Emacs, but it offers less flexibility. For
-example, if Emacs fails to start up properly, you are possibly left staring at a
+faster than disabling them within Emacs, but it offers less flexibility. For example, if Emacs fails to start up properly, you are possibly left staring at a
 chimera of an editor, with default font colours but themed background
 colours. Because the font is about the same shade as the background, this makes
 for some very fun times debugging.
@@ -749,27 +751,6 @@ nice and neat.
       auto-save-list-file-name (expand-file-name (concat gmacs-cache-dir "auto-save/.saves~")))
 #+END_SRC
 However, Emacs prints a lot of messages to the echo area telling you that a file
-has been autosaved. This is unnecessary, so I use [[http://pragmaticemacs.com/emacs/make-emacs-a-bit-quieter/][this hack]] from Pragmatic Emacs
-to quiet down the autosave. Essentially, we replace the default autosave
-function with our own silent version.
-#+BEGIN_SRC emacs-lisp
-(setq auto-save-timeout 99999)
-
-(defvar bjm/auto-save-timer nil
-  "Timer to run `bjm/auto-save-silent'")
-
-(defvar bjm/auto-save-interval 15
-  "How often in seconds of idle time to auto-save with
-`bjm/auto-save-silent'")
-
-(defun bjm/auto-save-silent ()
-  "Auto-save all buffers silently"
-  (interactive)
-  (do-auto-save t))
-
-(setq bjm/auto-save-timer
-      (run-with-idle-timer 0 bjm/auto-save-interval 'bjm/auto-save-silent))
-#+END_SRC
 **** History
 It's nice to have a history of commands and other things so that you can get
 right to work when you open a new Emacs instance, you can get right to work.
@@ -1045,16 +1026,6 @@ know about this process if it failed.
                  (unless result
                    (message "GMACS unsuccessfully tangled: %s" result))))))
     (setq gm--tangle-process proc)))
-#+END_SRC
-Finally. we wrap this in a function that checks whether we're in the right file.
-It would be inefficient to tangle the configuration file every time a different
-file was edited and saved.
-#+BEGIN_SRC emacs-lisp
-(defun gm/tangle-if-config ()
-    (when (string-suffix-p "gmacs.org" (buffer-file-name))
-      (gm/tangle-gmacs)))
-
-(add-hook 'after-save-hook #'gm/tangle-if-config)
 #+END_SRC
 *** Benchmarking
 **** Functions
