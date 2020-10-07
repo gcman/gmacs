@@ -1,8 +1,3 @@
-#+TITLE: My Emacs Configuration
-#+PROPERTY: header-args :results silent :tangle gmacs.el
-# Local variables:
-# eval: (add-hook 'after-save-hook #'gm/tangle-gmacs nil t)
-# end:
 * Starting Up
 ** Fixing the UI
 :PROPERTIES:
@@ -1487,9 +1482,12 @@ If there is no region active, operate on the current line.
 #+BEGIN_SRC emacs-lisp
 (use-package whole-line-or-region
   :defer 2
-  :bind (:map org-mode-map
-              ([remap org-kill] . 'whole-line-or-region-kill-region)
-              ([remap org-yank] . 'whole-line-or-region-yank-handler)))
+  :bind (:map global-map
+              ("C-k" . 'whole-line-or-region-kill-region)
+              ("M-w" . 'whole-line-or-region-copy-region-as-kill))
+        (:map org-mode-map
+              ("C-k" . 'whole-line-or-region-kill-region)
+              ("M-w" . 'whole-line-or-region-copy-region-as-kill)))
 #+END_SRC
 **** Paragraph Navigation
 Keep blank lines as paragraph delimiters, no matter the major mode. From [[http://endlessparentheses.com/meta-binds-part-2-a-peeve-with-paragraphs.html][Meta
@@ -1748,7 +1746,7 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 *** C++
 #+BEGIN_SRC emacs-lisp
 (setq-default c-default-style "linux"
-              c-basic-offset 2)
+              c-basic-offset 4)
 #+END_SRC
 ** Packages
 *** Package Management
@@ -1796,12 +1794,34 @@ could.
 #+END_SRC
 *** Special Modes
 **** PDF Viewing
+#+BEGIN_SRC emacs-lisp
+(defun gm-pdf-open-external (&optional filename)
+  (require 'dired-open)
+  (interactive)
+  (let (close)
+    (unless filename
+      (setq filename (file-truename buffer-file-name))
+      (setq close t))
+    (dired-open--start-process filename "xdg-open")
+    (when close
+      (kill-buffer-and-window))))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(after! doc-view
+  (bind-key "O" #'gm-pdf-open-external doc-view-mode-map))
+#+END_SRC
 Open with external viewer by default if wanted.
 #+BEGIN_SRC emacs-lisp
-(require 'openwith)
-(openwith-mode 1)
-(setq openwith-associations '(("\\.pdf\\'" "zathura" (file))
-                              ("\\.djvu\\'" "zathura" (file))))
+(use-package openwith
+  :ensure t
+  :defer 2
+  :commands (find-file openwith-mode)
+  :config
+  (openwith-mode 1)
+  (after! notmuch
+    (add-hook 'notmuch-message-mode-hook (lambda () (openwith-mode -1))))
+  :custom (openwith-associations '(("\\.pdf\\'" "zathura" (file))
+                                   ("\\.djvu\\'" "zathura" (file)))))
 #+END_SRC
 **** Epub Reading
 We use =nov.el=. Change default reading font from Source Sans Pro (my default
@@ -3301,26 +3321,6 @@ being the title of that website.
 (use-package org-cliplink
   :commands org-cliplink
   :bind (:map org-mode-map ("C-c y" . org-cliplink)))
-#+END_SRC
-*** Word Count
-It's very useful to be able to see the word count of a subtree when I am writing
-a paper for school.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(use-package org-wc
-  :commands org-wc-display
-  :bind (:map org-mode-map ("C-c w" . gm/wc-display-current-subtree)))
-#+END_SRC
-I narrow to subtree by default because displaying the count for every subtree in
-the file is (usually) unnecessary and (always) too slow.
-#+BEGIN_SRC emacs-lisp
-(after! org-wc
-  (defun gm/wc-display-current-subtree (arg)
-    (interactive "P")
-    (if arg
-        (org-wc-display nil)
-      (save-restriction
-        (org-narrow-to-subtree)
-        (org-wc-display nil)))))
 #+END_SRC
 *** Org Ref
 A wonderfully featured framework for maintaining bibliographies and writing
@@ -5031,7 +5031,7 @@ Snippets go in [[file:math-snippets.el]].
   ("F" (insert "\\mathbb{F}") "𝔽")
   ("l" (insert "\\ell{}") "ℓ")
   ("o" (insert "\\circ{}") "∘")
-  ("r" (insert "\\varrho ") "ρ")
+  ("r" (insert "\\wp{}") "ρ")
   ("u" (insert "\\sqcup ") "∩")
   ("U" (insert "\\cap ") "∩")
   ("n" (insert "\\nu{}") "ν")
@@ -5647,3 +5647,9 @@ snippet calls this function.
              (line-beginning-position) (line-end-position)) "")
       (yas-expand-snippet (format "#+name: fig:%s\n #+caption: $2\n #+attr_latex: :vertical-alignment b\n [[file:figures/%s.pdf_tex]]\n$0" name name)))))
       #+END_SRC
+* Options
+#+OPTIONS: todo:nil
+#+PROPERTY: header-args :results silent :tangle gmacs.el
+# Local variables:
+# eval: (add-hook 'after-save-hook 'gm/tangle-gmacs nil t)
+# end:

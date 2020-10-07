@@ -73,6 +73,7 @@
      ("ell" . "ℓ")
      ("wp" . "℘")
      ("partial" . "∂")
+     ("pd" . "∂")
      ("N" . "𝗡")
      ("Z" . "𝗭")
      ("Q" . "𝗤")
@@ -262,8 +263,7 @@
     ("int" . [?\s (Bc . Bc) ?\s (Bc . Br) ?∫])))
 
 (defvar gm/math-commands
-  '(("dd" [?\s (Br . Bc) ?𝖽] "")
-    ("pd" ?∂ "")))
+  '(("dd" [?\s (Br . Bc) ?𝖽] "")))
 
 (defun gm/math-regexp-unspaced (name symbol)
   (list (cons (format "\\(\\\\%s{}\\)" name) symbol)
