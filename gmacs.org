@@ -1020,7 +1020,7 @@ know about this process if it failed.
     (when (process-live-p proc)
       (kill-process proc)
       (kill-buffer (process-buffer proc))))
-  (let ((proc (async-start (symbol-function #'gm/tangle-gmacs-helper)
+  (let ((proc (async-start (symbol-function 'gm/tangle-gmacs-helper)
                (lambda (result)
                  (unless result
                    (message "GMACS unsuccessfully tangled: %s" result))))))
@@ -1164,7 +1164,7 @@ behavior added."
         (defining-kbd-macro
           (message
            (substitute-command-keys
-            "Quit is ignored during macro defintion, use \\[kmacro-end-macro] if you want to stop macro definition"))
+            "Quit is ignored during macro defintion, use [kmacro-end-macro] if you want to stop macro definition"))
           (cancel-kbd-macro-events))
         ((active-minibuffer-window)
          (when (get-buffer-window "*Completions*")
@@ -1178,7 +1178,7 @@ behavior added."
          (let ((debug-on-quit nil))
            (signal 'quit nil)))))
 
-(global-set-key [remap keyboard-quit] #'keyboard-quit-context)
+;; (global-set-key [remap keyboard-quit] #'keyboard-quit-context)
 #+END_SRC
 *** Don't Ask to Kill Processes on Quit
 #+BEGIN_SRC emacs-lisp
@@ -3222,7 +3222,7 @@ rotate the image first to make sure it displays correctly.
     (message "Attached %s" start-file-full)
     (setq end-file (expand-file-name start-file (org-attach-dir nil)))
     (call-process "convert" nil nil nil end-file "-rotate" "-90" end-file)
-    (insert (org-make-link-string (format "file:%s" end-file)))
+    (insert (org-link-make-string (format "file:%s" end-file)))
     (org-display-inline-images t t)))
 #+END_SRC
 *** Todo Lists and Agenda
@@ -3432,9 +3432,9 @@ the entry of interest in the bibfile.  but does not check that."
            (pdf (funcall org-ref-get-pdf-filename-function key))
            (pdf2 (reftex-get-bib-field "file" entry)))
       (if (file-exists-p pdf)
-          (org-open-link-from-string (format "[[file:%s]]" pdf))
+          (org-link-open-from-string (format "[[file:%s]]" pdf))
         (if (file-exists-p pdf2)
-            (org-open-link-from-string (format "[[file:%s]]" pdf2))
+            (org-link-open-from-string (format "[[file:%s]]" pdf2))
           (ding)))))))
 #+END_SRC
 Use the label names I make, which allows me to access them before export, at the
@@ -3469,45 +3469,45 @@ risk of them not being unique.
 #+END_SRC
 **** Links
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
-(setq hydra-org-link-helper-hint-base
-      "
-org link helper
-_i_ backward slurp     _o_ forward slurp    _n_ next link
-_j_ backward barf      _k_ forward barf     _p_ previous link
+;; (setq hydra-org-link-helper-hint-base
+;;       "
+;; org link helper
+;; _i_ backward slurp     _o_ forward slurp    _n_ next link
+;; _j_ backward barf      _k_ forward barf     _p_ previous link
 
-_q_ quit
-")
+;; _q_ quit
+;; ")
 
-(defhydra hydra-org-link-helper (:color pink)
-  hydra-org-link-helper-hint-base
-  ("i" org-link-edit-backward-slurp)
-  ("o" org-link-edit-forward-slurp)
-  ("j" org-link-edit-backward-barf)
-  ("k" org-link-edit-forward-barf)
-  ("n" org-next-link)
-  ("p" org-previous-link)
-  ("q" nil :color blue))
+;; (defhydra hydra-org-link-helper (:color pink)
+;;   hydra-org-link-helper-hint-base
+;;   ("i" org-link-edit-backward-slurp)
+;;   ("o" org-link-edit-forward-slurp)
+;;   ("j" org-link-edit-backward-barf)
+;;   ("k" org-link-edit-forward-barf)
+;;   ("n" org-next-link)
+;;   ("p" org-previous-link)
+;;   ("q" nil :color blue))
 
-(setq hydra-org-link-helper/hint
-      '(if (equal (org-element-property :path (org-element-context)) "marginnote")
-           (prog1
-               (let* ((lines (split-string hydra-org-link-helper-hint-base "\n"))
-                      (newhint "        _e_ shift margin note")
-                      hint)
-                 (setf (nth 2 lines) (concat (nth 2 lines) newhint))
-                 (setq hint (mapconcat 'identity lines "\n"))
-                 (eval
-                  (hydra--format nil '(nil nil :hint nil)
-                                 hint hydra-org-link-helper/heads)))
-             (define-key hydra-org-link-helper/keymap "e"
-               (lambda! ()
-                        (gm/math-make-marginnote-float)
-                        (hydra-org-link-helper/nil))))
-         (prog1
-             (eval
-              (hydra--format nil '(nil nil :hint nil)
-                             hydra-org-link-helper-hint-base hydra-org-link-helper/heads))
-           (define-key hydra-org-link-helper/keymap "e" nil))))
+;; (setq hydra-org-link-helper/hint
+;;       '(if (equal (org-element-property :path (org-element-context)) "marginnote")
+;;            (prog1
+;;                (let* ((lines (split-string hydra-org-link-helper-hint-base "\n"))
+;;                       (newhint "        _e_ shift margin note")
+;;                       hint)
+;;                  (setf (nth 2 lines) (concat (nth 2 lines) newhint))
+;;                  (setq hint (mapconcat 'identity lines "\n"))
+;;                  (eval
+;;                   (hydra--format nil '(nil nil :hint nil)
+;;                                  hint hydra-org-link-helper/heads)))
+;;              (define-key hydra-org-link-helper/keymap "e"
+;;                (lambda! ()
+;;                         (gm/math-make-marginnote-float)
+;;                         (hydra-org-link-helper/nil))))
+;;          (prog1
+;;              (eval
+;;               (hydra--format nil '(nil nil :hint nil)
+;;                              hydra-org-link-helper-hint-base hydra-org-link-helper/heads))
+;;            (define-key hydra-org-link-helper/keymap "e" nil))))
 #+END_SRC
 **** Tables
 #+BEGIN_SRC emacs-lisp
@@ -5512,7 +5512,7 @@ Turns an inline math snippet into an equation.
           (hungry-delete-forward 0))))))
 #+END_SRC
 **** Convert Equation to Split
-Slightly janky way to turn equation into split. Does idempotence check.
+Janky way to turn equation into split. Does idempotence check.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/math-split-delims '(" =" "\\le " "\\ge " "\\sim "))
 
@@ -5554,7 +5554,7 @@ and shifted notes use different link types.
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-make-marginnote-float ()
   (interactive)
-  (if (org-in-regexp org-bracket-link-regexp 1)
+  (if (org-in-regexp org-link-bracket-re 1)
       (let* ((remove (list (match-beginning 0) (match-end 0)))
              (description (match-string-no-properties 3))
              (shift-regexp ";[0-9]*ex")
