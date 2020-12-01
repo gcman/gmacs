@@ -47,7 +47,7 @@
 ;;
 
 ;;; Code:
-(require 'cl)
+(require 'cl-lib)
 
 (defun bratex--empty-string-p (str)
   "Return t if STR is nil or \"\"."
