@@ -8,10 +8,11 @@ see when we open Emacs, so it better not look ugly. We're going to configure
 part of the UI outside Emacs entirely, by editing the =~/.Xresources=.
 
 This kills the ugly parts of the UI before they are born. This is slightly
-faster than disabling them within Emacs, but it offers less flexibility. For example, if Emacs fails to start up properly, you are possibly left staring at a
-chimera of an editor, with default font colours but themed background
-colours. Because the font is about the same shade as the background, this makes
-for some very fun times debugging.
+faster than disabling them within Emacs, but it offers less flexibility. For
+example, if Emacs fails to start up properly, you are possibly left staring at a
+chimera of an editor, with default font colours but themed background colours.
+Because the font is about the same shade as the background, this makes for some
+very fun times debugging.
 
 After editing =.Xresources=, remember to reload it with =xrdb merge ~/.Xresources=.
 *** Bars
@@ -72,8 +73,8 @@ startup take longer and aren't that useful.
       initial-major-mode 'fundamental-mode
       initial-scratch-message nil)
 #+END_SRC
-We either load the byte-compiled GMACS configuration file or tangle and load
-the GMACS literate config file (you're reading it!) written in Org Mode.
+We tangle and load the GMACS literate config file (you're reading it!) written
+in Org Mode.
 #+BEGIN_SRC emacs-lisp :tangle init.el
 (advice-add #'display-startup-echo-area-message :override #'ignore)
 (setq inhibit-startup-message t
@@ -84,16 +85,14 @@ the GMACS literate config file (you're reading it!) written in Org Mode.
 
 (let ((file-name-handler-alist nil)
       (orgfile (expand-file-name "gmacs.org" user-emacs-directory))
-      (elfile (expand-file-name "gmacs.el" user-emacs-directory))
-      (elcfile (expand-file-name "gmacs.elc" user-emacs-directory)))
-  (if (file-exists-p elcfile)
-      (load-file elcfile)
-    (if (or (not (file-exists-p elfile))
-            (file-newer-than-file-p orgfile elfile))
-        (progn
-          (require 'org)
-          (org-babel-load-file orgfile))
-      (load-file elfile))))
+      (elfile (expand-file-name "gmacs.el" user-emacs-directory)))
+
+  (if (or (not (file-exists-p elfile))
+          (file-newer-than-file-p orgfile elfile))
+      (progn
+        (require 'org)
+        (org-babel-load-file orgfile))
+    (load-file elfile)))
 
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (when (file-exists-p custom-file) (load custom-file))
@@ -994,22 +993,8 @@ I used to have my =init.el= set up so that, if =gmacs.elc= did not exist, it wou
 tangle =gmacs.org=. This unfortunately means that Emacs takes a long time to start
 up (about 6 seconds). To solve this, I tangle this very file on save.
 
-First, we set up a function to do the tangling. We have to, for example, refer
-to =user-emacs-directory= and not =user-emacs-directoryectory=, and run =(require
-'ob-tangle)= because the function is run in its own subprocess (this is what
-allows it to be asynchronous).
-#+BEGIN_SRC emacs-lisp
-(defun gm/tangle-gmacs-helper ()
-  (let ((src (expand-file-name "gmacs.org" user-emacs-directory))
-        (dst (expand-file-name "gmacs.el" user-emacs-directory))
-        (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local)))
-    (require 'ob-tangle)
-    (org-babel-tangle-file src dst)
-    (byte-compile-file dst)))
-#+END_SRC
-Then, we wrap this in an asynchronous process. If the config file is already
-being tangled, we kill that process and start a new one. I only really want to
-know about this process if it failed.
+If the config file is already being tangled, we kill that process and start a
+new one. I only really want to know about this process if it failed.
 #+BEGIN_SRC emacs-lisp
 (defvar gm--tangle-process nil)
 
@@ -1020,7 +1005,10 @@ know about this process if it failed.
     (when (process-live-p proc)
       (kill-process proc)
       (kill-buffer (process-buffer proc))))
-  (let ((proc (async-start (symbol-function 'gm/tangle-gmacs-helper)
+  (let ((proc (async-start
+               (lambda ()
+                 (require 'ob-tangle)
+                 (org-babel-tangle-file (expand-file-name "gmacs.org" user-emacs-directory)))
                (lambda (result)
                  (unless result
                    (message "GMACS unsuccessfully tangled: %s" result))))))
