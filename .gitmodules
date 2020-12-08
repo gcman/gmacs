@@ -5,3 +5,7 @@
 [submodule "org-tufte-latex"]
 	path = elisp/tufte-org-mode
 	url = git@github.com:gcman/tufte-org-mode.git
+
+[submodule "elisp/math-preview"]
+	path = elisp/math-preview
+	url = https://gitlab.com/matsievskiysv/math-preview.git

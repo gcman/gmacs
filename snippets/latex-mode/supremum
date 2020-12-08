@@ -7,4 +7,4 @@
 (progn
 (delete-char -5)
 (insert "\\limsup "))
-(insert "\\Sup "))
+(insert "\\sup "))

@@ -3809,6 +3809,12 @@ simply explains what the regexp does."
                (eq (char-before) (string-to-char "}")))
       (newline))))
 #+END_SRC
+*** Change Bracket Sizes
+This allows the user to easily change the size of brackets in LaTeX expressions.
+#+BEGIN_SRC emacs-lisp
+;; (autoload 'bratex-config "bratex")
+;; (add-hook 'quick-math-mode-hook #'bratex-config)
+#+END_SRC
 *** Equation Auto Preview
 :PROPERTIES:
 :ORDERED:  t
@@ -3821,13 +3827,9 @@ POINT defaults to the current `point'."
   (or point (setq point (point)))
   (car (overlays-at point)))
 #+END_SRC
-Use =imagemagick=.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(setq org-preview-latex-default-process 'imagemagick)
-#+END_SRC
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(when gm/user (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.75)))
+(when gm/user (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.7)))
 #+END_SRC
 Where should it be? Let's put them all in the same place, so that common
 fragments (like =x^2=) are never generated more than once and so that we don't
@@ -3836,90 +3838,77 @@ litter our folders.
 (setq org-preview-latex-image-directory
       (expand-file-name "cache/ltximg/" user-emacs-directory))
 #+END_SRC
+Use this instead of =org-latex-preview=.
+#+BEGIN_SRC emacs-lisp
+(use-package math-preview
+  :load-path "~/.emacs.d/elisp/math-preview/"
+  :commands (math-preview-at-point)
+  :custom (math-preview-scale 2.5))
+#+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
-(defvar org-latex-fragment-last nil
+(defvar-local org-latex-fragment-last nil
   "Holds last fragment/environment you were on.")
 
-(defun my/org-latex-fragment--get-current-latex-fragment ()
+(defun org-latex-fragment-get-current-fragment ()
   "Return the overlay associated with the image under point."
-  (car (--select (eq (overlay-get it 'org-overlay-type) 'org-latex-overlay) (overlays-at (point)))))
+  (car (--select (eq (overlay-get it 'category) 'math-preview) (overlays-at (point)))))
 
-(defun my/org-in-latex-fragment-p ()
-    "Return the point where the latex fragment begins, if inside
+(defun org-latex-fragment-in-latex-fragment-p ()
+  "Return the point where the latex fragment begins, if inside
   a latex fragment. Else return false"
-    (let* ((el (org-element-context))
-           (el-type (car el)))
-      (and (or (eq 'latex-fragment el-type) (eq 'latex-environment el-type))
-          (org-element-property :begin el))))
+  (let* ((el (org-element-context))
+         (el-type (car el)))
+    (and (or (eq 'latex-fragment el-type) (eq 'latex-environment el-type))
+         (< (point) (- (org-element-property :end el) (org-element-property :post-blank el)))
+         (org-element-property :begin el))))
 
 (defun org-latex-fragment-toggle-auto ()
-  ;; Wait for the s
   (interactive)
   (while-no-input
-    (run-with-idle-timer 0.05 nil 'org-latex-fragment-toggle-helper)))
+    (run-with-idle-timer 0.01 nil 'org-latex-fragment-toggle-helper)))
+
+(defun org-latex-fragment-preview-last ()
+  (save-excursion
+    (goto-char org-latex-fragment-last)
+    (when (org-latex-fragment-in-latex-fragment-p)
+      (math-preview-at-point))))
+
+(defun org-latex-fragment-clear (pos)
+  (save-excursion
+    (goto-char pos)
+    (when (org-latex-fragment-get-current-fragment)
+      (math-preview-clear-at-point)))
+  (setq org-latex-fragment-last pos))
 
 (defun org-latex-fragment-toggle-helper ()
-    "Toggle a latex fragment image "
-    (condition-case nil
-        (and (eq 'org-mode major-mode)
-             (let* ((begin (my/org-in-latex-fragment-p)))
-               (cond
-                ;; were on a fragment and now on a new fragment
-                ((and
-                  ;; fragment we were on
-                  org-latex-fragment-last
-                  ;; and are on a fragment now
-                  begin
-                  ;; but not on the last one this is a little tricky. as you edit the
-                  ;; fragment, it is not equal to the last one. We use the begin
-                  ;; property which is less likely to change for the comparison.
-                  (not (= begin
-                          org-latex-fragment-last)))
-                 ;; go back to last one and put image back
-                 (save-excursion
-                   (goto-char org-latex-fragment-last)
-                   (when (my/org-in-latex-fragment-p) (org-latex-preview))
-                   ;; now remove current imagea
-                   (goto-char begin)
-                   (let ((ov (my/org-latex-fragment--get-current-latex-fragment)))
-                     (when ov
-                       (delete-overlay ov)))
-                   ;; and save new fragment
-                   (setq org-latex-fragment-last begin)))
-
-                ;; were on a fragment and now are not on a fragment
-                ((and
-                  ;; not on a fragment now
-                  (not begin)
-                  ;; but we were on one
-                  org-latex-fragment-last)
-                 ;; put image back on
-                 (save-excursion
-                   (goto-char org-latex-fragment-last)
-                   (when (my/org-in-latex-fragment-p) (org-latex-preview)))
-
-                 ;; unset last fragment
-                 (setq org-latex-fragment-last nil))
-
-                ;; were not on a fragment, and now are
-                ((and
-                  ;; we were not one one
-                  (not org-latex-fragment-last)
-                  ;; but now we are
-                  begin)
-                 (save-excursion
-                   (goto-char begin)
-                   ;; remove image
-                   (let ((ov (my/org-latex-fragment--get-current-latex-fragment)))
-                     (when ov
-                       (delete-overlay ov)))
-                   (setq org-latex-fragment-last begin)))
-                ;; else not on a fragment
-                ((not begin)
-                 (setq org-latex-fragment-last nil)))))
-      (error nil)))
+  "Toggle a latex fragment image "
+  (condition-case nil
+      (and (eq 'org-mode major-mode)
+           (let* ((begin (org-latex-fragment-in-latex-fragment-p)))
+             (cond
+              ;; were on a fragment and now on a new fragment
+              ;; need to replace old image and clear current image
+              ((and
+                org-latex-fragment-last
+                begin
+                (not (= begin
+                        org-latex-fragment-last)))
+               (org-latex-fragment-preview-last)
+               (org-latex-fragment-clear begin))
+              ;; were on a fragment and now are not on a fragment
+              ;; need to replace old image
+              ((and (not begin) org-latex-fragment-last)
+               (org-latex-fragment-preview-last)
+               (setq org-latex-fragment-last nil))
+              ;; were not on a fragment and now are
+              ((and (not org-latex-fragment-last) begin)
+               (org-latex-fragment-clear begin))
+              ;; else not on a fragment
+              ((not begin)
+               (setq org-latex-fragment-last nil)))))
+    (error nil)))
 #+END_SRC
 We can also centre equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
@@ -3966,16 +3955,7 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
         (add-hook 'post-command-hook 'org-latex-fragment-toggle-auto t 'local))
     (remove-hook 'post-command-hook 'org-latex-fragment-toggle-auto 'local)))
 
-(setq org-latex-fragment-toggle-helper (byte-compile 'org-latex-fragment-toggle-helper))
-(setq org-latex-fragment-toggle-auto (byte-compile 'org-latex-fragment-toggle-auto))
-
 (add-hook 'gm/eq-preview-mode-hook #'gm/eq-toggle)
-#+END_SRC
-*** Change Bracket Sizes
-This allows the user to easily change the size of brackets in LaTeX expressions.
-#+BEGIN_SRC emacs-lisp
-;; (autoload 'bratex-config "bratex")
-;; (add-hook 'quick-math-mode-hook #'bratex-config)
 #+END_SRC
 *** Allow Alphabetical List
 #+BEGIN_SRC emacs-lisp
@@ -4998,8 +4978,6 @@ Then we bind this to semicolon.
 *** Helper Functions
 **** QuickMath Minor Mode
 #+BEGIN_SRC emacs-lisp :noweb no-export
-(defvar gm/use-math-abbrevs nil)
-
 (after! org
   (defvar gm/math-mode-map
     (let ((map (make-sparse-keymap)))
@@ -5179,7 +5157,7 @@ snippets. First, we create a suffix tree of all the math snippets.
               (-max (--map (length (cadr it)) gm/math-snippets))))
   (let ((unique-suffixes
          (delete-dups (--map (s-right 1 (car it)) gm/math-snippets))))
-    (seq-do (lambda (key)
+    (seq-do #'(lambda (key)
               (eval `(define-conditional-key gm/math-mode-map
                          ,key (lambda! () (gm/math-snippet-expand ,key))
                        (gm/in-math-p))))
