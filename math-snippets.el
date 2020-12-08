@@ -1,5 +1,6 @@
 (setq gm/math-global-snippets
-      '(("succ" "\\prec ")
+      '(("/" "" t)
+        ("succ" "\\prec ")
         ("bul" "^{\\bullet}")
         ("Sh" "\\Sh")
         ("cprod" "\\coprod_{$1}")

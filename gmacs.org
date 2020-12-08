@@ -5333,78 +5333,149 @@ Typing =/= after an appropriate block (a number or a balanced set of parentheses
 creates a fraction with this block in the numerator and the point in the
 denominator. The outside parentheses will be removed; for example, =(\sin x)/=
 results in =\frac{\sin x}{|}=.
+
+First, this is a set of extra strings that we accept as a prefix to a match.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/math-frac-extras
-  '("\\\\vec"
-    "\\\\Delta"))
+  '("\\vec"))
+#+END_SRC
+We write a function to go backward from the point until no more characters match.
+#+BEGIN_SRC emacs-lisp
+;; Go backward by a latex sub/superscript
+(defun gm/math-frac--backward-script ()
+  (cond
+   ((string-match-p "[_^]." (gm/last-n-chars 2))
+    (backward-char 2))
+   ;; 125 is right curly brace
+   ((and (eq (char-before) 125)
+         (string-match-p "[_^]" (save-excursion
+                                  (backward-sexp)
+                                  (char-to-string (char-before)))))
+    (backward-sexp)
+    (backward-char))))
 
-(defun gm/math-insert-frac-match (match &optional env)
+(defun gm/math-frac--backward-word ()
+  (let ((pt (point)))
+    (save-excursion
+      (when (string-match-p "{}" (gm/last-n-chars 2))
+        (backward-char 2))
+      (when (string-match-p "\\w" (char-to-string (char-before)))
+        (backward-word)
+        (when (equal (char-before) (string-to-char "\\"))
+          (backward-char))
+        (setq pt (point))))
+    (goto-char pt)))
+
+(defun gm/math-frac--backward-match ()
+  ;; do this until we encounter a space character, or until we get into an
+  ;; infinite loop
+  (let ((pt (point-min)))
+    (while (and (not (eq (point) (point-min)))
+                (not (eq pt (point)))
+                (not (string-match-p "[[:space:]]" (char-to-string (char-before)))))
+      (setq pt (point))
+      (gm/math-frac--backward-script)
+      (gm/math-frac--backward-script)
+      (gm/math-frac--backward-word))
+    (condition-case nil
+        (re-search-backward (concat (regexp-opt gm/math-frac-extras) "\\( \\|{}\\)"))
+      (error nil))))
+#+END_SRC
+This gets plugged into a function that gets the maximal matching suffix of a string.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-frac--start-of-match-string (str)
+  "Return maximal matching suffix for a fraction match.
+
+Match a LaTeX word with 0 to 2 sub/superscripts that is not
+preceded by ^ or _ (because this means something like matching
+the 1 in x_1). Allow possibly being preceded by a math extra in
+`gm/math-frac--start-of-match-string' The match must end at
+point."
+  (with-temp-buffer
+    (insert str)
+    (goto-char (point-max))
+    (gm/math-frac--backward-match)
+    (buffer-substring-no-properties (point) (point-max))))
+#+END_SRC
+Now we use this as the matching function in a function that returns the spot in
+the buffer where the maximal suffix begins.
+#+BEGIN_SRC emacs-lisp
+(defvar gm/math-frac-start-of-match-func 'gm/math-frac--start-of-match-string)
+
+(defun gm/math-frac--get-max-start ()
+  (let* ((fr (org-element-context))
+         (fr-type (car fr))
+         (fr-begin (org-element-property :begin fr)))
+    ;; Casework for farthest to look back
+    (max (line-beginning-position)
+         (if (eq fr-type 'latex-fragment)
+             ;; add 2 to account for \( \)
+             (+ 2 fr-begin)
+           0)
+         (condition-case nil
+             (marker-position
+              (yas--field-start
+               (yas--snippet-active-field (car (yas-active-snippets)))))
+           (error 0)))))
+
+(defun gm/math-frac--start-of-match ()
+  "Return start of maximal match ending at point.
+
+Look no further back than bol for environment and start of
+fragment for inline math, and never any further than the start of
+the most recently activated snippet"
+  (let* ((max-start (gm/math-frac--get-max-start))
+         (max-match (buffer-substring-no-properties max-start (point)))
+         (match (funcall gm/math-frac-start-of-match-func max-match)))
+    (- (point) (length match))))
+#+END_SRC
+Finally, we write the main function.
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-frac--process-match (match)
+  (replace-regexp-in-string "\\`(\\(.*\\))\\'" "\\1" match))
+
+(defun gm/math-frac--insert-match (match env)
+  (yas-expand-snippet (yas-lookup-snippet env))
+  (insert (gm/math-frac--process-match match))
+  (yas-next-field))
+
+(defun gm/math-frac--region (beg end env)
+  "Replace text in region with fraction"
+  ;; default to frac environment
   (unless env (setq env "frac"))
-  (when match
-    (if (equal env "frac")
-        (yas-expand-snippet "\\frac{$1}{}")
-      (yas-expand-snippet (yas-lookup-snippet env)))
-    (insert match)
-    (forward-char 2)))
-
-(defun gm/math-frac-helper (regexp &optional env)
-  (when (looking-back regexp (line-beginning-position) t)
-    (let* ((begin (match-beginning 0))
-           (end (match-end 0))
-           (match (buffer-substring-no-properties begin end)))
-      (delete-region begin end)
-      (gm/math-insert-frac-match match env))))
+  (let ((match (buffer-substring-no-properties beg end)))
+    (delete-region beg end)
+    (gm/math-frac--insert-match match env)))
 
 (defun gm/math-frac (&optional env)
   (interactive)
-  (when (eq (char-before) ?/) ;; remove /
-    (delete-char -1))
-  (cond
-   ((use-region-p)
-    (let* ((begin (region-beginning))
-           (end (region-end))
-           (match (buffer-substring-no-properties
-                   begin end)))
-      (delete-region begin end)
-      ;; remove surrounding parens
-      (when (string-match-p "\\`([^()]*)\\'" match)
-        (setq match (substring match 1 -1)))
-      (gm/math-insert-frac-match match env)))
-   ((string-match "[\])]" (char-to-string (char-before)))
-    (let ((end (point))
-          (sqbracket (eq (char-before) 93)) ;; last char is sqbracket
-          (env (if (eq (char-before) 41) "frac" "quotient"))
-          match)
-      (when sqbracket
-        (backward-sexp))
-      (backward-sexp)
-      (setq match (buffer-substring-no-properties (point) end))
-      (delete-region (point) end)
-      (unless sqbracket
-        (setq match (substring match 1 -1)))
-      (gm/math-insert-frac-match match env)))
-   ((and (eq (char-before) 125)
-         (not (equal "({}" (gm/last-n-chars 3)))) ;; match closing curly braces
-    (gm/math-frac-helper "[\\][a-z]*[\[{].*[\]}]" env))
-   ((string-match "[[:alnum:]!]" (char-to-string (char-before)))
-    (let ((env (if env env "frac")))
-      (if (string-match "\\^" (char-to-string (char-before)))
-          (yas-expand-snippet (yas-lookup-snippet (if env env "frac")))
-        (gm/math-frac-helper
-         (format "%s\\( \\|{}\\)%s"
-                 (regexp-opt gm/math-frac-extras t)
-                 "\\\\?[[:alnum:]_!]+")
-         env)
-        (if (and (yas-active-snippets)
-                 (eq (point)
-                     (marker-position (yas--field-end (yas--snippet-active-field (car (yas-active-snippets)))))))  ;; check if snippet end here
-            (gm/math-frac-helper "\\\\?[[:alnum:]_!]+" env)
-          ;; Bit of a hacky fix
-          (gm/math-frac-helper "\\\\?[[:alnum:]_^!]+" env))
-        )))
-   (t (yas-expand-snippet (yas-lookup-snippet (if env env "frac"))))))
+  ;; use fraction if called with C-u and quotient if called with C-u C-u
+  (unless env
+    (setq env (cond
+               ((equal current-prefix-arg '(4)) "frac")
+               ((equal current-prefix-arg '(16)) "quotient"))))
+  (let ((ch (char-to-string (char-before)))
+        (end (point)))
+    (cond
+     ;; active region
+     ((use-region-p)
+      (gm/math-frac--region (region-beginning) (region-end) env))
+     ;; match is surrounded in brackets
+     ((string-match-p "[\])]" ch)
+      (let ((beg (progn
+                   (backward-sexp)
+                   (point))))
+        ;; For example, R[X] should use quotient by default
+        (when (equal ch "]")
+          (unless env (setq env "quotient"))
+          (setq beg (gm/math-frac--start-of-match)))
+        (gm/math-frac--region beg end env)))
+     ((string-match-p "[[:alnum:]!}]" ch)
+      (setq beg (gm/math-frac--start-of-match))
+      (gm/math-frac--region beg end env))
+     (t (unless env (setq env "frac"))
+        (yas-expand-snippet (yas-lookup-snippet env))))))
 #+END_SRC
-The binding is given in [[*Generate Snippets][Generate Snippets]].
 **** Easy Split Environments
 I wanted to make writing environments like =split= and =align= easier, so that I
 wouldn't have to manually add the newline (=\\=) at the end of each line required
