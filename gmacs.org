@@ -3780,7 +3780,8 @@ introducing too many spaces in the earlier regexps.
 #+BEGIN_SRC emacs-lisp
 (defcustom gm/reformat-fragment-alist
   '(("+" " + " "spaces around +")
-    ("\\( \\|{}\\)*\\([_^]\\)[ ]*" "\\2" "remove spaces and braces around ^ and _")
+    ("[ ]*\\([\\^_]\\)[ ]*" "\\1" "remove spaces around ^ and _")
+    ("[\\^_]{}" "\\1" "remove empty sub/superscript")
     (" +" " " "no more than 1 space in a row")
     ("\\(\\\\(\\) " "\\1" "no space at start of fragment")
     (" \\(\\\\)\\)" "\\1" "no space at end of fragment"))
@@ -3843,7 +3844,10 @@ Use this instead of =org-latex-preview=.
 (use-package math-preview
   :load-path "~/.emacs.d/elisp/math-preview/"
   :commands (math-preview-at-point)
-  :custom (math-preview-scale 2.5))
+  :custom
+  (math-preview-scale 2.5)
+  (math-preview-margin '(0 . 0))
+  (math-preview-raise 0))
 #+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
@@ -5057,10 +5061,7 @@ be in math. The one subtlety is that we also look at the starred versions of
                      (> (- env-open env-close) 0))))))))))
 #+END_SRC
 **** Enter Math Mode
-Enter a math fragment if inside one, exit otherwise. We keep track of the number
-of blank lines that follow the fragment, because according to Org, an =equation=
-environment doesn't end until the first non-newline character that follows. This
-makes for some awkward timing for activating previews.
+Enter a math fragment if inside one, exit otherwise.
 #+BEGIN_SRC emacs-lisp
 (defun gm/create-or-exit-math-fragment ()
   (interactive)
@@ -5068,20 +5069,19 @@ makes for some awkward timing for activating previews.
       (gm/reformat-fragment)
     (when (yas-active-snippets)
       (yas-exit-all-snippets))
-    (if (org-in-src-block-p)
-        (insert "$")
-      (insert "\\(")
-      (save-excursion (insert "\\)")))))
+    (insert "\\(")
+    (save-excursion (insert "\\)"))))
 #+END_SRC
 **** Last n Characters Before Point
-Return the last n characters before the point, or =loc= if provided.
+Return the last n characters before the point, or =loc= if provided. Provide less
+characters if there are not enough. Return nil if =loc= is too large.
 #+BEGIN_SRC emacs-lisp
 (defun gm/last-n-chars (n &optional loc)
+  (when (use-region-p) (setq loc (region-end)))
   (unless loc (setq loc (point)))
   (let ((start (- loc n)))
-    (when (and (>= start (point-min))
-               (<= start (point-max)))
-      (buffer-substring-no-properties (- loc n) loc))))
+    (when (<= start (point-max))
+      (buffer-substring-no-properties (max (point-min) (- loc n)) loc))))
 #+END_SRC
 **** Last LaTeX Letter
 Postfix commands often act on the last letter. For example, I want =fhat= to
@@ -5132,7 +5132,7 @@ I use this for postfix snippets, as explained.
     (or (eq (length math) 1)
         ;; Match one single latex macro such as \command
         ;; Only validate if this is the entire string
-        (string-match "\\`\\\\[a-zA-Z]+\\({}\\)?\\'" math))))
+        (string-match-p (concat "\\`\\\\" "[a-zA-Z]+\\({}\\)?\\'") math))))
 #+END_SRC
 **** Increment Snippet Fields
 #+BEGIN_SRC emacs-lisp
@@ -5149,6 +5149,24 @@ snippets. First, we create a suffix tree of all the math snippets.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (defvar gm/longest-snippet)
 
+(defvar gm/math-snippet-by-suffix)
+
+(defun gm/math-snippet--bind-keys (keys)
+  (dolist (key keys)
+    (eval `(define-conditional-key gm/math-mode-map
+               ,key (lambda! () (gm/math-snippet-expand ,key))
+             (gm/in-math-p)))))
+
+(defun gm/math-snippet--create-suffix-tree (keys)
+  (setq gm/math-snippet-by-suffix nil)
+  (dolist (key keys)
+    (push (cons key '()) gm/math-snippet-by-suffix))
+  (dolist (snippet gm/math-snippets)
+    (let* ((key (car snippet))
+           (last (s-right 1 key))
+           (rest (s-left -1 key)))
+      (push rest (alist-get last gm/math-snippet-by-suffix nil nil 'equal)))))
+
 (defun gm/math-setup ()
   (load gm/math-snippet-loc)
   (setq gm/math-snippets (append gm/math-local-snippets gm/math-global-snippets))
@@ -5157,11 +5175,8 @@ snippets. First, we create a suffix tree of all the math snippets.
               (-max (--map (length (cadr it)) gm/math-snippets))))
   (let ((unique-suffixes
          (delete-dups (--map (s-right 1 (car it)) gm/math-snippets))))
-    (seq-do #'(lambda (key)
-              (eval `(define-conditional-key gm/math-mode-map
-                         ,key (lambda! () (gm/math-snippet-expand ,key))
-                       (gm/in-math-p))))
-            unique-suffixes)))
+    (gm/math-snippet--bind-keys unique-suffixes)
+    (gm/math-snippet--create-suffix-tree unique-suffixes)))
 #+END_SRC
 We make a function to get the possible completion candidates from the buffer.
 #+BEGIN_SRC emacs-lisp
@@ -5171,25 +5186,27 @@ We make a function to get the possible completion candidates from the buffer.
 #+END_SRC
 Then, we set up the creation of an actual snippet (note that its length is
 capped at a certain number of characters, defined by =gm/longest-snippet=). The
-longest snippet is currently =binom=, for the binomial coefficient (choose
-function).
+longest snippet is, at the time of writing, =binom=, for the binomial coefficient
+(choose function).
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-snippet-expand (key)
-  (insert key)
   (-if-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet)))
-             (completions (--keep (assoc it gm/math-snippets) buff-cand))
-             (snippet (--max-by (> (length (car it)) (length (car other)))
-                                completions)))
+             (completions (-intersection
+                           buff-cand
+                           (alist-get key gm/math-snippet-by-suffix nil nil 'equal)))
+             (snippet-match (--max-by (> (length it) (length other)) completions))
+             (snippet (assoc (concat snippet-match key) gm/math-snippets))
+             (expand (cadr snippet)))
       (progn
         ;; this has to be negative, we're deleting back
-        (delete-char (- 0 (length (car snippet))))
+        (delete-char (- 1 (length (car snippet))))
         ;; this is so we don't have two backslashes after something like \sim
         (when (= (char-before) ?\\) (delete-char -1))
         ;; is this a snippet expansion or just a text insertion?
-        (let ((expand (cadr snippet)))
+        (if (equal (car snippet) "/")
+            (gm/math-frac)
           (yas-expand-snippet (if (cddr snippet) (yas-lookup-snippet expand) expand))))
-    (when (equal key "/")
-      (gm/math-frac))))
+    (insert key)))
 #+END_SRC
 **** Add and View Snippet
 Now we give the user a way to easily add snippets.
@@ -5304,21 +5321,20 @@ creating them.
 #+BEGIN_SRC emacs-lisp
 (defun gm/math-number-subscript (n)
   (insert n)
-  (cond ((save-excursion
-           (backward-char)
-           (> (length (replace-regexp-in-string "[{}]" "" (if (gm/last-letter) (gm/last-letter) ""))) 1))
-         (save-excursion
-           (backward-char)
-           (insert "_")))
-        ((string-match "[a-zA-Z][0-9]" (gm/last-n-chars 2))
-         (save-excursion
-           (backward-char)
-           (insert "_")))
-        ((string-match "\_[0-9][0-9]" (gm/last-n-chars 3))
-         (save-excursion
-           (backward-char 2)
-           (insert "\{"))
-         (insert  "\}"))))
+  (save-excursion
+    (cond ((save-excursion
+             (backward-char)
+             (> (length (replace-regexp-in-string "[{}]" "" (if (gm/last-letter) (gm/last-letter) ""))) 1))
+             (backward-char)
+             (insert "_"))
+          ((string-match "[a-zA-Z][0-9]" (gm/last-n-chars 2))
+             (backward-char)
+             (insert "_"))
+          ((string-match "\_[0-9][0-9]" (gm/last-n-chars 3))
+           (save-excursion
+             (backward-char 2)
+             (insert "\{"))
+           (insert  "\}")))))
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
