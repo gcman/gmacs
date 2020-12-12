@@ -1565,70 +1565,6 @@ word.
   :bind (("C-=" . er/expand-region)
          ("M-2" . er/expand-region)))
 #+END_SRC
-**** Change Region to Title Case
-#+BEGIN_SRC emacs-lisp
-(defvar gm/title-case-skip-chars
-  "^\"<>(){}[]“”‘’‹›«»「」『』【】〖〗《》〈〉〔〕")
-
-(defun xah-title-case-region-or-line (@begin @end)
-  "Title case text between nearest brackets, or current line, or text selection.
-Capitalize first letter of each word, except words like {to, of,
-the, a, in, or, and, …}. If a word already contains cap letters
-such as HTTP, URL, they are left as is.
-
-When called in a elisp program, *begin *end are region boundaries.
-URL `http://ergoemacs.org/emacs/elisp_title_case_text.html'
-Version 2017-01-11"
-  (interactive
-   (if (use-region-p)
-       (list (region-beginning) (region-end))
-     (let (p1
-           p2
-           (skipChars gm/title-case-skip-chars))
-       (progn
-         (skip-chars-backward skipChars (line-beginning-position))
-         (setq p1 (point))
-         (skip-chars-forward skipChars (line-end-position))
-         (setq p2 (point)))
-       (list p1 p2))))
-  (let* ((strPairs [[" A " " a "]
-                    [" And " " and "]
-                    [" At " " at "]
-                    [" As " " as "]
-                    [" By " " by "]
-                    [" Be " " be "]
-                    [" Into " " into "]
-                    [" In " " in "]
-                    [" Is " " is "]
-                    [" It " " it "]
-                    [" For " " for "]
-                    [" Of " " of "]
-                    [" Or " " or "]
-                    [" On " " on "]
-                    [" Via " " via "]
-                    [" The " " the "]
-                    [" That " " that "]
-                    [" To " " to "]
-                    [" Vs " " vs "]
-                    [" With " " with "]
-                    [" From " " from "]
-                    ["'S " "'s "]
-                    ["'T " "'t "]]))
-    (save-excursion
-      (save-restriction
-        (narrow-to-region @begin @end)
-        (downcase-region @begin @end)
-        (upcase-initials-region (point-min) (point-max))
-        (let ((case-fold-search nil))
-          (mapc
-           (lambda (x)
-             (goto-char (point-min))
-             (while
-                 (search-forward (aref x 0) nil t)
-               (replace-match (aref x 1) "FIXEDCASE" "LITERAL")))
-           strPairs))))))
-#+END_SRC
-Note that one of the characters we skip is ="=.
 **** Replace String
 #+BEGIN_SRC emacs-lisp
 (defalias 'rs 'replace-string)
@@ -2810,6 +2746,12 @@ We customize the commands a bit.
         ("c" org-set-tags-command)
         ("d" (lambda () (interactive) (org-todo 'done)))))
 #+END_SRC
+This isn't quite speed keys, but I'm adding back the functionality of expanding
+=<s= into a source block (and =<l= into a LaTeX block, and so on) that was changed
+in Org >=9.2.
+#+BEGIN_SRC emacs-lisp
+(require 'org-tempo)
+#+END_SRC
 *** Invisible Edits
 When text is entered near a hidden area (...), it is hard to see what is
 changed.
@@ -3145,13 +3087,22 @@ javascript:location.href='org-protocol://capture?template=n'
 I bind =c p= as a specific case of =c b= for PDF files. The following function
 fetches the path of the current PDF file in qutebrowser's temporary download directory.
 #+BEGIN_SRC emacs-lisp
+(defun gm/find-qutebrowser-download-dir (url)
+  (expand-file-name (car
+                     (--filter (string-match "qutebrowser-downloads" it)
+                               (directory-files "/tmp/")))
+                    "/tmp"))
+
 (defun gm/find-qutebrowser-download (url)
-  (let* ((qutedir (expand-file-name (car
-                                     (--filter (string-match "qutebrowser-downloads" it)
-                                               (directory-files "/tmp/"))) "/tmp"))
-         (file (progn (string-match "\\(tmp.*\\.pdf\\)" url)
-                      (substring url (match-beginning 1) (match-end 1)))))
-    (expand-file-name file qutedir)))
+  (let* ((file (progn (string-match "\\(tmp.*\\.pdf\\)" url)
+                      (substring url (match-beginning 1) (match-end 1))))
+         (qutedir (gm/find-qutebrowser-download-dir url))
+         (dldir "~/Downloads/")
+         (src (expand-file-name file qutedir))
+         (dst (expand-file-name file dldir)))
+    (unless (file-exists-p dst)
+      (rename-file src dst))
+    dst))
 #+END_SRC
 This template attaches the file for future reference.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -3566,8 +3517,7 @@ points.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (use-package org-superstar
     :commands org-superstar-mode
-    :hook (org-mode . org-superstar-mode)
-    )
+    :hook (org-mode . org-superstar-mode))
 #+END_SRC
 In a similar vein, it helps the visual hierarchy to have text indented in
 accordance with the level of the heading, so I always use =org-indent-mode=.
@@ -3664,7 +3614,7 @@ default execution commands.
                                   (latex . t)
                                   (shell . t)))
 
-(setq org-babel-python-command "python3.8"
+(setq org-babel-python-command "python"
       org-babel-latex-command "pdflatex"
       org-babel-sh-command "sh")
 #+END_SRC
@@ -3753,18 +3703,6 @@ I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-s
 their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 #+BEGIN_SRC emacs-lisp
 (require 'gm-pretty-math)
-#+END_SRC
-*** Don't Break Paragraph on Comments
-[[https://emacs.stackexchange.com/questions/22574/orgmode-export-how-to-prevent-a-new-line-for-comment-lines][John Kitchin]] tells us how to remove comments from an Org document when exporting
-to LaTeX.
-#+BEGIN_SRC emacs-lisp
-(defun delete-org-comments (backend)
-  (cl-loop for comment in (reverse (org-element-map (org-element-parse-buffer)
-                                    'comment 'identity))
-        do (setf (buffer-substring (org-element-property :begin comment)
-                                (org-element-property :end comment))
-              "")))
-(add-hook 'org-export-before-processing-hook 'delete-org-comments)
 #+END_SRC
 *** Reformat Math Fragment
 For my primary use case of typing math in LaTeX, I don't care about how the
@@ -4148,6 +4086,12 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 We make =gm-notes= our default class.
 #+BEGIN_SRC emacs-lisp
 (when gm/user (setq org-latex-default-class "gm-notes"))
+#+END_SRC
+*** Don't Make =<>= Parentheses
+There is so much elisp here that forms like =(< 1 2)= mess up the =check-parens=.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(modify-syntax-entry ?\< "w" org-mode-syntax-table)
+(modify-syntax-entry ?\> "w" org-mode-syntax-table)
 #+END_SRC
 * Media
 Here I configure everything for recreation and contact with the outside world:
@@ -4697,7 +4641,7 @@ For YouTube videos, I like to play them right from Emacs with =mpv=.
     (start-process
      "mpv" nil shell-file-name
      shell-command-switch
-     (format "nohup 1>/dev/null 2>/dev/null %s \"%s\"" "umpv" link))))
+     (format "nohup 1>/dev/null 2>/dev/null %s \"%s\"" "mpv" link))))
 
 (defun gm/elfeed-play-with-mpv ()
   "Play elfeed entry link with mpv."
@@ -4841,7 +4785,7 @@ I use a prefix map to compactify this set of keybindings.
   _q_uit            _p_ause             _c_reate
   _e_mms            _P_revious          _k_ill
   _b_rowse          _N_ext              _r_eload
-  ^^                _B_back (10s)       ^^
+  ^^                _B_ack (10s)       ^^
   ^^                _F_orward (10s)     ^^
   ^^                ^^                  ^^
   "
@@ -5145,7 +5089,8 @@ I use this for postfix snippets, as explained.
 :ORDERED:  t
 :END:
 I wrote this to reduce the amount of redundant code needed to set up the
-snippets. First, we create a suffix tree of all the math snippets.
+snippets. We create a list of the last characters of all the math
+snippets and bind each of these to a snippet expansion command.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (defvar gm/longest-snippet)
 
@@ -5306,13 +5251,14 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
   (unless (gm/in-math-p)
     (forward-char -1)
     (gm/reformat-fragment)))
+;; \]
 #+END_SRC
 Bind to tab.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 (define-conditional-key gm/math-mode-map (kbd "<tab>") #'math-tab (gm/in-math-p))
 #+END_SRC
 **** Subscripts/Indices
-This function eases the entry of subscripts such as $x_0$ or $a_{18}$. When a
+This function eases the entry of subscripts such as =x_0= or =a_{12}=. When a
 digit is pressed, if the last character is a letter, then a subscript is
 created. If this subscript is extended to a number with more than 1 digit,
 brackets are added to ensure proper LaTeX rendering. I also rarely enter a
@@ -5386,9 +5332,9 @@ We write a function to go backward from the point until no more characters match
   ;; do this until we encounter a space character, or until we get into an
   ;; infinite loop
   (let ((pt (point-min)))
-    (while (and (not (eq (point) (point-min)))
-                (not (eq pt (point)))
-                (not (string-match-p "[[:space:]]" (char-to-string (char-before)))))
+    (while (not (or (eq (point) (point-min))
+                    (eq pt (point))
+                    (string-match-p "[[:space:]]" (char-to-string (char-before)))))
       (setq pt (point))
       (gm/math-frac--backward-script)
       (gm/math-frac--backward-script)
@@ -5665,6 +5611,12 @@ snippet calls this function.
       (yas-expand-snippet (format "#+name: fig:%s\n #+caption: $2\n #+attr_latex: :vertical-alignment b\n [[file:figures/%s.pdf_tex]]\n$0" name name)))))
       #+END_SRC
 * Options
+*** Don't Make =<>= Parentheses
+There is so much elisp here that forms like =(< 1 2)= mess up the =check-parens=.
+#+BEGIN_SRC emacs-lisp
+(modify-syntax-entry ?\< "w" org-mode-syntax-table)
+(modify-syntax-entry ?\> "w" org-mode-syntax-table)
+#+END_SRC
 #+OPTIONS: todo:nil
 #+PROPERTY: header-args :results silent :tangle gmacs.el
 # Local variables:
