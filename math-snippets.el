@@ -1,5 +1,8 @@
 (setq gm/math-global-snippets
-      '(("/" "" t)
+      '(("bket" "\\braket{$1}{$2}")
+        ("ket" "\\ket{$1}")
+        ("bra" "\\bra{$1}")
+        ("/" "" t)
         ("succ" "\\prec ")
         ("bul" "^{\\bullet}")
         ("Sh" "\\Sh")

@@ -230,7 +230,7 @@ Otherwise, an error would be thrown when a package is missing.
 
 We use the following package archives.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref pack-arch
-(setq package-archivespp
+(setq package-archives
         '(("melpa" . "https://melpa.org/packages/")
           ("gnu" . "https://elpa.gnu.org/packages/")
           ("org" . "http://orgmode.org/elpa/")))
@@ -3260,6 +3260,12 @@ being the title of that website.
   :commands org-cliplink
   :bind (:map org-mode-map ("C-c y" . org-cliplink)))
 #+END_SRC
+*** Word Count
+#+BEGIN_SRC emacs-lisp
+(use-package org-wc
+  :commands org-wc-display
+  :bind (:map org-mode-map ("C-c w" . gm/wc-display-current-subtree)))
+#+END_SRC
 *** Org Ref
 A wonderfully featured framework for maintaining bibliographies and writing
 academic papers in Org Mode by Org-guru John Kitchin.
@@ -4086,12 +4092,6 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 We make =gm-notes= our default class.
 #+BEGIN_SRC emacs-lisp
 (when gm/user (setq org-latex-default-class "gm-notes"))
-#+END_SRC
-*** Don't Make =<>= Parentheses
-There is so much elisp here that forms like =(< 1 2)= mess up the =check-parens=.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(modify-syntax-entry ?\< "w" org-mode-syntax-table)
-(modify-syntax-entry ?\> "w" org-mode-syntax-table)
 #+END_SRC
 * Media
 Here I configure everything for recreation and contact with the outside world:
@@ -5297,9 +5297,14 @@ denominator. The outside parentheses will be removed; for example, =(\sin x)/=
 results in =\frac{\sin x}{|}=.
 
 First, this is a set of extra strings that we accept as a prefix to a match.
+There is also a list of strings which do not count as words for the purposes of
+=gm/math-frac--backward-word=.
 #+BEGIN_SRC emacs-lisp
 (defvar gm/math-frac-extras
   '("\\vec"))
+
+(defvar gm/math-frac-non-words
+  '("sum"))
 #+END_SRC
 We write a function to go backward from the point until no more characters match.
 #+BEGIN_SRC emacs-lisp
@@ -5321,7 +5326,8 @@ We write a function to go backward from the point until no more characters match
     (save-excursion
       (when (string-match-p "{}" (gm/last-n-chars 2))
         (backward-char 2))
-      (when (string-match-p "\\w" (char-to-string (char-before)))
+      (when (and (string-match-p "\\w" (char-to-string (char-before)))
+                 (not (member (thing-at-point 'word 'no-properties) gm/math-frac-non-words)))
         (backward-word)
         (when (equal (char-before) (string-to-char "\\"))
           (backward-char))
@@ -5330,7 +5336,7 @@ We write a function to go backward from the point until no more characters match
 
 (defun gm/math-frac--backward-match ()
   ;; do this until we encounter a space character, or until we get into an
-  ;; infinite loop
+  ;; infinite loop, and make sure the sub/superscripts connect to a valid word
   (let ((pt (point-min)))
     (while (not (or (eq (point) (point-min))
                     (eq pt (point))
@@ -5338,7 +5344,12 @@ We write a function to go backward from the point until no more characters match
       (setq pt (point))
       (gm/math-frac--backward-script)
       (gm/math-frac--backward-script)
-      (gm/math-frac--backward-word))
+      ;; break loop and undo this step if this turns out not to be a valid word
+      (let ((ptcand (save-excursion (gm/math-frac--backward-word)
+                                    (point))))
+        (if (eq ptcand (point))
+            (goto-char pt)
+          (goto-char ptcand))))
     (condition-case nil
         (re-search-backward (concat (regexp-opt gm/math-frac-extras) "\\( \\|{}\\)"))
       (error nil))))
