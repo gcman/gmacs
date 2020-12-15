@@ -269,9 +269,8 @@
 (defvar gm/math-commands
   '(("bra" "⟨" "|")
     ("ket" "|" "⟩")
-    ;; ("abs" "|" "|")
-    ;; ("norm" "‖" "‖")
-    ))
+    ("abs" "|" "|")
+    ("norm" "‖" "‖")))
 
 (defun gm/math-regexp-unspaced (name symbol)
   (list (list (format "\\(\\\\%s{}\\)" name) symbol)
@@ -287,30 +286,22 @@
 
 (defun gm/math-replacements ()
   (append
-   (-flatten-n 1 (--map (apply 'gm/math-regexp-spaced it) gm/math-spaced)) ;
+   (-flatten-n 1 (--map (apply 'gm/math-regexp-spaced it) gm/math-spaced))
    (-flatten-n 1 (--map (apply 'gm/math-regexp-unspaced it) gm/math-unspaced))
-   (--map (apply 'gm/math-regexp-spaced-custom it) gm/spaced-custom)
-   ;; (--map (apply 'gm/math-regexp-commands it) gm/math-commands)
-   ))
+   (--map (apply 'gm/math-regexp-spaced-custom it) gm/spaced-custom)))
+
+(defun gm/curry (fun &rest args)
+  "Partially apply FUN to ARGS.  The result is a new function.
+This idiom is preferred over `lexical-let'."
+  `(lambda (&rest more) (apply ',fun (append ',args more))))
 
 (defun gm/pretty-match-font-lock-helper (symbol &optional match-num)
   (unless match-num (setq match-num 1))
-  `(0 (progn
-        (compose-region (match-beginning ,match-num) (match-end ,match-num)
-                        ,symbol
-                        'decompose-region)
-        nil)))
-
-(defun gm/pretty-math-gen-font-lock-keywords (name symbol &optional name2 symbol2)
-  (let ((wordlist `(,(gm/pretty-match-font-lock-helper symbol)
-                    ,name)))
-    (when name2
-      (push `(,name2
-              (progn (up-list) (backward-char) (1+ (point)))
-              nil
-              ,(gm/pretty-match-font-lock-helper symbol2))
-            wordlist))
-    (reverse wordlist)))
+  `(,match-num (compose-region
+                (match-beginning ,match-num)
+                (match-end ,match-num)
+                ,symbol
+                'decompose-region)))
 
 (defun gm/pretty-math-command-matcher (command limit)
   (let ((end-brace1 nil)
@@ -338,14 +329,17 @@
                            end-brace2))
           (throw 'done (point)))))))
 
+(defun gm/pretty-math-gen-font-lock-keywords (name symbol &optional name2 symbol2)
+  `(,name ,(gm/pretty-match-font-lock-helper symbol)))
+
 (defun gm/pretty-math-gen-font-lock-commands (name open-delim close-delim)
-  (let ((wordlist `(,(gm/pretty-match-font-lock-helper close-delim 2)
-                    ,(gm/pretty-match-font-lock-helper open-delim 1)
-                    ,(gm/curry 'gm/pretty-math-command-matcher name))))
-    (reverse wordlist)))
+  `(,(gm/curry 'gm/pretty-math-command-matcher name)
+    ,(gm/pretty-match-font-lock-helper open-delim 1)
+    ,(gm/pretty-match-font-lock-helper close-delim 2)))
 
 (defun gm/pretty-math-keywords ()
-  (--map (apply 'gm/pretty-math-gen-font-lock-keywords it) (gm/math-replacements))
-  (--map (apply 'gm/pretty-math-gen-font-lock-commands it) gm/math-commands))
+  (append
+   (--map (apply 'gm/pretty-math-gen-font-lock-keywords it) (gm/math-replacements))
+   (--map (apply 'gm/pretty-math-gen-font-lock-commands it) gm/math-commands)))
 
 (provide 'gm-pretty-math)
