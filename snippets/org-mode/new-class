@@ -23,7 +23,8 @@ $0
 #+OPTIONS: todo:nil
 # Local variables:
 # eval: (add-hook 'after-save-hook 'gm/org-latex-export nil t)
-# eval: (quick-math-mode 1)
+# eval: (unless quick-math-mode (quick-math-mode 1))
+# gm/math-local-snippets: ()
 # end:
 * Footnotes"
 file

@@ -130,12 +130,6 @@ Gets name based on server-force-delete."
     (require 'server)
     (if (server-already-running-p) (server-shunt) (server-start))))
 #+END_SRC
-I was inspired to implement the following optimizations in GMACS thanks to
-[[https://github.com/nilcons/emacs-use-package-fast][nilcons/emacs-use-package-fast]]. During startup, we make the garbage collection
-threshold very high. [[*Garbage Collection][After startup]], we manage garbage collection with a package.
-#+BEGIN_SRC emacs-lisp
-(setq gc-cons-threshold #x40000000)
-#+END_SRC
 We increase these so that we don't exceed recursion limits unless there is some
 kind of infinite loop.
 #+BEGIN_SRC emacs-lisp
@@ -569,15 +563,15 @@ Highlight =.service= files like they are configuration files.
   (add-to-list 'auto-mode-alist '("\\.timer\\'" . systemd-mode)))
 #+END_SRC
 ** Quality of Life
-*** Garbage Collection
-This package minimizes the interference of garbage collection with the user
-experience. That means fewer annoyingly long pauses while you are using Emacs.
-#+BEGIN_SRC emacs-lisp
-(use-package gcmh
-  :defer 2
-  :diminish
-  :config (gcmh-mode 1))
-#+END_SRC
+# *** Garbage Collection
+# This package minimizes the interference of garbage collection with the user
+# experience. That means fewer annoyingly long pauses while you are using Emacs.
+# #+BEGIN_SRC emacs-lisp
+# (use-package gcmh
+#   :defer 2
+#   :diminish
+#   :config (gcmh-mode 1))
+# #+END_SRC
 *** Better Defaults
 All the things (perhaps they seem little) that just make sense to have.
 **** From Yes/No to y/n
@@ -710,22 +704,23 @@ Make files that start with a =#!= shebang executable.
 Authorize actions. The package =sudo-edit= is excellent for editing files owned by
 root.
 #+BEGIN_SRC emacs-lisp
-(use-package pinentry
-  :demand t
-  :config (when gm/user (pinentry-start)))
+(when gm/user
+  (use-package pinentry
+    :demand t
+    :config (pinentry-start))
 
-(use-package epa-file
-  :ensure nil
-  :init (epa-file-enable)
-  :config (setenv "GPG_AGENT_INFO" nil)
-  :custom
-  (epg-gpg-program "/usr/bin/gpg2")
-  (epa-file-cache-passphrase-for-symmetric-encryption t)
-  (epa-file-select-keys nil)
-  (epa-pinentry-mode 'loopback))
+  (use-package epa-file
+    :ensure nil
+    :init (epa-file-enable)
+    :config (setenv "GPG_AGENT_INFO" nil)
+    :custom
+    (epg-gpg-program "/usr/bin/gpg2")
+    (epa-file-cache-passphrase-for-symmetric-encryption t)
+    (epa-file-select-keys nil)
+    (epa-pinentry-mode 'loopback))
 
-(use-package sudo-edit
-  :commands sudo-edit)
+  (use-package sudo-edit
+    :commands sudo-edit))
 #+END_SRC
 *** Backups
 Keep backups in a dedicated spot and not in the current directory: this saves a
@@ -1678,7 +1673,7 @@ backwards are clunky: =C-M-f=, =C-M-b=. Since I've already taken my =M-digit=
 *** C++
 #+BEGIN_SRC emacs-lisp
 (setq-default c-default-style "linux"
-              c-basic-offset 4)
+              c-basic-offset 2)
 #+END_SRC
 ** Packages
 *** Package Management
@@ -1749,8 +1744,8 @@ Open with external viewer by default if wanted.
   :defer 2
   :config
   (openwith-mode 1)
-  (after! notmuch
-    (add-hook 'notmuch-message-mode-hook (lambda () (openwith-mode -1))))
+  ;; (after! notmuch
+  ;;   (add-hook 'notmuch-message-mode-hook (lambda () (openwith-mode -1))))
   :custom (openwith-associations '(("\\.pdf\\'" "zathura" (file))
                                    ("\\.djvu\\'" "zathura" (file)))))
 #+END_SRC
@@ -2111,10 +2106,6 @@ screen, and once we're done, we can get right back to where we left off.
   (add-hook 'magit-process-find-password-functions 'magit-process-password-auth-source)
   (remove-hook 'magit-status-sections-hook 'magit-insert-tags-header)
   (remove-hook 'magit-status-sections-hook 'magit-insert-status-headers)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
   :bind (("C-x g" . magit-status)
          :map magit-status-mode-map
          ("q" . magit-quit-session)))
@@ -3313,7 +3304,7 @@ cohesive, as I use =ivy= everywhere else.
 Whether it's side citations or footnotes, I almost always use the =\footcite=
 macro in LaTeX.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
-(setq org-ref-default-citation-link "footcite")
+(setq org-ref-default-citation-link "cite")
 #+END_SRC
 It's >=2019. BibTeX is a thing of the past.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
@@ -3692,7 +3683,6 @@ Here are the actual maps.
                            map))))
 #+END_SRC
 ** LaTeX
-Highlight LateX inline math in org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (setq org-highlight-latex-and-related '(latex))
 #+END_SRC
@@ -3725,7 +3715,8 @@ introducing too many spaces in the earlier regexps.
 (defcustom gm/reformat-fragment-alist
   '(("+" " + " "spaces around +")
     ("[ ]*\\([\\^_]\\)[ ]*" "\\1" "remove spaces around ^ and _")
-    ("[\\^_]{}" "\\1" "remove empty sub/superscript")
+    ("[\\^_]{}" "\\1" "remove empty sub/superscript and {} before them")
+    ("{}^" "^" "remove {} before subscript")
     (" +" " " "no more than 1 space in a row")
     ("\\(\\\\(\\) " "\\1" "no space at start of fragment")
     (" \\(\\\\)\\)" "\\1" "no space at end of fragment"))
@@ -3785,13 +3776,23 @@ litter our folders.
 #+END_SRC
 Use this instead of =org-latex-preview=.
 #+BEGIN_SRC emacs-lisp
+(defun gm/math-preview-toggle-subtree ()
+  (interactive)
+  (save-restriction
+    (org-narrow-to-subtree)
+      (if current-prefix-arg
+          (math-preview--clear-region (point-min) (point-max))
+        (math-preview--region (point-min) (point-max)))))
+
 (use-package math-preview
   :load-path "~/.emacs.d/elisp/math-preview/"
-  :commands (math-preview-at-point)
+  :commands (math-preview-at-point math-preview--region)
   :custom
   (math-preview-scale 2.5)
   (math-preview-margin '(0 . 0))
-  (math-preview-raise 0))
+  (math-preview-raise 0)
+  :bind (:map org-mode-map
+              ("C-c C-x C-l" . 'gm/math-preview-toggle-subtree)))
 #+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
@@ -3912,11 +3913,11 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
 *** Export
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path (expand-file-name "tufte-org-mode/" gmacs-custom-dir))
+(require 'ox-tufte-latex)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (defun gm/org-latex-export ()
   (interactive)
-  (require 'ox-tufte-latex)
   (save-excursion
     (while (and (not (org-entry-get (point) "EXPORT_FILE_NAME"))
                 (not (string= (buffer-substring-no-properties
@@ -3928,20 +3929,20 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
       (let* ((class (org-entry-get (point) "EXPORT_LATEX_CLASS"))
              (cmd (org-entry-get (point) "EXPORT_LATEX_CMD"))
              (file (replace-regexp-in-string "\\(\\.[^\\.]+\\)*$" ".tex" filebase))
-             (processname (format "latex-export-%s" file)))
+             (processname (format "latex-export-%s-%s" (buffer-name) file)))
         (if (and class
                  (not (string= class "gm-notes")))
             (org-latex-export-to-latex nil t)
           (org-tufte-latex-export-to-latex nil t))
-        (when (get-process processname)
-          (kill-buffer (process-buffer processname)))
-        (async-start-process processname
-                             "latexmk"
-                             (lambda (file) (message (format "Exported %s" file)))
-                             (if (string= cmd "PDF") "-pdf" "-xelatex")
-                             "-interaction=nonstopmode"
-                             file)
-        ))))
+        (unless (get-process processname)
+          (async-start-process processname
+                               "latexmk"
+                               (lambda (file) (message (format "Exported %s" file)))
+                               (if (string= cmd "PDF") "-pdf" "-xelatex")
+                               "-pvc"
+                               "-quiet"
+                               "-interaction=nonstopmode"
+                               file))))))
 #+END_SRC
 Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
@@ -3960,22 +3961,6 @@ as equation previews.
 (when gm/user
   (setq org-latex-packages-alist
       '(("" "gm-math" t))))
-#+END_SRC
-**** Latexmk
-The command =gm/auto-tex-cmd= looks at your Org file. If it finds that =xelatex= has
-been specified as the desired compilation command, then it uses that. Otherwise,
-it runs =latexmk= with normal =pdflatex=. We don't need to worry about compiling the
-correct number of times to include bibliography information, or to render
-graphics correctly; =latexmk= handles all of that.
-#+BEGIN_SRC emacs-lisp
-(defun gm/auto-tex-cmd ()
-  (let ((texcmd))
-    (setq texcmd "latexmk -pdf -quiet %f")
-    (if (string-match "LATEX_CMD: xelatex" (buffer-string))
-        (setq texcmd "latexmk -xelatex -pdf -quiet %f"))
-    (setq org-latex-pdf-process (list texcmd))))
-
-(add-hook 'org-mode-hook 'gm/auto-tex-cmd)
 #+END_SRC
 **** Command Links
 :PROPERTIES:
@@ -4111,6 +4096,7 @@ for me.
   (require 'smtpmail-async)
   <<notmuch-settings>>
   :custom
+  <<notmuch-custom-settings>>
   (nms-settings-file (expand-file-name "network-security.data" gmacs-cache-dir))
   :bind (:map notmuch-common-keymap
               ("g" . notmuch-refresh-this-buffer)
@@ -4121,7 +4107,7 @@ for me.
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq message-directory "~/mail/uni"
-      message-auto-save-directory "~/mail/Uni/Drafts"
+      message-auto-save-directory "~/mail/uni/Drafts"
       notmuch-fcc-dirs '((".*" . "\"uni/Sent Items\" +sent -inbox -unread")))
 #+END_SRC
 Provide my email and name.
@@ -4152,8 +4138,8 @@ Some commonly used searches.
         (:name "drafts" :query "tag:draft" :key "d")))
 #+END_SRC
 Show newest mail first.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(setq notmuch-search-oldest-first nil)
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-custom-settings
+(notmuch-search-oldest-first nil)
 #+END_SRC
 Nice stuff to have for sending mail.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
@@ -4943,7 +4929,8 @@ Then we bind this to semicolon.
     (when quick-math-mode
       (gm/math-setup)
       (gm/eq-preview-mode)
-      (pretty-math-mode))))
+      (pretty-math-mode)
+      (setq org-highlight-latex-and-related '(latex)))))
 #+END_SRC
 We need shift-tabbing in snippets to override =org-shift-tab=, but only in math
 mode.
@@ -5447,7 +5434,8 @@ Finally, we write the main function.
       (setq beg (gm/math-frac--start-of-match))
       (gm/math-frac--region beg end env))
      (t (unless env (setq env "frac"))
-        (yas-expand-snippet (yas-lookup-snippet env))))))
+        (yas-expand-snippet (yas-lookup-snippet env))
+        (yas-abort-snippet)))))
 #+END_SRC
 **** Easy Split Environments
 I wanted to make writing environments like =split= and =align= easier, so that I
