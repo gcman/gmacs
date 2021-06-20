@@ -3940,7 +3940,7 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
                                (lambda (file) (message (format "Exported %s" file)))
                                (if (string= cmd "PDF") "-pdf" "-xelatex")
                                "-pvc"
-                               "-quiet"
+                               (if current-prefix-arg "-verbose" "-quiet")
                                "-interaction=nonstopmode"
                                file))))))
 #+END_SRC
