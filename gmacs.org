@@ -4883,6 +4883,7 @@ Snippets go in [[file:math-snippets.el]].
   ("8" (insert "\\infinity") "∞")
   ("!" (insert "\\neg") "¬")
   ("*" (insert "\\star") "⋆")
+  ("/" (gm/math-frac))
   ("\\" (insert "\\setminus ") "∖")
   ("'" (insert "\\prime ") "′")
   ("," (insert ",\\ldots,") ".")
@@ -5135,9 +5136,7 @@ longest snippet is, at the time of writing, =binom=, for the binomial coefficien
         ;; this is so we don't have two backslashes after something like \sim
         (when (= (char-before) ?\\) (delete-char -1))
         ;; is this a snippet expansion or just a text insertion?
-        (if (equal (car snippet) "/")
-            (gm/math-frac)
-          (yas-expand-snippet (if (cddr snippet) (yas-lookup-snippet expand) expand))))
+        (yas-expand-snippet (if (cddr snippet) (yas-lookup-snippet expand) expand)))
     (insert key)))
 #+END_SRC
 **** Add and View Snippet
