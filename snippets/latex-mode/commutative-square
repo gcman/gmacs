@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
-# name: commutative-diagram
-# key: math-commutative-diagram
+# name: commutative-square
+# key: math-commutative-square
 # --
 \begin{tikzcd}
 ${1:A} \ar[r, "$5"] \ar[d, "$7"] & ${2:B} \ar[d, "$8"] \\\\

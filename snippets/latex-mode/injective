@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: injective
+# key: math-injective
+# --
+`(if (gm/math-in-commutative-diagram)
+    ", hook"
+    "\\hookrightarrow{}")`

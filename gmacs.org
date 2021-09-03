@@ -3255,7 +3255,7 @@ being the title of that website.
 #+BEGIN_SRC emacs-lisp
 (use-package org-wc
   :commands org-wc-display
-  :bind (:map org-mode-map ("C-c w" . gm/wc-display-current-subtree)))
+  :bind (:map org-mode-map ("C-c w" . org-wc-display)))
 #+END_SRC
 *** Org Ref
 A wonderfully featured framework for maintaining bibliographies and writing
@@ -3400,8 +3400,6 @@ risk of them not being unique.
       (t (message "No hydra for this major mode: %s" major-mode)))))
 
 (bind-key "C-c t" 'gm/context-hydra-launcher)
-(after! key-chord
-    (key-chord-define-global "jj" 'gm/context-hydra-launcher))
 #+END_SRC
 **** Links
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -3714,7 +3712,7 @@ introducing too many spaces in the earlier regexps.
 #+BEGIN_SRC emacs-lisp
 (defcustom gm/reformat-fragment-alist
   '(("+" " + " "spaces around +")
-    ("[ ]*\\([\\^_]\\)[ ]*" "\\1" "remove spaces around ^ and _")
+    ("[ ]+\\([\\^_]\\)[ ]+" "\\1" "remove spaces around ^ and _")
     ("[\\^_]{}" "\\1" "remove empty sub/superscript and {} before them")
     ("{}^" "^" "remove {} before subscript")
     (" +" " " "no more than 1 space in a row")
@@ -3737,8 +3735,15 @@ simply explains what the regexp does."
     (setq fr-end (- (org-element-property :end (org-element-context))
                     (org-element-property :post-blank (org-element-context))))
     (setq base (buffer-substring-no-properties fr-begin fr-end))
-    (dolist (reg gm/reformat-fragment-alist)
-      (setq base (replace-regexp-in-string (car reg) (nth 1 reg) base)))
+    (with-temp-buffer
+      (dolist (reg gm/reformat-fragment-alist)
+        (setq base (replace-regexp-in-string (car reg) (nth 1 reg) base)))
+      (insert base)
+      (goto-char (point-min))
+      (LaTeX-mode)
+      (align-current)
+      (setq base (buffer-substring-no-properties (point-min) (point-max)))
+      (setq base (replace-regexp-in-string "& =" "&=" base)))
     (delete-region fr-begin fr-end)
     (insert base)
     (when (and (eq fr-type 'latex-environment)
@@ -5237,7 +5242,7 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
   (unless (gm/in-math-p)
     (forward-char -1)
     (gm/reformat-fragment)))
-;; \]
+;; right bracket
 #+END_SRC
 Bind to tab.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
@@ -5563,6 +5568,11 @@ and shifted notes use different link types.
         (when (equal path "marginnote")
           (apply 'delete-region remove)
           (insert (format "[[latex-opt:marginnote][%s;0ex]]" (replace-regexp-in-string shift-regexp "" description)))))))
+#+END_SRC
+**** Check if in commutative diagram
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-in-commutative-diagram ()
+  (string-match-p (regexp-quote "tikzcd") (org-element-property :value (org-element-context))))
 #+END_SRC
 *** Inkscape Figures
 This is the mode we will load in Inkscape when we insert math.

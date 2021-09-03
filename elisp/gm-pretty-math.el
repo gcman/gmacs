@@ -194,6 +194,7 @@
     ("succ" "≻")
     ("prec" "≺")
     ("approx" "≈")
+    ("coloneqq" "≔")
     ("succeq" "≽")
     ("preceq" "≼")
     ("supset" "⊃")
