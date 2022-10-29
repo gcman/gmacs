@@ -81,7 +81,8 @@
      ("C" "𝗖")
      ("F" "𝗙")
      ("Prob" "𝗣")
-     ("E" "𝗘"))))
+     ("E" "𝗘")
+     ("A" "𝗔"))))
 
 (defvar gm/math-arrows
   '(("rightarrow" "→")        ; Directions

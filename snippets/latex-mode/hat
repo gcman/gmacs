@@ -3,4 +3,4 @@
 # key: math-hat
 # type: command
 # --
-(gm/math-postfix "hat")
+(gm/math-postfix "widehat")

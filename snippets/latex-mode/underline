@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: underline
+# key: math-underline
+# type: command
+# --
+(gm/math-postfix "underline")

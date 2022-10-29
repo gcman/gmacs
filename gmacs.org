@@ -440,7 +440,7 @@ set the default font for characters in the "Mathematical Alphanumeric Symbols"
 block in Unicode to Symbola. I got the Symbola font from the =ttf-ancient-fonts=
 package on the AUR.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/unicode-font "Symbola")
+(defvar gm/unicode-font "DejaVu Sans")
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) gm/unicode-font)
@@ -1651,6 +1651,10 @@ Turn Emacs into basically a Python IDE.
 #   (python-mode . elpy-mode)
 #   (elpy-mode . flycheck-mode))
 # #+END_SRC
+#+BEGIN_SRC emacs-lisp
+(use-package sage-shell-mode)
+(use-package ob-sagemath)
+#+END_SRC
 *** Lisp
 Because =use-package= is never actually evaluated/loaded if we byte-compile
 =gmacs.el=, it is not automatically syntax-highlighted as a macro.
@@ -2947,6 +2951,10 @@ after archiving lower level items.
         (while (org-up-heading-safe))
         (org-set-tags-to tags)))))
 #+END_SRC
+I keep accidentally archiving subtrees.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(unbind-key "C-c C-x C-s" org-mode-map)
+#+END_SRC
 *** Capture
 :PROPERTIES:
 :ORDERED:  t
@@ -3714,7 +3722,8 @@ introducing too many spaces in the earlier regexps.
   '(("+" " + " "spaces around +")
     ("[ ]+\\([\\^_]\\)[ ]+" "\\1" "remove spaces around ^ and _")
     ("[\\^_]{}" "\\1" "remove empty sub/superscript and {} before them")
-    ("{}^" "^" "remove {} before subscript")
+    ("{}^" "^" "remove {} before superscript")
+    ("{}_" "_" "remove {} before superscript")
     (" +" " " "no more than 1 space in a row")
     ("\\(\\\\(\\) " "\\1" "no space at start of fragment")
     (" \\(\\\\)\\)" "\\1" "no space at end of fragment"))
@@ -3790,12 +3799,13 @@ Use this instead of =org-latex-preview=.
         (math-preview--region (point-min) (point-max)))))
 
 (use-package math-preview
-  :load-path "~/.emacs.d/elisp/math-preview/"
   :commands (math-preview-at-point math-preview--region)
   :custom
   (math-preview-scale 2.5)
   (math-preview-margin '(0 . 0))
-  (math-preview-raise 0)
+  (math-preview-raise 0.325)
+  :config
+  (add-to-list 'math-preview-tex-marks '("\\begin{align}"  "\\end{align}"))
   :bind (:map org-mode-map
               ("C-c C-x C-l" . 'gm/math-preview-toggle-subtree)))
 #+END_SRC
@@ -3916,6 +3926,10 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
 (setq org-list-allow-alphabetical t)
 #+END_SRC
 *** Export
+Remove "hypersetup" at the beginning of exported document.
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-with-hyperref nil)
+#+END_SRC
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'load-path (expand-file-name "tufte-org-mode/" gmacs-custom-dir))
 (require 'ox-tufte-latex)
@@ -4022,10 +4036,20 @@ Correction link.
 (org-link-set-parameters
  "corr"
  :follow nil
- :face '(:foreground "green" :underline t)
+ :face '(:foreground "medium sea green" :underline t)
  :export (lambda (path desc format)
            (when (eq format 'latex)
-             (format "\\textcolor{SeaGreen}{%s}" path))))
+             (format "\\textcolor{green}{%s}" path))))
+#+END_SRC
+Correction link.
+#+BEGIN_SRC emacs-lisp
+(org-link-set-parameters
+ "comment"
+ :follow nil
+ :face '(:foreground "dim gray" :underline t)
+ :export (lambda (path desc format)
+           (when (eq format 'latex)
+             (format "\\textcolor{blue}{[%s]}" path))))
 #+END_SRC
 By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
 =cleveref= package, which uses the =\cref= macro.
@@ -4872,6 +4896,7 @@ Snippets go in [[file:math-snippets.el]].
   ("r" (insert "\\rho{}") "ρ")
   ("R" (insert "\\mathbb{R}") "ℝ")
   ("s" (insert "\\sigma{}") "σ")
+  ("S" (insert "\\Sigma{}") "Σ")
   ("t" (insert "\\tau{}") "τ")
   ("u" (insert "\\cup ") "∪")
   ("U" (yas-expand-snippet "\\bigcup_{$1}^{$2}$0"))
@@ -4904,10 +4929,12 @@ Snippets go in [[file:math-snippets.el]].
   ("l" (insert "\\ell{}") "ℓ")
   ("o" (insert "\\circ{}") "∘")
   ("r" (insert "\\wp{}") "ρ")
+  ("s" (insert ";") ";")
   ("u" (insert "\\sqcup ") "∩")
   ("U" (insert "\\cap ") "∩")
   ("n" (insert "\\nu{}") "ν")
   ("N" (insert "\\nabla") "∇")
+  ("w" (insert "\\varpi{}") "ϖ")
   ("x" (insert " \\times ") "×")
   ("." (insert "\\cdots{}") "···"))
 #+END_SRC
