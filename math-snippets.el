@@ -1,10 +1,12 @@
 (setq gm/math-global-snippets
-      '(("_int" "iintegral" t)
+      '(("\\subset eq" "\\subseteq ")
+        ("_int" "iintegral" t)
         ("Ric" "\\Ric")
         ("Sff" "\\Sff")
         ("\\Lapl /" "\\slashed{\\Lapl{}}")
         ("\\Gal(" "\\Gal($0)")
         ("fv" "\\fvec ")
+        ("\\partialun" "\\underline{\\partial{}}")
         ("\\partial{}un" "\\underline{\\partial{}}")
         ("\\Box{}til" "\\widetilde{\\Box{}}")
         ("_inn" "i\\in ")

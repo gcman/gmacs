@@ -3296,6 +3296,7 @@ For humanities essays.
 Bind this in Org Mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (bind-key "C-c ]" #'org-ref-insert-link org-mode-map)
+(bind-key "C-c }" #'org-ref-insert-ref-link org-mode-map)
 #+END_SRC
 Keep everything in my org directory.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
@@ -3534,6 +3535,9 @@ when you have a lot of headlines.
 #+BEGIN_SRC emacs-lisp
 (setq org-ellipsis "⬎")
 #+END_SRC
+#+BEGIN_SRC emacs-lisp
+(setq org-startup-folded t)
+#+END_SRC
 *** Emphasis Markers
 It looks much cleaner if we omit emphasis markers such as the =*= asterisks that
 make something bold. It is enough to just display the argument as bold.
@@ -3762,8 +3766,8 @@ simply explains what the regexp does."
 *** Change Bracket Sizes
 This allows the user to easily change the size of brackets in LaTeX expressions.
 #+BEGIN_SRC emacs-lisp
-;; (autoload 'bratex-config "bratex")
-;; (add-hook 'quick-math-mode-hook #'bratex-config)
+(autoload 'bratex-config "bratex")
+(add-hook 'quick-math-mode-hook #'bratex-config)
 #+END_SRC
 *** Equation Auto Preview
 :PROPERTIES:
@@ -3801,7 +3805,7 @@ Use this instead of =org-latex-preview=.
 (use-package math-preview
   :commands (math-preview-at-point math-preview--region)
   :custom
-  (math-preview-scale 2.5)
+  (math-preview-scale 1.1)
   (math-preview-margin '(0 . 0))
   (math-preview-raise 0.325)
   :config
