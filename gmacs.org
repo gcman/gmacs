@@ -3957,14 +3957,17 @@ Remove "hypersetup" at the beginning of exported document.
                  (not (string= class "gm-notes")))
             (org-latex-export-to-latex nil t)
           (org-tufte-latex-export-to-latex nil t))
-        (unless (get-process processname)
+        (if (get-process processname)
+            (when-let (processbuffer (get-buffer (concat "*" processname "*")))
+              (with-current-buffer processbuffer
+                (erase-buffer)))
           (async-start-process processname
                                "latexmk"
-                               (lambda (file) (message (format "Exported %s" file)))
+                               (lambda (file) )
                                (if (string= cmd "PDF") "-pdf" "-xelatex")
                                "-pvc"
-                               (if current-prefix-arg "-verbose" "-quiet")
-                               "-interaction=nonstopmode"
+                               "-verbose"
+                               "--interaction=nonstopmode"
                                file))))))
 #+END_SRC
 Bind this in Org mode.

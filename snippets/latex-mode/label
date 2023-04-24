@@ -3,4 +3,6 @@
 # key: math-label
 # type: command
 # --
-(insert (format "\\label{%s}" (read-string "Label: ")))
+(let ((label (read-string "Label: ")))
+     (insert (format "\\label{%s}" label))
+     (kill-new label))
