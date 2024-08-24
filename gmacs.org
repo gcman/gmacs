@@ -2773,8 +2773,7 @@ Use a prefix arg to get regular RET. "
       (if (org-element-property :contents-begin (org-element-context))
           (org-insert-item)
         (beginning-of-line)
-        (setf (buffer-substring
-               (line-beginning-position) (line-end-position)) "")
+        (cl--set-buffer-substring (line-beginning-position) (line-end-position) "")
         (org-return)))
      ((org-at-heading-p)
       (end-of-line)
@@ -2788,8 +2787,7 @@ Use a prefix arg to get regular RET. "
           (org-return)
         ;; empty row
         (beginning-of-line)
-        (setf (buffer-substring
-               (line-beginning-position) (line-end-position)) "")
+        (cl--set-buffer-substring (line-beginning-position) (line-end-position) "")
         (org-return)))
      ((org-in-src-block-p)
       (newline-and-indent))
@@ -3794,122 +3792,94 @@ litter our folders.
 #+END_SRC
 Use this instead of =org-latex-preview=.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-preview-toggle-subtree ()
-  (interactive)
-  (save-restriction
-    (org-narrow-to-subtree)
-      (if current-prefix-arg
-          (math-preview--clear-region (point-min) (point-max))
-        (math-preview--region (point-min) (point-max)))))
+(require 'org-auctex)
+;; (defun gm/math-preview-toggle-subtree ()
+;;   (interactive)
+;;   (save-restriction
+;;     (org-narrow-to-subtree)
+;;       (if current-prefix-arg
+;;           (math-preview--clear-region (point-min) (point-max))
+;;         (math-preview--region (point-min) (point-max)))))
 
-(use-package math-preview
-  :commands (math-preview-at-point math-preview--region)
-  :custom
-  (math-preview-scale 1.1)
-  (math-preview-margin '(0 . 0))
-  (math-preview-raise 0.325)
-  :config
-  (add-to-list 'math-preview-tex-marks '("\\begin{align}"  "\\end{align}"))
-  :bind (:map org-mode-map
-              ("C-c C-x C-l" . 'gm/math-preview-toggle-subtree)))
+;; (use-package math-preview
+;;   :commands (math-preview-at-point math-preview--region)
+;;   :custom
+;;   (math-preview-scale 1.1)
+;;   (math-preview-margin '(0 . 0))
+;;   (math-preview-raise 0.325)
+;;   :config
+;;   (add-to-list 'math-preview-tex-marks '("\\begin{align}"  "\\end{align}"))
+;;   :bind (:map org-mode-map
+;;               ("C-c C-x C-l" . 'gm/math-preview-toggle-subtree)))
 #+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
 #+BEGIN_SRC emacs-lisp
-(defvar-local org-latex-fragment-last nil
-  "Holds last fragment/environment you were on.")
+;; (defvar org-latex-fragment-last nil
+;;   "Holds last fragment/environment you were on.")
 
-(defun org-latex-fragment-get-current-fragment ()
-  "Return the overlay associated with the image under point."
-  (car (--select (eq (overlay-get it 'category) 'math-preview) (overlays-at (point)))))
+;; (defun org-latex-fragment-toggle ()
+;;   "Toggle a latex fragment image "
+;;   (condition-case nil
+;;       (and (eq 'org-mode major-mode)
+;;            (let* ((begin (org-latex-fragment-in-latex-fragment-p)))
+;;              (cond
+;;               ;; were on a fragment and now on a new fragment
+;;               ;; need to replace old image and clear current image
+;;               ((and
+;;                 org-latex-fragment-last
+;;                 begin
+;;                 (not (= begin
+;;                         org-latex-fragment-last)))
+;;                (org-latex-fragment-preview-last)
+;;                (org-latex-fragment-clear begin))
+;;               ;; were on a fragment and now are not on a fragment
+;;               ;; need to replace old image
+;;               ((and (not begin) org-latex-fragment-last)
+;;                (org-latex-fragment-preview-last)
+;;                (setq org-latex-fragment-last nil))
+;;               ;; were not on a fragment and now are
+;;               ((and (not org-latex-fragment-last) begin)
+;;                (org-latex-fragment-clear begin))
+;;               ;; else not on a fragment
+;;               ((not begin)
+;;                (setq org-latex-fragment-last nil)))))
+;;     (error nil)))
 
-(defun org-latex-fragment-in-latex-fragment-p ()
-  "Return the point where the latex fragment begins, if inside
-  a latex fragment. Else return false"
-  (let* ((el (org-element-context))
-         (el-type (car el)))
-    (and (or (eq 'latex-fragment el-type) (eq 'latex-environment el-type))
-         (< (point) (- (org-element-property :end el) (org-element-property :post-blank el)))
-         (org-element-property :begin el))))
-
-(defun org-latex-fragment-toggle-auto ()
-  (interactive)
-  (while-no-input
-    (run-with-idle-timer 0.01 nil 'org-latex-fragment-toggle-helper)))
-
-(defun org-latex-fragment-preview-last ()
-  (save-excursion
-    (goto-char org-latex-fragment-last)
-    (when (org-latex-fragment-in-latex-fragment-p)
-      (math-preview-at-point))))
-
-(defun org-latex-fragment-clear (pos)
-  (save-excursion
-    (goto-char pos)
-    (when (org-latex-fragment-get-current-fragment)
-      (math-preview-clear-at-point)))
-  (setq org-latex-fragment-last pos))
-
-(defun org-latex-fragment-toggle-helper ()
-  "Toggle a latex fragment image "
-  (condition-case nil
-      (and (eq 'org-mode major-mode)
-           (let* ((begin (org-latex-fragment-in-latex-fragment-p)))
-             (cond
-              ;; were on a fragment and now on a new fragment
-              ;; need to replace old image and clear current image
-              ((and
-                org-latex-fragment-last
-                begin
-                (not (= begin
-                        org-latex-fragment-last)))
-               (org-latex-fragment-preview-last)
-               (org-latex-fragment-clear begin))
-              ;; were on a fragment and now are not on a fragment
-              ;; need to replace old image
-              ((and (not begin) org-latex-fragment-last)
-               (org-latex-fragment-preview-last)
-               (setq org-latex-fragment-last nil))
-              ;; were not on a fragment and now are
-              ((and (not org-latex-fragment-last) begin)
-               (org-latex-fragment-clear begin))
-              ;; else not on a fragment
-              ((not begin)
-               (setq org-latex-fragment-last nil)))))
-    (error nil)))
+;; (add-hook 'post-command-hook 'org-latex-fragment-toggle)
 #+END_SRC
 We can also centre equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
 on it. This is more John Kitchin code.
 #+BEGIN_SRC emacs-lisp
-(defun gm/org-justify-fragment-overlay (beg end image imagetype)
-  "Adjust the justification of a LaTeX fragment.
-The justification is set by :justify in
-`org-format-latex-options'. Only equations at the beginning of a
-line are justified."
-  (when
-   ;; Centered justification
-   (and (= beg (line-beginning-position))
-         (string= "\\begin"
-                  (buffer-substring-no-properties
-                   beg (+ beg 6))))
-    (let* ((img (create-image image 'png t))
-           (width (car (image-size img)))
-           (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 3) (/ width 3)))))
-      (overlay-put (ov-at) 'before-string (make-string offset ? )))))
+;; (defun gm/org-justify-fragment-overlay (beg end image imagetype)
+;;   "Adjust the justification of a LaTeX fragment.
+;; The justification is set by :justify in
+;; `org-format-latex-options'. Only equations at the beginning of a
+;; line are justified."
+;;   (when
+;;    ;; Centered justification
+;;    (and (= beg (line-beginning-position))
+;;          (string= "\\begin"
+;;                   (buffer-substring-no-properties
+;;                    beg (+ beg 6))))
+;;     (let* ((img (create-image image 'png t))
+;;            (width (car (image-size img)))
+;;            (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 3) (/ width 3)))))
+;;       (overlay-put (ov-at) 'before-string (make-string offset ? )))))
 
-(defun gm/org-latex-fragment-tooltip (beg end image imagetype)
-  "Add the fragment tooltip to the overlay and set click function to toggle it."
-  (overlay-put (ov-at) 'help-echo
-               (concat (buffer-substring beg end)
-                       "\nmouse-1 to toggle."))
-  (overlay-put (ov-at) 'local-map (let ((map (make-sparse-keymap)))
-                                    (define-key map [mouse-1]
-                                      `())
-                                    map)))
+;; (defun gm/org-latex-fragment-tooltip (beg end image imagetype)
+;;   "Add the fragment tooltip to the overlay and set click function to toggle it."
+;;   (overlay-put (ov-at) 'help-echo
+;;                (concat (buffer-substring beg end)
+;;                        "\nmouse-1 to toggle."))
+;;   (overlay-put (ov-at) 'local-map (let ((map (make-sparse-keymap)))
+;;                                     (define-key map [mouse-1]
+;;                                       `())
+;;                                     map)))
 
-(advice-add 'org--format-latex-make-overlay :after 'gm/org-justify-fragment-overlay)
-(advice-add 'org--format-latex-make-overlay :after 'gm/org-latex-fragment-tooltip)
+;; (advice-add 'org--format-latex-make-overlay :after 'gm/org-justify-fragment-overlay)
+;; (advice-add 'org--format-latex-make-overlay :after 'gm/org-latex-fragment-tooltip)
 #+END_SRC
 Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hydra]].
 #+BEGIN_SRC emacs-lisp
@@ -3917,13 +3887,13 @@ Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hyd
   "Preview equations."
   :init-value nil)
 
-(defun gm/eq-toggle ()
-  (if gm/eq-preview-mode
-      (progn
-        (add-hook 'post-command-hook 'org-latex-fragment-toggle-auto t 'local))
-    (remove-hook 'post-command-hook 'org-latex-fragment-toggle-auto 'local)))
+;; (defun gm/eq-toggle ()
+;;   (if gm/eq-preview-mode
+;;       (progn
+;;         (add-hook 'post-command-hook 'org-latex-fragment-toggle t 'local))
+;;     (remove-hook 'post-command-hook 'org-latex-fragment-toggle 'local)))
 
-(add-hook 'gm/eq-preview-mode-hook #'gm/eq-toggle)
+;; (add-hook 'gm/eq-preview-mode-hook #'gm/eq-toggle)
 #+END_SRC
 *** Allow Alphabetical List
 #+BEGIN_SRC emacs-lisp
@@ -3957,18 +3927,19 @@ Remove "hypersetup" at the beginning of exported document.
                  (not (string= class "gm-notes")))
             (org-latex-export-to-latex nil t)
           (org-tufte-latex-export-to-latex nil t))
-        (if (get-process processname)
-            (when-let (processbuffer (get-buffer (concat "*" processname "*")))
-              (with-current-buffer processbuffer
-                (erase-buffer)))
+        (unless (get-process processname)
           (async-start-process processname
                                "latexmk"
-                               (lambda (file) )
-                               (if (string= cmd "PDF") "-pdf" "-xelatex")
+                               (lambda (file) (message (format "Exported %s" file)))
+                               "-pdf"
                                "-pvc"
-                               "-verbose"
-                               "--interaction=nonstopmode"
-                               file))))))
+                               (if current-prefix-arg "-verbose" "-quiet")
+                               "-interaction=nonstopmode"
+                               file))
+        (with-temp-file file
+          (insert-file-contents file)
+          (replace-regexp-in-region "\\\\cite\\[\\([^]]*\\)]\\[]" "\\\\cite[\\1]")
+          (replace-regexp-in-region "\\\\emph{Step " "\\\\step{Step "))))))
 #+END_SRC
 Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
@@ -4128,8 +4099,6 @@ for me.
 (use-package notmuch
   :commands (notmuch notmuch-refresh-all-buffers)
   :config
-  (require 'smtpmail)
-  (require 'smtpmail-async)
   <<notmuch-settings>>
   :custom
   <<notmuch-custom-settings>>
@@ -4142,45 +4111,27 @@ for me.
 #+END_SRC
 Set up the mail directory and draft location.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(setq message-directory "~/mail/uni"
-      message-auto-save-directory "~/mail/uni/Drafts"
-      notmuch-fcc-dirs '((".*" . "\"uni/Sent Items\" +sent -inbox -unread")))
+(setq message-directory "~/mail/gmail"
+      message-auto-save-directory "~/mail/gmail/drafts")
 #+END_SRC
-Provide my email and name.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(when gm/user
-  (setq mail-user-agent 'message-user-agent
-        user-mail-address gm--email
-        user-full-name "Gautam Manohar"))
-#+END_SRC
-SMTP for sending mail. The =stream-type= is important because I want my outgoing
-mail to at least use TLS encryption. One day, though, I would like to adopt a
-more rigorous system of encryption.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(setq send-mail-function #'smtpmail-send-it
-      message-send-mail-function #'smtpmail-send-it
-      smtpmail-debug-info t
-      smtpmail-debug-verb t
-      smtpmail-stream-type 'starttls
-      smtpmail-smtp-server gm--send-mail-server
-      smtpmail-smtp-service 587)
-#+END_SRC
-Some commonly used searches.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(setq notmuch-saved-searches
-      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order 'oldest-first)
-        (:name "flagged" :query "tag:flagged" :key "f")
-        (:name "sent" :query "tag:sent" :key "s" :sort-order 'newest-first)
-        (:name "drafts" :query "tag:draft" :key "d")))
+(setq message-send-mail-function 'message-send-mail-with-sendmail)
+(setq sendmail-program "gmi")
+(setq message-sendmail-extra-arguments '("send" "--quiet" "-t" "-C" "~/mail/princeton"))
+(setq notmuch-fcc-dirs nil)
+(setq message-kill-buffer-on-exit t
+      notmuch-address-command 'internal)
 #+END_SRC
 Show newest mail first.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-custom-settings
 (notmuch-search-oldest-first nil)
 #+END_SRC
-Nice stuff to have for sending mail.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(setq message-kill-buffer-on-exit t
-      notmuch-address-command 'internal)
+Some commonly used searches.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-custom-settings
+(setq notmuch-saved-searches
+      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order 'oldest-first)
+        (:name "sent" :query "tag:sent" :key "s" :sort-order 'newest-first)
+        (:name "drafts" :query "tag:draft" :key "d")))
 #+END_SRC
 Most modern mail clients expect mail to be soft-wrapped. That is, the paragraph
 conforms to the width of the viewer the person reading the mail is using, not to
@@ -4427,107 +4378,6 @@ either contains or follows the word unsubscribe."
       (goto-char (car ffap-string-at-point-region)))
   (ffap-next-url)))
 #+END_SRC
-*** Better Hello Screen
-From [[http://www.holgerschurig.de/en/emacs-notmuch-hello/][Holger Schurig]].
-#+BEGIN_SRC emacs-lisp
-(setq notmuch-hello-sections '())
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(defun my-notmuch-hello-insert-recent-searches ()
-  "Insert recent searches."
-  (when notmuch-search-history
-    (widget-insert "Recent searches:")
-    (widget-insert "\n\n")
-    (let ((start (point)))
-      (cl-loop for i from 1 to notmuch-hello-recent-searches-max
-        for search in notmuch-search-history do
-        (let ((widget-symbol (intern (format "notmuch-hello-search-%d" i))))
-          (set widget-symbol
-           (widget-create 'editable-field
-                  ;; Don't let the search boxes be
-                  ;; less than 8 characters wide.
-                  :size (max 8
-                         (- (window-width)
-                        ;; Leave some space
-                        ;; at the start and
-                        ;; end of the
-                        ;; boxes.
-                        (* 2 notmuch-hello-indent)
-                        ;; 1 for the space
-                        ;; before the `[del]'
-                        ;; button. 5 for the
-                        ;; `[del]' button.
-                        1 5))
-                  :action (lambda (widget &rest ignore)
-                        (notmuch-hello-search (widget-value widget)))
-                  search))
-          (widget-insert " ")
-          (widget-create 'push-button
-                 :notify (lambda (widget &rest ignore)
-                       (when (y-or-n-p "Are you sure you want to delete this search? ")
-                     (notmuch-hello-delete-search-from-history widget)))
-                 :notmuch-saved-search-widget widget-symbol
-                 "del"))
-        (widget-insert "\n"))
-      (indent-rigidly start (point) notmuch-hello-indent))
-    nil))
-
-(add-to-list 'notmuch-hello-sections #'my-notmuch-hello-insert-recent-searches)
-(add-to-list 'notmuch-hello-sections #'notmuch-hello-insert-search)
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(defface my-notmuch-hello-header-face
-  '((t :weight bold))
-  "Font for the header in `my-notmuch-hello-insert-searches`."
-  :group 'notmuch-faces)
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(defun my-count-query (query)
-  (with-temp-buffer
-    (insert query "\n")
-    (call-process-region (point-min) (point-max) notmuch-command t t nil "count" "--batch")
-    (goto-char (point-min))
-    (let ((n (read (current-buffer))))
-      (if (= n 0)
-          nil
-        (notmuch-hello-nice-number n)))))
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(defun my-notmuch-hello-query-insert (cnt query elem)
-  (if cnt
-      (let* ((str (format "%s" cnt))
-             (widget-push-button-prefix "")
-             (widget-push-button-suffix "")
-             (oldest-first notmuch-search-oldest-first))
-        (widget-create 'push-button
-                       :notify #'notmuch-hello-widget-search
-                       :notmuch-search-terms query
-                       :notmuch-search-oldest-first oldest-first
-                       :notmuch-search-type 'tree
-                       str)
-        (widget-insert (make-string (- 8 (length str)) ? )))
-    (widget-insert "        ")))
-#+END_SRC
-#+BEGIN_SRC emacs-lisp
-(defun my-notmuch-hello-insert-searches ()
-  "Insert the saved-searches section."
-  (widget-insert (propertize "New     Total      Key  List\n" 'face 'my-notmuch-hello-header-face))
-  (mapc (lambda (elem)
-          (when elem
-            (let* ((q_tot (plist-get elem :query))
-                   (q_new (concat q_tot " AND tag:unread"))
-                   (n_tot (my-count-query q_tot))
-                   (n_new (my-count-query q_new)))
-              (my-notmuch-hello-query-insert n_new q_new elem)
-              (my-notmuch-hello-query-insert n_tot q_tot elem)
-              (widget-insert "   ")
-              (widget-insert (plist-get elem :key))
-              (widget-insert "    ")
-              (widget-insert (plist-get elem :name))
-              (widget-insert "\n"))))
-        notmuch-saved-searches))
-(add-to-list 'notmuch-hello-sections #'my-notmuch-hello-insert-searches)
-#+END_SRC
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
 #+BEGIN_SRC emacs-lisp
@@ -4688,8 +4538,7 @@ Snippets go in [[file:math-snippets.el]].
   ("l" (insert "\\lambda{}") "λ")
   ("L" (insert "\\Lambda{}") "Λ")
   ("m" (insert "\\mu{}") "µ")
-  ("n" (insert "\\cap ") "∩")
-  ("N" (yas-expand-snippet "\\bigcap_{$1}^{$2}$0"))
+  ("n" (insert "\\nu{}") "ν")
   ("o" (insert "\\omega{}") "ω")
   ("O" (insert "\\Omega{}") "Ω")
   ("p" (insert "\\pi{}") "π")
@@ -4730,12 +4579,13 @@ Snippets go in [[file:math-snippets.el]].
   ("f" (insert "\\phi{}") "φ")
   ("F" (insert "\\mathbb{F}") "𝔽")
   ("l" (insert "\\ell{}") "ℓ")
+  ("n" (insert "\\cap ") "∩")
+  ("N" (yas-expand-snippet "\\bigcap_{$1}^{$2}$0"))
   ("o" (insert "\\circ{}") "∘")
   ("r" (insert "\\wp{}") "ρ")
   ("s" (insert ";") ";")
   ("u" (insert "\\sqcup ") "∩")
   ("U" (insert "\\cap ") "∩")
-  ("n" (insert "\\nu{}") "ν")
   ("N" (insert "\\nabla") "∇")
   ("w" (insert "\\varpi{}") "ϖ")
   ("x" (insert " \\times ") "×")
@@ -4935,16 +4785,20 @@ snippets and bind each of these to a snippet expansion command.
            (rest (s-left -1 key)))
       (push rest (alist-get last gm/math-snippet-by-suffix nil nil 'equal)))))
 
+(defvar gm/math-unique-snippets nil)
+
 (defun gm/math-setup ()
   (load gm/math-snippet-loc)
   (setq gm/math-snippets (append gm/math-local-snippets gm/math-global-snippets))
   (setq gm/longest-snippet
         (cons (-max (--map (length (car it)) gm/math-snippets))
               (-max (--map (length (cadr it)) gm/math-snippets))))
-  (let ((unique-suffixes
-         (delete-dups (--map (s-right 1 (car it)) gm/math-snippets))))
-    (gm/math-snippet--bind-keys unique-suffixes)
-    (gm/math-snippet--create-suffix-tree unique-suffixes)))
+    (cl-loop for i from 0 to 9
+             do (push (number-to-string i) gm/math-unique-suffixes))
+    (append (--map (s-right 1 (car it)) gm/math-snippets) gm/math-unique-suffixes)
+    (setq gm/math-unique-suffixes (delete-dups gm/math-unique-suffixes))
+    (gm/math-snippet--bind-keys gm/math-unique-suffixes)
+    (gm/math-snippet--create-suffix-tree gm/math-unique-suffixes))
 #+END_SRC
 We make a function to get the possible completion candidates from the buffer.
 #+BEGIN_SRC emacs-lisp
@@ -4957,13 +4811,19 @@ capped at a certain number of characters, defined by =gm/longest-snippet=). The
 longest snippet is, at the time of writing, =binom=, for the binomial coefficient
 (choose function).
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-snippet-expand (key)
+(defun gm/math-snippet-expand-p (key)
   (-if-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet)))
              (completions (-intersection
                            buff-cand
                            (alist-get key gm/math-snippet-by-suffix nil nil 'equal)))
              (snippet-match (--max-by (> (length it) (length other)) completions))
              (snippet (assoc (concat snippet-match key) gm/math-snippets))
+             (expand (cadr snippet)))
+      snippet))
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(defun gm/math-snippet-expand (key)
+  (-if-let* ((snippet (gm/math-snippet-expand-p key))
              (expand (cadr snippet)))
       (progn
         ;; this has to be negative, we're deleting back
@@ -4972,7 +4832,9 @@ longest snippet is, at the time of writing, =binom=, for the binomial coefficien
         (when (= (char-before) ?\\) (delete-char -1))
         ;; is this a snippet expansion or just a text insertion?
         (yas-expand-snippet (if (cddr snippet) (yas-lookup-snippet expand) expand)))
-    (insert key)))
+    (if (string-match "[0-9]" key)
+        (gm/math-number-subscript key)
+      (insert key))))
 #+END_SRC
 **** Add and View Snippet
 Now we give the user a way to easily add snippets.
@@ -5034,44 +4896,46 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
 #+BEGIN_SRC emacs-lisp
 (defun math-tab ()
   (interactive)
-  (catch 'stop
-    (cond
-     ((looking-at "}\\|\\]\\|)")
-      (forward-char 1)
-      (if (or (looking-at "\\\\") (looking-at "[^_\\^({\\[]"))
-          (throw 'stop t)))
-     ((= (following-char) ?$)
-      (while (= (following-char) ?$) (forward-char 1))
-      (throw 'stop t))
-     ((= (following-char) ?\ )
-      (forward-char 1)
-      (re-search-forward "[^ ]")
-      (if (/= (preceding-char) ?\n) (forward-char -1)))
-     (t
-      (forward-char 1)))
-    (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
-      (forward-char -1)
-      (cond
-       ((= (following-char) ?\ )
-        (if (not (bolp)) (forward-char 1)) (throw 'stop t))
-       ((= (following-char) ?\n)
-        (if (and (bolp) (not (eobp)))
-            (throw 'stop t)
-          (if (equal "\\\\" (buffer-substring-no-properties
-                             (- (point) 2) (point)))
-              (forward-char 1)
-            (throw 'stop t))))
-       (t
-        (if (or (= (char-syntax (preceding-char)) ?\()
-                (= (char-syntax (preceding-char)) ?\))
-                (= (preceding-char) ?-))
-            (throw 'stop t)
+  (if (yas-active-snippets t)
+      (yas-next-field)
+      (catch 'stop
+        (cond
+         ((looking-at "}\\|\\]\\|)")
           (forward-char 1)
-          (if (looking-at "[^_\\^({\\[]")
-              (throw 'stop t)))))))
-  (unless (gm/in-math-p)
-    (forward-char -1)
-    (gm/reformat-fragment)))
+          (if (or (looking-at "\\\\") (looking-at "[^_\\^({\\[]"))
+              (throw 'stop t)))
+         ((= (following-char) ?$)
+          (while (= (following-char) ?$) (forward-char 1))
+          (throw 'stop t))
+         ((= (following-char) ?\ )
+          (forward-char 1)
+          (re-search-forward "[^ ]")
+          (if (/= (preceding-char) ?\n) (forward-char -1)))
+         (t
+          (forward-char 1)))
+        (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
+          (forward-char -1)
+          (cond
+           ((= (following-char) ?\ )
+            (if (not (bolp)) (forward-char 1)) (throw 'stop t))
+           ((= (following-char) ?\n)
+            (if (and (bolp) (not (eobp)))
+                (throw 'stop t)
+              (if (equal "\\\\" (buffer-substring-no-properties
+                                 (- (point) 2) (point)))
+                  (forward-char 1)
+                (throw 'stop t))))
+           (t
+            (if (or (= (char-syntax (preceding-char)) ?\()
+                    (= (char-syntax (preceding-char)) ?\))
+                    (= (preceding-char) ?-))
+                (throw 'stop t)
+              (forward-char 1)
+              (if (looking-at "[^_\\^({\\[]")
+                  (throw 'stop t)))))))
+    (unless (gm/in-math-p)
+      (forward-char -1)
+      (gm/reformat-fragment))))
 ;; right bracket
 #+END_SRC
 Bind to tab.
@@ -5105,11 +4969,11 @@ creating them.
 #+END_SRC
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(cl-loop for i from 0 to 9
-         collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
-                                         (number-to-string ,i)
-                                         (lambda! () (gm/math-number-subscript (number-to-string ,i)))
-                                       (gm/in-math-p)))))
+;; (cl-loop for i from 0 to 9
+;;          collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
+;;                                          (number-to-string ,i)
+;;                                          (lambda! () (gm/math-number-subscript (number-to-string ,i)))
+;;                                        (gm/in-math-p)))))
 #+END_SRC
 **** Fraction
 Typing =/= after an appropriate block (a number or a balanced set of parentheses)
@@ -5444,8 +5308,7 @@ snippet calls this function.
                     "create" name)
       (shell-command "i3-msg \"fullscreen\"")
       (shell-command "i3-msg \"fullscreen\"")
-      (setf (buffer-substring
-             (line-beginning-position) (line-end-position)) "")
+      (cl--set-buffer-substring (line-beginning-position) (line-end-position) "")
       (yas-expand-snippet (format "#+name: fig:%s\n #+caption: $2\n #+attr_latex: :vertical-alignment b\n [[file:figures/%s.pdf_tex]]\n$0" name name)))))
       #+END_SRC
 * Options

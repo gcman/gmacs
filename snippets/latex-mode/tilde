@@ -3,4 +3,4 @@
 # key: math-tilde
 # type: command
 # --
-(gm/math-postfix "widetilde")
+(gm/math-postfix "tilde")

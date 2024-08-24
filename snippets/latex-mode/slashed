@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: slashed
+# key: math-slashed
+# type: command
+# --
+(gm/math-postfix "slashed")
