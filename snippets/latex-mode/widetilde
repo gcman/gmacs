@@ -2,4 +2,4 @@
 # name: widetilde
 # key: math-widetilde
 # --
-(gm/math-postfix "widetilde")
+(og/math-postfix "widetilde")

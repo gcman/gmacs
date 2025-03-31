@@ -3,4 +3,4 @@
 # key: math-derivative
 # type: command
 # --
-(insert (concat (if (equal "wedge{}" (gm/last-n-chars 7)) "\\!" "") "\\dd{}"))
+(insert (concat (if (equal "wedge{}" (og/last-n-chars 7)) "\\!" "") "\\dd{}"))

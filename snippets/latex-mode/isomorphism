@@ -2,6 +2,6 @@
 # name: isomorphism
 # key: math-isomorphism
 # --
-`(if (gm/math-in-commutative-diagram)
+`(if (og/math-in-commutative-diagram)
     ", \"\\sim\""
     "\\Iso{}")`

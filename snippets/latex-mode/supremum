@@ -3,7 +3,7 @@
 # key: math-supremum
 # type: command
 # --
-(if (equal (gm/last-n-chars 5) "\\lim ")
+(if (equal (og/last-n-chars 5) "\\lim ")
 (progn
 (delete-char -5)
 (insert "\\limsup "))

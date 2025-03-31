@@ -3,7 +3,7 @@
 # key: math-split-equals
 # type: command
 # --
-(if (and (gm/in-math-p)
+(if (and (og/in-math-p)
      (eq (car (org-element-context)) 'latex-environment))
 (insert "&= ")
 (insert "\\equiv{}"))

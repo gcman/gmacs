@@ -3,4 +3,4 @@
 # key: math-slashed
 # type: command
 # --
-(gm/math-postfix "slashed")
+(og/math-postfix "slashed")

@@ -3,4 +3,4 @@
 # key: math-underline
 # type: command
 # --
-(gm/math-postfix "underline")
+(og/math-postfix "underline")

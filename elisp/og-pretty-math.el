@@ -6,10 +6,10 @@
   :init-value nil
   (font-lock-fontify-buffer)
   (if pretty-math-mode
-      (font-lock-add-keywords nil (gm/pretty-math-keywords))
-    (font-lock-remove-keywords nil (gm/pretty-math-keywords))))
+      (font-lock-add-keywords nil (og/pretty-math-keywords))
+    (font-lock-remove-keywords nil (og/pretty-math-keywords))))
 
-(defvar gm/math-greek-upper
+(defvar og/math-greek-upper
   '(("Gamma" "Γ")
     ("Delta" "Δ")
     ("Epsilon" "Ε")
@@ -23,7 +23,7 @@
     ("Psi" "Ψ")
     ("Omega" "Ω")))
 
-(defvar gm/math-greek-lower
+(defvar og/math-greek-lower
   '(("alpha" "α")
     ("beta" "β")
     ("gamma" "γ")
@@ -54,7 +54,7 @@
     ("varrho" "ϱ")
     ("varsigma" "ς")))
 
-(defvar gm/math-vectors
+(defvar og/math-vectors
   (append
    (cl-loop for i from 65 to 90
             collect (list (concat "vec " (char-to-string i))
@@ -63,11 +63,11 @@
             collect (list (concat "vec " (char-to-string i))
                           (char-to-string (+ i 120205))))))
 
-(defvar gm/math-letters
+(defvar og/math-letters
   (append
-   gm/math-greek-lower
-   gm/math-greek-upper
-   gm/math-vectors
+   og/math-greek-lower
+   og/math-greek-upper
+   og/math-vectors
    '(("aleph" "ℵ")
      ("hbar" "ħ")
      ("ell" "ℓ")
@@ -84,7 +84,7 @@
      ("E" "𝗘")
      ("A" "𝗔"))))
 
-(defvar gm/math-arrows
+(defvar og/math-arrows
   '(("rightarrow" "→")        ; Directions
     ("leftarrow" "←")
     ("leftrightarrow" "↔")
@@ -119,7 +119,7 @@
     ("hookrightarrow" "↪")
     ("hookleftarrow" "↩")))
 
-(defvar gm/math-operators
+(defvar og/math-operators
   '(("bigvee" "⋁")
     ("bigwedge" "⋀")
     ("biguplus" "⨄")
@@ -141,9 +141,9 @@
     ("bigsqcup" "⨆")
     ("bigcirc" "◯")))
 
-(defvar gm/math-spaced
+(defvar og/math-spaced
   (append
-   gm/math-arrows
+   og/math-arrows
   '(("geq" "≥")
     ("ge" "≥")
     ("leq" "≤")
@@ -221,10 +221,10 @@
     ("vee" "∨")
     ("intprod" "｣"))))
 
-(defvar gm/math-unspaced
+(defvar og/math-unspaced
   (append
-   gm/math-operators
-   gm/math-letters
+   og/math-operators
+   og/math-letters
    '(("infty" "∞")
      ("emptyset" "∅")
      ("dots" "…")
@@ -240,7 +240,7 @@
      ("dagger" "†" )
      ("dag" "†")
      ("ddag" "‡")
-     ("S" "§")
+     ;; ("S" "§")
      ("star" "★")
      ("bullet" "•")
      ("vDash" "⊨")
@@ -260,7 +260,7 @@
      ("left\\[" "[")
      ("right\\]" "]"))))
 
-(defvar gm/spaced-custom
+(defvar og/spaced-custom
   '(("Div" [?\s (Br . Bl) ?\s (Bc . Br) ?∇ (Br . Bc) ?\s (Br . Bc) ?\s (Bc . Bl) ?·])
     ("Lapl" [?\s (Bc . Bc) ?\s (Bc . Br) ?∆])
     ("Grad" [?\s (Bc . Bc) ?\s (Bc . Br) ?∇])
@@ -268,36 +268,36 @@
     ("int" [?\s (Bc . Bc) ?\s (Bc . Br) ?∫])
     ("dd" [?\s (Br . Bc) ?𝖽])))
 
-(defvar gm/math-commands
+(defvar og/math-commands
   '(("bra" "⟨" "|")
     ("ket" "|" "⟩")
     ("abs" "|" "|")
     ("norm" "‖" "‖")))
 
-(defun gm/math-regexp-unspaced (name symbol)
+(defun og/math-regexp-unspaced (name symbol)
   (list (list (format "\\(\\\\%s{}\\)" name) symbol)
         (list (format "\\(\\\\%s\\)[^[:alnum:]{]" name) symbol)))
 
-(defun gm/math-regexp-spaced (name symbol)
+(defun og/math-regexp-spaced (name symbol)
   (setq symbol `[?\s (Br . Bl) ?\s (Bc . Bc) ,(string-to-char symbol)])
   (list (list (format "\\(\\\\%s\\( \\|{}\\)\\)" name) symbol)
         (list (format "\\([ ]?\\\\%s\\)[^[:alnum:]{ ]" name) symbol)))
 
-(defun gm/math-regexp-spaced-custom (name symbol)
+(defun og/math-regexp-spaced-custom (name symbol)
   (list (format "\\(\\\\%s\\( \\|{}\\)\\)" name) symbol))
 
-(defun gm/math-replacements ()
+(defun og/math-replacements ()
   (append
-   (-flatten-n 1 (--map (apply 'gm/math-regexp-spaced it) gm/math-spaced))
-   (-flatten-n 1 (--map (apply 'gm/math-regexp-unspaced it) gm/math-unspaced))
-   (--map (apply 'gm/math-regexp-spaced-custom it) gm/spaced-custom)))
+   (-flatten-n 1 (--map (apply 'og/math-regexp-spaced it) og/math-spaced))
+   (-flatten-n 1 (--map (apply 'og/math-regexp-unspaced it) og/math-unspaced))
+   (--map (apply 'og/math-regexp-spaced-custom it) og/spaced-custom)))
 
-(defun gm/curry (fun &rest args)
+(defun og/curry (fun &rest args)
   "Partially apply FUN to ARGS.  The result is a new function.
 This idiom is preferred over `lexical-let'."
   `(lambda (&rest more) (apply ',fun (append ',args more))))
 
-(defun gm/pretty-match-font-lock-helper (symbol &optional match-num)
+(defun og/pretty-match-font-lock-helper (symbol &optional match-num)
   (unless match-num (setq match-num 1))
   `(,match-num (compose-region
                 (match-beginning ,match-num)
@@ -305,7 +305,7 @@ This idiom is preferred over `lexical-let'."
                 ,symbol
                 'decompose-region)))
 
-(defun gm/pretty-math-command-matcher (command limit)
+(defun og/pretty-math-command-matcher (command limit)
   (let ((end-brace1 nil)
         (end-brace2 nil)
         (data nil))
@@ -331,17 +331,17 @@ This idiom is preferred over `lexical-let'."
                            end-brace2))
           (throw 'done (point)))))))
 
-(defun gm/pretty-math-gen-font-lock-keywords (name symbol &optional name2 symbol2)
-  `(,name ,(gm/pretty-match-font-lock-helper symbol)))
+(defun og/pretty-math-gen-font-lock-keywords (name symbol &optional name2 symbol2)
+  `(,name ,(og/pretty-match-font-lock-helper symbol)))
 
-(defun gm/pretty-math-gen-font-lock-commands (name open-delim close-delim)
-  `(,(gm/curry 'gm/pretty-math-command-matcher name)
-    ,(gm/pretty-match-font-lock-helper open-delim 1)
-    ,(gm/pretty-match-font-lock-helper close-delim 2)))
+(defun og/pretty-math-gen-font-lock-commands (name open-delim close-delim)
+  `(,(og/curry 'og/pretty-math-command-matcher name)
+    ,(og/pretty-match-font-lock-helper open-delim 1)
+    ,(og/pretty-match-font-lock-helper close-delim 2)))
 
-(defun gm/pretty-math-keywords ()
+(defun og/pretty-math-keywords ()
   (append
-   (--map (apply 'gm/pretty-math-gen-font-lock-keywords it) (gm/math-replacements))
-   (--map (apply 'gm/pretty-math-gen-font-lock-commands it) gm/math-commands)))
+   (--map (apply 'og/pretty-math-gen-font-lock-keywords it) (og/math-replacements))
+   (--map (apply 'og/pretty-math-gen-font-lock-commands it) og/math-commands)))
 
-(provide 'gm-pretty-math)
+(provide 'og-pretty-math)

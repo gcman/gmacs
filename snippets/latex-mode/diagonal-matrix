@@ -2,7 +2,7 @@
 # name: diagonal-matrix
 # key: dmat
 # type: command
-# condition: (gm/in-math-p)
+# condition: (og/in-math-p)
 # --
 (let* ((width (read-number "Matrix width?" 3))
       (height width)

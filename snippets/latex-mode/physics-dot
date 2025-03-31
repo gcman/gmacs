@@ -3,4 +3,4 @@
 # key: math-physics-dot
 # type: command
 # --
-(gm/math-postfix "dot")
+(og/math-postfix "dot")

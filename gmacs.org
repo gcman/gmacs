@@ -108,27 +108,27 @@ Enable lexical binding.
 #+END_SRC
 Always load up a server when opening Emacs, unless one is already running.
 #+BEGIN_SRC emacs-lisp
-(defun server-already-running-p ()
-  "Is Emacs already running?
-Gets name based on server-force-delete."
-       (let ((file (expand-file-name
-                    server-name
-                    (if server-use-tcp
-                        server-auth-dir
-                      server-socket-dir))))
-         (file-exists-p file)))
+  ;;   (defun server-already-running-p ()
+  ;;     "Is Emacs already running?
+  ;;     Gets name based on server-force-delete."
+  ;;     (let ((file (expand-file-name
+  ;; 		 server-name
+  ;; 		 (if server-use-tcp
+  ;; 		     server-auth-dir
+  ;; 		   server-socket-dir))))
+  ;;       (file-exists-p file)))
 
-(defun server-shunt ()
-  "Shunts to emacsclient"
-       (let ((args (append '("emacsclient" "-a" "\"\"" "-c" "-n")
-                           (cdr command-line-args))))
-         (shell-command (substring (format "%S" args) 1 -1))
-         (kill-emacs)))
+  ;; (defun server-shunt ()
+  ;;     "Shunts to emacsclient"
+  ;;     (let ((args (append '("emacsclient" "-a" "\"\"" "-c" "-n")
+  ;; 			(cdr command-line-args))))
+  ;;       (shell-command (substring (format "%S" args) 1 -1))
+  ;;       (kill-emacs)))
 
-(unless (featurep 'server)
-  (unless (boundp 'server-process)
-    (require 'server)
-    (if (server-already-running-p) (server-shunt) (server-start))))
+  ;;   (unless (featurep 'server)
+  ;;     (unless (boundp 'server-process)
+  ;;       (require 'server)
+  ;;       (if (server-already-running-p) (server-shunt) (server-start))))
 #+END_SRC
 We increase these so that we don't exceed recursion limits unless there is some
 kind of infinite loop.
@@ -150,7 +150,7 @@ Generate native compiled files whenever Emacs loads a =.elc= file.
 #+END_SRC
 Let the user know how quickly GMACS started.
 #+BEGIN_SRC emacs-lisp
-(defun gm/startup-time ()
+(defun og/startup-time ()
   (interactive)
   (message "GMACS ready in %s with %d garbage collections."
            (format "%.2f seconds"
@@ -158,7 +158,7 @@ Let the user know how quickly GMACS started.
                     (time-subtract after-init-time before-init-time)))
            gcs-done))
 
-(add-hook 'after-init-hook #'gm/startup-time)
+(add-hook 'after-init-hook #'og/startup-time)
 #+END_SRC
 ** Directories and File Locations
 We define a few custom directories to satisfy my own wishes for how things
@@ -192,7 +192,7 @@ method makes it easy for to extend to more directories if needed.
 #+END_SRC
 Make a variable for personal settings.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/user nil)
+(defvar og/user nil)
 #+END_SRC
 ** Setup Packages
 We're going to use a custom package directory, so we need to trick Emacs into
@@ -326,15 +326,6 @@ tab (evil tabs!), the cursor will look as wide as a tab.
   (setq-default cursor-type 'box))
 (setq x-stretch-cursor t)
 #+END_SRC
-**** Beacon Mode
-Never lose your cursor again. This package lights up your cursor when the
-screen/cursor position is refactored. It's much more useful than it sounds.
-#+BEGIN_SRC emacs-lisp
-;; (use-package beacon
-;;   :defer 2
-;;   :config (beacon-mode 1)
-;;   :custom (beacon-color "#b58900"))
-#+END_SRC
 *** Bells
 Visual, not audible bells.
 #+BEGIN_SRC emacs-lisp
@@ -342,21 +333,7 @@ Visual, not audible bells.
 (setq visible-bell t)
 #+END_SRC
 *** Modeline
-The =smart-mode-line= package comes with some useful items on the modeline, as
-well as colour coding. Some interesting features (which I set in
-=sml/replacer-regexp-list=) is shortening features. Another useful thing is that
-minor modes are displayed.
-#+BEGIN_SRC emacs-lisp
-(use-package smart-mode-line
-  :defer 1
-  :config (sml/setup))
-#+END_SRC
-What time is it, Mr. Emacs?
-#+BEGIN_SRC emacs-lisp
-(display-time-mode 1)
-(setq display-time-format "%l:%M%p")
-#+END_SRC
-=line-number-mode= mode displays the current line number in the modeline. Except
+The =line-number-mode= displays the current line number in the modeline, except
 when there is a line Emacs decides is too long. In that case, all you see in the
 modeline is =??=. See [[https://emacs.stackexchange.com/questions/3824/what-piece-of-code-in-emacs-makes-line-number-mode-print-as-line-number-i][this question]] on Emacs SE for a workaround.
 #+BEGIN_SRC emacs-lisp
@@ -407,23 +384,23 @@ everything looks right, including the colours in PDFs and the asterisks
 for headlines in Org Mode (I hide them with =org-bullets-mode= but one of them
 comes back when I switch themes, for some reason), I refresh all open buffers.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/theme 'dark)
-(defun gm/switch-theme ()
+(defvar og/theme 'dark)
+(defun og/switch-theme ()
   (interactive)
-  (if (eq gm/theme 'dark)
+  (if (eq og/theme 'dark)
       (progn
         (load-theme 'solarized-light)
         (after! pdf-tools (setq pdf-view-midnight-colors '("#839496" . "#fdf6e3")))
-        (setq gm/theme 'light))
+        (setq og/theme 'light))
     (load-theme 'solarized-dark)
     (setq pdf-view-midnight-colors '("#839496" . "#002b36"))
-    (setq gm/theme 'dark))
+    (setq og/theme 'dark))
   (modi/revert-buffers))
 #+END_SRC
 **** Font Face
 I change my fonts a lot, so I made it easier to set a font.
 #+BEGIN_SRC emacs-lisp
-(defun gm/switch-font ()
+(defun og/switch-font ()
   (interactive)
   (let ((font (ivy-completing-read "Choose a font: "
                                    (delete-dups (font-family-list)))))
@@ -440,24 +417,24 @@ set the default font for characters in the "Mathematical Alphanumeric Symbols"
 block in Unicode to Symbola. I got the Symbola font from the =ttf-ancient-fonts=
 package on the AUR.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/unicode-font "DejaVu Sans")
+(defvar og/unicode-font "DejaVu Sans")
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) gm/unicode-font)
-(set-fontset-font "fontset-default" '(#x2200 . #x22ff) gm/unicode-font)
+(set-fontset-font "fontset-default" '(#x1d400 . #x1d7ff) og/unicode-font)
+(set-fontset-font "fontset-default" '(#x2200 . #x22ff) og/unicode-font)
 #+END_SRC
 I do something similar for my =org-ellipsis= character (=⬎=); here, though, I just
 prefer how this font draws the character.
 #+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x2b0e . #x2b0e) gm/unicode-font)
+(set-fontset-font "fontset-default" '(#x2b0e . #x2b0e) og/unicode-font)
 #+END_SRC
 I also include other miscellaneous characters.
 #+BEGIN_SRC emacs-lisp
-(set-fontset-font "fontset-default" '(#x211c . #x211c) gm/unicode-font) ;; real part ℜ
-(set-fontset-font "fontset-default" '(#x2111 . #x2111) gm/unicode-font) ;; imaginary part ℑ
-(set-fontset-font "fontset-default" '(#x2113 . #x2113) gm/unicode-font) ;; ell ℓ
-(set-fontset-font "fontset-default" '(#x2118 . #x2118) gm/unicode-font) ;; Weierstrass p ℘
-(set-fontset-font "fontset-default" '(#x2135 . #x2135) gm/unicode-font) ;; aleph ℵ
+(set-fontset-font "fontset-default" '(#x211c . #x211c) og/unicode-font) ;; real part ℜ
+(set-fontset-font "fontset-default" '(#x2111 . #x2111) og/unicode-font) ;; imaginary part ℑ
+(set-fontset-font "fontset-default" '(#x2113 . #x2113) og/unicode-font) ;; ell ℓ
+(set-fontset-font "fontset-default" '(#x2118 . #x2118) og/unicode-font) ;; Weierstrass p ℘
+(set-fontset-font "fontset-default" '(#x2135 . #x2135) og/unicode-font) ;; aleph ℵ
 #+END_SRC
 **** Syntax Highlighting
 I want syntax highlighting everywhere...
@@ -472,12 +449,12 @@ definitely slow things down. In such buffers I also remove line numbers.
   (or (> (buffer-size) (* 5000 80))
       (> (line-number-at-pos (point-max)) 5000)))
 
-(defun gm/big-buffer-setup ()
+(defun og/big-buffer-setup ()
   (when (buffer-too-big-p)
               (nlinum-relative-mode -1)
               (font-lock-mode -1)))
 
-(add-hook 'prog-mode-hook #'gm/big-buffer-setup)
+(add-hook 'prog-mode-hook #'og/big-buffer-setup)
 #+END_SRC
 Normally, I want the opening and closing parentheses highlighted. I used to set
 =show-paren-style= to =expression=, but all that highlighting was not really
@@ -563,15 +540,6 @@ Highlight =.service= files like they are configuration files.
   (add-to-list 'auto-mode-alist '("\\.timer\\'" . systemd-mode)))
 #+END_SRC
 ** Quality of Life
-# *** Garbage Collection
-# This package minimizes the interference of garbage collection with the user
-# experience. That means fewer annoyingly long pauses while you are using Emacs.
-# #+BEGIN_SRC emacs-lisp
-# (use-package gcmh
-#   :defer 2
-#   :diminish
-#   :config (gcmh-mode 1))
-# #+END_SRC
 *** Better Defaults
 All the things (perhaps they seem little) that just make sense to have.
 **** From Yes/No to y/n
@@ -704,7 +672,7 @@ Make files that start with a =#!= shebang executable.
 Authorize actions. The package =sudo-edit= is excellent for editing files owned by
 root.
 #+BEGIN_SRC emacs-lisp
-(when gm/user
+(when og/user
   (use-package pinentry
     :demand t
     :config (pinentry-start))
@@ -896,7 +864,7 @@ This kills Emacs and starts a new session.
 Our function completely restarts, compiles and reloads with a prefix argument,
 and just loads the existing =.el= file with two prefix arguments.
 #+BEGIN_SRC emacs-lisp
-(defun gm/reload (p)
+(defun og/reload (p)
   (interactive "P")
   (let ((after-save-hook nil)
         (org (expand-file-name "gmacs.org" user-emacs-directory))
@@ -915,7 +883,7 @@ and just loads the existing =.el= file with two prefix arguments.
           (t (restart-emacs)))))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(bind-key "C-c r" 'gm/reload)
+(bind-key "C-c r" 'og/reload)
 #+END_SRC
 *** Abbreviations
 Abbrevs are a pretty common and useful feature in editors. You can define
@@ -963,7 +931,7 @@ This usually happens to me if I have something I'm reading in one buffer (code
 reference, PDF) and something I'm writing in the other. I got this from
 [[https://github.com/bbatsov/crux][bbatsov/crux]].
 #+BEGIN_SRC emacs-lisp
-(defun gm/swap-windows (arg)
+(defun og/swap-windows (arg)
   "Transpose the buffers shown in two windows.
 Prefix ARG determines if the current windows buffer is swapped
 with the next or previous window, and the number of
@@ -978,7 +946,7 @@ transpositions to execute in sequence."
         (select-window (funcall selector)))
       (setq arg (if (> arg 0) (1- arg) (1+ arg))))))
 
-(bind-key "C-x 4 t" #'gm/swap-windows)
+(bind-key "C-x 4 t" #'og/swap-windows)
 #+END_SRC
 *** Tangle Config File
 :PROPERTIES:
@@ -991,11 +959,11 @@ up (about 6 seconds). To solve this, I tangle this very file on save.
 If the config file is already being tangled, we kill that process and start a
 new one. I only really want to know about this process if it failed.
 #+BEGIN_SRC emacs-lisp
-(defvar gm--tangle-process nil)
+(defvar og--tangle-process nil)
 
-(defun gm/tangle-gmacs ()
+(defun og/tangle-gmacs ()
   (interactive)
-  (let ((proc gm--tangle-process)
+  (let ((proc og--tangle-process)
         (kill-buffer-query-functions nil))
     (when (process-live-p proc)
       (kill-process proc)
@@ -1007,7 +975,7 @@ new one. I only really want to know about this process if it failed.
                (lambda (result)
                  (unless result
                    (message "GMACS unsuccessfully tangled: %s" result))))))
-    (setq gm--tangle-process proc)))
+    (setq og--tangle-process proc)))
 #+END_SRC
 *** Benchmarking
 **** Functions
@@ -1050,6 +1018,14 @@ smooth.
 #+BEGIN_SRC emacs-lisp
 (setq auto-window-vscroll nil)
 #+END_SRC
+#+BEGIN_SRC emacs-lisp
+(use-package ultra-scroll
+  :init
+  (setq scroll-conservatively 101 ; important!
+        scroll-margin 0)
+  :config
+  (ultra-scroll-mode 1))
+#+END_SRC
 *** Dump Vars to File
 #+BEGIN_SRC emacs-lisp
 (defun dump-vars-to-file (varlist filename &optional lines)
@@ -1069,7 +1045,7 @@ smooth.
 #+END_SRC
 *** Add Package to Dotfiles
 #+BEGIN_SRC emacs-lisp
-(defun gm/package-linux-add (&optional package)
+(defun og/package-linux-add (&optional package)
   (interactive)
   (let ((file "~/dotfiles/packages.txt")
         (package (if package package (read-string "Package name: "))))
@@ -1111,7 +1087,7 @@ Make commands easier.
 We can reload the environment variables without restarting Emacs by sending this
 command to the client.
 #+BEGIN_SRC emacs-lisp
-(defun gm/update-env (fn)
+(defun og/update-env (fn)
   (let ((str
          (with-temp-buffer
            (insert-file-contents fn)
@@ -1306,7 +1282,7 @@ my own Emacs configuration.
 We automatically spellcheck text buffers using =flyspell=. The only mode I write
 prose in is Org Mode.
 #+BEGIN_SRC emacs-lisp :noweb no-export
-(defvar gm/spelling nil)
+(defvar og/spelling nil)
 
 (use-package flyspell
   :diminish
@@ -1426,7 +1402,7 @@ something like "This," =dubcaps-mode= converts it to "This" for you automaticall
 This isn't really a hindrance, because if I actually want two capital letters in
 a row, I almost never want a lowercase letter to follow.
 #+BEGIN_SRC emacs-lisp
-(defun gm/dcaps-to-scaps ()
+(defun og/dcaps-to-scaps ()
   "Convert word in DOuble CApitals to Single Capitals."
   (interactive)
   (let ((point (point)))
@@ -1437,23 +1413,23 @@ a row, I almost never want a lowercase letter to follow.
                         (= -3 (skip-syntax-backward "w")))
                       (let (case-fold-search)
                         (looking-at "\\b[[:upper:]]\\{2\\}[[:lower:]]"))
-                      (gm/capitalize-word))))
+                      (og/capitalize-word))))
       (goto-char point))))
 
-(define-minor-mode gm/dubcaps-mode
-  "Toggle `gm/dubcaps-mode'.  Converts words in DOuble CApitals to
+(define-minor-mode og/dubcaps-mode
+  "Toggle `og/dubcaps-mode'.  Converts words in DOuble CApitals to
 Single Capitals as you type."
   :init-value nil
-  (if gm/dubcaps-mode
-      (add-hook 'post-self-insert-hook #'gm/dcaps-to-scaps nil 'local)
-    (remove-hook 'post-self-insert-hook #'gm/dcaps-to-scaps 'local)))
+  (if og/dubcaps-mode
+      (add-hook 'post-self-insert-hook #'og/dcaps-to-scaps nil 'local)
+    (remove-hook 'post-self-insert-hook #'og/dcaps-to-scaps 'local)))
 
-(add-hook 'text-mode-hook #'gm/dubcaps-mode)
+(add-hook 'text-mode-hook #'og/dubcaps-mode)
 #+END_SRC
 **** Remove Words
 Sometimes we accidentally add a word to our personal list and want to remove it.
 #+BEGIN_SRC emacs-lisp
-(defun gm/remove-personal-word ()
+(defun og/remove-personal-word ()
   (interactive)
   (let ((file (format "~/.hunspell_%s" ispell-local-dictionary))
         wordlist)
@@ -1531,7 +1507,7 @@ produces =capitAlize= is silly; I can't think of a situation where I would want 
 capitalize just the following character if the cursor is in the middle of a
 word.
 #+BEGIN_SRC emacs-lisp
-(defun gm/capitalize-word ()
+(defun og/capitalize-word ()
   (interactive)
   (let ((eol (eolp)))
     (when (and (eq (char-before) ? )
@@ -1551,7 +1527,7 @@ word.
       (forward-word)
       (backward-word))))
 
-(bind-key "M-c" #'gm/capitalize-word)
+(bind-key "M-c" #'og/capitalize-word)
 #+END_SRC
 **** Expand Region
 #+BEGIN_SRC emacs-lisp
@@ -1691,7 +1667,7 @@ for the user to be able to interact with this process after it has taken place.
 For example, packages must be initialized to evaluate code blocks with
 =use-package= declarations in them.
 #+BEGIN_SRC emacs-lisp :noweb no-export
-(defun gm/package-intiialize ()
+(defun og/package-intiialize ()
   (interactive)
   <<pack-arch>>
   (require 'use-package)
@@ -1717,16 +1693,10 @@ could.
              helpful-function
              helpful-command))
 #+END_SRC
-**** Paradox
-#+BEGIN_SRC emacs-lisp
-(use-package paradox
-  :commands (package-initialize)
-  :config (paradox-enable))
-#+END_SRC
 *** Special Modes
 **** PDF Viewing
 #+BEGIN_SRC emacs-lisp
-(defun gm-pdf-open-external (&optional filename)
+(defun og-pdf-open-external (&optional filename)
   (require 'dired-open)
   (interactive)
   (let (close)
@@ -1739,7 +1709,7 @@ could.
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (after! doc-view
-  (bind-key "O" #'gm-pdf-open-external doc-view-mode-map))
+  (bind-key "O" #'og-pdf-open-external doc-view-mode-map))
 #+END_SRC
 Open with external viewer by default if wanted.
 #+BEGIN_SRC emacs-lisp
@@ -1751,13 +1721,14 @@ Open with external viewer by default if wanted.
   ;; (after! notmuch
   ;;   (add-hook 'notmuch-message-mode-hook (lambda () (openwith-mode -1))))
   :custom (openwith-associations '(("\\.pdf\\'" "zathura" (file))
-                                   ("\\.djvu\\'" "zathura" (file)))))
+                                   ("\\.djvu\\'" "zathura" (file))
+                                   ("\\.jpeg\\'" "pqiv" ("--browse" file)))))
 #+END_SRC
 **** Epub Reading
 We use =nov.el=. Change default reading font from Source Sans Pro (my default
 variable pitch font) to Minion Pro.
 #+BEGIN_SRC emacs-lisp
-(defun gm/nov-font-setup ()
+(defun og/nov-font-setup ()
   (face-remap-add-relative 'variable-pitch :family "Minion Pro"
                                            :height 2.0))
 #+END_SRC
@@ -1765,7 +1736,7 @@ variable pitch font) to Minion Pro.
 (use-package nov
   :commands (nov-mode)
   :init (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
-  :hook (nov-mode . gm/nov-font-setup)
+  :hook (nov-mode . og/nov-font-setup)
   :config
   <<nov-settings>>)
 #+END_SRC
@@ -1931,11 +1902,11 @@ Don't show details by default.
 #+END_SRC
 Allow the user to copy the full file path.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
-(defun gm/dired-copy-path-at-point ()
+(defun og/dired-copy-path-at-point ()
     (interactive)
     (dired-copy-filename-as-kill 0))
 
-(bind-key "W" #'gm/dired-copy-path-at-point dired-mode-map)
+(bind-key "W" #'og/dired-copy-path-at-point dired-mode-map)
 #+END_SRC
 Show recursive folder sizes.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
@@ -1966,13 +1937,13 @@ But I don't want to permanently delete things. Not yet, anyway.
 Even then, I sometimes want to actually delete files.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
 (after! dired
-  (defun gm/really-delete ()
+  (defun og/really-delete ()
     (interactive)
     (let ((delete-by-moving-to-trash nil))
       (dired-do-delete))
     (revert-buffer)))
-(bind-key "F" #'gm/really-delete dired-mode-map)
-(add-hook 'dired-mode-hook (lambda () (bind-key "F" #'gm/really-delete dired-mode-map)))
+(bind-key "F" #'og/really-delete dired-mode-map)
+(add-hook 'dired-mode-hook (lambda () (bind-key "F" #'og/really-delete dired-mode-map)))
 #+END_SRC
 We might as well perform file operations asynchronously.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
@@ -1999,7 +1970,7 @@ controlled.
 #+END_SRC
 For really big files, =rsync= is nice.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
-(defun gm/dired-rsync (dest)
+(defun og/dired-rsync (dest)
   (interactive
    (list
     (expand-file-name
@@ -2029,7 +2000,7 @@ For really big files, =rsync= is nice.
     (other-window 1)))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref dired-settings
-(bind-key "C" #'gm/dired-rsync dired-mode-map)
+(bind-key "C" #'og/dired-rsync dired-mode-map)
 #+END_SRC
 I often find the commands in Dired hard to remember.
 #+BEGIN_SRC emacs-lisp :noweb-ref hydra
@@ -2054,7 +2025,7 @@ T - tag prefix
   ("?" dired-summary)
   ("$" diredp-hide-subdir-nomove)
   ("A" dired-do-find-regexp)
-  ("C" gm/dired-rsync)        ;; Copy all marked files
+  ("C" og/dired-rsync)        ;; Copy all marked files
   ("D" dired-do-delete)
   ("E" dired-mark-extension)
   ("e" dired-ediff-files)
@@ -2176,31 +2147,31 @@ Set tramp connection history location.
 I want to ignore certain file extensions when searching for a file, so I add
 them to the regexp in =counsel-find-file-ignore-regexp=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref ivy
-(defconst gm/find-file-ignore-extensions
+(defconst og/find-file-ignore-extensions
   '("aux" "bbl" "blg" "exe" "log" "meta" "out" "fls" "tdo" "toc" "xdv" "fdx" "bcf" "run.xml"
     "synctex.gz" "fdb_latexmk"
     "elc"
     "pyc"))
 
-(defconst gm/find-file-ignore-dirs
+(defconst og/find-file-ignore-dirs
   '("cache/" "auto/" "ltximg/"
     ".git/"
     "VideoDecodeStats/"))
 
 (setq counsel-find-file-ignore-regexp
       (s-join "\\|" (list (concat (regexp-opt
-                                   (--map (concat "." it) gm/find-file-ignore-extensions))
+                                   (--map (concat "." it) og/find-file-ignore-extensions))
                                   "\\'")            ; make sure we only match end of filename
                           (regexp-opt
-                           gm/find-file-ignore-dirs))))
+                           og/find-file-ignore-dirs))))
 #+END_SRC
 We do something similar for =ivy-switch-buffer=.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref ivy
-(defconst gm/find-file-ignore-names
+(defconst og/find-file-ignore-names
   '("*elfeed-org*"
     ".org-gcal-token"))
 
-(add-to-list 'ivy-ignore-buffers (regexp-opt gm/find-file-ignore-names))
+(add-to-list 'ivy-ignore-buffers (regexp-opt og/find-file-ignore-names))
 #+END_SRC
 [[http://pragmaticemacs.com/page/6/][This post]] explains the pitfalls of the default behaviour of =ivy-yank-word= and
 how to fix them. Now we can easily search for the word at point using =swiper=.
@@ -2241,13 +2212,13 @@ people do this by having a bar cursor in "insert mode" (to borrow some
 terminology from Vim) and a block cursor in "command mode" (in our case, God
 Mode).
 #+BEGIN_SRC emacs-lisp
-(defun gm/god-mode-indicator ()
+(defun og/god-mode-indicator ()
   (cond (god-local-mode
          (set-cursor-color "#dc322f"))
         (t (set-cursor-color "#657b83"))))
 
-(add-hook 'god-mode-enabled-hook #'gm/god-mode-indicator)
-(add-hook 'god-mode-disabled-hook #'gm/god-mode-indicator)
+(add-hook 'god-mode-enabled-hook #'og/god-mode-indicator)
+(add-hook 'god-mode-disabled-hook #'og/god-mode-indicator)
 #+END_SRC
 *** Hydra
 #+BEGIN_SRC emacs-lisp :noweb no-export
@@ -2259,7 +2230,7 @@ Mode).
 *** Which Key Mode
 Helpful when you want to see completion for a certain sequence of prefix keys.
 #+BEGIN_SRC emacs-lisp
-(unless gm/user
+(unless og/user
   (use-package which-key
     :defer 10
     :diminish
@@ -2289,12 +2260,12 @@ I don't like the default Emacs functionality of splitting windows but not
 switching to the new window. I find myself pressing =M-3 C-x 0= pretty much every
 time I split the window.
 #+BEGIN_SRC emacs-lisp
-(defun gm/split-window-below-and-switch ()
+(defun og/split-window-below-and-switch ()
   (interactive)
   (split-window-below)
   (other-window 1))
 
-(defun gm/split-window-right-and-switch ()
+(defun og/split-window-right-and-switch ()
   (interactive)
   (split-window-right)
   (other-window 1))
@@ -2307,14 +2278,14 @@ the "other one" is. Instead, you select the window with a number.
   :commands (ace-window
              delete-window
              delete-other-windows
-             gm/split-window-right-and-switch
-             gm/split-window-below-and-switch)
+             og/split-window-right-and-switch
+             og/split-window-below-and-switch)
   :bind (("C-x o" . ace-window)
          ("M-o" . ace-window)
          ("C-x 0" . delete-window)
          ("M-1" . delete-other-windows)
-         ("M-3" . gm/split-window-right-and-switch)
-         ("M-4" . gm/split-window-below-and-switch)))
+         ("M-3" . og/split-window-right-and-switch)
+         ("M-4" . og/split-window-below-and-switch)))
 #+END_SRC
 *** Projectile
 A neat package to perform operations with respect to the active "project,"
@@ -2377,18 +2348,18 @@ I use a hydra to manage its many keybindings.
 (autoload 'gif-screencast "gif-screencast" "Start GIF Screencast" t)
 (autoload 'keycast-mode "keycast" "Start `keycast-mode'" t)
 
-(defun gm/begin-screencast ()
+(defun og/begin-screencast ()
   (interactive)
   (gif-screencast)
   (unless (bound-and-true-p keycast-mode) (keycast-mode)))
 
-(defun gm/end-screencast ()
+(defun og/end-screencast ()
   (interactive)
   (gif-screencast-stop)
   (when (bound-and-true-p keycast-mode) (keycast-mode)))
 
-(bind-key "<f8>" #'gm/begin-screencast)
-(bind-key "<f9>" #'gm/end-screencast)
+(bind-key "<f8>" #'og/begin-screencast)
+(bind-key "<f9>" #'og/end-screencast)
 #+END_SRC
 *** Key Frequency
 #+BEGIN_SRC emacs-lisp
@@ -2417,8 +2388,8 @@ Simple client for =transmission-cli=.
 #+END_SRC
 I often want to download large torrents to my external drive if possible.
 #+BEGIN_SRC emacs-lisp
-(defun gm/transmission-add (url)
-  (let* ((torrent-dir-cand (expand-file-name "download" gm--drive-path))
+(defun og/transmission-add (url)
+  (let* ((torrent-dir-cand (expand-file-name "download" og--drive-path))
          (torrent-dir (when (file-directory-p torrent-dir-cand) torrent-dir-cand)))
   (transmission-add url torrent-dir)))
 #+END_SRC
@@ -2487,11 +2458,11 @@ paragraph. However, unfilling is sometimes useful, so I kept the package around.
 *** Join Line
 This allows me to combine text over multiple lines into one line.
 #+BEGIN_SRC emacs-lisp
-(defun gm/join-line ()
+(defun og/join-line ()
   (interactive)
   (join-line -1))
 
-(bind-key "M-j" #'gm/join-line)
+(bind-key "M-j" #'og/join-line)
 #+END_SRC
 *** Normal Undo Binding
 #+BEGIN_SRC emacs-lisp
@@ -2646,19 +2617,19 @@ section for the [[*Context-dependent Hydra][Context-dependent Hydra]].
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
 (defhydra hydra-toggle (:color pink)
   "
-_t_ theme-colour       %`gm/theme
+_t_ theme-colour       %`og/theme
 _m_ quick-math-mode:   %`quick-math-mode
-_p_ equation-preview:  %`gm/eq-preview-mode
+_p_ equation-preview:  %`og/eq-preview-mode
 _e_ pretty-math:       %`pretty-math-mode
-_D_ dubcaps-mode:      %`gm/dubcaps-mode
+_D_ dubcaps-mode:      %`og/dubcaps-mode
 _W_ Window management
 "
-  ("t" gm/switch-theme nil)
+  ("t" og/switch-theme nil)
   ("m" quick-math-mode nil :color blue)
-  ("p" gm/eq-preview-mode nil)
+  ("p" og/eq-preview-mode nil)
   ("e" pretty-math-mode nil)
-  ("D" gm/dubcaps-mode nil)
-  ("W" hydra-window-mngm/body :color blue)
+  ("D" og/dubcaps-mode nil)
+  ("W" hydra-window-mnog/body :color blue)
   ("q" nil "cancel"))
 #+END_SRC
 I also link to window management here.
@@ -2759,7 +2730,7 @@ If we're in a heading, we want to go the end of the line, then return. This is
 because I never want to split the heading in half. If we're in a table, we add a
 new row. If we are in a source block, we want to indent. Inspired by [[http://kitchingroup.cheme.cmu.edu/blog/2017/04/09/A-better-return-in-org-mode/][John Kitchin]].
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(defun gm/org-return (&optional ignore)
+(defun og/org-return (&optional ignore)
   "Add new list item, heading or table row with RET.
 A double return on an empty element deletes it.
 Use a prefix arg to get regular RET. "
@@ -2796,7 +2767,7 @@ Use a prefix arg to get regular RET. "
 #+END_SRC
 We replace the normal return.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(bind-key "RET" #'gm/org-return org-mode-map)
+(bind-key "RET" #'og/org-return org-mode-map)
 (bind-key "C-RET" #'org-return org-mode-map)
 #+END_SRC
 *** File Locations
@@ -2807,12 +2778,12 @@ example, decide where to put the result of an Org Capture.
 #+END_SRC
 We similarly decide other default locations.
 #+BEGIN_SRC emacs-lisp
-(setq gm/agenda-org-files '("todo" "notes" "reading")
+(setq og/agenda-org-files '("todo" "notes" "reading")
       org-default-notes-file (expand-file-name "inbox.org" org-directory)
       org-agenda-files (append
                         `(,org-default-notes-file)
                         (--map (expand-file-name (concat it ".org") org-directory)
-                               gm/agenda-org-files)))
+                               og/agenda-org-files)))
 #+END_SRC
 This is particular to my setup, but I want my agenda to include the non-archived portion
 of my school files.
@@ -2834,13 +2805,13 @@ Keeping my refile locations minimal makes refiling faster; besides, my primary
 use case for refiling is to stow something away in its proper place for later
 use. and we just set our "proper places."
 #+BEGIN_SRC emacs-lisp
-(setq gm/org-non-refile-targets '("inbox")
-      gm/org-refile-targets (--filter
+(setq og/org-non-refile-targets '("inbox")
+      og/org-refile-targets (--filter
                               (not (string-match-p
-                                    (concat (regexp-opt gm/org-non-refile-targets) ".org$") it))
+                                    (concat (regexp-opt og/org-non-refile-targets) ".org$") it))
                               org-agenda-files)
       org-refile-targets '((nil :maxlevel . 5)
-                           (gm/org-refile-targets :maxlevel . 5)))
+                           (og/org-refile-targets :maxlevel . 5)))
 #+END_SRC
 Sometimes we want to refile into a subtree that hasn't yet been created.
 #+BEGIN_SRC emacs-lisp
@@ -2857,10 +2828,10 @@ Log refiling.
 #+END_SRC
 Don't refile to DONE tasks.
 #+BEGIN_SRC emacs-lisp
-(defun gm/verify-refile-target ()
+(defun og/verify-refile-target ()
   (not (member (nth 2 (org-heading-components)) org-done-keywords)))
 
-(setq org-refile-target-verify-function 'gm/verify-refile-target)
+(setq org-refile-target-verify-function 'og/verify-refile-target)
 #+END_SRC
 Cache the refile targets. It can be refreshed with =C-u C-u C-u C-u C-w=.
 #+BEGIN_SRC emacs-lisp
@@ -2868,7 +2839,7 @@ Cache the refile targets. It can be refreshed with =C-u C-u C-u C-u C-w=.
 #+END_SRC
 Refile to a given location.
 #+BEGIN_SRC emacs-lisp
-(defun gm/refile (file headline)
+(defun og/refile (file headline)
   (let ((curr-buff (buffer-name))
         (pos (save-excursion
                (find-file file)
@@ -2881,12 +2852,12 @@ documents sitting in my downloads folder. Invoking =org-attach= from each target
 is a lot of tedious work, so I made this snippet that lets me do it all from a
 Dired buffer.
 #+BEGIN_SRC emacs-lisp
-(defun gm--attach-name (file title)
+(defun og--attach-name (file title)
   (concat (replace-regexp-in-string " " "-" (downcase title)) "." (f-ext file)))
 
-(defun gm--attach-to-subtree (file &optional new-filename rfloc)
+(defun og--attach-to-subtree (file &optional new-filename rfloc)
   (unless rfloc (setq rfloc (org-refile-get-location nil nil t)))
-  (unless new-filename (setq new-filename (gm--attach-name file (read-string "Title: "))))
+  (unless new-filename (setq new-filename (og--attach-name file (read-string "Title: "))))
   (let* ((target (nth 1 rfloc))
         (mark-maybe (nth 3 rfloc))
         (mark (if (markerp mark-maybe)
@@ -2903,7 +2874,7 @@ Dired buffer.
     (org-attach-attach new-file)
     (switch-to-buffer old-buff)))
 
-(defun gm/dired-attach-files ()
+(defun og/dired-attach-files ()
   (interactive)
   (let ((list (dired-get-marked-files)))
     (delete-other-windows)
@@ -2917,7 +2888,7 @@ Dired buffer.
       (when (eq major-mode 'pdf-view-mode)
         (pdf-view-first-page))
       (other-window 1)
-      (gm--attach-to-subtree (dired-file-name-at-point))
+      (og--attach-to-subtree (dired-file-name-at-point))
       (!cdr list)
       (when list
         (dired-next-marked-file 1)))))
@@ -2925,7 +2896,7 @@ Dired buffer.
 [[https://orgmode.org/worg/org-hacks.html#org0344577][Worg]] gives a way to avoid messing up the heading hierarchy of an archive file
 after archiving lower level items.
 #+BEGIN_SRC emacs-lisp
-(defun gm/org-inherited-no-file-tags ()
+(defun og/org-inherited-no-file-tags ()
   (let ((tags (org-entry-get nil "ALLTAGS" 'selective))
         (ltags (org-entry-get nil "TAGS")))
     (mapc (lambda (tag)
@@ -2935,7 +2906,7 @@ after archiving lower level items.
     (if (string= ":" tags) nil tags)))
 
 (defadvice org-archive-subtree (around my-org-archive-subtree-low-level activate)
-  (let ((tags (gm/org-inherited-no-file-tags))
+  (let ((tags (og/org-inherited-no-file-tags))
         (org-archive-location
          (if (save-excursion (org-back-to-heading)
                              (> (org-outline-level) 1))
@@ -3021,12 +2992,12 @@ I bind this to =c b=, for "capture bookmark." The data goes to the following tem
  'org-capture-templates
  '("p" "Org Protocol" entry
    (file org-default-notes-file)
-   "* %^{Title|%(gm/square-to-round-brackets \"%:description\")} :web:
+   "* %^{Title|%(og/square-to-round-brackets \"%:description\")} :web:
 :PROPERTIES:
 :CREATED: %U
-:SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]]
+:SOURCE: [[%:link][%(og/square-to-round-brackets \"%:description\")]]
 :END:
-%?\n%(->> \"%i\" gm/fix-mathjax-output gm/quote-if-non-empty)"))
+%?\n%(->> \"%i\" og/fix-mathjax-output og/quote-if-non-empty)"))
 #+END_SRC
 I have a similar template for capturing code snippets.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -3034,14 +3005,14 @@ I have a similar template for capturing code snippets.
  'org-capture-templates
  '("c" "Org Protocol Code" entry
    (file org-default-notes-file)
-   "* %^{Title} :snippet:\n:PROPERTIES:\n:SOURCE: [[%:link][%(gm/square-to-round-brackets \"%:description\")]] \n:CREATED: %U\n:END:\n%?\n#+BEGIN_SRC %^{Language|emacs-lisp|python|sh|conf}\n%(hex-to-string \"%i\")\n#+END_SRC"))
+   "* %^{Title} :snippet:\n:PROPERTIES:\n:SOURCE: [[%:link][%(og/square-to-round-brackets \"%:description\")]] \n:CREATED: %U\n:END:\n%?\n#+BEGIN_SRC %^{Language|emacs-lisp|python|sh|conf}\n%(hex-to-string \"%i\")\n#+END_SRC"))
 #+END_SRC
 Because Org links are constructed with square brackets, any URL whose title
 contains square brackets (I'm looking at you, arXiv) would break a normal
 implementation of the this template. Our workaround is to change square brackets
 to round ones.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(defun gm/square-to-round-brackets (s)
+(defun og/square-to-round-brackets (s)
   "Transform [ into ( and ] into ), other chars left unchanged."
   (->> s
       (replace-regexp-in-string "\\[" "\(")
@@ -3050,7 +3021,7 @@ to round ones.
 Also, I want to wrap the excerpt in an Org quote block, but not if there is no
 excerpt.
 #+BEGIN_SRC emacs-lisp
-(defun gm/quote-if-non-empty (str)
+(defun og/quote-if-non-empty (str)
   (setq str (with-temp-buffer
               (insert (s-trim str))
               (fill-region (point-min) (point-max))
@@ -3068,7 +3039,7 @@ what the differences between =B= and =B'= are. They both seem to be functional, 
 \rbrack=, while =B'= has =a^n= and =[0,1]=. This function runs a simple regex replace
 for =B'=.
 #+BEGIN_SRC emacs-lisp
-(defun gm/fix-mathjax-output (str)
+(defun og/fix-mathjax-output (str)
   (let ((re "[^ $]*\$[^$]*\$\$\\([^$]*\\)\\$"))
     (replace-regexp-in-string re "\\\\(\\1\\\\)" str)))
 #+END_SRC
@@ -3084,16 +3055,16 @@ javascript:location.href='org-protocol://capture?template=n'
 I bind =c p= as a specific case of =c b= for PDF files. The following function
 fetches the path of the current PDF file in qutebrowser's temporary download directory.
 #+BEGIN_SRC emacs-lisp
-(defun gm/find-qutebrowser-download-dir (url)
+(defun og/find-qutebrowser-download-dir (url)
   (expand-file-name (car
                      (--filter (string-match "qutebrowser-downloads" it)
                                (directory-files "/tmp/")))
                     "/tmp"))
 
-(defun gm/find-qutebrowser-download (url)
+(defun og/find-qutebrowser-download (url)
   (let* ((file (progn (string-match "\\(tmp.*\\.pdf\\)" url)
                       (substring url (match-beginning 1) (match-end 1))))
-         (qutedir (gm/find-qutebrowser-download-dir url))
+         (qutedir (og/find-qutebrowser-download-dir url))
          (dldir "~/Downloads/")
          (src (expand-file-name file qutedir))
          (dst (expand-file-name file dldir)))
@@ -3108,7 +3079,7 @@ This template attaches the file for future reference.
  '("q" "Org Protocol Qutebrowser pdf" entry
    (file org-default-notes-file)
    "* %^{Title} %(let* ((dir \"~/org/data\") (org-attach-directory dir)) (require 'org-attach)
-(org-attach-attach (gm/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U %^{Author}p\n:END:\n%?\n"))
+(org-attach-attach (og/find-qutebrowser-download \"%:description\") nil 'cp) \"\")\n:PROPERTIES:\n:CREATED: %U %^{Author}p\n:END:\n%?\n"))
 #+END_SRC
 *** Org Download
 Now we can easily move images into Org Mode buffers.
@@ -3129,19 +3100,19 @@ conference and want to reference a slide or diagram on the board.
 I use Syncthing to get photos from my phone to my computer, but any syncing
 service works, like Google Drive or Dropbox.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/live-image-dir (expand-file-name "~/Camera/Camera"))
+(defvar og/live-image-dir (expand-file-name "~/Camera/Camera"))
 #+END_SRC
 We use =ivy= to prompt the user for a file from the camera roll, sorted by most
 recent. Then, we attach the file to the current subtree by /copying/ it, add an
 image link, and display it. Because most images taken this way are vertical, I
 rotate the image first to make sure it displays correctly.
 #+BEGIN_SRC emacs-lisp
-(defun gm/insert-live-image ()
+(defun og/insert-live-image ()
   (interactive)
   (let (file-list file-list-sorted start-file start-file-full end-file)
     (setq file-list
           (-remove (lambda (x) (nth 1 x))
-                   (directory-files-and-attributes gm/live-image-dir)))
+                   (directory-files-and-attributes og/live-image-dir)))
     (setq file-list-sorted
           (mapcar #'car
                   (sort file-list
@@ -3153,7 +3124,7 @@ rotate the image first to make sure it displays correctly.
                       :sort nil
                       :initial-input nil))
     (setq start-file-full
-          (expand-file-name start-file gm/live-image-dir))
+          (expand-file-name start-file og/live-image-dir))
     (org-attach-attach start-file-full nil 'cp)
     (message "Attached %s" start-file-full)
     (setq end-file (expand-file-name start-file (org-attach-dir nil)))
@@ -3281,7 +3252,7 @@ academic papers in Org Mode by Org-guru John Kitchin.
 #+END_SRC
 For humanities essays.
 #+BEGIN_SRC emacs-lisp
-(defun gm/org-ref-cite-with-page ()
+(defun og/org-ref-cite-with-page ()
   (interactive)
   (if current-prefix-arg
       (call-interactively #'org-ref-insert-link)
@@ -3387,7 +3358,7 @@ risk of them not being unique.
 #+END_SRC
 *** Context-dependent Hydra
 #+BEGIN_SRC emacs-lisp
-(defun gm/context-hydra-launcher ()
+(defun og/context-hydra-launcher ()
   "A launcher for hydras based on the current context."
   (interactive)
   (require 'org-link-edit)
@@ -3406,7 +3377,7 @@ risk of them not being unique.
       ('bibtex-mode (org-ref-bibtex-hydra/body))
       (t (message "No hydra for this major mode: %s" major-mode)))))
 
-(bind-key "C-c t" 'gm/context-hydra-launcher)
+(bind-key "C-c t" 'og/context-hydra-launcher)
 #+END_SRC
 **** Links
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -3442,7 +3413,7 @@ risk of them not being unique.
 ;;                                  hint hydra-org-link-helper/heads)))
 ;;              (define-key hydra-org-link-helper/keymap "e"
 ;;                (lambda! ()
-;;                         (gm/math-make-marginnote-float)
+;;                         (og/math-make-marginnote-float)
 ;;                         (hydra-org-link-helper/nil))))
 ;;          (prog1
 ;;              (eval
@@ -3477,7 +3448,7 @@ _q_ quit
 #+END_SRC
 **** Source Blocks
 #+BEGIN_SRC emacs-lisp
-(defun gm/org-babel-src-block-info ()
+(defun og/org-babel-src-block-info ()
   (interactive)
   (if (get-buffer-window "*Help*")
       (delete-other-windows)
@@ -3493,7 +3464,7 @@ _H_ goto head  _E_ expand
 _q_ quit       _r_ remove result  _e_ examplify region
 
 "
-  ("i" gm/org-babel-toggle-src-block-info)
+  ("i" og/org-babel-toggle-src-block-info)
   ("h" org-babel-insert-header-arg)
   ("c" org-babel-check-src-block :color blue)
   ("s" org-babel-demarcate-block :color blue)
@@ -3641,38 +3612,38 @@ special edit mode with =C-c '=. The idea is that we set up keymaps and apply the
 with font-lock by hooking into Org Mode's font-lock. We define the function that
 applies the keymap to each block.
 #+BEGIN_SRC emacs-lisp
-(defun gm/add-keymap-to-src-blocks (limit)
-  "Add keymaps to src-blocks defined in `gm/src-block-keymaps'."
+(defun og/add-keymap-to-src-blocks (limit)
+  "Add keymaps to src-blocks defined in `og/src-block-keymaps'."
   (let ((case-fold-search t))
     (while (re-search-forward org-babel-src-block-regexp limit t)
       (let ((lang (match-string 2))
             (beg (match-beginning 0))
             (end (match-end 0)))
-        (if (assoc (org-no-properties lang) gm/src-block-keymaps)
+        (if (assoc (org-no-properties lang) og/src-block-keymaps)
             (progn
               (add-text-properties
                beg end `(local-map ,(cdr (assoc
                                           (org-no-properties lang)
-                                          gm/src-block-keymaps))))))))))
+                                          og/src-block-keymaps))))))))))
 #+END_SRC
 To be able to toggle this, we add a minor mode. This is where we add the
 relevant hook.
 #+BEGIN_SRC emacs-lisp
-(define-minor-mode gm/src-keymap-mode
+(define-minor-mode og/src-keymap-mode
   "Minor mode to add mode keymaps to src-blocks."
   :init-value nil
-  (if gm/src-keymap-mode
+  (if og/src-keymap-mode
       (progn
         (require 'elpy)
-        (add-hook 'org-font-lock-hook #'gm/add-keymap-to-src-blocks t)
+        (add-hook 'org-font-lock-hook #'og/add-keymap-to-src-blocks t)
         (add-to-list 'font-lock-extra-managed-props 'local-map))
-    (remove-hook 'org-font-lock-hook #'gm/add-keymap-to-src-blocks)
+    (remove-hook 'org-font-lock-hook #'og/add-keymap-to-src-blocks)
     (cursor-sensor-mode -1))
   (call-interactively #'font-lock-fontify-buffer))
 #+END_SRC
 Here are the actual maps.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(defvar gm/src-block-keymaps
+(defvar og/src-block-keymaps
       `(("python" . ,(let ((map (make-composed-keymap
                                  `(,(when (boundp 'elpy-mode)
                                       elpy-mode-map)
@@ -3699,14 +3670,14 @@ Define a keychord to enter inline math mode. This allows me to get around
 messing with making =$= an electrically paired delimiter.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (after! key-chord
-  (key-chord-define org-mode-map "r4" #'gm/create-or-exit-math-fragment)
-  (key-chord-define org-mode-map "df" #'gm/create-or-exit-math-fragment))
+  (key-chord-define org-mode-map "r4" #'og/create-or-exit-math-fragment)
+  (key-chord-define org-mode-map "df" #'og/create-or-exit-math-fragment))
 #+END_SRC
 **** Pretty Math Symbols
 I got the source for this from [[https://bitbucket.org/mortiferus/latex-pretty-symbols.el][mortiferus]]. The file I use is not the one from
 their Bitbucket repo; I have, for example, removed subscripts and superscripts.
 #+BEGIN_SRC emacs-lisp
-(require 'gm-pretty-math)
+(require 'og-pretty-math)
 #+END_SRC
 *** Reformat Math Fragment
 For my primary use case of typing math in LaTeX, I don't care about how the
@@ -3715,12 +3686,12 @@ is speed. But later, I want it to look nice and readable, with spacing and so
 on.
 
 The idea is pretty simple. We just maintain a list of regexps in
-=gm/reformat-fragment-alist= and run them all on a given LaTeX fragment with
-=gm/reformat-fragment=. The main thing to notice is that the regexp that takes
+=og/reformat-fragment-alist= and run them all on a given LaTeX fragment with
+=og/reformat-fragment=. The main thing to notice is that the regexp that takes
 care of too many spaces goes last. This way, we don't have to worry about
 introducing too many spaces in the earlier regexps.
 #+BEGIN_SRC emacs-lisp
-(defcustom gm/reformat-fragment-alist
+(defcustom og/reformat-fragment-alist
   '(("+" " + " "spaces around +")
     ("[ ]+\\([\\^_]\\)[ ]+" "\\1" "remove spaces around ^ and _")
     ("[\\^_]{}" "\\1" "remove empty sub/superscript and {} before them")
@@ -3729,14 +3700,14 @@ introducing too many spaces in the earlier regexps.
     (" +" " " "no more than 1 space in a row")
     ("\\(\\\\(\\) " "\\1" "no space at start of fragment")
     (" \\(\\\\)\\)" "\\1" "no space at end of fragment"))
-  "Alist of (REGEXP TO DOCSTRING) parsed by `gm/reformat-fragment'.
+  "Alist of (REGEXP TO DOCSTRING) parsed by `og/reformat-fragment'.
 Upon reformatting, each REGEXP is replaced with TO. DOCSTRING
 simply explains what the regexp does."
   :type 'alist
   :group 'quick-math)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(defun gm/reformat-fragment (&optional fr)
+(defun og/reformat-fragment (&optional fr)
   (let ((fr-type (car (if fr fr (org-element-context))))
         (fr-begin (if fr
                       (nth 1 fr)
@@ -3747,7 +3718,7 @@ simply explains what the regexp does."
                     (org-element-property :post-blank (org-element-context))))
     (setq base (buffer-substring-no-properties fr-begin fr-end))
     (with-temp-buffer
-      (dolist (reg gm/reformat-fragment-alist)
+      (dolist (reg og/reformat-fragment-alist)
         (setq base (replace-regexp-in-string (car reg) (nth 1 reg) base)))
       (insert base)
       (goto-char (point-min))
@@ -3781,7 +3752,13 @@ POINT defaults to the current `point'."
 #+END_SRC
 Not too small.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(when gm/user (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.7)))
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.7))
+#+END_SRC
+Use my custom macros.
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
+(when og/user
+  (with-eval-after-load 'org
+    (add-to-list 'org-latex-packages-alist '("" "og-math" t))))
 #+END_SRC
 Where should it be? Let's put them all in the same place, so that common
 fragments (like =x^2=) are never generated more than once and so that we don't
@@ -3793,7 +3770,7 @@ litter our folders.
 Use this instead of =org-latex-preview=.
 #+BEGIN_SRC emacs-lisp
 (require 'org-auctex)
-;; (defun gm/math-preview-toggle-subtree ()
+;; (defun og/math-preview-toggle-subtree ()
 ;;   (interactive)
 ;;   (save-restriction
 ;;     (org-narrow-to-subtree)
@@ -3810,7 +3787,7 @@ Use this instead of =org-latex-preview=.
 ;;   :config
 ;;   (add-to-list 'math-preview-tex-marks '("\\begin{align}"  "\\end{align}"))
 ;;   :bind (:map org-mode-map
-;;               ("C-c C-x C-l" . 'gm/math-preview-toggle-subtree)))
+;;               ("C-c C-x C-l" . 'og/math-preview-toggle-subtree)))
 #+END_SRC
 Inspired by John Kitchin. I've modified it to be toggleable and to run a hook on
 leaving a math fragment.
@@ -3852,7 +3829,7 @@ We can also centre equations and (this is useful when equation preview mode is
 disabled) add a tooltip to them that lets you edit the equation when you click
 on it. This is more John Kitchin code.
 #+BEGIN_SRC emacs-lisp
-;; (defun gm/org-justify-fragment-overlay (beg end image imagetype)
+;; (defun og/org-justify-fragment-overlay (beg end image imagetype)
 ;;   "Adjust the justification of a LaTeX fragment.
 ;; The justification is set by :justify in
 ;; `org-format-latex-options'. Only equations at the beginning of a
@@ -3868,7 +3845,7 @@ on it. This is more John Kitchin code.
 ;;            (offset (floor (- (/ (min (window-max-chars-per-line) fill-column) 3) (/ width 3)))))
 ;;       (overlay-put (ov-at) 'before-string (make-string offset ? )))))
 
-;; (defun gm/org-latex-fragment-tooltip (beg end image imagetype)
+;; (defun og/org-latex-fragment-tooltip (beg end image imagetype)
 ;;   "Add the fragment tooltip to the overlay and set click function to toggle it."
 ;;   (overlay-put (ov-at) 'help-echo
 ;;                (concat (buffer-substring beg end)
@@ -3878,22 +3855,22 @@ on it. This is more John Kitchin code.
 ;;                                       `())
 ;;                                     map)))
 
-;; (advice-add 'org--format-latex-make-overlay :after 'gm/org-justify-fragment-overlay)
-;; (advice-add 'org--format-latex-make-overlay :after 'gm/org-latex-fragment-tooltip)
+;; (advice-add 'org--format-latex-make-overlay :after 'og/org-justify-fragment-overlay)
+;; (advice-add 'org--format-latex-make-overlay :after 'og/org-latex-fragment-tooltip)
 #+END_SRC
 Create a minor mode to preview equations. The keybinding is in [[*Toggles][a hydra]].
 #+BEGIN_SRC emacs-lisp
-(define-minor-mode gm/eq-preview-mode
+(define-minor-mode og/eq-preview-mode
   "Preview equations."
   :init-value nil)
 
-;; (defun gm/eq-toggle ()
-;;   (if gm/eq-preview-mode
+;; (defun og/eq-toggle ()
+;;   (if og/eq-preview-mode
 ;;       (progn
 ;;         (add-hook 'post-command-hook 'org-latex-fragment-toggle t 'local))
 ;;     (remove-hook 'post-command-hook 'org-latex-fragment-toggle 'local)))
 
-;; (add-hook 'gm/eq-preview-mode-hook #'gm/eq-toggle)
+;; (add-hook 'og/eq-preview-mode-hook #'og/eq-toggle)
 #+END_SRC
 *** Allow Alphabetical List
 #+BEGIN_SRC emacs-lisp
@@ -3909,7 +3886,7 @@ Remove "hypersetup" at the beginning of exported document.
 (require 'ox-tufte-latex)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(defun gm/org-latex-export ()
+(defun og/org-latex-export ()
   (interactive)
   (save-excursion
     (while (and (not (org-entry-get (point) "EXPORT_FILE_NAME"))
@@ -3924,7 +3901,7 @@ Remove "hypersetup" at the beginning of exported document.
              (file (replace-regexp-in-string "\\(\\.[^\\.]+\\)*$" ".tex" filebase))
              (processname (format "latex-export-%s-%s" (buffer-name) file)))
         (if (and class
-                 (not (string= class "gm-notes")))
+                 (not (string= class "og-notes")))
             (org-latex-export-to-latex nil t)
           (org-tufte-latex-export-to-latex nil t))
         (unless (get-process processname)
@@ -3938,12 +3915,14 @@ Remove "hypersetup" at the beginning of exported document.
                                file))
         (with-temp-file file
           (insert-file-contents file)
-          (replace-regexp-in-region "\\\\cite\\[\\([^]]*\\)]\\[]" "\\\\cite[\\1]")
-          (replace-regexp-in-region "\\\\emph{Step " "\\\\step{Step "))))))
+          (replace-regexp-in-region "\\\\cite\\[\\([^]]*\\)\\]\\[]" "\\\\cite[\\1]")
+          (replace-string-in-region "=_s" "=_\{\\mathrm\{s\}\}")
+          (replace-string-in-region "\\sidenote[]" "\\sidenote")
+          (replace-string-in-region "\\emph{Step " "\\step{Step "))))))
 #+END_SRC
 Bind this in Org mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-keys
-("C-c b" . gm/org-latex-export)
+("C-c b" . og/org-latex-export)
 #+END_SRC
 Don't use straight quotes when exporting.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -3955,9 +3934,9 @@ included in every LaTeX file exported from Org Mode. The optional third argument
 makes sure this package is also loaded when compiling LaTeX image previews, such
 as equation previews.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
-(when gm/user
+(when og/user
   (setq org-latex-packages-alist
-      '(("" "gm-math" t))))
+      '(("" "og-math" t))))
 #+END_SRC
 **** Command Links
 :PROPERTIES:
@@ -4049,41 +4028,61 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
                  ("\\subsection{%s}" . "\\subsection*{%s}")))
 
   (add-to-list 'org-latex-classes
-               '("assignment"
-                 "\\documentclass[12pt]{article}
-\\usepackage{uts-assignment}
-\\renewcommand{\\maketitle}{}
-[NO-DEFAULT-PACKAGES]
-[EXTRA]"
-                 ("\\section{%s}" . "\\section*{%s}")
-                 ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")
-                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
-
-  (add-to-list 'org-latex-classes
-               '("gm-mla"
-                 "\\documentclass[12pt]{article}
-\\usepackage{uts-mla}
-\\renewcommand{\\maketitle}{}
-\\renewcommand{\\tableofcontents}{}
-[NO-DEFAULT-PACKAGES]
-[EXTRA]"
-                 ("\\section{%s}" . "\\section*{%s}")
-                 ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubection*{%s}")))
-
-  (add-to-list 'org-latex-classes
-               '("gm-notes"
-                 "\\documentclass{gm-notes}
+               '("og-notes"
+                 "\\documentclass{og-notes}
 [NO-DEFAULT-PACKAGES]"
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+
+  (add-to-list 'org-latex-classes
+               '("amsart"
+                 "\\documentclass[10pt, reqno]{amsart}
+               [NO-DEFAULT-PACKAGES]
+\\usepackage[top=1in,bottom=1in,left=1in,right=1in]{geometry}
+\\usepackage[dvipsnames]{xcolor}
+\\usepackage[hidelinks=true,pdfencoding=auto, psdextra]{hyperref}
+\\usepackage{cleveref}
+\\usepackage{amsthm}
+\\usepackage{thmtools}
+\\declaretheorem[numberwithin=section]{theorem}
+\\declaretheorem[sibling=theorem]{lemma, proposition, corollary, claim, goal, conjecture}
+\\declaretheorem[style=definition, sibling=theorem]{definition}
+\\declaretheorem[style=definition, numbered=no]{notation}
+\\declaretheorem[style=remark, sibling=theorem]{remark}
+\\declaretheorem[style=remark, sibling=theorem, name={Example}]{ex}
+\\newcommand{\\marginnote}{\\footnote}
+\\newcommand{\\sidenote}{\\footnote}
+\\usepackage{etoolbox}
+\\makeatletter
+\\patchcmd{\\@maketitle}{\\global\\topskip42\\p@\\relax}
+  {\\global\\topskip42\\p@\\relax \\vspace*{-1ex}}
+  {}{}
+\\makeatother
+\\usepackage[backend=biber, style=alphabetic]{biblatex}
+\\crefname{equation}{}{}
+\\crefrangeformat{equation}{(#3#1#4)--(#5#2#6)}
+\\newcommand{\\step}[1]{\\smallskip\\noindent\\emph{#1}}
+\\pagestyle{plain}
+
+\\usepackage{import}
+\\usepackage{xifthen}
+\\usepackage{pdfpages}
+\\usepackage{transparent}
+\\usepackage{makecell}
+\\usepackage{subcaption}
+\\newcommand{\\incfig}[2]{%
+    \\def\\svgwidth{#1\\columnwidth}
+    \\import{./figures/}{#2.pdf_tex}
+}
+"
+                 ("\\section{%s}" . "\\section{%s}")
+                 ("\\subsection{%s}" . "\\subsection{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection{%s}"))))
 #+END_SRC
-We make =gm-notes= our default class.
+We make =amsart= our default class.
 #+BEGIN_SRC emacs-lisp
-(when gm/user (setq org-latex-default-class "gm-notes"))
+(setq org-latex-default-class "amsart")
 #+END_SRC
 * Media
 Here I configure everything for recreation and contact with the outside world:
@@ -4152,12 +4151,12 @@ paragraph not at the window edge but at =fill-column=.
 On a similar note, I don't want filling the paragraph to do anything, unless I
 really do.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(defun gm/maybe-fill-paragraph ()
+(defun og/maybe-fill-paragraph ()
   (interactive)
   (when current-prefix-arg
       (fill-paragraph)))
 
-(bind-key "M-q" #'gm/maybe-fill-paragraph notmuch-message-mode-map)
+(bind-key "M-q" #'og/maybe-fill-paragraph notmuch-message-mode-map)
 #+END_SRC
 I don't want to manually do this.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
@@ -4166,16 +4165,16 @@ I don't want to manually do this.
 Accessing mail. When we first open up =notmuch=, I want to start a system script
 that checks for new mail periodically.
 #+BEGIN_SRC emacs-lisp
-(defun gm/open-mail ()
+(defun og/open-mail ()
   (interactive)
   (notmuch)
   (notmuch-refresh-this-buffer))
 
-(bind-key "C-c m" #'gm/open-mail)
+(bind-key "C-c m" #'og/open-mail)
 #+END_SRC
 *** Hard Delete Mail
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(defun gm/notmuch-delete-mail ()
+(defun og/notmuch-delete-mail ()
   (interactive)
   (notmuch-search-tag (list "+deleted"))
   (call-process-shell-command
@@ -4183,14 +4182,14 @@ that checks for new mail periodically.
    nil nil nil)
   (notmuch-search-refresh-view))
 
-(bind-key "D" #'gm/notmuch-delete-mail notmuch-search-mode-map)
+(bind-key "D" #'og/notmuch-delete-mail notmuch-search-mode-map)
 #+END_SRC
 *** See Last Unread in Thread
 Notmuch doesn't take you to the latest unread message in a thread. Usually, you
 can work around this by going to the end of the buffer, but this doesn't work if
 the thread is non-linear and the message of interest is somewhere in the middle.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(defun gm/next-unread ()
+(defun og/next-unread ()
   (interactive)
   (let ((init (point)))
     (catch 'break
@@ -4205,7 +4204,7 @@ the thread is non-linear and the message of interest is somewhere in the middle.
           (goto-char init)
           (throw 'break t))))))
 
-(bind-key "U" #'gm/next-unread notmuch-show-mode-map)
+(bind-key "U" #'og/next-unread notmuch-show-mode-map)
 #+END_SRC
 *** Send HTML Mail
 This code from [[http://kitchingroup.cheme.cmu.edu/blog/category/orgmode/4/][John Kitchin]] lets you write mail in Org Mode and send it
@@ -4236,19 +4235,19 @@ Now for the Emacs setup. This library converts Org into HTML.
 Then we give ourselves a way to activate Org Mode mail, and also to send HTML
 mail by default.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
-(defun gm/compose-html-org ()
+(defun og/compose-html-org ()
   (interactive)
   (setq *compose-html-org* t)
   (org-mode)
   (quick-math-mode)
   (auto-fill-mode -1))
 
-(bind-key "M-m" #'gm/compose-html-org notmuch-message-mode-map)
-;; (bind-key "C-c C-c" (lambda! () (progn (gm/compose-html-org) (gm/org-htmlize-and-send))) notmuch-message-mode-map)
+(bind-key "M-m" #'og/compose-html-org notmuch-message-mode-map)
+;; (bind-key "C-c C-c" (lambda! () (progn (og/compose-html-org) (og/org-htmlize-and-send))) notmuch-message-mode-map)
 #+END_SRC
 Let's define a function to send the mail.
 #+BEGIN_SRC emacs-lisp
-(defun gm/org-htmlize-and-send ()
+(defun og/org-htmlize-and-send ()
   "When composing an Org HTML message, htmlize and send it."
   (interactive)
   (when (and (not (org-in-src-block-p))
@@ -4258,7 +4257,7 @@ Let's define a function to send the mail.
     (org-mime-htmlize)
     (notmuch-mua-send-and-exit)))
 
-(add-hook 'org-ctrl-c-ctrl-c-hook 'gm/org-htmlize-and-send t)
+(add-hook 'org-ctrl-c-ctrl-c-hook 'og/org-htmlize-and-send t)
 #+END_SRC
 If we're sending HTML, we might as well make it pretty. Let's nicely offset
 block quotes.
@@ -4367,7 +4366,7 @@ through `notmuch-message-attach-regex'."""
 #+END_SRC
 *** Unsubscribe
 #+BEGIN_SRC emacs-lisp
-(defun gm/notmuch-show-unsubscribe ()
+(defun og/notmuch-show-unsubscribe ()
    "When in a notmuch show mail, try to find an unsubscribe link and
 click it. This will be the link nearest the end of the message which
 either contains or follows the word unsubscribe."
@@ -4381,9 +4380,9 @@ either contains or follows the word unsubscribe."
 ** Music
 I got the setup information from [[https://www.reddit.com/r/emacs/comments/981khz/emacs_music_player_with_emms/][Reddit]] and [[https://www.youtube.com/watch?v=xTVN8UDScqk][this video]].
 #+BEGIN_SRC emacs-lisp
-(defvar gm/emms-started nil)
+(defvar og/emms-started nil)
 
-(defun gm/emms-setup ()
+(defun og/emms-setup ()
   (add-to-list 'load-path (expand-file-name "emms/lisp/" gmacs-custom-dir))
   (require 'emms-setup)
   (require 'emms-player-mpd)
@@ -4392,8 +4391,8 @@ I got the setup information from [[https://www.reddit.com/r/emacs/comments/981kh
   (emms-mode-line 1)
   (require 'emms-playing-time)
   (emms-playing-time 1)
-  (unless gm/emms-started
-    (setq gm/emms-started t)
+  (unless og/emms-started
+    (setq og/emms-started t)
     (condition-case nil
         (emms-player-mpd-connect)
       (error nil))))
@@ -4445,7 +4444,7 @@ the GUI application =easytag=.
 *** Bindings
 I use a prefix map to compactify this set of keybindings.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
-(defhydra hydra-emms (:color pink :pre (gm/emms-setup))
+(defhydra hydra-emms (:color pink :pre (og/emms-setup))
   "
   ^
   ^EMMS^            ^Track^             ^MPD (daemon)^
@@ -4501,7 +4500,7 @@ don't require the use of =yasnippets=.
 **** Main Math Snippets
 Snippets go in [[file:math-snippets.el]].
 #+BEGIN_SRC emacs-lisp
-(defcustom gm/math-snippets nil
+(defcustom og/math-snippets nil
   "Contains lists (KEY EXPANSION SNIPPET). When KEY is typed, it
   will be replaced with EXPANSION. If SNIPPET is non-nil,
   EXPANSION is taken to be a loaded yasnippet. Otherwise, it is
@@ -4509,9 +4508,9 @@ Snippets go in [[file:math-snippets.el]].
   :type 'alist
   :group 'quick-math)
 
-(defvar gm/math-global-snippets nil)
-(defvar-local gm/math-local-snippets nil)
-(defvar gm/math-snippet-loc (expand-file-name "math-snippets.el" user-emacs-directory))
+(defvar og/math-global-snippets nil)
+(defvar-local og/math-local-snippets nil)
+(defvar og/math-snippet-loc (expand-file-name "math-snippets.el" user-emacs-directory))
 #+END_SRC
 **** Hydras
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref hydra
@@ -4565,7 +4564,7 @@ Snippets go in [[file:math-snippets.el]].
   ("8" (insert "\\infinity") "∞")
   ("!" (insert "\\neg") "¬")
   ("*" (insert "\\star") "⋆")
-  ("/" (gm/math-frac))
+  ("/" (og/math-frac))
   ("\\" (insert "\\setminus ") "∖")
   ("'" (insert "\\prime ") "′")
   ("," (insert ",\\ldots,") ".")
@@ -4582,6 +4581,7 @@ Snippets go in [[file:math-snippets.el]].
   ("n" (insert "\\cap ") "∩")
   ("N" (yas-expand-snippet "\\bigcap_{$1}^{$2}$0"))
   ("o" (insert "\\circ{}") "∘")
+  ("q" (insert "\\vartheta{}") "ϑ")
   ("r" (insert "\\wp{}") "ρ")
   ("s" (insert ";") ";")
   ("u" (insert "\\sqcup ") "∩")
@@ -4593,35 +4593,34 @@ Snippets go in [[file:math-snippets.el]].
 #+END_SRC
 Then we bind this to semicolon.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(define-conditional-key gm/math-mode-map ";" #'hydra-semicolon-a/body (gm/in-math-p))
+(define-conditional-key og/math-mode-map ";" #'hydra-semicolon-a/body (og/in-math-p))
 #+END_SRC
 *** Helper Functions
 **** QuickMath Minor Mode
 #+BEGIN_SRC emacs-lisp :noweb no-export
 (after! org
-  (defvar gm/math-mode-map
+  (defvar og/math-mode-map
     (let ((map (make-sparse-keymap)))
       (set-keymap-parent map org-mode-map)
       map))
   <<math-mode>>
-
   (define-minor-mode quick-math-mode
     "Minor mode for math"
     :init-value nil
-    :keymap gm/math-mode-map
+    :keymap og/math-mode-map
     (when (file-exists-p abbrev-file-name)
           (abbrev-table-put org-mode-abbrev-table
                   :parents (list quick-math-mode-abbrev-table)))
     (when quick-math-mode
-      (gm/math-setup)
-      (gm/eq-preview-mode)
+      (og/math-setup)
+      (og/eq-preview-mode)
       (pretty-math-mode)
       (setq org-highlight-latex-and-related '(latex)))))
 #+END_SRC
 We need shift-tabbing in snippets to override =org-shift-tab=, but only in math
 mode.
 #+BEGIN_SRC emacs-lisp
-(define-conditional-key gm/math-mode-map (kbd "<S-iso-lefttab>") (lambda! (yas-next-field -1)) (gm/in-math-p))
+(define-conditional-key og/math-mode-map (kbd "<S-iso-lefttab>") (lambda! (yas-next-field -1)) (og/in-math-p))
 #+END_SRC
 **** Simpler =texmathp=
 The default =texmathp= function assumes that you are writing valid LaTeX code.
@@ -4632,8 +4631,8 @@ make my own for checking if you are in math mode, which leverages Org Mode's
 font-locking to narrow down the area we need to check. We first make a list of
 math environments that our function will look for.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-environments '("equation" "align")
-  "The environments `gm/in-math-p' assumes as valid math environments.")
+(defvar og/math-environments '("equation" "align")
+  "The environments `og/in-math-p' assumes as valid math environments.")
 #+END_SRC
 The only way we're in math mode is if we're in a LaTeX fragment. However, the
 latter sometimes returns false positives when it comes to math mode. That is, we
@@ -4643,18 +4642,18 @@ mode.
 When Org says we're in inline LaTeX, we're definitely in math mode. If we're in
 an environment, we check from the beginning of the environment to the point. If
 there are more opening delimiters than closing ones (more of =\begin{ENV}= then
-=\end{ENV}=, where =ENV= is an element of =gm/math-environments=), then the point must
+=\end{ENV}=, where =ENV= is an element of =og/math-environments=), then the point must
 be in math. The one subtlety is that we also look at the starred versions of
 =ENV=.
 #+BEGIN_SRC emacs-lisp
-(defun gm/in-math-p (&optional loc)
+(defun og/in-math-p (&optional loc)
   (if (boundp 'latex-mode)
       (when (eq major-mode 'latex-mode)
         (texmathp))
     (progn
       (unless loc (setq loc (point)))
-      (defun gm/--in-math-p (begin-delim)
-        (concat begin-delim (regexp-opt gm/math-environments) "[\\*]?}"))
+      (defun og/--in-math-p (begin-delim)
+        (concat begin-delim (regexp-opt og/math-environments) "[\\*]?}"))
       (let* ((fr (org-element-context))
              (fr-type (car fr))
              (begin (org-element-property :begin fr)))
@@ -4673,27 +4672,27 @@ be in math. The one subtlety is that we also look at the starred versions of
                     (<= loc (1- (- (org-element-property :end fr)
                                    (org-element-property :post-blank fr))))))
                   ((eq fr-type 'latex-environment)
-                   (let ((env-open (how-many (gm/--in-math-p "\\\\begin{") begin loc))
-                         (env-close (how-many (gm/--in-math-p "\\\\end{") begin loc)))
+                   (let ((env-open (how-many (og/--in-math-p "\\\\begin{") begin loc))
+                         (env-close (how-many (og/--in-math-p "\\\\end{") begin loc)))
                      (> (- env-open env-close) 0))))))))))
 #+END_SRC
 **** Enter Math Mode
 Enter a math fragment if inside one, exit otherwise.
 #+BEGIN_SRC emacs-lisp
-(defun gm/create-or-exit-math-fragment ()
+(defun og/create-or-exit-math-fragment ()
   (interactive)
-  (if (gm/in-math-p)
-      (gm/reformat-fragment)
+  (if (og/in-math-p)
+      (og/reformat-fragment)
     (when (yas-active-snippets)
       (yas-exit-all-snippets))
     (insert "\\(")
     (save-excursion (insert "\\)"))))
 #+END_SRC
 **** Last n Characters Before Point
-Return the last n characters before the point, or =loc= if provided. Provide less
+Return the last n characters before the point, or =loc= if provided. Provide fewer
 characters if there are not enough. Return nil if =loc= is too large.
 #+BEGIN_SRC emacs-lisp
-(defun gm/last-n-chars (n &optional loc)
+(defun og/last-n-chars (n &optional loc)
   (when (use-region-p) (setq loc (region-end)))
   (unless loc (setq loc (point)))
   (let ((start (- loc n)))
@@ -4705,35 +4704,35 @@ Postfix commands often act on the last letter. For example, I want =fhat= to
 expand into =\hat{f}=. However, we cannot just act on the last letter, because
 =\betahat= should expand into =\hat{beta}=, not the invalid =\bet\hat{a}=.
 #+BEGIN_SRC emacs-lisp
-(defun gm/last-letter ()
-  (defun gm/--last-letter-helper ()
-    (when (string-match "[a-zA-Z]" (gm/last-n-chars 1))
+(defun og/last-letter ()
+  (defun og/--last-letter-helper ()
+    (when (string-match "[a-zA-Z]" (og/last-n-chars 1))
       (let ((match
              (if (looking-back (regexp-opt
                                 (--map (concat "\\" (car it))
-                                       (append gm/math-greek-lower
-                                               gm/math-greek-upper
+                                       (append og/math-greek-lower
+                                               og/math-greek-upper
                                                '(("ell")))))
                                (- (point) 8) t)
                  (buffer-substring-no-properties (match-beginning 0)
                                                  (match-end 0))
                (char-to-string (char-before)))))
         (backward-char (length match))
-        (cond ((string= (gm/last-n-chars 5) "\\vec ")
+        (cond ((string= (og/last-n-chars 5) "\\vec ")
                (setq match (format "\\vec %s" match)))
               ((eq (char-before) ?\\)
                (setq match (format "\\%s" match))))
         match)))
   (save-excursion
-    (if (string-match "}" (gm/last-n-chars 1))
+    (if (string-match "}" (og/last-n-chars 1))
         (progn (backward-char 2)
-               (concat (gm/--last-letter-helper) "{}"))
-      (gm/--last-letter-helper))))
+               (concat (og/--last-letter-helper) "{}"))
+      (og/--last-letter-helper))))
 #+END_SRC
 I use this for postfix snippets, as explained.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-postfix (snippet)
-  (let ((len (length (gm/last-letter))))
+(defun og/math-postfix (snippet)
+  (let ((len (length (og/last-letter))))
     (if (> len 0)
         (progn
           (backward-char len)
@@ -4744,7 +4743,7 @@ I use this for postfix snippets, as explained.
 #+END_SRC
 **** Test if LaTeX Needs to Be Wrapped in Brackets
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-expression-p (math)
+(defun og/math-expression-p (math)
   (when math
     (or (eq (length math) 1)
         ;; Match one single latex macro such as \command
@@ -4753,7 +4752,7 @@ I use this for postfix snippets, as explained.
 #+END_SRC
 **** Increment Snippet Fields
 #+BEGIN_SRC emacs-lisp
-(defun gm/increment-snippet-fields (string &optional n)
+(defun og/increment-snippet-fields (string &optional n)
   (unless n (setq n 1))
   (replace-regexp-in-string "[1-9]+" (lambda (x) (format "%d" (+ n (string-to-number x)))) string))
 #+END_SRC
@@ -4765,65 +4764,64 @@ I wrote this to reduce the amount of redundant code needed to set up the
 snippets. We create a list of the last characters of all the math
 snippets and bind each of these to a snippet expansion command.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(defvar gm/longest-snippet)
+(defvar og/longest-snippet)
 
-(defvar gm/math-snippet-by-suffix)
+(defvar og/math-snippet-by-suffix)
 
-(defun gm/math-snippet--bind-keys (keys)
+(defun og/math-snippet--bind-keys (keys)
   (dolist (key keys)
-    (eval `(define-conditional-key gm/math-mode-map
-               ,key (lambda! () (gm/math-snippet-expand ,key))
-             (gm/in-math-p)))))
+    (eval `(define-conditional-key og/math-mode-map
+               ,key (lambda! () (og/math-snippet-expand ,key))
+             (og/in-math-p)))))
 
-(defun gm/math-snippet--create-suffix-tree (keys)
-  (setq gm/math-snippet-by-suffix nil)
+(defun og/math-snippet--create-suffix-tree (keys)
+  (setq og/math-snippet-by-suffix nil)
   (dolist (key keys)
-    (push (cons key '()) gm/math-snippet-by-suffix))
-  (dolist (snippet gm/math-snippets)
+    (push (cons key '()) og/math-snippet-by-suffix))
+  (dolist (snippet og/math-snippets)
     (let* ((key (car snippet))
            (last (s-right 1 key))
            (rest (s-left -1 key)))
-      (push rest (alist-get last gm/math-snippet-by-suffix nil nil 'equal)))))
+      (push rest (alist-get last og/math-snippet-by-suffix nil nil 'equal)))))
 
-(defvar gm/math-unique-snippets nil)
+(defvar og/math-unique-suffixes nil)
 
-(defun gm/math-setup ()
-  (load gm/math-snippet-loc)
-  (setq gm/math-snippets (append gm/math-local-snippets gm/math-global-snippets))
-  (setq gm/longest-snippet
-        (cons (-max (--map (length (car it)) gm/math-snippets))
-              (-max (--map (length (cadr it)) gm/math-snippets))))
-    (cl-loop for i from 0 to 9
-             do (push (number-to-string i) gm/math-unique-suffixes))
-    (append (--map (s-right 1 (car it)) gm/math-snippets) gm/math-unique-suffixes)
-    (setq gm/math-unique-suffixes (delete-dups gm/math-unique-suffixes))
-    (gm/math-snippet--bind-keys gm/math-unique-suffixes)
-    (gm/math-snippet--create-suffix-tree gm/math-unique-suffixes))
+(defun og/math-setup ()
+  (load og/math-snippet-loc)
+  (setq og/math-snippets (append og/math-local-snippets og/math-global-snippets))
+  (setq og/longest-snippet
+        (cons (-max (--map (length (car it)) og/math-snippets))
+              (-max (--map (length (cadr it)) og/math-snippets))))
+  (cl-loop for i from 0 to 9
+           do (push (number-to-string i) og/math-unique-suffixes))
+  (setq og/math-unique-suffixes (delete-dups (append (--map (s-right 1 (car it)) og/math-snippets) og/math-unique-suffixes)))
+  (og/math-snippet--bind-keys og/math-unique-suffixes)
+  (og/math-snippet--create-suffix-tree og/math-unique-suffixes))
 #+END_SRC
 We make a function to get the possible completion candidates from the buffer.
 #+BEGIN_SRC emacs-lisp
-(defun gm/buff-cand (n)
+(defun og/buff-cand (n)
   (cl-loop for i from 0 to n
-        collect (gm/last-n-chars i)))
+        collect (og/last-n-chars i)))
 #+END_SRC
 Then, we set up the creation of an actual snippet (note that its length is
-capped at a certain number of characters, defined by =gm/longest-snippet=). The
+capped at a certain number of characters, defined by =og/longest-snippet=). The
 longest snippet is, at the time of writing, =binom=, for the binomial coefficient
 (choose function).
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-snippet-expand-p (key)
-  (-if-let* ((buff-cand (gm/buff-cand (car gm/longest-snippet)))
+(defun og/math-snippet-expand-p (key)
+  (-if-let* ((buff-cand (og/buff-cand (car og/longest-snippet)))
              (completions (-intersection
                            buff-cand
-                           (alist-get key gm/math-snippet-by-suffix nil nil 'equal)))
+                           (alist-get key og/math-snippet-by-suffix nil nil 'equal)))
              (snippet-match (--max-by (> (length it) (length other)) completions))
-             (snippet (assoc (concat snippet-match key) gm/math-snippets))
+             (snippet (assoc (concat snippet-match key) og/math-snippets))
              (expand (cadr snippet)))
       snippet))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-snippet-expand (key)
-  (-if-let* ((snippet (gm/math-snippet-expand-p key))
+(defun og/math-snippet-expand (key)
+  (-if-let* ((snippet (og/math-snippet-expand-p key))
              (expand (cadr snippet)))
       (progn
         ;; this has to be negative, we're deleting back
@@ -4833,15 +4831,15 @@ longest snippet is, at the time of writing, =binom=, for the binomial coefficien
         ;; is this a snippet expansion or just a text insertion?
         (yas-expand-snippet (if (cddr snippet) (yas-lookup-snippet expand) expand)))
     (if (string-match "[0-9]" key)
-        (gm/math-number-subscript key)
+        (og/math-number-subscript key)
       (insert key))))
 #+END_SRC
 **** Add and View Snippet
 Now we give the user a way to easily add snippets.
 #+BEGIN_SRC emacs-lisp
-(defun gm/new-math-snippet ()
+(defun og/new-math-snippet ()
   "Creates a new math snippet. Adds the cons (KEY . NAME) to
-`gm/math-snippets'. If no snippet with the name NAME exists in
+`og/math-snippets'. If no snippet with the name NAME exists in
 the yasnippet directory for latex-mode, then the such a file is
 created. The user can then write the code into which te snippet
 should expand."
@@ -4855,36 +4853,36 @@ should expand."
          (snippet (if (s-blank-str? text)
                       (list key name t)
                     (list key text)))
-         (snippet-keys (--map (car it) gm/math-global-snippets))
-         (snippet-list (--map (cons (car it) it) gm/math-global-snippets)))
+         (snippet-keys (--map (car it) og/math-global-snippets))
+         (snippet-list (--map (cons (car it) it) og/math-global-snippets)))
     (unless (s-blank-str? name)
       (find-file file-cand)
       (unless (file-exists-p file-cand)
         (yas-expand-snippet (yas-lookup-snippet "new-math-snippet"))))
     (when (and (member (car snippet) snippet-keys)
                (y-or-n-p (format "Snippet %s is already defined. Overwrite?" key)))
-      (setq gm/math-global-snippets (delete (cdr (assoc key snippet-list)) gm/math-global-snippets)))
-    (push snippet gm/math-global-snippets)
+      (setq og/math-global-snippets (delete (cdr (assoc key snippet-list)) og/math-global-snippets)))
+    (push snippet og/math-global-snippets)
     (unless current-prefix-arg
-      (setq gm/math-global-snippets gm/math-global-snippets))
-    (dump-vars-to-file '(gm/math-global-snippets) gm/math-snippet-loc t)
-    (gm/math-setup)))
+      (setq og/math-global-snippets og/math-global-snippets))
+    (dump-vars-to-file '(og/math-global-snippets) og/math-snippet-loc t)
+    (og/math-setup)))
 #+END_SRC
 A very rudimentary command to see all current snippet keys and expansions.
 #+BEGIN_SRC emacs-lisp
-(defun gm/view-snippets ()
+(defun og/view-snippets ()
   (interactive)
-  (setq gm/math-snippets
-        (--sort (string< (car it) (car other)) gm/math-snippets))
+  (setq og/math-snippets
+        (--sort (string< (car it) (car other)) og/math-snippets))
   (with-output-to-temp-buffer "*QuickMath Expansions*"
-    (let ((key-len (+ 4 (car gm/longest-snippet)))
-          (snip-len (cdr gm/longest-snippet)))
+    (let ((key-len (+ 4 (car og/longest-snippet)))
+          (snip-len (cdr og/longest-snippet)))
       (princ (format "Key%s  Snippet%s\n%s%s\n"
                      (make-string (- key-len 4) ? )
                      (make-string (- snip-len 8) ? )
                      (make-string key-len ?-)
                      (make-string (1+ snip-len) ?-)))
-      (dolist (snippet gm/math-snippets)
+      (dolist (snippet og/math-snippets)
         (princ (format "%s %s\n"
                        (concat
                         (car snippet)
@@ -4933,14 +4931,14 @@ Modified from the =cdlatex-tab= function in =cdlatex.el=.
               (forward-char 1)
               (if (looking-at "[^_\\^({\\[]")
                   (throw 'stop t)))))))
-    (unless (gm/in-math-p)
+    (unless (og/in-math-p)
       (forward-char -1)
-      (gm/reformat-fragment))))
+      (og/reformat-fragment))))
 ;; right bracket
 #+END_SRC
 Bind to tab.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(define-conditional-key gm/math-mode-map (kbd "<tab>") #'math-tab (gm/in-math-p))
+(define-conditional-key og/math-mode-map (kbd "<tab>") #'math-tab (og/in-math-p))
 #+END_SRC
 **** Subscripts/Indices
 This function eases the entry of subscripts such as =x_0= or =a_{12}=. When a
@@ -4950,18 +4948,18 @@ brackets are added to ensure proper LaTeX rendering. I also rarely enter a
 numbered subscript of more than two digits, so I also exit the brackets after
 creating them.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-number-subscript (n)
+(defun og/math-number-subscript (n)
   (insert n)
   (save-excursion
     (cond ((save-excursion
              (backward-char)
-             (> (length (replace-regexp-in-string "[{}]" "" (if (gm/last-letter) (gm/last-letter) ""))) 1))
+             (> (length (replace-regexp-in-string "[{}]" "" (if (og/last-letter) (og/last-letter) ""))) 1))
              (backward-char)
              (insert "_"))
-          ((string-match "[a-zA-Z][0-9]" (gm/last-n-chars 2))
+          ((string-match "[a-zA-Z][0-9]" (og/last-n-chars 2))
              (backward-char)
              (insert "_"))
-          ((string-match "\_[0-9][0-9]" (gm/last-n-chars 3))
+          ((string-match "\_[0-9][0-9]" (og/last-n-chars 3))
            (save-excursion
              (backward-char 2)
              (insert "\{"))
@@ -4970,10 +4968,10 @@ creating them.
 Add subscript bindings to each of the ten digits.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
 ;; (cl-loop for i from 0 to 9
-;;          collect (eval (macroexpand `(define-conditional-key gm/math-mode-map
+;;          collect (eval (macroexpand `(define-conditional-key og/math-mode-map
 ;;                                          (number-to-string ,i)
-;;                                          (lambda! () (gm/math-number-subscript (number-to-string ,i)))
-;;                                        (gm/in-math-p)))))
+;;                                          (lambda! () (og/math-number-subscript (number-to-string ,i)))
+;;                                        (og/in-math-p)))))
 #+END_SRC
 **** Fraction
 Typing =/= after an appropriate block (a number or a balanced set of parentheses)
@@ -4983,20 +4981,20 @@ results in =\frac{\sin x}{|}=.
 
 First, this is a set of extra strings that we accept as a prefix to a match.
 There is also a list of strings which do not count as words for the purposes of
-=gm/math-frac--backward-word=.
+=og/math-frac--backward-word=.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-frac-extras
+(defvar og/math-frac-extras
   '("\\vec"))
 
-(defvar gm/math-frac-non-words
+(defvar og/math-frac-non-words
   '("sum"))
 #+END_SRC
 We write a function to go backward from the point until no more characters match.
 #+BEGIN_SRC emacs-lisp
 ;; Go backward by a latex sub/superscript
-(defun gm/math-frac--backward-script ()
+(defun og/math-frac--backward-script ()
   (cond
-   ((string-match-p "[_^]." (gm/last-n-chars 2))
+   ((string-match-p "[_^]." (og/last-n-chars 2))
     (backward-char 2))
    ;; 125 is right curly brace
    ((and (eq (char-before) 125)
@@ -5006,20 +5004,20 @@ We write a function to go backward from the point until no more characters match
     (backward-sexp)
     (backward-char))))
 
-(defun gm/math-frac--backward-word ()
+(defun og/math-frac--backward-word ()
   (let ((pt (point)))
     (save-excursion
-      (when (string-match-p "{}" (gm/last-n-chars 2))
+      (when (string-match-p "{}" (og/last-n-chars 2))
         (backward-char 2))
       (when (and (string-match-p "\\w" (char-to-string (char-before)))
-                 (not (member (thing-at-point 'word 'no-properties) gm/math-frac-non-words)))
+                 (not (member (thing-at-point 'word 'no-properties) og/math-frac-non-words)))
         (backward-word)
         (when (equal (char-before) (string-to-char "\\"))
           (backward-char))
         (setq pt (point))))
     (goto-char pt)))
 
-(defun gm/math-frac--backward-match ()
+(defun og/math-frac--backward-match ()
   ;; do this until we encounter a space character, or until we get into an
   ;; infinite loop, and make sure the sub/superscripts connect to a valid word
   (let ((pt (point-min)))
@@ -5027,40 +5025,40 @@ We write a function to go backward from the point until no more characters match
                     (eq pt (point))
                     (string-match-p "[[:space:]]" (char-to-string (char-before)))))
       (setq pt (point))
-      (gm/math-frac--backward-script)
-      (gm/math-frac--backward-script)
+      (og/math-frac--backward-script)
+      (og/math-frac--backward-script)
       ;; break loop and undo this step if this turns out not to be a valid word
-      (let ((ptcand (save-excursion (gm/math-frac--backward-word)
+      (let ((ptcand (save-excursion (og/math-frac--backward-word)
                                     (point))))
         (if (eq ptcand (point))
             (goto-char pt)
           (goto-char ptcand))))
     (condition-case nil
-        (re-search-backward (concat (regexp-opt gm/math-frac-extras) "\\( \\|{}\\)"))
+        (re-search-backward (concat (regexp-opt og/math-frac-extras) "\\( \\|{}\\)"))
       (error nil))))
 #+END_SRC
 This gets plugged into a function that gets the maximal matching suffix of a string.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-frac--start-of-match-string (str)
+(defun og/math-frac--start-of-match-string (str)
   "Return maximal matching suffix for a fraction match.
 
 Match a LaTeX word with 0 to 2 sub/superscripts that is not
 preceded by ^ or _ (because this means something like matching
 the 1 in x_1). Allow possibly being preceded by a math extra in
-`gm/math-frac--start-of-match-string' The match must end at
+`og/math-frac--start-of-match-string' The match must end at
 point."
   (with-temp-buffer
     (insert str)
     (goto-char (point-max))
-    (gm/math-frac--backward-match)
+    (og/math-frac--backward-match)
     (buffer-substring-no-properties (point) (point-max))))
 #+END_SRC
 Now we use this as the matching function in a function that returns the spot in
 the buffer where the maximal suffix begins.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-frac-start-of-match-func 'gm/math-frac--start-of-match-string)
+(defvar og/math-frac-start-of-match-func 'og/math-frac--start-of-match-string)
 
-(defun gm/math-frac--get-max-start ()
+(defun og/math-frac--get-max-start ()
   (let* ((fr (org-element-context))
          (fr-type (car fr))
          (fr-begin (org-element-property :begin fr)))
@@ -5076,36 +5074,36 @@ the buffer where the maximal suffix begins.
                (yas--snippet-active-field (car (yas-active-snippets)))))
            (error 0)))))
 
-(defun gm/math-frac--start-of-match ()
+(defun og/math-frac--start-of-match ()
   "Return start of maximal match ending at point.
 
 Look no further back than bol for environment and start of
 fragment for inline math, and never any further than the start of
 the most recently activated snippet"
-  (let* ((max-start (gm/math-frac--get-max-start))
+  (let* ((max-start (og/math-frac--get-max-start))
          (max-match (buffer-substring-no-properties max-start (point)))
-         (match (funcall gm/math-frac-start-of-match-func max-match)))
+         (match (funcall og/math-frac-start-of-match-func max-match)))
     (- (point) (length match))))
 #+END_SRC
 Finally, we write the main function.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-frac--process-match (match)
+(defun og/math-frac--process-match (match)
   (replace-regexp-in-string "\\`(\\(.*\\))\\'" "\\1" match))
 
-(defun gm/math-frac--insert-match (match env)
+(defun og/math-frac--insert-match (match env)
   (yas-expand-snippet (yas-lookup-snippet env))
-  (insert (gm/math-frac--process-match match))
+  (insert (og/math-frac--process-match match))
   (yas-next-field))
 
-(defun gm/math-frac--region (beg end env)
+(defun og/math-frac--region (beg end env)
   "Replace text in region with fraction"
   ;; default to frac environment
   (unless env (setq env "frac"))
   (let ((match (buffer-substring-no-properties beg end)))
     (delete-region beg end)
-    (gm/math-frac--insert-match match env)))
+    (og/math-frac--insert-match match env)))
 
-(defun gm/math-frac (&optional env)
+(defun og/math-frac (&optional env)
   (interactive)
   ;; use fraction if called with C-u and quotient if called with C-u C-u
   (unless env
@@ -5117,7 +5115,7 @@ Finally, we write the main function.
     (cond
      ;; active region
      ((use-region-p)
-      (gm/math-frac--region (region-beginning) (region-end) env))
+      (og/math-frac--region (region-beginning) (region-end) env))
      ;; match is surrounded in brackets
      ((string-match-p "[\])]" ch)
       (let ((beg (progn
@@ -5126,11 +5124,11 @@ Finally, we write the main function.
         ;; For example, R[X] should use quotient by default
         (when (equal ch "]")
           (unless env (setq env "quotient"))
-          (setq beg (gm/math-frac--start-of-match)))
-        (gm/math-frac--region beg end env)))
+          (setq beg (og/math-frac--start-of-match)))
+        (og/math-frac--region beg end env)))
      ((string-match-p "[[:alnum:]!}]" ch)
-      (setq beg (gm/math-frac--start-of-match))
-      (gm/math-frac--region beg end env))
+      (setq beg (og/math-frac--start-of-match))
+      (og/math-frac--region beg end env))
      (t (unless env (setq env "frac"))
         (yas-expand-snippet (yas-lookup-snippet env))
         (yas-abort-snippet)))))
@@ -5140,8 +5138,8 @@ I wanted to make writing environments like =split= and =align= easier, so that I
 wouldn't have to manually add the newline (=\\=) at the end of each line required
 to make LaTeX happy.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-in-env-p (env)
-  (when (gm/in-math-p)
+(defun og/math-in-env-p (env)
+  (when (og/in-math-p)
     (save-excursion
       (if (eq major-mode 'org-mode)
           (org-backward-paragraph)
@@ -5152,7 +5150,7 @@ to make LaTeX happy.
               (line-end-position))
              (format "\\begin{%s}" env)))))
 
-(defun gm/tex-newline ()
+(defun og/tex-newline ()
   (interactive)
   (if current-prefix-arg
       (progn
@@ -5164,7 +5162,7 @@ to make LaTeX happy.
       (if (equal current-line "\\begin{split}")
           (newline)
         (end-of-line)
-        (unless (equal (gm/last-n-chars 2) "\\\\")
+        (unless (equal (og/last-n-chars 2) "\\\\")
           (insert " \\\\"))
         (if (save-excursion
               (forward-line)
@@ -5179,12 +5177,12 @@ to make LaTeX happy.
           (forward-line))))))
 #+END_SRC
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref math-mode
-(define-conditional-key gm/math-mode-map (kbd "RET") #'gm/tex-newline (gm/math-in-env-p "split"))
+(define-conditional-key og/math-mode-map (kbd "RET") #'og/tex-newline (og/math-in-env-p "split"))
 #+END_SRC
 **** Convert Inline Math to Equation
 Turns an inline math snippet into an equation.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-inline-to-equation ()
+(defun og/math-inline-to-equation ()
   (interactive)
   (let* ((fr (org-element-context))
          (fr-type (car fr))
@@ -5210,9 +5208,9 @@ Turns an inline math snippet into an equation.
 **** Convert Equation to Split
 Janky way to turn equation into split. Does idempotence check.
 #+BEGIN_SRC emacs-lisp
-(defvar gm/math-split-delims '(" =" "\\le " "\\ge " "\\sim "))
+(defvar og/math-split-delims '(" =" "\\le " "\\ge " "\\sim "))
 
-(defun gm/math-make-split ()
+(defun og/math-make-split ()
   (interactive)
   (let* ((fr (org-element-context))
          (fr-type (car fr))
@@ -5234,7 +5232,7 @@ Janky way to turn equation into split. Does idempotence check.
           (insert "\\end{split}")
           (goto-char fr-begin)
           (forward-line 2)
-          (when (string-match (regexp-opt gm/math-split-delims)
+          (when (string-match (regexp-opt og/math-split-delims)
                                 (buffer-substring-no-properties
                                  (line-beginning-position)
                                  (line-end-position)))
@@ -5248,7 +5246,7 @@ Janky way to turn equation into split. Does idempotence check.
 I often add a margin note then decide to shift it down. However, margin notes
 and shifted notes use different link types.
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-make-marginnote-float ()
+(defun og/math-make-marginnote-float ()
   (interactive)
   (if (org-in-regexp org-link-bracket-re 1)
       (let* ((remove (list (match-beginning 0) (match-end 0)))
@@ -5265,7 +5263,7 @@ and shifted notes use different link types.
 #+END_SRC
 **** Check if in commutative diagram
 #+BEGIN_SRC emacs-lisp
-(defun gm/math-in-commutative-diagram ()
+(defun og/math-in-commutative-diagram ()
   (string-match-p (regexp-quote "tikzcd") (org-element-property :value (org-element-context))))
 #+END_SRC
 *** Inkscape Figures
@@ -5279,12 +5277,12 @@ This is the mode we will load in Inkscape when we insert math.
   (when (= (point) (point-min))
     (funcall-interactively 'forward-char 2)))
 
-(defun gm/inkmath-end ()
+(defun og/inkmath-end ()
   (interactive)
   (save-buffer)
   (delete-frame))
 
-(bind-key [remap org-ctrl-c-ctrl-c] #'gm/inkmath-end inkmath-mode-map)
+(bind-key [remap org-ctrl-c-ctrl-c] #'og/inkmath-end inkmath-mode-map)
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'auto-mode-alist '("\\.inkmath\\'" . inkmath-mode))
@@ -5297,7 +5295,7 @@ I don't want to mark these files as recently visited.
 We need a way to make Inkscape figures from Emacs. The =org-inkscape-figure=
 snippet calls this function.
 #+BEGIN_SRC emacs-lisp
-(defun gm/inkscape-figure ()
+(defun og/inkscape-figure ()
   (interactive)
   (let ((imgdir (expand-file-name "figures/" default-directory)))
     (unless (file-directory-p imgdir)
@@ -5321,5 +5319,5 @@ There is so much elisp here that forms like =(< 1 2)= mess up the =check-parens=
 #+OPTIONS: todo:nil
 #+PROPERTY: header-args :results silent :tangle gmacs.el
 # Local variables:
-# eval: (add-hook 'after-save-hook 'gm/tangle-gmacs nil t)
+# eval: (add-hook 'after-save-hook 'og/tangle-gmacs nil t)
 # end:

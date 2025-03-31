@@ -3,4 +3,4 @@
 # key: math-quotient-helper
 # type: command
 # --
-(gm/math-frac "quotient")
+(og/math-frac "quotient")

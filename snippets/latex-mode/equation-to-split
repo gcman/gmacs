@@ -3,4 +3,4 @@
 # key: math-equation-to-split
 # type: command
 # --
-(gm/math-make-split)
+(og/math-make-split)
