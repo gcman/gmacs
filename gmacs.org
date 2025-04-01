@@ -108,27 +108,27 @@ Enable lexical binding.
 #+END_SRC
 Always load up a server when opening Emacs, unless one is already running.
 #+BEGIN_SRC emacs-lisp
-  ;;   (defun server-already-running-p ()
-  ;;     "Is Emacs already running?
-  ;;     Gets name based on server-force-delete."
-  ;;     (let ((file (expand-file-name
-  ;; 		 server-name
-  ;; 		 (if server-use-tcp
-  ;; 		     server-auth-dir
-  ;; 		   server-socket-dir))))
-  ;;       (file-exists-p file)))
+  (defun server-already-running-p ()
+    "Is Emacs already running?
+    Gets name based on server-force-delete."
+    (let ((file (expand-file-name
+		 server-name
+		 (if server-use-tcp
+		     server-auth-dir
+		   server-socket-dir))))
+      (file-exists-p file)))
 
-  ;; (defun server-shunt ()
-  ;;     "Shunts to emacsclient"
-  ;;     (let ((args (append '("emacsclient" "-a" "\"\"" "-c" "-n")
-  ;; 			(cdr command-line-args))))
-  ;;       (shell-command (substring (format "%S" args) 1 -1))
-  ;;       (kill-emacs)))
+(defun server-shunt ()
+    "Shunts to emacsclient"
+    (let ((args (append '("emacsclient" "-a" "\"\"" "-c" "-n")
+			(cdr command-line-args))))
+      (shell-command (substring (format "%S" args) 1 -1))
+      (kill-emacs)))
 
-  ;;   (unless (featurep 'server)
-  ;;     (unless (boundp 'server-process)
-  ;;       (require 'server)
-  ;;       (if (server-already-running-p) (server-shunt) (server-start))))
+  (unless (featurep 'server)
+    (unless (boundp 'server-process)
+      (require 'server)
+      (if (server-already-running-p) (server-shunt) (server-start))))
 #+END_SRC
 We increase these so that we don't exceed recursion limits unless there is some
 kind of infinite loop.
@@ -4126,11 +4126,14 @@ Show newest mail first.
 (notmuch-search-oldest-first nil)
 #+END_SRC
 Some commonly used searches.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-custom-settings
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref notmuch-settings
 (setq notmuch-saved-searches
-      '((:name "inbox" :query "tag:inbox" :key "i" :sort-order 'oldest-first)
-        (:name "sent" :query "tag:sent" :key "s" :sort-order 'newest-first)
-        (:name "drafts" :query "tag:draft" :key "d")))
+      '((:name "inbox" :query "tag:inbox" :key "i")
+        (:name "unread" :query "tag:unread" :key "u")
+        (:name "flagged" :query "tag:flagged" :key "f")
+        (:name "sent" :query "tag:sent" :key "s")
+        (:name "drafts" :query "tag:draft" :key "d")
+        (:name "all mail" :query "*" :key "a")))
 #+END_SRC
 Most modern mail clients expect mail to be soft-wrapped. That is, the paragraph
 conforms to the width of the viewer the person reading the mail is using, not to
