@@ -88,9 +88,8 @@ If ELT does not belong to LST, returns nil."
   "List of right LaTeX brackets in reverse order.")
 
 (defconst bratex--bracket-regexp
-  (regexp-opt (apply #'append (map 'list
-                                   (lambda (pair) (list (car pair) (cdr pair)))
-                                   bratex--brackets)))
+  (regexp-opt (apply #'append (mapcar (lambda (pair) (list (car pair) (cdr pair)))
+                                      bratex--brackets)))
   "Regular expression that defines a LaTeX bracket.
 
 This variable is generated automatically from `bratex--brackets'.

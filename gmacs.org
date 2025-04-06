@@ -61,6 +61,9 @@ but after =early-init-file=. As we'll see later, we can handle package
 initialization ourselves, so there's no need for Emacs to do it first.
 #+BEGIN_SRC emacs-lisp :tangle early-init.el
 (setq package-enable-at-startup nil)
+(setq gc-cons-threshold (* 50 1000 1000))
+(defvar default-file-name-handler-alist file-name-handler-alist)
+(setq file-name-handler-alist nil)
 #+END_SRC
 ** =init.el=
 The main entry point into GMACS. First, we remove some features that would make
@@ -159,6 +162,13 @@ Let the user know how quickly GMACS started.
            gcs-done))
 
 (add-hook 'after-init-hook #'og/startup-time)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(add-hook 'emacs-startup-hook
+      (lambda ()
+        "Restore defalut values after init."
+        (setq file-name-handler-alist default-file-name-handler-alist)
+        (setq gc-cons-threshold 800000)))
 #+END_SRC
 ** Directories and File Locations
 We define a few custom directories to satisfy my own wishes for how things
@@ -266,7 +276,7 @@ We load some packages that I use throughout my configuration.
 (use-package async :commands (async-start))
 (use-package s :demand t)
 (use-package dash :demand t :config (dash-enable-font-lock))
-(eval-when-compile (require 'cl-lib))
+;; (eval-when-compile (require 'cl-lib))
 #+END_SRC
 * General Configuration
 ** Macros
@@ -311,7 +321,6 @@ This is like `define-key', except the definition
                  (when ,(macroexp-progn body)
                    ,def)))))
 #+END_SRC
-
 ** User Interface
 Show off the title.
 #+BEGIN_SRC emacs-lisp
@@ -515,19 +524,11 @@ FACE defaults to inheriting from default and highlight."
       show-paren-when-point-inside-paren nil
       show-paren-when-point-in-periphery t)
 #+END_SRC
-When I'm doing dedicated editing, it's sometimes nice to have more colours,
-especially for Lisps such as Emacs Lisp. However, it's too distracting in org
-mode source blocks, and it also slows down the point's movement, so I find it
-best not to enable it globally.
-#+BEGIN_SRC emacs-lisp
-;; (use-package rainbow-delimiters
-;;   :hook (emacs-lisp-mode . rainbow-delimiters-mode))
-#+END_SRC
 Finally, =rainbow-mode= highlights hex-color strings with their colour. Very handy
 for choosing colours, especially when editing CSS files.
 #+BEGIN_SRC emacs-lisp
 (use-package rainbow-mode
-  :defer 2
+  :defer 3
   :diminish
   :config (rainbow-mode 1))
 #+END_SRC
@@ -674,12 +675,10 @@ root.
 #+BEGIN_SRC emacs-lisp
 (when og/user
   (use-package pinentry
-    :demand t
     :config (pinentry-start))
 
   (use-package epa-file
     :ensure nil
-    :init (epa-file-enable)
     :config (setenv "GPG_AGENT_INFO" nil)
     :custom
     (epg-gpg-program "/usr/bin/gpg2")
@@ -1018,14 +1017,6 @@ smooth.
 #+BEGIN_SRC emacs-lisp
 (setq auto-window-vscroll nil)
 #+END_SRC
-#+BEGIN_SRC emacs-lisp
-(use-package ultra-scroll
-  :init
-  (setq scroll-conservatively 101 ; important!
-        scroll-margin 0)
-  :config
-  (ultra-scroll-mode 1))
-#+END_SRC
 *** Dump Vars to File
 #+BEGIN_SRC emacs-lisp
 (defun dump-vars-to-file (varlist filename &optional lines)
@@ -1291,8 +1282,6 @@ prose in is Org Mode.
   (add-hook 'org-mode-hook #'flyspell-mode)
   (after! notmuch
     (add-hook 'notmuch-message-mode-hook #'flyspell-mode))
-  (dolist (hook '(change-log-mode-hook log-edit-mode-hook org-agenda-mode-hook))
-    (add-hook hook (lambda () (flyspell-mode -1))))
   <<flyspell-init>>
   :config
   <<flyspell-settings>>)
@@ -1715,7 +1704,6 @@ Open with external viewer by default if wanted.
 #+BEGIN_SRC emacs-lisp
 (use-package openwith
   :ensure t
-  :defer 2
   :config
   (openwith-mode 1)
   ;; (after! notmuch
@@ -2107,10 +2095,6 @@ Set tramp connection history location.
   (ivy-mode 1)
   <<ivy>>
   :custom
-  (ivy-re-builders-alist
-   '((swiper . ivy--regex-plus)
-     (ivy-switch-buffer . ivy--regex-plus)
-     (t . ivy--regex-fuzzy)))
   (ivy-use-virtual-buffers t)
   (ivy-display-style 'fancy)
   (ivy-initial-inputs-alist nil))
@@ -2143,6 +2127,13 @@ Set tramp connection history location.
   (amx-save-file (expand-file-name "amx" gmacs-cache-dir))
   (amx-history-length 50)
   (amx-show-key-bindings nil))
+#+END_SRC
+Use fuzzy search in most places.
+#+BEGIN_SRC emacs-lisp
+(setq ivy-re-builders-alist
+   '((t . ivy--regex-fuzzy)
+     (swiper . ivy--regex-plus)
+     (ivy-switch-buffer . ivy--regex-plus)))
 #+END_SRC
 I want to ignore certain file extensions when searching for a file, so I add
 them to the regexp in =counsel-find-file-ignore-regexp=.
@@ -2223,18 +2214,13 @@ Mode).
 *** Hydra
 #+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package hydra
-  :defer 2
   :config
   <<hydra>>)
 #+END_SRC
 *** Which Key Mode
 Helpful when you want to see completion for a certain sequence of prefix keys.
 #+BEGIN_SRC emacs-lisp
-(unless og/user
-  (use-package which-key
-    :defer 10
-    :diminish
-    :config (which-key-mode)))
+(which-key-mode)
 #+END_SRC
 *** Avy
 #+BEGIN_SRC emacs-lisp
@@ -2580,10 +2566,6 @@ A better version of the built-in =comment-dwim= from [[https://github.com/remyfe
   :commands comment-dwim-2
   :bind (("M-;" . comment-dwim-2)))
 #+END_SRC
-** Find Inbox
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-c o" (lambda! (find-file "~/org/inbox.org")))
-#+END_SRC
 ** Keychord
 #+BEGIN_SRC emacs-lisp :noweb no-export
 (use-package key-chord
@@ -2769,57 +2751,6 @@ We replace the normal return.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (bind-key "RET" #'og/org-return org-mode-map)
 (bind-key "C-RET" #'org-return org-mode-map)
-#+END_SRC
-*** File Locations
-We need a place where Org files go by default. Org Mode uses this to, for
-example, decide where to put the result of an Org Capture.
-#+BEGIN_SRC emacs-lisp
-(setq org-directory "~/org/")
-#+END_SRC
-We similarly decide other default locations.
-#+BEGIN_SRC emacs-lisp
-(setq og/agenda-org-files '("todo" "notes" "reading")
-      org-default-notes-file (expand-file-name "inbox.org" org-directory)
-      org-agenda-files (append
-                        `(,org-default-notes-file)
-                        (--map (expand-file-name (concat it ".org") org-directory)
-                               og/agenda-org-files)))
-#+END_SRC
-This is particular to my setup, but I want my agenda to include the non-archived portion
-of my school files.
-#+BEGIN_SRC emacs-lisp
-(require 'org-agenda)
-
-(when (file-exists-p "~/school/")
-  (setq org-agenda-files
-      (append org-agenda-files
-              (apply 'append
-                     (mapcar
-                      (lambda (directory)
-                        (directory-files-recursively
-                         directory org-agenda-file-regexp))
-                      (--filter (not (string-match-p (regexp-opt '("archive" "." "..")) it))
-                                (directory-files "~/school" t)))))))
-#+END_SRC
-Keeping my refile locations minimal makes refiling faster; besides, my primary
-use case for refiling is to stow something away in its proper place for later
-use. and we just set our "proper places."
-#+BEGIN_SRC emacs-lisp
-(setq og/org-non-refile-targets '("inbox")
-      og/org-refile-targets (--filter
-                              (not (string-match-p
-                                    (concat (regexp-opt og/org-non-refile-targets) ".org$") it))
-                              org-agenda-files)
-      org-refile-targets '((nil :maxlevel . 5)
-                           (og/org-refile-targets :maxlevel . 5)))
-#+END_SRC
-Sometimes we want to refile into a subtree that hasn't yet been created.
-#+BEGIN_SRC emacs-lisp
-(setq org-refile-allow-creating-parent-nodes 'confirm)
-#+END_SRC
-This abbreviation lets us easily include attached files as inline images.
-#+BEGIN_SRC emacs-lisp
-(setq org-link-abbrev-alist '(("att" . org-attach-expand-link)))
 #+END_SRC
 *** Refile and Archival
 Log refiling.
@@ -3132,7 +3063,7 @@ rotate the image first to make sure it displays correctly.
     (insert (org-link-make-string (format "file:%s" end-file)))
     (org-display-inline-images t t)))
 #+END_SRC
-*** Todo Lists and Agenda
+*** Todo Lists
 I like the following set of =TODO= words. This is what appears
 before an Org headline when a todo state is activated.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
@@ -3198,18 +3129,9 @@ TODO state should be marked as such.
                   (org-todo 'done)
                 (org-todo 'todo)))))))
 #+END_SRC
-I manage deadlines with Org Agenda.
-#+BEGIN_SRC emacs-lisp
-(bind-key "C-c a" #'org-agenda)
-#+END_SRC
 I've never used these commands on purpose.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (unbind-key "C-c [" org-mode-map)
-#+END_SRC
-The default is =week=, which gives the current week (starting on Monday by
-default). I prefer to see a larger view.
-#+BEGIN_SRC emacs-lisp
-(setq org-agenda-span 14)
 #+END_SRC
 *** Links
 I often use links to easily navigate to a relevant file in cases where I would
@@ -3243,12 +3165,17 @@ academic papers in Org Mode by Org-guru John Kitchin.
 (autoload #'org-ref-insert-link "org-ref")
 (autoload #'org-ref-bibtex-new-entry/body "org-ref")
 (add-hook 'bibtex-mode-hook (lambda () (require 'org-ref)))
-
 (after! org-ref
   (require 'doi-utils)
   (require 'org-ref-pdf)
-  (bind-key "C-c b" #'org-ref-bibtex-new-entry/body bibtex-mode-map)
+  (bind-key "C-c b" #'biblio-arxiv-lookup bibtex-mode-map)
   <<org-ref>>)
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
+(defun og/update-bib-files ()
+  (setq-local bibtex-completion-bibliography
+              (directory-files default-directory nil "\\.bib$")))
+(add-hook 'org-mode-hook #'og/update-bib-files)
 #+END_SRC
 For humanities essays.
 #+BEGIN_SRC emacs-lisp
@@ -3266,13 +3193,6 @@ Bind this in Org Mode.
 #+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (bind-key "C-c ]" #'org-ref-insert-link org-mode-map)
 (bind-key "C-c }" #'org-ref-insert-ref-link org-mode-map)
-#+END_SRC
-Keep everything in my org directory.
-#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-ref
-(setq org-ref-bibliography-notes (expand-file-name "ref/notes.org" org-directory)
-      org-ref-default-bibliography (list (expand-file-name "ref/references.bib" org-directory)
-                                         (expand-file-name "ref/zotero.bib" org-directory))
-      org-ref-pdf-directory (expand-file-name "ref/pdf/" org-directory))
 #+END_SRC
 Use =ivy= instead of =helm= for =org-ref= completion. It makes everything more
 cohesive, as I use =ivy= everywhere else.
@@ -3915,7 +3835,13 @@ Remove "hypersetup" at the beginning of exported document.
                                file))
         (with-temp-file file
           (insert-file-contents file)
+          (when-let ((bibfiles (directory-files default-directory nil "\\.bib$")))
+            (search-forward "\\begin{document}")
+            (beginning-of-line)
+            (--map (insert (format "\\addbibresource{%s}\n" it)) bibfiles)
+            (insert "\\AtEndDocument{\\printbibliography}\n"))
           (replace-regexp-in-region "\\\\cite\\[\\([^]]*\\)\\]\\[]" "\\\\cite[\\1]")
+          (replace-regexp-in-region "\\\\label{sec:org[a-f0-9]+}\n" "")
           (replace-string-in-region "=_s" "=_\{\\mathrm\{s\}\}")
           (replace-string-in-region "\\sidenote[]" "\\sidenote")
           (replace-string-in-region "\\emph{Step " "\\step{Step "))))))
@@ -4039,43 +3965,7 @@ By default, Org Mode exports references to LaTeX with =\ref=. I prefer using the
                '("amsart"
                  "\\documentclass[10pt, reqno]{amsart}
                [NO-DEFAULT-PACKAGES]
-\\usepackage[top=1in,bottom=1in,left=1in,right=1in]{geometry}
-\\usepackage[dvipsnames]{xcolor}
-\\usepackage[hidelinks=true,pdfencoding=auto, psdextra]{hyperref}
-\\usepackage{cleveref}
-\\usepackage{amsthm}
-\\usepackage{thmtools}
-\\declaretheorem[numberwithin=section]{theorem}
-\\declaretheorem[sibling=theorem]{lemma, proposition, corollary, claim, goal, conjecture}
-\\declaretheorem[style=definition, sibling=theorem]{definition}
-\\declaretheorem[style=definition, numbered=no]{notation}
-\\declaretheorem[style=remark, sibling=theorem]{remark}
-\\declaretheorem[style=remark, sibling=theorem, name={Example}]{ex}
-\\newcommand{\\marginnote}{\\footnote}
-\\newcommand{\\sidenote}{\\footnote}
-\\usepackage{etoolbox}
-\\makeatletter
-\\patchcmd{\\@maketitle}{\\global\\topskip42\\p@\\relax}
-  {\\global\\topskip42\\p@\\relax \\vspace*{-1ex}}
-  {}{}
-\\makeatother
-\\usepackage[backend=biber, style=alphabetic]{biblatex}
-\\crefname{equation}{}{}
-\\crefrangeformat{equation}{(#3#1#4)--(#5#2#6)}
-\\newcommand{\\step}[1]{\\smallskip\\noindent\\emph{#1}}
-\\pagestyle{plain}
-
-\\usepackage{import}
-\\usepackage{xifthen}
-\\usepackage{pdfpages}
-\\usepackage{transparent}
-\\usepackage{makecell}
-\\usepackage{subcaption}
-\\newcommand{\\incfig}[2]{%
-    \\def\\svgwidth{#1\\columnwidth}
-    \\import{./figures/}{#2.pdf_tex}
-}
-"
+\\usepackage{og-amsart}"
                  ("\\section{%s}" . "\\section{%s}")
                  ("\\subsection{%s}" . "\\subsection{%s}")
                  ("\\subsubsection{%s}" . "\\subsubsection{%s}"))))
@@ -4484,17 +4374,19 @@ that is the default in Org Mode). Otherwise, binding =TAB= to =nil= in
 (use-package yasnippet
   :commands (yas-minor-mode yas-global-mode)
   :config
-  (yas-global-mode 1)
   (bind-key "<tab>" nil yas-minor-mode-map)
   (bind-key "TAB" nil yas-minor-mode-map)
   (define-key yas-minor-mode-map (kbd "SPC")
-    (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
+              (or (bound-and-true-p yas-maybe-expand) #'yas-expand))
   :custom
   (yas-triggers-in-field t) ; expand snippets within snippets
   (yas-wrap-around-region t)
   (yas-snippet-dirs '("~/.emacs.d/snippets")))
-(yas-global-mode 1)
-(diminish 'yas-minor-mode " ✂")
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+(after! org
+  (yas-global-mode 1)
+  (diminish 'yas-minor-mode " ✂"))
 #+END_SRC
 ** QuickMath
 I use a hydra for snippets that just insert/replace text in math mode and thus
@@ -4649,21 +4541,22 @@ there are more opening delimiters than closing ones (more of =\begin{ENV}= then
 be in math. The one subtlety is that we also look at the starred versions of
 =ENV=.
 #+BEGIN_SRC emacs-lisp
+(defun og/in-math-p-regexp (begin-delim)
+  (concat begin-delim (regexp-opt og/math-environments) "[\\*]?}"))
+
 (defun og/in-math-p (&optional loc)
   (if (boundp 'latex-mode)
       (when (eq major-mode 'latex-mode)
         (texmathp))
     (progn
       (unless loc (setq loc (point)))
-      (defun og/--in-math-p (begin-delim)
-        (concat begin-delim (regexp-opt og/math-environments) "[\\*]?}"))
       (let* ((fr (org-element-context))
              (fr-type (car fr))
              (begin (org-element-property :begin fr)))
         (save-excursion
           (if (condition-case nil
                   (progn
-                    (re-search-backward "\\text{" begin)
+                    (re-search-backward "\\text" begin)
                     (forward-word)
                     (forward-sexp)
                     (> (point) loc))
@@ -4675,8 +4568,8 @@ be in math. The one subtlety is that we also look at the starred versions of
                     (<= loc (1- (- (org-element-property :end fr)
                                    (org-element-property :post-blank fr))))))
                   ((eq fr-type 'latex-environment)
-                   (let ((env-open (how-many (og/--in-math-p "\\\\begin{") begin loc))
-                         (env-close (how-many (og/--in-math-p "\\\\end{") begin loc)))
+                   (let ((env-open (how-many (og/in-math-p-regexp "\\\\begin{") begin loc))
+                         (env-close (how-many (og/in-math-p-regexp "\\\\end{") begin loc)))
                      (> (- env-open env-close) 0))))))))))
 #+END_SRC
 **** Enter Math Mode
@@ -5315,7 +5208,7 @@ snippet calls this function.
 * Options
 *** Don't Make =<>= Parentheses
 There is so much elisp here that forms like =(< 1 2)= mess up the =check-parens=.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no :noweb-ref org-settings
 (modify-syntax-entry ?\< "w" org-mode-syntax-table)
 (modify-syntax-entry ?\> "w" org-mode-syntax-table)
 #+END_SRC
